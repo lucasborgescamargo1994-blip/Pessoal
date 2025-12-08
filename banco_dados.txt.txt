@@ -194,3 +194,5 @@ Solução: Ir em parâmetros, pesquisar pelo nome interno: transp_regraConhecime
 Erro: Sistema está aparecendo alerta de conhecimento não averbado.
 Solução: Para remover o alerta de não averbação, é necessário habilitar uma funcionalidade que dentro do alerta permite colocar averbado manualmente, e coloca o número do protocolo da averbação externa.
 ###
+Erro: Cálculo de regra para outros subtrair para gerar um desconto. Estava tentando digitar valor negativo. E queria que o valor total serviço ficasse sem o desconto, apenas no total a receber o valor líquido.
+Solução: Habilitar no parâmetro transp_camposEscondidosComposicaoFrete o campo Valor total serviço, e ajustar na regra os cálculos.
