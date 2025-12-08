@@ -1,184 +1,184 @@
-        Erro: Ao criar múltiplos Conhecimentos com parâmetro de criação, pode apresentar um erro de natureza.
+Erro: Ao criar múltiplos Conhecimentos com parâmetro de criação, pode apresentar um erro de natureza.
         Solução: No parâmetro de criação de CT-e a partir de NF-e, mudar a opção Frete para remetente.
-        ###
-        Erro: Não consegue emitir GNRE
-        Solução: GNRE só é obrigatório quando começa o frete em um estado diferente de onde a empresa está localizada.
-        ###
-        Erro: Produto predominante sai com nome Diversos
-        Solução: Se o nome possui mais de 60 caracteres, sai com nome Diversos.
-        ###
-        Erro: Duplicidade de MDF-e e/ou CT-e
-        solução: Alterar a numeração inicial de acordo com a sequência do último documento emitido no antigo sistema, vai em Transporte/Configuralções/Tipos de talões
-        ###
-        Erro: Emitir GNRE pelo TMS e com 20% de desconto no ICMS
-        Solução: https://www.gnre.pe.gov.br:444/gnre/portal/automacao.jsp Em Web Services, Solicitar uso do WebService. Parametrizar um campo em Manutenção/Configurações/Tipos de Valores Outros, um campo (vICMSGNRE) para aplicar automaticamente nele o desconto ou para digitar manualmente o valor que quer que gere de GNRE. Pois se tiver divergência da aliquota gera rejeição no portal da SEFAZ.
-        ###
-        Erro: Problema de comunicação com os servidores do SEFAZ
-        Solução: Enviar em Contigência, pois caso o servidor principal não estiver ativo o servidor de contigência pode funcionar e recepcionar os documentos.
-        ###
-        Erro: Precisava dos XML de CT-e cancelados, foi solicitado pela contabilidade
-        Solução: Sim, de fato CT-e cancelado possui os XML dos cancelamentos.
-        ###
-        Erro: Integração de novo banco para emissão de boletos
-        Solução: Deve transferir para o setor de Expansão, pois a integração conta por banco integrado.
-        ###
-        Erro: Precisava cadastrar mais um veículo para aparecer no módulo de abastecimentos
-        Solução: O plano disponibilizava cadastro para até 6 veículos que já estavam todos usados, precisava aumentar o plano para poder cadastrar o novo veículo. Para este caso pode transferir para o setor de expansão se o cliente desejar aumentar o plano para atender sua demanda.
-        ###
-        Erro: No relatório Gerencial por conta competência um abastecimento não está aparecendo.
-        Solução: No gerencial por conta competência, o valor apresentado é igual ao valor do titulo como um todo, ele trás as informações de acordo com a criação do titulo. No caso o filtro de data tem que englobar o lançamento do título, No caso do gerencial por conta, ele trás as informações com base na baixa realizada.
-        ###
-        Erro: Necessidade de aplicar desconto em fatura cadastrada em Transporte/Faturamento.
-        Solução: Basta editar o faturamento criado, e no campo desconto colocar qual o valor do desconto a ser aplicado, e após vai solicitar para colocar a conta gerencial do desconto.
-        obs. Para gerar desconto colocar sinal negativo, para gerar acréscimo só digitar o valor.
-        ###
-        Erro: Cadastro de veículo errado como arrendatário
-        Solução: Se o proprietário do veículo for um e a ANTT estiver em nome de outra pessoa, tem que colocar como arrendatário (quem recebe o veículo) no cadastro de pessoas.
-        O processo
-        Contrato de arrendamento: O proprietário do veículo e o transportador devem celebrar um contrato de arrendamento, que precisa ser registrado e autenticado.
-        Cadastro do contrato: O proprietário do veículo (arrendante) deve cadastrar este contrato no sistema da ANTT (RNTRC Digital).
-        Inclusão na frota: Após o cadastro do contrato pelo proprietário, o transportador (arrendatário) poderá então incluir o veículo arrendado em sua frota no sistema RNTRC Digital.
-        Outros tipos de contrato: Caso a situação seja de comodato (empréstimo) ou aluguel, é preciso apresentar o contrato de comodato ou aluguel com firma reconhecida para que o transportador possa incluir o veículo em sua frota.
-        ###
-        Erro: CF: 120 - Sistema efrete (www.efrete.com.br): [Validação] (Protocolo: 848.543.257) Erro adicionando operação de transporte: Verifique se peso da carga é maior que zero
-        Solução: É um erro na emissão do CIOT porque o peso na nota está igual a 0.
-        ###
-        Erro: Rota de pedágio calculou errado no contrato de frete.
-        Solução: Tem que cancelar o CIOT e gerar um novo contrato de frete. Vai no contrato de frete, clica em CF-e e cancelar.  Depois de cancelado, gera o VPO antes, ai nele coloca de inicio a cidade que de inicio que deseja.
-        ###
-        Erro: Ajuda na emissão de um CT-e de uma nota fiscal impressa. Não sabe quem é o remetente, destinatário, pagador e CFOP.
-        Solução: Na nota consta os dados do Remetente e destinatário, e o pagador é quem pagou o frete para a transportadora que está fazendo o frete. CFOP tem que verificar com a contabilidade.
-        ###
-        Erro: Quer agrupar várias NF-e em um CT-e.
-        Solução: A regra principal é que um CTe comum só agrupa notas fiscais se tiverem o mesmo remetente e o mesmo destinatário. Já o CTe Globalizado permite agrupar várias notas de vários remetentes para um único destinatário ou de um único remetente para vários destinatários, e exige no mínimo cinco notas fiscais, que devem ser do mesmo estado (intermunicipal). CT-e Simplificado: Único Tomador de Serviço: O serviço de transporte deve ter um único tomador (o pagador do frete) para todas as NF-e agrupadas. Mesma UF de Início e Fim, Mesmo CFOP, Tributação e Código de Benefício Fiscal, Dispensados Dados Detalhados dos Participantes.
-        Múltiplos Remetentes OU Múltiplos Destinatários: A operação deve envolver, no mínimo, duas NF-e. Estas podem ser de:
-        Vários remetentes para um único destinatário.
-        Um único remetente para vários destinatários.
-        ###
-        Erro: Contrato de frete selecionado não possui uma operadora de crédito definida
-        Solução: Vai em Transportes/Configurações/Contratos com operadoras de crédito, e adiciona a operadora PEF do cliente.
-        ###
-        Erro: Precisava de um relatório com todos os dados de pessoas e veículos.
-        Solução: Abrir um ticket para relatório personalizado, prazo de 48 horas.
-        ###
-        Erro: Precisava emitir o Manifesto Internacional de Cargas.
-        Solução: Adquirir o módulo para realizar este tipo de emissão no sistema.
-        ###
-        Erro: Cliente com receio de não ter gerado VPO por causa da rota não possuir pedágios.
-        Solução: Se o percurso for respeitado, não tem porque ter receio, pois de fato o VPO não é obrigatório quando não possui pedágios na rota a ser percorrida.
-        ###
-        Erro: Emissão NFS-e
-        Solução: Passar para o setor integrações.
-        ###
-        Erro: Veículo em nome de uma empresa, ANTT em nome de uma pessoa física, e motorista não é essa pessoa física.
-        Solução: Cadastrar em Pessoas o proprietário do veículo (empresa), a pessoa física com a ANTT como arrendatário e proprietário de veículo, e motorista como motorista.
-        ###
-        Erro: Cliente cobrando modelo e se o sistema está preparado para o CBS e IBS da reforma tributária.
-        Solução: Repassa a eles que ainda não está em vigor e o ano que vem será o primeiro ano para testes, no momento não conseguimos disponibilizar esse novo modelo porque ainda não está liberado pela Sefaz e dessa forma não irá validar.
-        ###
-        Erro: Gostaria de que o relatório de conhecimentos aparecece apenas os Ct-e, e as Minutas não.
-        Solução: Basta nos filtros dos relatórios selecionar o talão CT-e apenas.
-        ###
-        Erro: Como enviar automaticamente o CT-e para o e-mail do cliente?
-        Solução:  Menu Pessoas > Seleciona e edita o cadastro do cliente > Verifica o quadro "e-mail".
-        Confere o parâmetro (Ambiente > Administração > Parâmetros > Cód. 2060) o valor deve ser "Cliente" ou o tipo de pessoa desejada.
-        ###
-        Erro: MDF-e em circulação não sendo possível cancelamento e é preciso trocar de motorista. Como reaproveitar o mesmo CT-e?
-        Solução: Emitir um novo MDF-e usando o mesmo CT-e e alterando o motorista. Já que o MDF-e anterior não pode ser cancelado, deve ser encerrado na SEFAZ.  E para emissão do novo pode ir no menu "Manifesto de cargas" > Clica no "+" para adicionar > Seleciona agência e talão > No campo "Conhecimentos" busca pelo número do CT-e. https://manuaisbsoft.atlassian.net/wiki/spaces/BT/pages/140574762/Emiss+o+de+MDF-e+Rodovi+rio
-        O motorista não é um dado que sai no XML do CT-e, acredito que não teria problemas fiscais, mas caso queira, confirma com sua contabilidade. Então pode ser alterado.
-        ###
-        Erro: Não aparece para colocar informações de pagamento no MDF-e
-        Solução: Para apresentar o campo informações de pagamento, deve estar ou apenas 1 documento informado no MDF-e ou ser TAC. Em caso de TAC, colocar as informações de pagamento do TAC.
-        ###
-        Erro: Como gerar um CT-e utilizando a Natureza da Operação 6357 (ou outra) mas não está puxando.
-        Solução: O usuário deve ter acesso a tela "tipos de operações". Possivelmente o CFOP está inativo no sistema e precisa ser reativado. Localiza o CFOP que vai utilizar no caso o 6357 > Seleciona ele > Clica no símbolo da lâmpada para ativar/desativar. Após isso pode tentar gerar o CT-e novamente.
-        ###
-        Erro: Quais os documentos que preciso expedir além do cte e manifesto quando estou contratando um terceiro?
-        Solução: Além do Ct-e e Manifesto, deve também expedir o CIOT e o VPO. Caso a pessoa não tiver contato com nenhuma Operadora, pode passar para o setor expansão para negociar o e-frete.
-        ###
-        Erro: Quando o gestor libera alguma permissão ao usuário e mesmo assim não aparece para ele.
-        Solução: Basta ir em Opções do Sistema/Atualizar Permissões.
-        ###
-        Erro: Estava fazendo CT-e e o campo Seguradora sumiu
-        Solução: A apólice de seguro venceu e foi trocada de seguradora, necessário cadastrar em pessoas a nova seguradora, e em Transportes/Configurações/Apólices de Seguro a nova apólice.
-        ###
-        Erro: Quando o valor do ICMS ou CST estiver configurado errado, qual caminho seguir?
-        Solução: Deve ser configurado corretamente (EX: ICMS de isenção CST 040 o valor da alíquota deve ser 0%) caminho: Transporte > Configurações > Exceções ICMS e CST.
-        ###
-        Erro: Envio de documentos automático por e-mail não estava funcionando.
-        Solução: Verificar no cadastro de pessoa se os grupos de e-mails estão corretos, e em Visualização/Preferências de Transporte se está habilitado as opções enviar e-mail automático.
-        ###
-        Erro: Cliente reclamou que ao criar a CT-e a partir de uma importação do xml de uma nf-e, ele altera automaticamente o campo do pagador do frete.
-        Solução: Esse dado puxa do xml da nf-e, quem emite a nf-e que define o pagador na emissão do documento.
-        ###
-        Erro: Cliente contratou o VPO pela E-frete e precisava configurar a e-frete para gerar o VPO dentro do Bsoft TMS.
-        Solução: Para emitir o VPO dentro do Bsoft TMS, é preciso adquirir o módulo para isso, transferir para o setor Expansão.
-        ###
-        Erro: Dúvidas do cliente em relação a rotas e/ou percurso.
-        Solução: Quando é apenas um estado ou é estado vizinho não há necessidade de informar. Deve informar somente se for 3 estados ou mais.
-        ###
-        Erro: Cliente gostaria de mudar placa para padrão Mercosul.
-        Solução: Vai em veículos, clique direito em cima do veículo que quer alterar, e clica na opção Aplicar Padrão de Placa Mercosul.
-        ###
-        Erro: Cliente bloqueou um veículo, e precisava fazer o desbloqueio.
-        Solução: O usuário precisa ter a permissão para desbloquear veículos, basta a gente ir em Ambiente/Controle de Acesso/Funcionalidades, filtra pela descrição e encontra a funcionalidade “Quem pode desbloquear veículos”, edita ela e adiciona os usuários que terão essa funcionalidade ativa. Depois faz o Atualizar Permissões e já vai estar aparecendo em veículos o cadeado desbloqueado.
-        ###
-        Erro: Cliente queria emitir uma NF-e sem item informado, apenas com o valor do frete.
-        Solução: NF-e Complementar A SEFAZ exige que seja colocado ao menos um item na NF-e, o que da pra fazer é colocar um item genérico e colocar o valor de 1 centavo. Mas preferencialmente deve ser colocado todos os dados iguais da nota a ser complementada e apenas o valor de complemento.
-        ###
-        Erro: Conta bancária não está aparecendo para o usuário do sistema
-        Solução: Basta o gestor de recursos ir em contas bancárias, visualização, marcar os usuários que podem utilizar e clicar em salvar.
-        ###
-        Erro: CT-e não estava faturando automaticamente
-        Solução: Verificar se em Ambiente/Administração/Parâmetros, está 	a opção Faturar automaticamente ao enviar CT-e marcado como sim. E se o cliente quer que fature sem transmitir para o SEFAZ, se a opção Permite faturar CT-e não transmitido?.
-        ###
-        Erro: Usuário gostaria de desabilitar alerta de checklist quinzenal.
-        Solução: Basta ir em Manutenção/Configurações/Plano de Manutenção, seleciona o plano, vai em visualização, seleciona o alerta que quer inativar e clica na lampada (ativar/inativar) que ficará vermelho se inativar com sucesso. Ou se quiser pode remover o alerta caso não for utilizar futuramente.
-        ###
-        Erro: Usuário relatou que não consegue realizar baixa de pagamentos no sistema, e apresenta o seguinte erro: A CONTA IRA FICAR COM SALDO POSITIVO AO ESTORNAR ESSE PAGAMENTO
-        Solução: Em Financeiro/Configurações/Contas Financeiras – Editar a conta financeira que está sendo utilizada, e na opção Controle de crédito deixar como não. Pois se ele estiver habilitado é preciso deixar marcado se permite saldo positivo ou negativo.
-        ###
-        Erro: Usuário pediu onde ele poderia verificar o CRLVE do veículo o qual ele anexou no sistema.
-        Solução: Manutenção / Equipamentos  Seleciona o equipamento, vizualizar, vai estar em Arquivos.
-        ###
-        Erro: Foi solicitado um relatório dos conhecimentos
-        Solução: Vai em Transporte / Relatórios / Relatório de conhecimentos, o modelo mais utilizado é o Resultado Multi Empresas.
-        ###
-        Erro: Gerar CT-E ou MDF-e sem ter feito averbação.
-        Solução: Precisa assinar um termo via e-mail, para verificar se termo foi assinado basta ir no talão do CTE ou MDFE e ver as opções de gerar sem averbação está marcado como SIM.
-        ###
-        Erro: Cliente precisava emitir um CT-e complementar, pois esqueceu de colocar os impostos no CT-e que emitiu.
-        Solução: Estava com a regra selecionada para simples nacional, e pediu para mudar para o CST Demonstrativo. Após deu erro devido o usuário não ter permissão para emitir CT-e com valor zerado. Foi feito pelo usuário Gestão de Recursos. Para verificar se tem o acesso, basta ir em Funcionalidades, e opção “Quem pode salvar CT-e com valor zerado”.
-        ###
-        Erro: Ao tentar transmitir para o SEFAZ uma NF-E, deu erro de IE (Inscrição Estadual) não informado. Após o cliente colocar IE, deu erro 696.
-        Solução: Estava incorreta a IE do cliente, e estava marcado como não contribuinte, sendo que é contribuinte conforme consultado no Sintegra. Após correções nota foi emitida com sucesso.
-        ###
-        Erro: Usuário queria Relatório com chave de acesso e tomador dos conhecimentos CT-e.
-        Solução: Criar um relatório customizado em Assistente de relatórios.
-        ###
-        Erro: Cliente não conseguia emitir um CT-E de subcontratação importando a nota pela chave de acesso o qual o cliente tentou importar no nsdocs.
-        Solução: Apenas consegue importar o documento manualmente no nsdocs pela chave de acesso se o usuário for participante no documento. A solução é o usuário pedir o XML ou lançar manualmente as informações para emitir o CT-E de Subcontratação que precisa.
+###
+Erro: Não consegue emitir GNRE
+Solução: GNRE só é obrigatório quando começa o frete em um estado diferente de onde a empresa está localizada.
+###
+Erro: Produto predominante sai com nome Diversos
+Solução: Se o nome possui mais de 60 caracteres, sai com nome Diversos.
+###
+Erro: Duplicidade de MDF-e e/ou CT-e
+solução: Alterar a numeração inicial de acordo com a sequência do último documento emitido no antigo sistema, vai em Transporte/Configuralções/Tipos de talões
+###
+Erro: Emitir GNRE pelo TMS e com 20% de desconto no ICMS
+Solução: https://www.gnre.pe.gov.br:444/gnre/portal/automacao.jsp Em Web Services, Solicitar uso do WebService. Parametrizar um campo em Manutenção/Configurações/Tipos de Valores Outros, um campo (vICMSGNRE) para aplicar automaticamente nele o desconto ou para digitar manualmente o valor que quer que gere de GNRE. Pois se tiver divergência da aliquota gera rejeição no portal da SEFAZ.
+###
+Erro: Problema de comunicação com os servidores do SEFAZ
+Solução: Enviar em Contigência, pois caso o servidor principal não estiver ativo o servidor de contigência pode funcionar e recepcionar os documentos.
+###
+Erro: Precisava dos XML de CT-e cancelados, foi solicitado pela contabilidade
+Solução: Sim, de fato CT-e cancelado possui os XML dos cancelamentos.
+###
+Erro: Integração de novo banco para emissão de boletos
+Solução: Deve transferir para o setor de Expansão, pois a integração conta por banco integrado.
+###
+Erro: Precisava cadastrar mais um veículo para aparecer no módulo de abastecimentos
+Solução: O plano disponibilizava cadastro para até 6 veículos que já estavam todos usados, precisava aumentar o plano para poder cadastrar o novo veículo. Para este caso pode transferir para o setor de expansão se o cliente desejar aumentar o plano para atender sua demanda.
+###
+Erro: No relatório Gerencial por conta competência um abastecimento não está aparecendo.
+Solução: No gerencial por conta competência, o valor apresentado é igual ao valor do titulo como um todo, ele trás as informações de acordo com a criação do titulo. No caso o filtro de data tem que englobar o lançamento do título, No caso do gerencial por conta, ele trás as informações com base na baixa realizada.
+###
+Erro: Necessidade de aplicar desconto em fatura cadastrada em Transporte/Faturamento.
+Solução: Basta editar o faturamento criado, e no campo desconto colocar qual o valor do desconto a ser aplicado, e após vai solicitar para colocar a conta gerencial do desconto.
+obs. Para gerar desconto colocar sinal negativo, para gerar acréscimo só digitar o valor.
+###
+Erro: Cadastro de veículo errado como arrendatário
+Solução: Se o proprietário do veículo for um e a ANTT estiver em nome de outra pessoa, tem que colocar como arrendatário (quem recebe o veículo) no cadastro de pessoas.
+O processo
+Contrato de arrendamento: O proprietário do veículo e o transportador devem celebrar um contrato de arrendamento, que precisa ser registrado e autenticado.
+Cadastro do contrato: O proprietário do veículo (arrendante) deve cadastrar este contrato no sistema da ANTT (RNTRC Digital).
+Inclusão na frota: Após o cadastro do contrato pelo proprietário, o transportador (arrendatário) poderá então incluir o veículo arrendado em sua frota no sistema RNTRC Digital.
+Outros tipos de contrato: Caso a situação seja de comodato (empréstimo) ou aluguel, é preciso apresentar o contrato de comodato ou aluguel com firma reconhecida para que o transportador possa incluir o veículo em sua frota.
+###
+Erro: CF: 120 - Sistema efrete (www.efrete.com.br): [Validação] (Protocolo: 848.543.257) Erro adicionando operação de transporte: Verifique se peso da carga é maior que zero
+Solução: É um erro na emissão do CIOT porque o peso na nota está igual a 0.
+###
+Erro: Rota de pedágio calculou errado no contrato de frete.
+Solução: Tem que cancelar o CIOT e gerar um novo contrato de frete. Vai no contrato de frete, clica em CF-e e cancelar.  Depois de cancelado, gera o VPO antes, ai nele coloca de inicio a cidade que de inicio que deseja.
+###
+Erro: Ajuda na emissão de um CT-e de uma nota fiscal impressa. Não sabe quem é o remetente, destinatário, pagador e CFOP.
+Solução: Na nota consta os dados do Remetente e destinatário, e o pagador é quem pagou o frete para a transportadora que está fazendo o frete. CFOP tem que verificar com a contabilidade.
+###
+Erro: Quer agrupar várias NF-e em um CT-e.
+Solução: A regra principal é que um CTe comum só agrupa notas fiscais se tiverem o mesmo remetente e o mesmo destinatário. Já o CTe Globalizado permite agrupar várias notas de vários remetentes para um único destinatário ou de um único remetente para vários destinatários, e exige no mínimo cinco notas fiscais, que devem ser do mesmo estado (intermunicipal). CT-e Simplificado: Único Tomador de Serviço: O serviço de transporte deve ter um único tomador (o pagador do frete) para todas as NF-e agrupadas. Mesma UF de Início e Fim, Mesmo CFOP, Tributação e Código de Benefício Fiscal, Dispensados Dados Detalhados dos Participantes.
+Múltiplos Remetentes OU Múltiplos Destinatários: A operação deve envolver, no mínimo, duas NF-e. Estas podem ser de:
+Vários remetentes para um único destinatário.
+Um único remetente para vários destinatários.
+###
+Erro: Contrato de frete selecionado não possui uma operadora de crédito definida
+Solução: Vai em Transportes/Configurações/Contratos com operadoras de crédito, e adiciona a operadora PEF do cliente.
+###
+Erro: Precisava de um relatório com todos os dados de pessoas e veículos.
+Solução: Abrir um ticket para relatório personalizado, prazo de 48 horas.
+###
+Erro: Precisava emitir o Manifesto Internacional de Cargas.
+Solução: Adquirir o módulo para realizar este tipo de emissão no sistema.
+###
+Erro: Cliente com receio de não ter gerado VPO por causa da rota não possuir pedágios.
+Solução: Se o percurso for respeitado, não tem porque ter receio, pois de fato o VPO não é obrigatório quando não possui pedágios na rota a ser percorrida.
+###
+Erro: Emissão NFS-e
+Solução: Passar para o setor integrações.
+###
+Erro: Veículo em nome de uma empresa, ANTT em nome de uma pessoa física, e motorista não é essa pessoa física.
+Solução: Cadastrar em Pessoas o proprietário do veículo (empresa), a pessoa física com a ANTT como arrendatário e proprietário de veículo, e motorista como motorista.
+###
+Erro: Cliente cobrando modelo e se o sistema está preparado para o CBS e IBS da reforma tributária.
+Solução: Repassa a eles que ainda não está em vigor e o ano que vem será o primeiro ano para testes, no momento não conseguimos disponibilizar esse novo modelo porque ainda não está liberado pela Sefaz e dessa forma não irá validar.
+###
+Erro: Gostaria de que o relatório de conhecimentos aparecece apenas os Ct-e, e as Minutas não.
+Solução: Basta nos filtros dos relatórios selecionar o talão CT-e apenas.
+###
+Erro: Como enviar automaticamente o CT-e para o e-mail do cliente?
+Solução:  Menu Pessoas > Seleciona e edita o cadastro do cliente > Verifica o quadro "e-mail".
+Confere o parâmetro (Ambiente > Administração > Parâmetros > Cód. 2060) o valor deve ser "Cliente" ou o tipo de pessoa desejada.
+###
+Erro: MDF-e em circulação não sendo possível cancelamento e é preciso trocar de motorista. Como reaproveitar o mesmo CT-e?
+Solução: Emitir um novo MDF-e usando o mesmo CT-e e alterando o motorista. Já que o MDF-e anterior não pode ser cancelado, deve ser encerrado na SEFAZ.  E para emissão do novo pode ir no menu "Manifesto de cargas" > Clica no "+" para adicionar > Seleciona agência e talão > No campo "Conhecimentos" busca pelo número do CT-e. https://manuaisbsoft.atlassian.net/wiki/spaces/BT/pages/140574762/Emiss+o+de+MDF-e+Rodovi+rio
+O motorista não é um dado que sai no XML do CT-e, acredito que não teria problemas fiscais, mas caso queira, confirma com sua contabilidade. Então pode ser alterado.
+###
+Erro: Não aparece para colocar informações de pagamento no MDF-e
+Solução: Para apresentar o campo informações de pagamento, deve estar ou apenas 1 documento informado no MDF-e ou ser TAC. Em caso de TAC, colocar as informações de pagamento do TAC.
+###
+Erro: Como gerar um CT-e utilizando a Natureza da Operação 6357 (ou outra) mas não está puxando.
+Solução: O usuário deve ter acesso a tela "tipos de operações". Possivelmente o CFOP está inativo no sistema e precisa ser reativado. Localiza o CFOP que vai utilizar no caso o 6357 > Seleciona ele > Clica no símbolo da lâmpada para ativar/desativar. Após isso pode tentar gerar o CT-e novamente.
+###
+Erro: Quais os documentos que preciso expedir além do cte e manifesto quando estou contratando um terceiro?
+Solução: Além do Ct-e e Manifesto, deve também expedir o CIOT e o VPO. Caso a pessoa não tiver contato com nenhuma Operadora, pode passar para o setor expansão para negociar o e-frete.
+###
+Erro: Quando o gestor libera alguma permissão ao usuário e mesmo assim não aparece para ele.
+Solução: Basta ir em Opções do Sistema/Atualizar Permissões.
+###
+Erro: Estava fazendo CT-e e o campo Seguradora sumiu
+Solução: A apólice de seguro venceu e foi trocada de seguradora, necessário cadastrar em pessoas a nova seguradora, e em Transportes/Configurações/Apólices de Seguro a nova apólice.
+###
+Erro: Quando o valor do ICMS ou CST estiver configurado errado, qual caminho seguir?
+Solução: Deve ser configurado corretamente (EX: ICMS de isenção CST 040 o valor da alíquota deve ser 0%) caminho: Transporte > Configurações > Exceções ICMS e CST.
+###
+Erro: Envio de documentos automático por e-mail não estava funcionando.
+Solução: Verificar no cadastro de pessoa se os grupos de e-mails estão corretos, e em Visualização/Preferências de Transporte se está habilitado as opções enviar e-mail automático.
+###
+Erro: Cliente reclamou que ao criar a CT-e a partir de uma importação do xml de uma nf-e, ele altera automaticamente o campo do pagador do frete.
+Solução: Esse dado puxa do xml da nf-e, quem emite a nf-e que define o pagador na emissão do documento.
+###
+Erro: Cliente contratou o VPO pela E-frete e precisava configurar a e-frete para gerar o VPO dentro do Bsoft TMS.
+Solução: Para emitir o VPO dentro do Bsoft TMS, é preciso adquirir o módulo para isso, transferir para o setor Expansão.
+###
+Erro: Dúvidas do cliente em relação a rotas e/ou percurso.
+Solução: Quando é apenas um estado ou é estado vizinho não há necessidade de informar. Deve informar somente se for 3 estados ou mais.
+###
+Erro: Cliente gostaria de mudar placa para padrão Mercosul.
+Solução: Vai em veículos, clique direito em cima do veículo que quer alterar, e clica na opção Aplicar Padrão de Placa Mercosul.
+###
+Erro: Cliente bloqueou um veículo, e precisava fazer o desbloqueio.
+Solução: O usuário precisa ter a permissão para desbloquear veículos, basta a gente ir em Ambiente/Controle de Acesso/Funcionalidades, filtra pela descrição e encontra a funcionalidade “Quem pode desbloquear veículos”, edita ela e adiciona os usuários que terão essa funcionalidade ativa. Depois faz o Atualizar Permissões e já vai estar aparecendo em veículos o cadeado desbloqueado.
+###
+Erro: Cliente queria emitir uma NF-e sem item informado, apenas com o valor do frete.
+Solução: NF-e Complementar A SEFAZ exige que seja colocado ao menos um item na NF-e, o que da pra fazer é colocar um item genérico e colocar o valor de 1 centavo. Mas preferencialmente deve ser colocado todos os dados iguais da nota a ser complementada e apenas o valor de complemento.
+###
+Erro: Conta bancária não está aparecendo para o usuário do sistema
+Solução: Basta o gestor de recursos ir em contas bancárias, visualização, marcar os usuários que podem utilizar e clicar em salvar.
+###
+Erro: CT-e não estava faturando automaticamente
+Solução: Verificar se em Ambiente/Administração/Parâmetros, está 	a opção Faturar automaticamente ao enviar CT-e marcado como sim. E se o cliente quer que fature sem transmitir para o SEFAZ, se a opção Permite faturar CT-e não transmitido?.
+###
+Erro: Usuário gostaria de desabilitar alerta de checklist quinzenal.
+Solução: Basta ir em Manutenção/Configurações/Plano de Manutenção, seleciona o plano, vai em visualização, seleciona o alerta que quer inativar e clica na lampada (ativar/inativar) que ficará vermelho se inativar com sucesso. Ou se quiser pode remover o alerta caso não for utilizar futuramente.
+###
+Erro: Usuário relatou que não consegue realizar baixa de pagamentos no sistema, e apresenta o seguinte erro: A CONTA IRA FICAR COM SALDO POSITIVO AO ESTORNAR ESSE PAGAMENTO
+Solução: Em Financeiro/Configurações/Contas Financeiras – Editar a conta financeira que está sendo utilizada, e na opção Controle de crédito deixar como não. Pois se ele estiver habilitado é preciso deixar marcado se permite saldo positivo ou negativo.
+###
+Erro: Usuário pediu onde ele poderia verificar o CRLVE do veículo o qual ele anexou no sistema.
+Solução: Manutenção / Equipamentos  Seleciona o equipamento, vizualizar, vai estar em Arquivos.
+###
+Erro: Foi solicitado um relatório dos conhecimentos
+Solução: Vai em Transporte / Relatórios / Relatório de conhecimentos, o modelo mais utilizado é o Resultado Multi Empresas.
+###
+Erro: Gerar CT-E ou MDF-e sem ter feito averbação.
+Solução: Precisa assinar um termo via e-mail, para verificar se termo foi assinado basta ir no talão do CTE ou MDFE e ver as opções de gerar sem averbação está marcado como SIM.
+###
+Erro: Cliente precisava emitir um CT-e complementar, pois esqueceu de colocar os impostos no CT-e que emitiu.
+Solução: Estava com a regra selecionada para simples nacional, e pediu para mudar para o CST Demonstrativo. Após deu erro devido o usuário não ter permissão para emitir CT-e com valor zerado. Foi feito pelo usuário Gestão de Recursos. Para verificar se tem o acesso, basta ir em Funcionalidades, e opção “Quem pode salvar CT-e com valor zerado”.
+###
+Erro: Ao tentar transmitir para o SEFAZ uma NF-E, deu erro de IE (Inscrição Estadual) não informado. Após o cliente colocar IE, deu erro 696.
+Solução: Estava incorreta a IE do cliente, e estava marcado como não contribuinte, sendo que é contribuinte conforme consultado no Sintegra. Após correções nota foi emitida com sucesso.
+###
+Erro: Usuário queria Relatório com chave de acesso e tomador dos conhecimentos CT-e.
+Solução: Criar um relatório customizado em Assistente de relatórios.
+###
+Erro: Cliente não conseguia emitir um CT-E de subcontratação importando a nota pela chave de acesso o qual o cliente tentou importar no nsdocs.
+Solução: Apenas consegue importar o documento manualmente no nsdocs pela chave de acesso se o usuário for participante no documento. A solução é o usuário pedir o XML ou lançar manualmente as informações para emitir o CT-E de Subcontratação que precisa.
         ###
         Erro: Cliente informou que não estava puxando CST automático nos CT-E fazendo a importação pelas notas fiscais.
         Solução: Na verdade estava cadastrando um CST sim porque não tem como enviar para o SEFAZ sem CST. Foi solicitado para verificar no PDF qual CST constava e estava correto.
-        ###
-        Erro: Cliente não conseguia cancelar NFS-E no sistema, apresentava erro.
-        Solução: Foi notado que apenas estavam mostrando as RPS, e ao tentar converter a RPS em NFS-E dava erro de talão. Não foi solucionado, foi preciso abrir um Ticket para o N2 resolver.
-        ###
-        Erro: Cliente fez o envio de CTE pelo servidor de contingência e tinha dúvida se era necessário fazer algum procedimento após.
-        Solução: No Bsoft TMS pelo menos não é necessário fazer nada, pois o envio é normal mesmo enviado pelo servidor de contingência.
-        ###
-        Erro: Não aparece valores no DACTE depois de emitido o CT-E
-        Solução: Dentro da regra, tem um campo: Campos que não vão aparecer no bloco de componentes do valor da prestação de serviço do DACTE.
-        ###
-        Erro: Cliente não estava conseguindo contratar TAC e gerar CIOT, apresentava rejeição por o contratado estar com sua RNTRC vinculado a um contrato.
-        Solução: Da para consultar no link abaixo com a RNTRC e Renavam do contratado: Consulta Pública - 1.1.3.0
-        ###
-        Erro: Cliente precisava cancelar cte fora do prazo com evento de desacordo. E também queria remover do títulos a receber.
-        Solução: Liberamos o cancelamento gerencial para o usuário (Precisa ser gerente de recursos). Foi excluído o faturamento e resolvido o problema.
-        ###
-        Erro: Ao criar CT-E a partir de NF-E pré cadastrada, estava dando erro de que as informações <modFrete> estavam com diferentes informações.
-        Solução: O erro estava na informação de pagador das NFE, o que deixou dentro do XML a tag com o pagador incorreto. Para contornar a informação errada da NFE, criamos dois parâmetros para um ficar com o Remetente como pagador e outro como Destinatário como pagador. Basta o usuário selecionar conforme as notas a ser criadas.
+###
+Erro: Cliente não conseguia cancelar NFS-E no sistema, apresentava erro.
+Solução: Foi notado que apenas estavam mostrando as RPS, e ao tentar converter a RPS em NFS-E dava erro de talão. Não foi solucionado, foi preciso abrir um Ticket para o N2 resolver.
+###
+Erro: Cliente fez o envio de CTE pelo servidor de contingência e tinha dúvida se era necessário fazer algum procedimento após.
+Solução: No Bsoft TMS pelo menos não é necessário fazer nada, pois o envio é normal mesmo enviado pelo servidor de contingência.
+###
+Erro: Não aparece valores no DACTE depois de emitido o CT-E
+Solução: Dentro da regra, tem um campo: Campos que não vão aparecer no bloco de componentes do valor da prestação de serviço do DACTE.
+###
+Erro: Cliente não estava conseguindo contratar TAC e gerar CIOT, apresentava rejeição por o contratado estar com sua RNTRC vinculado a um contrato.
+Solução: Da para consultar no link abaixo com a RNTRC e Renavam do contratado: Consulta Pública - 1.1.3.0
+###
+Erro: Cliente precisava cancelar cte fora do prazo com evento de desacordo. E também queria remover do títulos a receber.
+Solução: Liberamos o cancelamento gerencial para o usuário (Precisa ser gerente de recursos). Foi excluído o faturamento e resolvido o problema.
+###
+Erro: Ao criar CT-E a partir de NF-E pré cadastrada, estava dando erro de que as informações <modFrete> estavam com diferentes informações.
+Solução: O erro estava na informação de pagador das NFE, o que deixou dentro do XML a tag com o pagador incorreto. Para contornar a informação errada da NFE, criamos dois parâmetros para um ficar com o Remetente como pagador e outro como Destinatário como pagador. Basta o usuário selecionar conforme as notas a ser criadas.
         Exemplo para ver no XML:
         <modFrete>1 (Contratação do Frete por conta do Destinatário)
         0=Contratação do Frete por conta do Remetente (CIF);
@@ -187,10 +187,10 @@
         3=Transporte Próprio por conta do Remetente;
         4=Transporte Próprio por conta do Destinatário;
         9=Sem Ocorrência de Transporte.
-        ###
-        Erro: Usuário pediu para deixar como padrão uma regra de cálculo do frete.
-        Solução: Ir em parâmetros, pesquisar pelo nome interno: transp_regraConhecimentoPadrao. Colocar a regra padrão desejada e na justificativa o protocolo do atendimento.
-        ###
-        Erro: Sistema está aparecendo alerta de conhecimento não averbado.
-        Solução: Para remover o alerta de não averbação, é necessário habilitar uma funcionalidade que dentro do alerta permite colocar averbado manualmente, e coloca o número do protocolo da averbação externa.
-        `;
+###
+Erro: Usuário pediu para deixar como padrão uma regra de cálculo do frete.
+Solução: Ir em parâmetros, pesquisar pelo nome interno: transp_regraConhecimentoPadrao. Colocar a regra padrão desejada e na justificativa o protocolo do atendimento.
+###
+Erro: Sistema está aparecendo alerta de conhecimento não averbado.
+Solução: Para remover o alerta de não averbação, é necessário habilitar uma funcionalidade que dentro do alerta permite colocar averbado manualmente, e coloca o número do protocolo da averbação externa.
+###
