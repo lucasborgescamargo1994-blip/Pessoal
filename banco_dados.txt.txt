@@ -210,4 +210,7 @@ Solução: Utilizar filtro avançado na tela de conhecimentos para filtrar por n
 Erro: Cliente perguntou como fazer CT-e complementar de um CT-e que foi emitido no antigo sistema.
 Solução: Importar XML do CT-e do sistema antigo. Precisa criar um parâmetro EDI para importação.
 ###
+Erro: Ao tentar importar xml de antigo sistema, está dando erro de talão com série diferente.
+Solução: Deve ser clonado o talão da empresa e colocado a série conforme está no xml do conhecimento, cria este talão apenas para fazer a importação do CT-e.
+###
 
