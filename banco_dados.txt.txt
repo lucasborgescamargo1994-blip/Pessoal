@@ -204,4 +204,7 @@ Erro: Cliente estava com problema para gerar cobrança no EDI, em exportação D
 Solução: Após testes, verifiquei que o arquivo gera se marcar como não a opção apenas enviadas.
 OCOREN, CONEMB e DOCCOB são arquivos padrão do sistema EDI (Intercâmbio Eletrônico de Dados) PROCEDA, usados na logística para automatizar a comunicação entre transportadora e cliente, mas com funções diferentes: CONEMB (Conhecimentos Embarcados) lista os CTes gerados, OCOREN (Ocorrências) informa o status da entrega, e DOCCOB (Documento de Cobrança) consolida os CTes para faturamento, sendo o fluxo: CONEMB (confirma embarque) -> OCOREN (informa status) -> DOCCOB (cobra). 
 ###
+Erro: Cliente gostaria de emitir pdf dos ct-e filtrando pelo número de fatura.
+Solução: Utilizar filtro avançado na tela de conhecimentos para filtrar por número de fatura, seleciona todos os conhecimentos filtrados e gera os DACTEs normalmente.
+###
 
