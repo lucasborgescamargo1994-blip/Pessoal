@@ -200,3 +200,6 @@ Solução: Habilitar no parâmetro transp_camposEscondidosComposicaoFrete o camp
 Erro: Cliente precisava fazer cadastro em que ele contratou um veículo de terceiro que estava em nome de uma pessoa física (sem antt), e o motorista era quem possui a ANTT.
 Solução: Verificar com o cliente em qual ANTT está vinculado o veículo, se é da empresa ou do motorista. Neste caso era do motorista, o importante é sempre estar como proprietário ou arrendatário a pessoa que está com sua ANTT ligada ao Renavam do veículo. Caso o cliente não souber basta usar a consulta pública da ANTT.
 ###
+Erro: Cliente estava com problema para gerar cobrança no EDI, em exportação DOCOB.
+Solução: Após testes, verifiquei que o arquivo gera se marcar como não a opção apenas enviadas.
+###
