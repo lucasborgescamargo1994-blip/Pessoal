@@ -207,4 +207,7 @@ OCOREN, CONEMB e DOCCOB são arquivos padrão do sistema EDI (Intercâmbio Eletr
 Erro: Cliente gostaria de emitir pdf dos ct-e filtrando pelo número de fatura.
 Solução: Utilizar filtro avançado na tela de conhecimentos para filtrar por número de fatura, seleciona todos os conhecimentos filtrados e gera os DACTEs normalmente.
 ###
+Erro: Cliente perguntou como fazer CT-e complementar de um CT-e que foi emitido no antigo sistema.
+Solução: Importar XML do CT-e do sistema antigo. Precisa criar um parâmetro EDI para importação.
+###
 
