@@ -224,6 +224,7 @@ Solução: Deve ser configurado campos para poder utilizar a ST e ajustar a regr
 Cuidar para deixar a opção "Totaliza valor no campo Outros do CT como não.
 ###
 Erro: Cliente mandou que estava dando erro de RNTRC inválida quando o motorista cadastrado com o CNPJ e ETC conforme consulta pública.
-Solução: Verificar se o proprietário do veículo esta no CNPJ do motorista, pois a informação da RNTRC puxa do proprietário do veículo indicado no cadastro do veículo envolvido no CT-E.
+Solução: Verificar no cadastro do veículo envolvido no ct-e está indicado como proprietário do veículo o CNPJ do motorista. Pois se tiver o CPF e o motorista estiver cadastrado apenas no grupo motorista, não terá RNTRC para puxar. De toda forma verificar também no cadastro de pessoas se a RNTRC está indicada corretamente no CNPJ em cadastro de pessoas.
+
 
 
