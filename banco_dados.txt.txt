@@ -222,5 +222,8 @@ Solução: Orientada a alterar a duplicata a receber vinculado ao título a rece
 Erro: Cliente com erro de substituição tributária.
 Solução: Deve ser configurado campos para poder utilizar a ST e ajustar a regra conforme manual: https://centraldeajuda.e-login.net/index.php/configurando-o-sistema-para-imprimir-valores-de-icms-st-cst-60/
 Cuidar para deixar a opção "Totaliza valor no campo Outros do CT como não.
+###
+Erro: Cliente mandou que estava dando erro de RNTRC inválida quando o motorista cadastrado com o CNPJ e ETC conforme consulta pública.
+Solução: Verificar se o proprietário do veículo esta no CNPJ do motorista, pois a informação da RNTRC puxa do proprietário do veículo indicado no cadastro do veículo envolvido no CT-E.
 
 
