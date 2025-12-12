@@ -219,5 +219,8 @@ Solução: Em Modelos de Notas deve estar marcado a opção Utiliza notas de ter
 Erro: Cliente precisava alterar o valor financeiro recebido pelo cliente, pois ele não pagou o valor líquido da nota fiscal, pagou o valor cheio com impostos. 
 Solução: Orientada a alterar a duplicata a receber vinculado ao título a receber.
 ###
+Erro: Cliente com erro de substituição tributária.
+Solução: Deve ser configurado campos para poder utilizar a ST e ajustar a regra conforme manual: https://centraldeajuda.e-login.net/index.php/configurando-o-sistema-para-imprimir-valores-de-icms-st-cst-60/
+Cuidar para deixar a opção "Totaliza valor no campo Outros do CT como não.
 
 
