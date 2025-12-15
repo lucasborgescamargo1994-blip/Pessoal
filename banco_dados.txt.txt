@@ -231,6 +231,10 @@ Solução: Tem três opções, uma é dentro da edição do próprio talão do d
 ###
 Erro: Cliente perguntou se tem como emitir um Ct-e de transbordo, e em que será feito entrega parcial do que está no ct-e em questão?
 Solução: Não existe um Ct-e específico para isso. O ideal para esse tipo de operação é no momento da emissão do Ct-e fazer dois já, um para essa entrega parcial e o outro o restante. Vincula os dois em um MDF-e (desde que sejam ambos a mesma UF de destino), quando for feito o transbordo encerra o MDF-e e faz um novo vinculando apenas o Ct-e das entregas parciais.
+###
+Erro: Cliente precisava acessar seu antigo sistema Bsoft Tms que foi cancelado para baixar arquivos xml.
+Solução: Pedir o número do ticket de cancelamento do sistema e passar para o comercial.
+
 
 
 
