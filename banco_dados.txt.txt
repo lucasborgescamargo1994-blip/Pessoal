@@ -234,6 +234,9 @@ Solução: Não existe um Ct-e específico para isso. O ideal para esse tipo de 
 ###
 Erro: Cliente precisava acessar seu antigo sistema Bsoft Tms que foi cancelado para baixar arquivos xml.
 Solução: Pedir o número do ticket de cancelamento do sistema e passar para o comercial. Caso não tiver o ticket de cancelamento orientar a abrir o ticket e colocar já no ticket que deseja acesso demonstrativo.
+###
+Erro: Cliente pediu se tem como sair segunda via de ordem de carregamento no sistema igual era o antigo.
+Solução: Vai em configurações de ordem de carregamento, coloca opção vias 2.
 
 
 
