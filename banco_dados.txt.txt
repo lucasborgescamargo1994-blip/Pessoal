@@ -1,5 +1,5 @@
 Erro: Ao criar múltiplos Conhecimentos com parâmetro de criação, pode apresentar um erro de natureza.
-        Solução: No parâmetro de criação de CT-e a partir de NF-e, mudar a opção Frete para remetente.
+Solução: No parâmetro de criação de CT-e a partir de NF-e, mudar a opção Frete para remetente.
 ###
 Erro: Não consegue emitir GNRE
 Solução: GNRE só é obrigatório quando começa o frete em um estado diferente de onde a empresa está localizada.
@@ -237,6 +237,7 @@ Solução: Pedir o número do ticket de cancelamento do sistema e passar para o 
 ###
 Erro: Cliente pediu se tem como sair segunda via de ordem de carregamento no sistema igual era o antigo.
 Solução: Vai em configurações de ordem de carregamento, coloca opção vias 2.
+
 
 
 
