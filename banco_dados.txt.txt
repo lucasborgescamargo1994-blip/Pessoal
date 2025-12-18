@@ -237,6 +237,10 @@ Solução: Pedir o número do ticket de cancelamento do sistema e passar para o 
 ###
 Erro: Cliente pediu se tem como sair segunda via de ordem de carregamento no sistema igual era o antigo.
 Solução: Vai em configurações de ordem de carregamento, coloca opção vias 2.
+###
+Erro: Ao criar conhecimento não estava aparecendo opção de emitir contrato de frete juntamente. 
+Solução: Habilitado função no talão que a cliente estava utilizando.
+
 
 
 
