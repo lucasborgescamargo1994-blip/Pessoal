@@ -246,7 +246,9 @@ Solução: Tem duas maneiras, ou cria um CT-e a partir dessa ordem, ou habilita 
 ###
 Erro: Importação de NF-e pela criação de CT-e com NF-e pré cadastrada estava com problema de não preencher o campo Espécie. 
 Solução: Em Espécies, ao editar ela você deve colocar a mesma que consta no xml da nf-e as expressões para o sistema interpretar e colocar a espécie cadastrada. Ou caso não tenha importância ficar em branco este campo, basta no talão do ct-e tirar obrigatóriedade de informações da nf-e.
-
+###
+Erro: Empresa quer emitir GNRE pela primeira vez pelo sistema e é do Simples Nacional.
+Solução: Habilitar parâmetro (transp_mostrarBlocoOutrosValores), criar novo Tipos Valores Outros com nome Valor GNRE e nome interno deve ser vICMSGNRE
 
 
 
