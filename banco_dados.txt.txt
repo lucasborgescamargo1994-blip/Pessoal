@@ -251,7 +251,8 @@ Erro: Empresa quer emitir GNRE pela primeira vez pelo sistema e é do Simples Na
 Solução: Habilitar parâmetro (transp_mostrarBlocoOutrosValores), criar novo Tipos Valores Outros com nome Valor GNRE e nome interno deve ser vICMSGNRE
 ###
 Erro: Unidade criada não aparecia para o produto na criação da nota fiscal.
-Solução: Ao criar a unidade, deve vincular ela no cadastro de produto, na opção controle de estoque.
+Solução: Ao criar a unidade, deve vincular ela no cadastro de produto, na opção controle de estoque, não colocar código TERM e nem Sinonimo para aparecer.
+
 
 
 
