@@ -256,7 +256,9 @@ Solução: Ao criar a unidade, deve vincular ela no cadastro de produto, na opç
 Erro: Cliente solicitou se tem como enviar e-mail de cobrança com os boletos agrupados.
 Solução: Infelizmente de forma automatizada não tem como, porém da para ir em Titulos a receber, utilizar filtro avançado de referência, o filtro normal para o cliente, marcar todos e clicar em gerar boleto, nesta opção tem para enviar a cobrança de todos os boletos em um e-mail só.
 ###
-
+Erro: Estava com problema para emitir NFSE (Nota fiscal de serviço), apresentava Erro E188 Descrição: Opção simples nacional conflita com o regime especial de tributação informado. Foi mudado regime da empresa de simples nacional para Lucro Real.
+Solução: Na área interna do cliente, pesquisa por modelos de notas a RPS referente, e coloca em regime especial de tributação o "-".
+###
 
 
 
