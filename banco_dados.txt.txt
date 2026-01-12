@@ -259,6 +259,9 @@ Solução: Infelizmente de forma automatizada não tem como, porém da para ir e
 Erro: Estava com problema para emitir NFSE (Nota fiscal de serviço), apresentava Erro E188 Descrição: Opção simples nacional conflita com o regime especial de tributação informado. Foi mudado regime da empresa de simples nacional para Lucro Real.
 Solução: Na área interna do cliente, pesquisa por modelos de notas a RPS referente, e coloca em regime especial de tributação o "-".
 ###
+Erro: Problema com VPO (Vale pedágio obrigatório) e PEF do CIOT, estava dando erro cliente não encontrato ou sem permissão.
+Solução: Tinha duas configurações, uma para filial e outra para matriz, foi colocado os talões da filial na configuração da matriz e excluído as config da Filial e funcionou certinho.
+###
 
 
 
