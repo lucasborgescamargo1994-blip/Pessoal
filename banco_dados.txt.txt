@@ -262,7 +262,9 @@ Solução: Na área interna do cliente, pesquisa por modelos de notas a RPS refe
 Erro: Problema com VPO (Vale pedágio obrigatório) e PEF do CIOT, estava dando erro cliente não encontrato ou sem permissão.
 Solução: Tinha duas configurações, uma para filial e outra para matriz, foi colocado os talões da filial na configuração da matriz e excluído as config da Filial e funcionou certinho.
 ###
-
+Erro: Para corrigir a sequência dos números dos (CT-e) conhecimentos e (MDF-e) manifestos.
+Solução: Deve usar a função de recortar. Caso já foi feito os recortes, basta excluir e fazer novamente para o sistema entender qual a sequência.
+###
 
 
 
