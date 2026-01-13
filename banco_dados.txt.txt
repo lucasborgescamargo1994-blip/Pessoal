@@ -274,7 +274,9 @@ Solução: Vai em parâmetros, edita o parâmetro 268 - Regra padrão composiç�
 Erro: Quando feito o faturamento direto pela tela de conhecimento, queria saber a condição de pagamento padrão que está configurada.
 Solução: Tem duas opções, ou puxa diretamente pelo que estiver configurado no cliente em pessoas/informações de cobrança por empresa, ou em informações de cobrança padrão.
 ###
-
+Erro: Não estava aparecendo a empresa na consulta garantida dentro do preenchimento manual do Ct-e. 
+Solução: Corrigido no cadastro da empresa para possui consulta garantida sim.
+###
 
 
 
