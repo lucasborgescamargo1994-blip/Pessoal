@@ -271,7 +271,9 @@ Solução: Deve usar a função de recortar. Caso já foi feito os recortes, bas
 Erro: Cliente pediu para definir uma regra padrão para cálculo do ICMS para sempre que abrir criação do CT-e já preencher automaticamente.
 Solução: Vai em parâmetros, edita o parâmetro 268 - Regra padrão composição do frete para a regra padrão desejada.
 ###
-
+Erro: Quando feito o faturamento direto pela tela de conhecimento, queria saber a condição de pagamento padrão que está configurada.
+Solução: Tem duas opções, ou puxa diretamente pelo que estiver configurado no cliente em pessoas/informações de cobrança por empresa, ou em informações de cobrança padrão.
+###
 
 
 
