@@ -217,7 +217,7 @@ Erro: Cliente precisava colocar manualmente CST e alíquotas dos impsotos IPI, P
 Solução: Em Modelos de Notas deve estar marcado a opção Utiliza notas de terceiros. Vai em Rotinas, e na opção finan_produtosNotaFiscalTerceiros  vai em permissões aos grupos de usuários, adiciona NF-E Completo e marca todas as opções. Depois basta ir na nota fiscal, ir em Notas Terceiros, editar e configurar manualmente os campos para calcular icms e clicar na calculadora. Também verificar se a operação selecionada para emissão da nota está marcada como utiliza impostos "sim".
 ###
 Erro: Cliente precisava emitir uma nota de venda de veículo da empresa, com tributação de 1% de ICMS e código fiscal 00 - Tributado integralmente.
-Solução: Em Modelos de Notas deve estar marcado a opção Utiliza notas de terceiros. Vai em Rotinas, e na opção finan_produtosNotaFiscalTerceiros  vai em permissões aos grupos de usuários, adiciona NF-E Completo e marca todas as opções. Depois basta ir na nota fiscal, ir em Notas Terceiros, editar e configurar manualmente os campos para calcular icms e clicar na calculadora.
+Solução: Em Modelos de Notas deve estar marcado a opção Utiliza notas de terceiros. Vai em Rotinas, e na opção finan_produtosNotaFiscalTerceiros  vai em permissões aos grupos de usuários, adiciona NF-E Completo e marca todas as opções. Depois basta ir na nota fiscal, ir em Notas Terceiros, editar e configurar manualmente os campos para calcular icms e clicar na calculadora. Também verificar se a operação selecionada para emissão da nota está marcada como utiliza impostos "sim".
 ###
 Erro: Cliente precisava alterar o valor financeiro recebido pelo cliente, pois ele não pagou o valor líquido da nota fiscal, pagou o valor cheio com impostos. 
 Solução: Orientada a alterar a duplicata a receber vinculado ao título a receber.
@@ -268,6 +268,7 @@ Solução: Tinha duas configurações, uma para filial e outra para matriz, foi 
 Erro: Para corrigir a sequência dos números dos (CT-e) conhecimentos e (MDF-e) manifestos.
 Solução: Deve usar a função de recortar. Caso já foi feito os recortes, basta excluir e fazer novamente para o sistema entender qual a sequência.
 ###
+
 
 
 
