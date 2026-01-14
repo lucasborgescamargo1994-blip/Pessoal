@@ -280,6 +280,11 @@ Solução: Corrigido no cadastro da empresa para possui consulta garantida sim.
 Erro: Cliente precisava fazer cotação de frete no sistema.
 Solução: Precisa configurar o sistema para tal função, segue manual de configuração: https://centraldeajuda.e-login.net/index.php/cotacao-de-frete/
 ###
+Erro: Como configurar e passo a passo para NFS-e (Nota fiscal de serviço) no sistema TMS.
+Solução: Principal: Configurando: https://centraldeajuda.e-login.net/index.php/configurando-e-integrando-nfs-e-rps-com-prefeituras/
+Extras: 
+Manual para novas integrações: https://centraldeajuda.e-login.net/index.php/nfse-manual-para-novas-integracoes/
+Integração Conhecimento TMS X NFS-e (Financeiro): https://centraldeajuda.e-login.net/index.php/nota-fiscal-de-servico-pela-tela-de-conhecimentos/
 
 
 
