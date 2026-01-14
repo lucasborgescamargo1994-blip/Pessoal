@@ -277,6 +277,9 @@ Solução: Tem duas opções, ou puxa diretamente pelo que estiver configurado n
 Erro: Não estava aparecendo a empresa na consulta garantida dentro do preenchimento manual do Ct-e. 
 Solução: Corrigido no cadastro da empresa para possui consulta garantida sim.
 ###
+Erro: Cliente precisava fazer cotação de frete no sistema.
+Solução: Precisa configurar o sistema para tal função, segue manual de configuração: https://centraldeajuda.e-login.net/index.php/cotacao-de-frete/
+###
 
 
 
