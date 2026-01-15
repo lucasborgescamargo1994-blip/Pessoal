@@ -285,6 +285,8 @@ Solução: Principal: Configurando: https://centraldeajuda.e-login.net/index.php
 Extras: 
 Manual para novas integrações: https://centraldeajuda.e-login.net/index.php/nfse-manual-para-novas-integracoes/
 Integração Conhecimento TMS X NFS-e (Financeiro): https://centraldeajuda.e-login.net/index.php/nota-fiscal-de-servico-pela-tela-de-conhecimentos/
+Config. Lançamentos com retenções: https://centraldeajuda.e-login.net/index.php/config-lctos-serv-tomados-com-retencoes/
+
 
 
 
