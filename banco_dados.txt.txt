@@ -293,6 +293,9 @@ Solução: Talão do Ct-e estava configurado para não criar contrato de frete.
 Erro: Cliente queria fazer regra que somasse total das notas fiscais (nf-e) e multiplicasse por um advalorem (percentual específico).
 Solução: Na regra, para puxar o valor total das notas é "obt("merc_valor[]");"
 ###
+Erro: Cliente quer imprimir diretamente pelo sistema TMS, configurar a impressora nele.
+Solução: Primeiro tem de baixar o java, depois baixar um componente datamex e executar para conseguir usar a impressora.
+Link componente: https://ajuda.e-login.net/postagem/componente-java-datamex-para-google-chrome/
 
 
 
