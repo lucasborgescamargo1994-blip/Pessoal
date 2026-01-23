@@ -296,6 +296,10 @@ Solução: Na regra, para puxar o valor total das notas é "obt("merc_valor[]");
 Erro: Cliente quer imprimir diretamente pelo sistema TMS, configurar a impressora nele.
 Solução: Primeiro tem de baixar o java, depois baixar um componente datamex e executar para conseguir usar a impressora.
 Link componente: https://ajuda.e-login.net/postagem/componente-java-datamex-para-google-chrome/
+###
+Erro: Problema de NSU no nsdocs. Alguém consultou com o certificado da empresa em outro sistema e o NSU do nsdocs está fora de sequência.
+Solução: Verificar o último NSU que consta no erro, pedir senha master para um lider, logar na sua máquina no nsdocs com e-mail e senha master segurando o ctrl. Clicar na flecha esquerda do pesquisar sefaz e alterar o NSU.
+###
 
 
 
