@@ -12,6 +12,7 @@ solução: Alterar a numeração inicial de acordo com a sequência do último d
 ###
 Erro: Emitir GNRE pelo TMS e com 20% de desconto no ICMS
 Solução: https://www.gnre.pe.gov.br:444/gnre/portal/automacao.jsp Em Web Services, Solicitar uso do WebService. Parametrizar um campo em Manutenção/Configurações/Tipos de Valores Outros, um campo (vICMSGNRE) para aplicar automaticamente nele o desconto ou para digitar manualmente o valor que quer que gere de GNRE. Pois se tiver divergência da aliquota gera rejeição no portal da SEFAZ.
+obs: Se você for utilizar apenas um certificado digital em todas as solicitações do webservice, só é necessário cadastrar o CNPJ contido neste certificado. Ex: caso o certificado utilizado em todas as filiais seja um certificado único com o CNPJ da matriz, deve-se cadastrar este CNPJ. Caso contrário, se cada filial utiliza um certificado digital próprio deve-se cadastrar o CNPJ de cada filial.
 ###
 Erro: Problema de comunicação com os servidores do SEFAZ
 Solução: Enviar em Contigência, pois caso o servidor principal não estiver ativo o servidor de contigência pode funcionar e recepcionar os documentos.
