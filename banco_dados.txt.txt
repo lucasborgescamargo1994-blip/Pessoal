@@ -301,6 +301,10 @@ Link componente: https://ajuda.e-login.net/postagem/componente-java-datamex-para
 Erro: Problema de NSU no nsdocs. Alguém consultou com o certificado da empresa em outro sistema e o NSU do nsdocs está fora de sequência.
 Solução: Verificar o último NSU que consta no erro, pedir senha master para um lider, logar na sua máquina no nsdocs com e-mail e senha master segurando o ctrl. Clicar na flecha esquerda do pesquisar sefaz e alterar o NSU.
 ###
+Erro: Precisava acessar área datamex para importar dados de regras, ct-e, nf-e, etc.
+Solução: entra em https://suporte.e-login.net/ , vai em central de atendimento, pesquisa a empresa, digita senha coca e clica em abrir área que vai apresentar a senha para logar na área do cliente datamex.
+###
+
 
 
 
