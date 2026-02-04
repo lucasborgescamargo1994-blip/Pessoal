@@ -310,6 +310,9 @@ https://centraldeajuda.e-login.net/index.php/comissoes-no-tms-corretores/
 https://centraldeajuda.e-login.net/index.php/tsm-lotes-melhorias-no-controle-de-comissoes-para-corretores-sugestao-de-corretores-em-andamento/
 https://centraldeajuda.e-login.net/index.php/controle-de-informacoes-definidas-nos-lotes/
 ###
+Erro: Problema para gerar o CIOT no contrato de frete por conta do telefone do motorista e/ou envolvido no contrato dando divergência.
+Solução: Precisa entrar em contato com o portal da e-frete para alterar telefone para o correto, passa o 0800 943 3800. Se o cliente dizer que nunca usou esse telefone para o motorista, pode informar que pode ser utilizado em outro sistema mas que ficou vinculado ao CIOT na efrete.
+###
 
 
 
