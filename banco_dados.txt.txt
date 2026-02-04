@@ -304,6 +304,13 @@ Solução: Verificar o último NSU que consta no erro, pedir senha master para u
 Erro: Precisava acessar área datamex para importar dados de regras, ct-e, nf-e, etc.
 Solução: entra em https://suporte.e-login.net/ , vai em central de atendimento, pesquisa a empresa, digita senha coca e clica em abrir área que vai apresentar a senha para logar na área do cliente datamex.
 ###
+Erro: Dúvidas e parâmetros de como utilizar Comissionamento Transporte (Comissão dos Corretores).
+Solução: 
+https://centraldeajuda.e-login.net/index.php/comissoes-no-tms-corretores/
+https://centraldeajuda.e-login.net/index.php/tsm-lotes-melhorias-no-controle-de-comissoes-para-corretores-sugestao-de-corretores-em-andamento/
+https://centraldeajuda.e-login.net/index.php/controle-de-informacoes-definidas-nos-lotes/
+###
+
 
 
 
