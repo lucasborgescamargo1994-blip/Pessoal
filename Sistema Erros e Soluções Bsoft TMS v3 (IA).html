@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BSoft TMS - Buscador Inteligente com IA</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; padding-bottom: 50px; }
+        h1 { color: #333; border-bottom: 2px solid #ccc; padding-bottom: 10px; }
+        h3 { color: #555; margin-top: 15px; }
+        
+        /* Container de Busca */
+        .search-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        #searchInput { padding: 12px; width: 60%; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
+        
+        /* Botões */
+        button, .button { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.3s; margin: 5px; }
+        .btn-primary { background-color: #007bff; color: white; }
+        .btn-primary:hover { background-color: #0056b3; }
+        .btn-success { background-color: #28a745; color: white; text-decoration: none; display: inline-block; }
+        .btn-warning { background-color: #ff9800; color: white; }
+        .btn-danger { background-color: #dc3545; color: white; }
+        
+        /* Áreas de Mensagem e Resultados */
+        #messageArea { margin-top: 20px; padding: 15px; border-radius: 4px; display: none; white-space: pre-wrap; line-height: 1.6; border: 1px solid #ddd; background: #fff; }
+        
+        /* Estilo Especial para IA */
+        #aiResponseArea { margin-top: 20px; padding: 15px; border-radius: 8px; background-color: #eef2ff; border: 1px solid #c7d2fe; display: none; position: relative; }
+        #aiResponseArea::before { content: "🤖 ASSISTENTE IA BSOFT"; font-weight: bold; color: #4338ca; display: block; margin-bottom: 10px; font-size: 12px; }
+        .loading-ai { color: #6366f1; font-style: italic; }
+
+        /* Termos buscados */
+        .retract-button { background-color: #343a40; color: white; width: 100%; text-align: left; padding: 10px; border: none; border-radius: 4px; display: flex; justify-content: space-between; cursor: pointer; }
+        .retracted-content { padding: 0 18px; background-color: white; max-height: 0; overflow: hidden; transition: 0.3s ease-out; border: 1px solid #ddd; border-top: none; }
+        #topTermsList { list-style: none; padding: 10px 0; }
+        #topTermsList li { display: inline-block; background: #eee; padding: 5px 10px; margin: 5px; border-radius: 15px; font-size: 13px; }
+
+        /* Modal */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 25px; border-radius: 8px; width: 320px; }
+        input[type="password"] { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; }
+        
+        #databaseContent { width: 100%; height: 200px; display: none; margin-top: 10px; font-family: monospace; }
+    </style>
+</head>
+<body>
+
+    <h1>🔎 BSoft TMS - Inteligência Operacional</h1>
+    
+    <div class="search-container">
+        <input type="text" id="searchInput" placeholder="Descreva o erro ou dúvida sobre o BSoft TMS...">
+        <button class="btn-primary" onclick="performGeneralSearch()">Buscar com IA</button>
+        <button class="btn-warning" id="toggleDbButton">Ver Banco de Dados</button>
+        <a href="https://raw.githubusercontent.com/lucasborgescamargo1994-blip/Pessoal/main/banco_dados.txt.txt" target="_blank" class="btn-success">🔗 Link GitHub</a>
+        <button class="btn-danger" onclick="openPasswordModal()">🔒 Acesso Restrito</button>
+    </div>
+
+    <div id="topTermsArea">
+        <button id="toggleTopTerms" class="retract-button" onclick="toggleRetractTerms()">
+            🔥 Termos Frequentes <span id="retractIcon">▶</span>
+        </button>
+        <div id="topTermsContent" class="retracted-content">
+            <ul id="topTermsList"></ul>
+            <button class="btn-danger" style="font-size: 11px;" onclick="clearSearchLog()">🗑️ Limpar Histórico</button>
+        </div>
+    </div>
+
+    <div id="aiResponseArea">
+        <div id="aiText">Aguardando busca...</div>
+    </div>
+
+    <div id="messageArea"></div>
+    
+    <textarea id="databaseContent" readonly></textarea>
+
+    <div id="passwordModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3>Acesso Restrito</h3>
+            <input type="password" id="passwordInput" placeholder="Senha">
+            <button class="btn-primary" onclick="checkPasswordAndRedirect()">Acessar</button>
+            <button class="btn-danger" onclick="closePasswordModal()">Cancelar</button>
+            <p id="feedbackMessage" style="color: red; font-size: 12px;"></p>
+        </div>
+    </div>
+
+    <script>
+        // 🛑 CONFIGURAÇÕES 🛑
+        const GITHUB_TOKEN = "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";
+        const RAW_URL = "https://raw.githubusercontent.com/lucasborgescamargo1994-blip/Pessoal/main/banco_dados.txt.txt";
+        const GEMINI_API_KEY = "AIzaSyBClpiITIfBohiOxBfGVNnF12xOGwizBvM";
+        const SECRET_PASS = "123";
+        const SECRET_LINK = "https://www.google.com";
+
+        let fileContent = "";
+        let isDatabaseVisible = false;
+
+        // --- CARREGAMENTO INICIAL ---
+        async function loadData() {
+            try {
+                const res = await fetch(RAW_URL, { headers: { 'Authorization': `token ${GITHUB_TOKEN}` } });
+                if (!res.ok) throw new Error("Erro ao acessar GitHub");
+                fileContent = await res.text();
+                console.log("Banco de dados carregado.");
+            } catch (e) {
+                alert("Falha ao carregar banco de dados. Verifique o Token.");
+            }
+        }
+
+        // --- INTEGRAÇÃO COM IA (GEMINI) ---
+        async function callAI(question, context) {
+            const aiArea = document.getElementById('aiResponseArea');
+            const aiText = document.getElementById('aiText');
+            aiArea.style.display = 'block';
+            aiText.innerHTML = '<span class="loading-ai">🪄 IA está analisando o banco de dados e formulando resposta...</span>';
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+            
+            const prompt = `
+                Você é um Assistente Especialista no sistema BSoft TMS. 
+                Seu objetivo é ajudar funcionários da empresa a resolverem problemas técnicos.
+                
+                CONTEXTO DO NOSSO BANCO DE DADOS:
+                ${context}
+                
+                PERGUNTA DO USUÁRIO:
+                ${question}
+                
+                INSTRUÇÕES:
+                1. Se a solução estiver no contexto acima, explique-a de forma clara e profissional.
+                2. Se a solução NÃO estiver no contexto, use seu conhecimento geral sobre transporte e o sistema BSoft para sugerir o que pode ser, mas avise que essa informação não está no manual oficial.
+                3. Sempre formate a resposta com negrito para facilitar a leitura.
+            `;
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+                const data = await response.json();
+                const text = data.candidates[0].content.parts[0].text;
+                aiText.innerHTML = text.replace(/\n/g, '<br>');
+            } catch (e) {
+                aiText.innerHTML = "❌ Erro ao contatar a IA. Verifique sua chave API.";
+            }
+        }
+
+        // --- LÓGICA DE BUSCA ---
+        function performGeneralSearch() {
+            const term = document.getElementById('searchInput').value.trim();
+            if (!term) return;
+
+            updateSearchLog(term);
+            const blocks = fileContent.split('###');
+            let foundContext = "";
+            let foundHTML = "";
+
+            blocks.forEach(block => {
+                if (block.toLowerCase().includes(term.toLowerCase())) {
+                    foundContext += block + "\n";
+                    foundHTML += formatResultBlock(block) + '<hr style="border-top: 1px solid #ccc;">';
+                }
+            });
+
+            const msgArea = document.getElementById('messageArea');
+            msgArea.style.display = 'block';
+
+            if (foundHTML) {
+                msgArea.innerHTML = `<strong>Resultados Diretos do Banco de Dados:</strong><br><br>${foundHTML}`;
+                callAI(term, foundContext); // Envia os resultados encontrados para a IA explicar
+            } else {
+                msgArea.innerHTML = "⚠️ Nenhuma solução exata encontrada no banco de dados. Consultando IA para sugestões...";
+                callAI(term, "Nenhuma informação específica encontrada no manual para este termo.");
+            }
+        }
+
+        function formatResultBlock(block) {
+            return block.trim()
+                .replace(/erro:/gi, '<b>ERRO:</b>\n    ')
+                .replace(/solução:/gi, '\n<b>SOLUÇÃO:</b>\n    ')
+                .replace(/\n/g, '<br>');
+        }
+
+        // --- OUTRAS FUNÇÕES (HISTÓRICO, MODAL, ETC) ---
+        function updateSearchLog(term) {
+            let log = JSON.parse(localStorage.getItem('searchLog') || '{}');
+            log[term.toLowerCase()] = (log[term.toLowerCase()] || 0) + 1;
+            localStorage.setItem('searchLog', JSON.stringify(log));
+            renderTopTerms();
+        }
+
+        function renderTopTerms() {
+            const list = document.getElementById('topTermsList');
+            let log = JSON.parse(localStorage.getItem('searchLog') || '{}');
+            const sorted = Object.entries(log).sort((a,b) => b[1] - a[1]).slice(0, 5);
+            list.innerHTML = sorted.map(i => `<li>${i[0]} (${i[1]})</li>`).join('');
+        }
+
+        function clearSearchLog() {
+            if(confirm("Limpar histórico?")) { localStorage.removeItem('searchLog'); renderTopTerms(); }
+        }
+
+        function toggleRetractTerms() {
+            const content = document.getElementById('topTermsContent');
+            const icon = document.getElementById('retractIcon');
+            if (content.style.maxHeight) {
+                content.style.maxHeight = null;
+                icon.style.transform = "rotate(0deg)";
+            } else {
+                content.style.maxHeight = content.scrollHeight + "px";
+                icon.style.transform = "rotate(90deg)";
+            }
+        }
+
+        function openPasswordModal() { document.getElementById('passwordModal').style.display = 'flex'; }
+        function closePasswordModal() { document.getElementById('passwordModal').style.display = 'none'; }
+        function checkPasswordAndRedirect() {
+            if(document.getElementById('passwordInput').value === SECRET_PASS) {
+                window.open(SECRET_LINK, '_blank');
+                closePasswordModal();
+            } else {
+                document.getElementById('feedbackMessage').textContent = "Senha incorreta!";
+            }
+        }
+
+        document.getElementById('toggleDbButton').onclick = () => {
+            const area = document.getElementById('databaseContent');
+            isDatabaseVisible = !isDatabaseVisible;
+            area.style.display = isDatabaseVisible ? 'block' : 'none';
+            area.value = fileContent;
+        };
+
+        window.onload = () => { loadData(); renderTopTerms(); };
+    </script>
+
+    <div style="position: fixed; bottom: 10px; right: 10px; font-size: 11px; color: #888; background: #fff; padding: 3px 8px; border-radius: 3px; border: 1px solid #ddd;">
+        Desenvolvido por Lucas Borges Camargo
+    </div>
+</body>
+</html>
