@@ -316,6 +316,9 @@ Solução: Precisa entrar em contato com o portal da e-frete para alterar telefo
 Erro: Cliente precisa colocar a logo da empresa nos documentos ct-e, nf-e, etc.
 Solução: Para colocar/inserir a logo do cliente, basta pesquisar no menu do sistema por empresa, seleciona a empresa que deseja, clica em editar e anexa o arquivo na opção logotipo da empresa.
 ###
+Erro: É possível emitir um contrato de frete e/ou CIOT para mais de um ct-e e/ou mdf-e?
+Solução: Sim, basta utilizar os filtros dentro da emissão do Contrato de frete para selecionar todos os documentos necessários que deseja inserir na emissão do contrato de frete.
+###
 
 
 
