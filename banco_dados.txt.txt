@@ -313,6 +313,9 @@ https://centraldeajuda.e-login.net/index.php/controle-de-informacoes-definidas-n
 Erro: Problema para gerar o CIOT no contrato de frete por conta do telefone do motorista e/ou envolvido no contrato dando divergência.
 Solução: Precisa entrar em contato com o portal da e-frete para alterar telefone para o correto, passa o 0800 943 3800. Se o cliente dizer que nunca usou esse telefone para o motorista, pode informar que pode ser utilizado em outro sistema mas que ficou vinculado ao CIOT na efrete. Vale salientar ao cliente a importância do telefone, que o motorista recebe um código de verificação para confirmar que está no trajeto final, o telefone é usado para segurança de ambas as partes envolvidas na operação.
 ###
+Erro: Cliente precisa colocar a logo da empresa nos documentos ct-e, nf-e, etc.
+Solução: Para colocar/inserir a logo do cliente, basta pesquisar no menu do sistema por empresa, seleciona a empresa que deseja, clica em editar e anexa o arquivo na opção logotipo da empresa.
+###
 
 
 
