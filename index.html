@@ -1,707 +1,281 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Erros e Soluções Bsoft TMS</title>
+    <title>Erros e Soluções Bsoft TMS v3 (IA)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 10px; /* Reduz a margem geral */
+            margin: 10px;
             background-color: #f4f4f9;
-        }
-        h1 {
-            color: #000000;
-            border-bottom: 2px solid #ccc;
-            padding-bottom: 5px; /* Reduz o padding */
-        }
-        h3 {
-            color: #555;
-            margin-top: 15px;
-        }
-        /* Ajustes no campo de busca e botões para telas normais */
-        #searchInput {
-            padding: 10px;
-            width: 40%; /* Mantém a largura original para desktop */
-            margin-right: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box; /* Garante que o padding não aumente a largura total */
-        }
-        /* Estilos de Botões Padrão */
-        button {
-            padding: 10px 15px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-            margin-right: 5px; /* Reduz margem lateral */
-            margin-top: 5px; 
-            white-space: nowrap; /* Evita quebras desnecessárias em botões pequenos */
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        
-        /* Botões Específicos */
-        .specific-button {
-            background-color: #ff9800; /* Laranja */
-        }
-        .specific-button:hover {
-            background-color: #e68900;
-        }
-        .protected-button {
-            background-color: #dc3545 !important;
-        }
-        
-        /* Área de Conteúdo / Mensagens */
-        #databaseContent {
-            width: 98%;
-            min-height: 250px;
-            margin-top: 20px;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-family: monospace; 
-            box-sizing: border-box;
-            display: none; 
-        }
-        #messageArea {
-            margin-top: 15px;
-            padding: 10px;
-            border: 1px solid #ffc107;
-            background-color: #fff3cd;
-            color: #856404;
-            border-radius: 4px;
-            display: block;
-            white-space: pre-wrap;
-        }
-
-        /* --- ESTILOS DO BOTÃO RETRÁTIL (ACORDEÃO) --- */
-        .retract-button {
-            background-color: #343a40;
-            color: white;
-            cursor: pointer;
-            padding: 10px;
-            width: 100%;
-            border: none;
-            text-align: left;
-            outline: none;
-            font-size: 16px;
-            transition: 0.4s;
-            border-radius: 4px;
-            margin-bottom: 5px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .retract-button:hover {
-            background-color: #495057;
-        }
-        #retractIcon, #newEntryRetractIcon {
-            font-size: 12px;
-            margin-left: 10px;
-            transition: transform 0.3s;
-        }
-        .retract-button.active #retractIcon,
-        .retract-button.active #newEntryRetractIcon {
-            transform: rotate(90deg);
-        }
-        .retracted-content {
-            padding: 0 18px;
-            background-color: #f8f9fa;
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease-out, padding 0.3s ease-out;
-            border: 1px solid #ddd;
-            border-top: none;
-            border-radius: 0 0 4px 4px;
-        }
-        /* Lista dentro do conteúdo retrátil */
-        #topTermsList {
-            list-style-type: none;
-            padding: 10px 0;
-            margin: 0;
-        }
-        #topTermsList li {
-            background: #e9ecef;
-            margin-bottom: 5px;
-            padding: 8px 12px;
-            border-radius: 3px;
-            display: inline-block;
-            margin-right: 8px;
-            font-size: 14px; 
-        }
-        #topTermsList li a {
-            text-decoration: none;
-            color: #007bff;
-            font-weight: bold;
-        }
-
-        /* Estilos para os novos campos de entrada */
-        #newEntryContent label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            margin-top: 10px;
-        }
-        #newErrorInput, #newSolutionInput, #formattedOutput {
-            width: 98%; 
-            padding: 8px; 
-            margin-bottom: 10px; 
-            box-sizing: border-box;
-            border: 1px solid #ccc;
-            border-radius: 3px;
-        }
-        #formattedOutput {
-            background-color: #f0f0f0; 
-            font-family: monospace;
-            display: none; 
-        }
-        #formattedOutputTitle {
-            display: none;
-        }
-		
-		body {
             background-image: url("https://bsoft.com.br/blog/wp-content/uploads/2025/03/bsoft-960x500.webp");
             background-repeat: no-repeat;
             background-size: cover;
+            background-attachment: fixed;
         }
-
-        /* ------------------------------------------------ */
-        /* *** MEDIA QUERIES (CELULAR) *** */
-        /* ------------------------------------------------ */
+        h1 { color: #000; border-bottom: 2px solid #ccc; padding-bottom: 5px; text-shadow: 1px 1px 2px white; }
+        
+        /* Container IA */
+        #aiContainer {
+            margin: 15px 0; padding: 15px;
+            border: 1px solid #4338ca; background-color: rgba(238, 242, 255, 0.9);
+            color: #1e1b4b; border-radius: 8px; display: none;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .ai-title { font-weight: bold; color: #4338ca; margin-bottom: 8px; display: flex; align-items: center; }
+        
+        #searchInput { padding: 10px; width: 40%; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 10px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-top: 5px; }
+        button:hover { background-color: #0056b3; }
+        .protected-button { background-color: #dc3545 !important; }
+        
+        #messageArea { margin-top: 15px; padding: 10px; border: 1px solid #ffc107; background-color: rgba(255, 243, 205, 0.9); border-radius: 4px; display: block; white-space: pre-wrap; }
+        #databaseContent { width: 98%; min-height: 200px; display: none; margin-top: 10px; font-family: monospace; }
+        
+        .retract-button { background-color: #343a40; color: white; width: 100%; padding: 10px; border: none; text-align: left; border-radius: 4px; cursor: pointer; display: flex; justify-content: space-between; margin-bottom: 5px; }
+        .retracted-content { padding: 0 18px; background-color: rgba(248, 249, 250, 0.9); max-height: 0; overflow: hidden; transition: 0.3s ease-out; border: 1px solid #ddd; }
 
         @media screen and (max-width: 600px) {
-            
-            /* 1. Campos de Busca */
-            #searchInput {
-                width: 100%; /* Ocupa a largura total */
-                margin-right: 0;
-                margin-bottom: 10px; 
-            }
-
-            /* 2. Botões Principais (Empilhamento) */
-            /* Garante que todos os botões se empilhem */
-            button {
-                width: 100%; /* Ocupa a largura total */
-                display: block; /* Garante que cada botão fique em sua própria linha */
-                margin-right: 0 !important;
-                margin-left: 0 !important;
-                margin-bottom: 5px;
-                box-sizing: border-box;
-            }
-            
-            /* Ajuste do Botão de Geração para evitar conflitos de margem */
-            #submitNewEntryButton {
-                width: 100% !important; 
-            }
-            
-            /* 3. Oculta a imagem de fundo para economizar dados e focar no conteúdo */
-            body {
-                background-image: none;
-            }
+            #searchInput { width: 100%; }
+            button { width: 100%; }
+            body { background-image: none; }
         }
     </style>
 </head>
 <body>
     <h1>🔎 Erros e soluções Bsoft TMS</h1>
 
+    <input type="text" id="searchInput" placeholder="Descreva o erro ou termo...">
+    <button onclick="performGeneralSearch()">Buscar com IA</button>
+    <button id="toggleDbButton">Ver Banco de Dados</button>
+    <button class="protected-button" onclick="checkPasswordAndRedirect()">🔑 Abrir GitHub</button>
 
-    <input type="text" id="searchInput" placeholder="Digite uma palavra chave do erro e clique em buscar!">
-    <button onclick="performGeneralSearch()">Buscar/Fechar busca</button>
-    
-    <button id="toggleDbButton">Abrir/Fechar Visualização (Apenas Leitura)</button>
-    <button class="protected-button" onclick="checkPasswordAndRedirect()">
-        🔑 Clique Aqui para Abrir o Banco de Dados
-    </button>
+    <div id="aiContainer">
+        <div class="ai-title">🤖 Assistente IA Bsoft:</div>
+        <div id="aiResponseText">Processando...</div>
+    </div>
 
-    <script>
-        // 🛑 CONFIGURAÇÃO 🛑
-        
-        // 1. Defina a senha que o usuário deve digitar
-        const CORRECT_PASSWORD = "camargo02"; 
-
-        // 2. Defina o link para onde o usuário será direcionado
-        const DESTINATION_LINK = "https://github.com/lucasborgescamargo1994-blip/Pessoal/blob/main/banco_dados.txt.txt"; 
-        
-        // 3. Email para onde o código será enviado
-        const DESTINATION_EMAIL = "lucas.borges@nstech.com.br";
-
-
-        // ---------------------------------
-
-        function checkPasswordAndRedirect() {
-            // Usa a função prompt() para pedir a senha ao usuário
-            const enteredPassword = prompt("Por favor, digite a senha de acesso:");
-
-            // Verifica se o usuário digitou algo e se a senha está correta
-            if (enteredPassword === CORRECT_PASSWORD) {
-                // Senha correta: abre o link em uma nova guia (_blank)
-                alert("Senha correta! Abrindo em uma nova guia...");
-                window.open(DESTINATION_LINK, '_blank'); 
-                
-            } else if (enteredPassword !== null) {
-                // Senha incorreta (e o usuário não cancelou)
-                alert("Senha incorreta. Tente novamente.");
-            } else {
-                // O usuário clicou em "Cancelar"
-                alert("Acesso cancelado.");
-            }
-        }
-    </script>
-
-</a>
-	
     <hr>
     
     <div id="topTermsArea">
-        <button id="toggleTopTerms" class="retract-button" onclick="toggleRetractTerms()">
-            🔥 Termos Mais Buscados
-            <span id="retractIcon">▶</span>
-        </button>
+        <button class="retract-button" onclick="toggleRetract('topTermsContent')">🔥 Termos Mais Buscados <span>▼</span></button>
         <div id="topTermsContent" class="retracted-content">
-            <ul id="topTermsList">
-                </ul>
-            <button id="clearSearchLogButton" 
-                    onclick="clearSearchLog()" 
-                    style="background-color: #dc3545; margin-top: 10px;">
-                🗑️ Limpar Histórico de Buscas
-            </button>
+            <ul id="topTermsList" style="list-style:none; padding:10px 0;"></ul>
+            <button onclick="clearSearchLog()" style="background-color:#dc3545; font-size:12px;">Limpar Histórico</button>
         </div>
     </div>
 
-    <hr>
-    
-    <div id="messageArea" role="alert">
-        Aguarde, o banco de dados externo está sendo carregado...
-    </div>
-    
+    <div id="messageArea">Aguarde, carregando banco de dados...</div>
     <textarea id="databaseContent" readonly></textarea>
 
     <div id="newEntryRetractArea" style="margin-top: 20px;">
-        <button id="toggleNewEntry" class="retract-button" onclick="toggleNewEntryForm()">
-            ➕ Enviar Novo Erro e Solução (clique aqui)
-            <span id="newEntryRetractIcon">▶</span>
-        </button>
-        <div id="newEntryContent" class="retracted-content" style="background-color: #fcfcfc;">
-            
-            <label for="newErrorInput">Erro/Descrição:</label>
-            <textarea id="newErrorInput" placeholder="Descreva o erro (Ex: Código 500 ao enviar CT-E)" rows="3"></textarea>
-            
-            <label for="newSolutionInput">Solução/Procedimento:</label>
-            <textarea id="newSolutionInput" placeholder="Descreva a solução detalhada (Ex: Reiniciar servidor X e limpar cache do cliente)." rows="5"></textarea>
-            
-            <button id="submitNewEntryButton" 
-                    onclick="generateCopyAndEmail()" 
-                    style="background-color: #28a745; margin-bottom: 10px; margin-top: 10px; width: 98%;">
-                Clique aqui para enviar seu Erro e Solução!
-            </button>
-            
-            <h4 id="formattedOutputTitle" style="margin-top: 20px; display: none;">Código Formatado (Visualização):</h4>
-            <textarea id="formattedOutput" readonly placeholder="O novo bloco formatado aparecerá aqui..." rows="7" style="display: none;"></textarea>
+        <button class="retract-button" onclick="toggleRetract('newEntryContent')">➕ Enviar Novo Erro <span>▼</span></button>
+        <div id="newEntryContent" class="retracted-content">
+            <label style="display:block; margin-top:10px;">Erro:</label>
+            <textarea id="newErrorInput" rows="2" style="width:100%"></textarea>
+            <label style="display:block; margin-top:10px;">Solução:</label>
+            <textarea id="newSolutionInput" rows="3" style="width:100%"></textarea>
+            <button onclick="generateCopyAndEmail()" style="background-color:#28a745; width:100%; margin:10px 0;">Copiar e Enviar</button>
         </div>
     </div>
-    <hr>
-
 
     <script>
-        // 🛑 CONFIGURAÇÃO: LINK RAW DO SEU ARQUIVO TXT 🛑
-        const externalDataUrl = "https://raw.githubusercontent.com/lucasborgescamargo1994-blip/Pessoal/refs/heads/main/banco_dados.txt.txt"; 
-        
-        const MAX_TOP_TERMS = 5; 
-        
-        let fileContent = ""; 
-        let isDatabaseVisible = false;
+        // 🛑 CONFIGURAÇÕES 🛑
+        const GITHUB_RAW_URL = "https://raw.githubusercontent.com/lucasborgescamargo1994-blip/Pessoal/main/banco_dados.txt.txt";
+        const GITHUB_PAGE_URL = "https://github.com/lucasborgescamargo1994-blip/Pessoal/blob/main/banco_dados.txt.txt";
+        const GEMINI_API_KEY = "AIzaSyBUJ43suRdhmhfdr6RNncMsMPySv7d2nj8";
+        const CORRECT_PASSWORD = "camargo02";
+        const DEST_EMAIL = "lucas.borges@nstech.com.br";
 
-        const specificKeywords = {
-            'Nota Fiscal': ['Nota', 'nota fiscal', 'notas fiscais', 'NF-E', 'Fatura', 'Imposto', 'Sefaz'],
-            'Servidor': ['API', 'HTTP', '500', '404', 'Conexão', 'Rota'],
-        };
+        let fileContent = "";
 
-        let contentArea;
-        let toggleButton;
-        let messageArea;
-        let topTermsList;
-        let topTermsContent;
-        let toggleTopTermsButton; 
-        let newEntryContent; 
-        let toggleNewEntryButton; 
-
-
-        // --- FUNÇÕES DE LÓGICA E UTILIDADE ---
-        
-        async function loadExternalData() {
-            displayMessage("⏳ Carregando dados do servidor externo...");
+        // --- CARREGAR BANCO DE DADOS ---
+        async function loadData() {
             try {
-                const response = await fetch(externalDataUrl);
-                
-                if (!response.ok) {
-                    throw new Error(`Erro HTTP: ${response.status} - Verifique se o link RAW está correto.`);
-                }
-                
+                // Usando cache buster para evitar erros de cache/CORS
+                const response = await fetch(`${GITHUB_RAW_URL}?t=${Date.now()}`);
+                if (!response.ok) throw new Error("Erro ao acessar GitHub");
                 fileContent = await response.text();
-                displayMessage("✅ Banco de dados carregado com sucesso! Pronto para buscar.", 'success');
-            } catch (error) {
-                console.error("Falha na operação de fetch:", error);
-                displayMessage(`❌ Falha Crítica ao carregar: ${error.message || 'Erro de conexão ou CORS desconhecido.'} Tente verificar o console para detalhes.`, 'error');
+                displayMessage("✅ Banco de dados carregado!", "success");
+            } catch (e) {
+                displayMessage("❌ Erro ao carregar banco de dados. Verifique a conexão.", "error");
             }
         }
 
-        // Usando innerHTML para renderizar as tags <b>
-        function displayMessage(message, type = 'info') {
-            const area = messageArea;
-            area.innerHTML = message; 
-            area.style.display = 'block';
-            
-            if (type === 'success') {
-                area.style.backgroundColor = '#d4edda'; area.style.borderColor = '#c3e6cb'; area.style.color = '#155724';
-            } else if (type === 'error') {
-                area.style.backgroundColor = '#f8d7da'; area.style.borderColor = '#f5c6cb'; area.style.color = '#721c24';
-            } else { 
-                area.style.backgroundColor = 'd4edda'; area.style.borderColor = '#000000'; area.style.color = '#000000';
+        // --- IA GEMINI (AJUSTADA) ---
+        async function askGeminiAI(question, context) {
+    const container = document.getElementById('aiContainer');
+    const responseText = document.getElementById('aiResponseText');
+    container.style.display = "block";
+    
+    // Lista de modelos que vimos na sua chave, do melhor para o que tem mais cota
+    const modelosParaTentar = [
+    "gemma-3-27b-it", // Adicione este no topo da lista
+    "gemini-2.0-flash-lite",
+    "gemini-pro-latest"
+];
+
+    async function tentarModelo(index) {
+        if (index >= modelosParaTentar.length) {
+            responseText.innerHTML = "❌ Todos os modelos da sua chave estão sem cota no momento. Tente novamente em alguns minutos.";
+            return;
+        }
+
+        const MODELO_ATUAL = modelosParaTentar[index];
+        responseText.innerHTML = `<em>Pensando na resposta...</em>`;
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODELO_ATUAL}:generateContent?key=${GEMINI_API_KEY}`;
+        
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: `Você é suporte Bsoft. Contexto: ${context}\n\nPergunta: ${question}` }] }]
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                // Se o erro for cota (429), tenta o próximo modelo da lista
+                if (response.status === 429 || (data.error && data.error.message.includes("quota"))) {
+                    console.warn(`Cota excedida no modelo ${MODELO_ATUAL}. Tentando o próximo...`);
+                    return tentarModelo(index + 1);
+                }
+                throw new Error(data.error ? data.error.message : "Erro desconhecido");
             }
+
+            // Se chegou aqui, deu certo!
+            let aiMsg = data.candidates[0].content.parts[0].text;
+            responseText.innerHTML = aiMsg
+                .replace(/\n/g, '<br>')
+                .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+
+        } catch (e) {
+            console.error(`Erro no modelo ${MODELO_ATUAL}:`, e);
+            return tentarModelo(index + 1);
+        }
+    }
+
+    // Inicia a primeira tentativa
+    tentarModelo(0);
+}
+
+        // --- BUSCA ---
+        function performGeneralSearch(customTerm = null) {
+    const input = document.getElementById('searchInput');
+    const query = (customTerm || input.value).trim().toLowerCase();
+    if (!query) return;
+
+    updateSearchLog(query);
+
+    // 1. Prepara as palavras-chave (remove termos comuns para focar no que importa)
+    const stopWords = ["como", "fazer", "o", "a", "de", "do", "da", "em", "para", "erro", "no", "na"];
+    const keywords = query.split(' ').filter(word => !stopWords.includes(word) && word.length > 2);
+
+    const blocks = fileContent.split('###');
+    let scoredResults = [];
+
+    // 2. Sistema de Pontuação (Score)
+    blocks.forEach(block => {
+        if (!block.trim()) return;
+        
+        let score = 0;
+        const blockLower = block.toLowerCase();
+
+        // Se a frase exata existir, ganha muitos pontos
+        if (blockLower.includes(query)) score += 100;
+
+        // Cada palavra-chave encontrada soma pontos
+        keywords.forEach(word => {
+            if (blockLower.includes(word)) score += 20;
+        });
+
+        if (score > 0) {
+            scoredResults.push({ block, score });
+        }
+    });
+
+    // 3. Ordena pelos mais relevantes
+    scoredResults.sort((a, b) => b.score - a.score);
+
+    // 4. Prepara o que vai mostrar na tela e o que vai para a IA
+    if (scoredResults.length > 0) {
+        // Pega os 3 melhores resultados para o contexto da IA
+        const contextForAI = scoredResults.slice(0, 3).map(r => r.block).join("\n---\n");
+        
+        // Formata os resultados para exibir na tela (offline)
+        let foundHTML = `<b>Resultados encontrados (${scoredResults.length}):</b><br><br>`;
+        scoredResults.forEach(res => {
+            foundHTML += formatBlock(res.block) + `<div style="font-size:10px; color:gray;">Relevância: ${res.score}%</div><hr>`;
+        });
+
+        displayMessage(foundHTML);
+        
+        // Envia os melhores blocos para a IA processar a resposta
+        askGeminiAI(query, contextForAI);
+    } else {
+        displayMessage("Nenhum termo técnico específico encontrado no manual. Consultando inteligência geral...");
+        askGeminiAI(query, "Não há instruções específicas no manual para este termo.");
+    }
+}
+
+        function formatBlock(b) {
+            return b.trim().replace(/erro:/gi, '<b>ERRO:</b>').replace(/solução:/gi, '<br><b>SOLUÇÃO:</b>').replace(/\n/g, '<br>');
         }
 
-        // Incluindo tags <b> e </b> para negrito
-        function formatResultBlock(block) {
-            let resultBlock = block;
-            // 1. Coloca 'ERRO:' em negrito e adiciona quebra de linha
-            resultBlock = resultBlock.replace(/erro:/gi, (match) => '<b>' + match + '</b>' + '\n    ');
-            // 2. Coloca 'SOLUÇÃO:' em negrito e adiciona quebras de linha
-            resultBlock = resultBlock.replace(/solução:/gi, (match) => '\n' + '<b>' + match + '</b>' + '\n    ');
-            return resultBlock;
+        // --- UTILITÁRIOS ---
+        function displayMessage(m, type) {
+            const a = document.getElementById('messageArea');
+            a.innerHTML = m;
+            a.style.backgroundColor = type === 'success' ? '#d4edda' : 'rgba(255, 243, 205, 0.9)';
         }
 
-        // --- FUNÇÃO COMBINADA (GERAR, COPIAR E ENVIAR) ---
+        function toggleRetract(id) {
+            const c = document.getElementById(id);
+            c.style.maxHeight = (c.style.maxHeight === "0px" || !c.style.maxHeight) ? c.scrollHeight + "px" : "0px";
+        }
+
+        function checkPasswordAndRedirect() {
+            if (prompt("Senha:") === CORRECT_PASSWORD) window.open(GITHUB_PAGE_URL, '_blank');
+            else alert("Senha errada.");
+        }
 
         function generateCopyAndEmail() {
-            const errorText = document.getElementById('newErrorInput').value.trim();
-            const solutionText = document.getElementById('newSolutionInput').value.trim();
-            const outputArea = document.getElementById('formattedOutput');
-            const submitButton = document.getElementById('submitNewEntryButton');
-
-            // 1. VALIDAÇÃO
-            if (!errorText || !solutionText) {
-                alert("Por favor, preencha os campos 'Erro/Descrição' e 'Solução/Procedimento' antes de enviar.");
-                return;
-            }
-
-            // 2. GERAR CÓDIGO (E PREENCHER O ELEMENTO OCULTO PARA CÓPIA)
-            const generatedCode = 
-`###
-Erro: ${errorText} 
-Solução: ${solutionText}`;
-
-            // Isso é necessário para o processo de cópia/seleção
-            outputArea.value = generatedCode;
-            
-            // Texto de feedback temporário
-            const originalText = submitButton.textContent;
-            submitButton.textContent = 'Gerando e Copiando...';
-
-
-            // 3. COPIAR PARA O CLIPBOARD
-            // Seleciona o elemento oculto
-            outputArea.select(); 
-            outputArea.setSelectionRange(0, 99999); 
-            
-            navigator.clipboard.writeText(generatedCode).then(() => {
-                submitButton.textContent = '✅ Copiado! Abrindo E-mail...';
-
-                // 4. ABRIR CLIENTE DE E-MAIL
-                const recipient = DESTINATION_EMAIL;
-                const subject = "Erro/Solução - Atualização Bsoft TMS";
-                
-                // Quebras de linha (new lines) devem ser encodadas para o mailto
-                const bodyContent = `Olá Lucas,\n\nO código abaixo foi gerado para atualização no banco de dados. Você pode colá-lo diretamente no arquivo TXT do GitHub:\n\n${generatedCode}\n\n Favor adicionar uma descrição adicional logo abaixo se necessário:`;
-                
-                const mailtoLink = `mailto:${recipient}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyContent)}`;
-                
-                // Abre o link mailto
-                window.location.href = mailtoLink;
-
-                // Restaura o texto do botão após 3 segundos
-                setTimeout(() => { 
-                    submitButton.textContent = originalText; 
-                    // Limpar os campos após a operação bem sucedida
-                    document.getElementById('newErrorInput').value = '';
-                    document.getElementById('newSolutionInput').value = '';
-                    outputArea.value = '';
-                    
-                     // Tenta fechar o painel de geração após o envio bem-sucedido
-                    if (newEntryContent && newEntryContent.style.maxHeight && newEntryContent.style.maxHeight !== "0px") {
-                        toggleNewEntryForm();
-                    }
-
-                }, 3000);
-
-            }).catch(err => {
-                // Fallback copy logic (less reliable for body text)
-                document.execCommand("copy");
-                
-                submitButton.textContent = '⚠️ Erro na Cópia! E-mail Aberto. (Cole manualmente)';
-                
-                // Tenta abrir o e-mail mesmo se a cópia falhar
-                const recipient = DESTINATION_EMAIL;
-                const subject = "Erro/Solução - ATENÇÃO: COPIE O CÓDIGO MANUALMENTE";
-                const mailtoLink = `mailto:${recipient}?subject=${encodeURIComponent(subject)}`;
-                window.location.href = mailtoLink;
-                
-                setTimeout(() => { submitButton.textContent = originalText; }, 5000);
-            });
+            const e = document.getElementById('newErrorInput').value;
+            const s = document.getElementById('newSolutionInput').value;
+            const code = `###\nErro: ${e}\nSolução: ${s}`;
+            navigator.clipboard.writeText(code);
+            window.location.href = `mailto:${DEST_EMAIL}?subject=Update Bsoft&body=${encodeURIComponent(code)}`;
+            alert("Copiado! Envie o e-mail que abriu.");
         }
 
-
-        // --- FUNÇÕES DE REGISTRO DE BUSCA (localStorage) ---
-
-        function getSearchLog() {
-            const log = localStorage.getItem('searchLog');
-            return log ? JSON.parse(log) : {};
-        }
-
-        function updateSearchLog(term) {
-            if (!term || typeof term !== 'string' || term.length < 2) return;
-
-            const log = getSearchLog();
-            const normalizedTerm = term.toLowerCase().trim();
-
-            log[normalizedTerm] = (log[normalizedTerm] || 0) + 1;
+        function updateSearchLog(t) {
+            let log = JSON.parse(localStorage.getItem('searchLog') || '{}');
+            log[t.toLowerCase()] = (log[t.toLowerCase()] || 0) + 1;
             localStorage.setItem('searchLog', JSON.stringify(log));
-
             renderTopTerms();
         }
 
         function renderTopTerms() {
-            if (!topTermsList) return; 
-
-            const log = getSearchLog();
-            const termsArray = [];
-
-            for (const term in log) {
-                termsArray.push({ term: term, count: log[term] });
-            }
-
-            termsArray.sort((a, b) => b.count - a.count);
-            const topTerms = termsArray.slice(0, MAX_TOP_TERMS);
-
-            topTermsList.innerHTML = '';
-
-            if (topTerms.length === 0) {
-                topTermsList.innerHTML = '<li>Nenhuma busca registrada ainda.</li>';
-                return;
-            }
-
-            topTerms.forEach(item => {
-                const li = document.createElement('li');
-                li.innerHTML = `<a href="#" onclick="performGeneralSearch('${item.term}'); return false;">${item.term} (${item.count})</a>`;
-                topTermsList.appendChild(li);
-            });
+            const list = document.getElementById('topTermsList');
+            let log = JSON.parse(localStorage.getItem('searchLog') || '{}');
+            const sorted = Object.entries(log).sort((a,b) => b[1]-a[1]).slice(0,5);
+            list.innerHTML = sorted.map(i => `<li style="display:inline-block; background:#eee; margin:2px; padding:5px; border-radius:3px;"><a href="#" onclick="performGeneralSearch('${i[0]}');return false" style="text-decoration:none; color:#007bff;">${i[0]}</a></li>`).join('');
         }
 
+        function clearSearchLog() { localStorage.removeItem('searchLog'); renderTopTerms(); }
 
-        // --- FUNÇÃO DO BOTÃO RETRÁTIL (TERMOS) ---
-
-        function toggleRetractTerms() {
-            if (!topTermsContent || !toggleTopTermsButton) return;
-
-            // Alterna a classe 'active' no botão para mudar o ícone
-            toggleTopTermsButton.classList.toggle("active");
-
-            // Alterna a exibição do conteúdo
-            if (topTermsContent.style.maxHeight && topTermsContent.style.maxHeight !== "0px") {
-                // Se estiver aberto, fecha
-                topTermsContent.style.maxHeight = '0px';
-                topTermsContent.style.paddingTop = '0';
-                topTermsContent.style.paddingBottom = '0';
-            } else {
-                // Se estiver fechado, abre (ajusta o maxHeight para caber o conteúdo)
-                topTermsContent.style.maxHeight = (topTermsContent.scrollHeight + 50) + "px";
-                topTermsContent.style.paddingTop = '18px';
-                topTermsContent.style.paddingBottom = '18px';
-            } 
-        }
-        
-        // --- FUNÇÃO DO BOTÃO RETRÁTIL (CADASTRO) ---
-
-        function toggleNewEntryForm() {
-            if (!newEntryContent || !toggleNewEntryButton) return;
-
-            // Alterna a classe 'active' no botão para mudar o ícone
-            toggleNewEntryButton.classList.toggle("active");
-
-            // Alterna a exibição do conteúdo
-            if (newEntryContent.style.maxHeight && newEntryContent.style.maxHeight !== "0px") {
-                // Se estiver aberto, fecha
-                newEntryContent.style.maxHeight = '0px';
-                newEntryContent.style.paddingTop = '0';
-                newEntryContent.style.paddingBottom = '0';
-            } else {
-                // Se estiver fechado, abre (ajusta o maxHeight para caber o conteúdo)
-                // Aumentei o espaço para acomodar campos de texto maiores
-                newEntryContent.style.maxHeight = (newEntryContent.scrollHeight + 150) + "px"; 
-                newEntryContent.style.paddingTop = '18px';
-                newEntryContent.style.paddingBottom = '18px';
-            } 
-        }
-
-        // --- FUNÇÕES DE BUSCA PÚBLICAS ---
-        
-        function performGeneralSearch(customTerm = null) {
-            const inputElement = document.getElementById('searchInput');
-            const searchTerm = (customTerm || inputElement.value).trim(); 
-            
-            if (!searchTerm) {
-                displayMessage("Por favor, digite um termo de busca no campo acima.");
-                return;
-            }
-            
-            updateSearchLog(searchTerm);
-
-            if (!customTerm) {
-                inputElement.value = "";
-            }
-
-            performSearchLogic(searchTerm, [searchTerm.toLowerCase()], `"${searchTerm}"`);
-        }
-
-        function performSpecificSearch(theme) {
-            const keywords = specificKeywords[theme];
-            if (!keywords || keywords.length === 0) {
-                displayMessage(`Nenhuma palavra-chave definida para o tema "${theme}".`, 'error');
-                return;
-            }
-            
-            const searchTerms = keywords.map(k => k.toLowerCase());
-            const displayTerms = keywords.join(', ');
-
-            updateSearchLog(theme);
-
-            performSearchLogic(theme, searchTerms, displayTerms);
-        }
-
-
-        // --- LÓGICA DE BUSCA CENTRAL ---
-
-        function performSearchLogic(searchName, searchTerms, displayTerms) {
-            if (fileContent.length === 0) {
-                displayMessage("Aguarde o carregamento dos dados externos.", 'error');
-                return;
-            }
-            if (isDatabaseVisible) toggleDatabaseView(); 
-
-            messageArea.style.display = 'block';
-            
-            const dataBlocks = fileContent.split('###');
-            const foundBlocks = [];
-
-            dataBlocks.forEach((block) => {
-                const trimmedBlock = block.trim();
-                if (trimmedBlock === "") return;
-                const lowerBlock = trimmedBlock.toLowerCase();
-
-                const isMatch = searchTerms.some(term => lowerBlock.includes(term));
-
-                if (isMatch) {
-                    let resultBlock = formatResultBlock(trimmedBlock);
-                    foundBlocks.push(resultBlock);
-                }
-            });
-
-            if (foundBlocks.length > 0) {
-                const isSingleTerm = searchTerms.length === 1 && searchName.toLowerCase() === searchTerms[0];
-                const resultTitle = isSingleTerm ? `"${searchName}"` : `o tema "${searchName}" (Palavras-chave: ${displayTerms})`;
-                
-                // Separador preto
-                const resultsText = `Resultados encontrados (${foundBlocks.length}) para ${resultTitle}:\n\n` + foundBlocks.join('\n\n<hr style="border-top: 1px solid #000;">\n\n');
-                displayMessage(resultsText);
-            } else {
-                displayMessage(`Nenhum resultado encontrado para ${searchName}.`);
-            }
-        }
-
-
-        // --- FUNÇÃO DE VISUALIZAÇÃO (Database) ---
-
-        function toggleDatabaseView() {
-            const searchInput = document.getElementById('searchInput');
-            if (searchInput) {
-                 searchInput.value = "";
-            }
-            messageArea.style.display = 'none';
-
-            if (isDatabaseVisible) {
-                contentArea.style.display = 'none';
-                toggleButton.textContent = "Abrir/Fechar Visualização (Apenas Leitura)";
-                isDatabaseVisible = false;
-            } else {
-                if (fileContent.length === 0) {
-                    displayMessage("O banco de dados não está disponível. Tente recarregar a página.", 'error');
-                    return;
-                }
-                contentArea.value = fileContent.trim(); 
-                contentArea.style.display = 'block';
-                toggleButton.textContent = "Fechar Visualização";
-                isDatabaseVisible = true;
-                displayMessage("Visualizando conteúdo do Banco de dados completo.", 'info');
-            }
-        }
-
-        // --- INÍCIO ROBUSTO E CARREGAMENTO ---
-        window.addEventListener('DOMContentLoaded', (event) => {
-            // Inicializa as referências aos elementos HTML
-            contentArea = document.getElementById('databaseContent');
-            toggleButton = document.getElementById('toggleDbButton');
-            messageArea = document.getElementById('messageArea');
-            topTermsList = document.getElementById('topTermsList');
-            topTermsContent = document.getElementById('topTermsContent');
-            toggleTopTermsButton = document.getElementById('toggleTopTerms');
-            
-            // Inicialização dos elementos do novo formulário retrátil
-            newEntryContent = document.getElementById('newEntryContent');
-            toggleNewEntryButton = document.getElementById('toggleNewEntry');
-
-
-            if (toggleButton) {
-                toggleButton.addEventListener('click', toggleDatabaseView);
-            }
-            
-            // Renderiza os termos antes de carregar o BD
+        window.onload = () => {
+            loadData();
             renderTopTerms();
-
-            // Inicia o carregamento dos dados externos (assíncrono)
-            loadExternalData();
-        });
-		
-		// --- FUNÇÃO PARA LIMPAR O LOG DE BUSCA ---
-        function clearSearchLog() {
-            if (confirm("Tem certeza que deseja limpar todo o histórico de termos buscados?")) {
-                localStorage.removeItem('searchLog');
-                displayMessage("✅ Histórico de buscas limpo com sucesso.", 'success');
-                renderTopTerms(); 
-                
-                // Tenta fechar o painel se estiver aberto
-                if (topTermsContent && topTermsContent.style.maxHeight && topTermsContent.style.maxHeight !== "0px") {
-                    toggleRetractTerms();
-                }
-            }
+            document.getElementById('toggleDbButton').onclick = () => {
+                const db = document.getElementById('databaseContent');
+                db.style.display = db.style.display === 'none' ? 'block' : 'none';
+                db.value = fileContent;
+            };
         };
     </script>
-	
-	
-	<div style="
-        position: fixed; 
-        bottom: 10px; 
-        right: 10px; 
-        font-size: 12px;
-        color: #000000; 
-        background-color: #f8f9fa; 
-        padding: 5px 10px;
-        border-radius: 3px;
-        box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); 
-        z-index: 100;">
-        Desenvolvido por Lucas Borges Camargo / Versão 1.0
-    </div>
 </body>
 </html>
