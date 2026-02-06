@@ -319,6 +319,9 @@ Solução: Para colocar/inserir a logo do cliente, basta pesquisar no menu do si
 Erro: É possível emitir um contrato de frete e/ou CIOT para mais de um ct-e e/ou mdf-e?
 Solução: Sim, basta utilizar os filtros dentro da emissão do Contrato de frete para selecionar todos os documentos necessários que deseja inserir na emissão do contrato de frete.
 ###
+Erro: Cliente reclamou que não estava aparecendo um CFOP específico, que era o 6932 - Prestação de serviço de transporte interestadual iniciada em UF diferente da do prestador (inter-estadual).
+Solução: Verifica o preenchimento do Ct-e e marca a caixinha para mostrar início e fim da prestação de serviço para verificar se a UF de início do frete é a mesma da empresa, se for dai realmente não vai aparecer esse CFOP. O Sistema sempre recomenda os CFOP conforme o que é preenchido. 
+###
 
 
 
