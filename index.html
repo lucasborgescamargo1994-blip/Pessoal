@@ -1,503 +1,375 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <title>Suporte Inteligente Bsoft TMS</title>
+    <title>Bsoft TMS AI Chat - V5 Stable</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
     <style>
         :root {
-            --primary-color: #2563eb; /* Azul Vibrante */
+            --primary-color: #2563eb;
             --primary-hover: #1d4ed8;
-            --bg-glass: rgba(255, 255, 255, 0.95);
-            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-            --radius: 12px;
+            --bg-glass: rgba(255, 255, 255, 0.96);
+            --shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.15);
+            --radius: 16px;
         }
 
         body {
             font-family: 'Segoe UI', Inter, system-ui, sans-serif;
-            margin: 0;
-            padding: 20px;
+            margin: 0; padding: 0;
             background-color: #f0f2f5;
             background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url("https://bsoft.com.br/blog/wp-content/uploads/2025/03/bsoft-960x500.webp");
-            background-repeat: no-repeat;
-            background-size: cover;
-            background-attachment: fixed;
-            background-position: center;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
+            background-repeat: no-repeat; background-size: cover; background-attachment: fixed; background-position: center;
+            height: 100vh; display: flex; justify-content: center; align-items: center;
         }
 
-        /* Container Principal (Card Branco) */
         .main-container {
             background-color: var(--bg-glass);
-            width: 100%;
-            max-width: 800px;
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            padding: 30px;
-            backdrop-filter: blur(5px);
-            margin-top: 20px;
+            width: 100%; max-width: 900px; height: 95vh;
+            border-radius: var(--radius); box-shadow: var(--shadow);
+            display: flex; flex-direction: column; overflow: hidden; position: relative;
         }
 
-        h1 { 
-            color: #1e293b; 
-            font-size: 24px;
-            margin-top: 0;
-            border-bottom: 2px solid #e2e8f0; 
-            padding-bottom: 15px; 
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        /* Header */
+        header {
+            padding: 15px 20px; border-bottom: 1px solid #e2e8f0;
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(255,255,255,0.95); z-index: 10;
+        }
+        h1 { margin: 0; font-size: 18px; color: #1e293b; display: flex; align-items: center; gap: 8px; }
+        .badge { font-size: 11px; background:#dcfce7; color:#166534; padding:3px 8px; border-radius:12px; font-weight: bold; }
+
+        /* Chat Stream */
+        #chatStream {
+            flex: 1; padding: 20px; overflow-y: auto;
+            display: flex; flex-direction: column; gap: 15px;
+            background-color: #f8fafc; scroll-behavior: smooth;
         }
 
-        /* Área de Busca */
-        .search-wrapper {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
+        /* Balões */
+        .message {
+            max-width: 85%; padding: 12px 16px; border-radius: 12px;
+            line-height: 1.5; font-size: 15px; position: relative; word-wrap: break-word;
+            animation: fadeIn 0.3s ease;
+        }
+        .user-msg {
+            align-self: flex-end; background-color: var(--primary-color);
+            color: white; border-bottom-right-radius: 2px; box-shadow: 0 2px 5px rgba(37,99,235,0.2);
+        }
+        .ai-msg {
+            align-self: flex-start; background-color: white;
+            color: #1e293b; border: 1px solid #e2e8f0; border-bottom-left-radius: 2px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
 
-        #searchInput { 
-            flex: 1;
-            padding: 12px 15px; 
-            border: 2px solid #e2e8f0; 
-            border-radius: 8px; 
-            font-size: 16px;
-            transition: border-color 0.2s;
-            outline: none;
+        /* Card Retrátil (Resultados) */
+        .db-result-card {
+            align-self: center; width: 95%; max-width: 600px;
+            background-color: #fffbeb; border: 1px solid #fcd34d;
+            border-radius: 8px; overflow: hidden; margin: 5px 0;
+            animation: fadeIn 0.4s ease;
         }
-
-        #searchInput:focus {
-            border-color: var(--primary-color);
-        }
-
-        /* Botões */
-        button { 
-            padding: 12px 20px; 
-            background-color: var(--primary-color); 
-            color: white; 
-            border: none; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            font-weight: 600;
-            transition: all 0.2s ease;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-        }
-
-        button:hover { 
-            background-color: var(--primary-hover); 
-            transform: translateY(-1px);
-        }
-
-        button:active {
-            transform: translateY(0);
-        }
-
-        .btn-secondary { background-color: #64748b; }
-        .btn-secondary:hover { background-color: #475569; }
-
-        .btn-danger { background-color: #ef4444 !important; }
-        .btn-danger:hover { background-color: #dc2626 !important; }
-
-        .btn-success { background-color: #10b981 !important; }
-        .btn-success:hover { background-color: #059669 !important; }
-
-        .protected-button { background-color: #334155 !important; font-size: 13px; padding: 8px 15px; }
-
-        /* Container IA */
-        #aiContainer {
-            margin: 20px 0; 
-            padding: 20px;
-            border-left: 5px solid #4338ca; 
-            background: linear-gradient(to right, #eef2ff, #fff);
-            color: #1e1b4b; 
-            border-radius: 8px; 
-            display: none;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            animation: fadeIn 0.5s ease;
-        }
-        .ai-title { font-weight: bold; color: #4338ca; margin-bottom: 10px; font-size: 1.1em; }
-        
-        /* Área de Mensagens (Resultados do Banco) */
-        #messageArea {
-            margin-top: 20px;
-            padding: 15px;
-            border: 1px solid #fcd34d;
-            background-color: #fffbeb; /* Amarelo bem suave */
-            border-radius: 8px;
-            display: block;
-            white-space: normal; 
-            color: #451a03;
-        }
-
-        /* Acordeões (Retract) */
-        .retract-button { 
-            background-color: #f1f5f9; 
-            color: #334155; 
-            width: 100%; 
-            padding: 12px 15px; 
-            border: 1px solid #e2e8f0; 
-            text-align: left; 
-            border-radius: 8px; 
-            display: flex; 
-            justify-content: space-between; 
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
-        .retract-button:hover { background-color: #e2e8f0; color: #0f172a; transform: none; }
-        
-        .retracted-content { 
-            padding: 0 15px; 
-            background-color: #fff; 
-            max-height: 0; 
-            overflow: hidden; 
-            transition: max-height 0.3s ease-out; 
-            border-left: 2px solid #e2e8f0;
-            margin-bottom: 10px;
-        }
-
-        /* Tags de Termos */
-        #topTermsList li {
-            display: inline-block;
-            background: #e0f2fe;
-            margin: 3px;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 13px;
+        .db-header-btn {
+            width: 100%; padding: 12px 15px; background: none; border: none;
+            text-align: left; font-weight: 600; color: #92400e; cursor: pointer;
+            display: flex; justify-content: space-between; align-items: center;
             transition: background 0.2s;
         }
-        #topTermsList li:hover { background: #bae6fd; }
-        #topTermsList a { text-decoration: none; color: #0284c7; font-weight: 500; }
-
-        /* Utilitários */
-        hr { border: 0; height: 1px; background: #e2e8f0; margin: 25px 0; }
-        textarea { 
-            width: 100%; 
-            border: 1px solid #ccc; 
-            border-radius: 6px; 
-            padding: 8px; 
-            font-family: inherit;
-            box-sizing: border-box; /* Garante que padding não estoure largura */
+        .db-header-btn:hover { background-color: #fef3c7; }
+        .db-content { display: none; padding: 15px; border-top: 1px solid #fcd34d; background-color: #fff; max-height: 400px; overflow-y: auto; }
+        
+        .result-item {
+            background: #fafafa; padding: 12px; border-left: 4px solid #f59e0b;
+            margin-bottom: 10px; border-radius: 4px; font-size: 14px; color: #334155;
         }
-        #databaseContent { display: none; margin-top: 10px; font-family: monospace; background: #1e1e1e; color: #00ff00; padding: 15px; border-radius: 8px; }
 
-        /* Animação */
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Mobile */
-        @media screen and (max-width: 600px) {
-            body { padding: 10px; background-attachment: scroll; }
-            .main-container { padding: 15px; margin-top: 0; }
-            .search-wrapper { flex-direction: column; }
-            #searchInput, button { width: 100%; }
-            h1 { font-size: 20px; }
+        /* Input Area */
+        .input-area {
+            padding: 20px; background: white; border-top: 1px solid #e2e8f0;
+            display: flex; gap: 10px; align-items: center;
         }
+        #searchInput { 
+            flex: 1; padding: 12px 15px; border: 2px solid #e2e8f0; 
+            border-radius: 24px; font-size: 15px; outline: none; transition: 0.2s;
+        }
+        #searchInput:focus { border-color: var(--primary-color); }
+        .send-btn { 
+            width: 45px; height: 45px; background: var(--primary-color); color: white; 
+            border: none; border-radius: 50%; cursor: pointer; font-size: 18px;
+            display: flex; justify-content: center; align-items: center; transition: 0.2s;
+        }
+        .send-btn:hover { transform: scale(1.05); background: var(--primary-hover); }
+
+        /* Termos sugeridos */
+        .suggestions { padding: 8px 20px; background: #f1f5f9; font-size: 12px; white-space: nowrap; overflow-x: auto; border-top: 1px solid #e2e8f0; }
+        .suggestions span { margin-right: 10px; color: #64748b; }
+        .suggestions a { color: #2563eb; text-decoration: none; cursor: pointer; margin-right: 8px; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
-    <div class="main-container">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h1>🔎 Bsoft TMS <span style="font-size: 14px; background:#e0e7ff; color:#4338ca; padding:4px 8px; border-radius:4px;">AI Support v3</span></h1>
-            <button class="protected-button" onclick="checkPasswordAndRedirect()">🔑 GitHub</button>
-        </div>
+<div class="main-container">
+    <header>
+        <h1>🤖 Suporte Bsoft <span class="badge">Online</span></h1>
+        <button onclick="checkPassword()" style="border:none; background:none; cursor:pointer; font-size:18px;">🔑</button>
+    </header>
 
-        <div class="search-wrapper">
-            <input type="text" id="searchInput" placeholder="Descreva o erro (Ex: CT-e sem averbação)..." autofocus>
-            <button onclick="performGeneralSearch()">✨ Buscar com IA</button>
-        </div>
-
-        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-bottom: 10px;">
-            <button id="toggleDbButton" class="btn-secondary" style="font-size: 12px; padding: 8px 12px;">📂 Ver Banco de Dados</button>
-        </div>
-
-        <div id="aiContainer">
-            <div class="ai-title">🤖 Assistente IA Bsoft:</div>
-            <div id="aiResponseText">Processando...</div>
-        </div>
-
-        <div id="messageArea">Aguarde, carregando banco de dados...</div>
-        <textarea id="databaseContent" readonly></textarea>
-
-        <hr>
-        
-        <div id="topTermsArea">
-            <button class="retract-button" onclick="toggleRetract('topTermsContent')">
-                🔥 Termos Mais Buscados <span style="font-size: 12px; opacity: 0.7;">▼</span>
-            </button>
-            <div id="topTermsContent" class="retracted-content">
-                <ul id="topTermsList" style="list-style:none; padding:10px 0;"></ul>
-                <button class="btn-danger" onclick="clearSearchLog()" style="font-size:12px; padding: 5px 10px;">Limpar Histórico</button>
-                <div style="height: 10px;"></div>
-            </div>
-        </div>
-
-        <div id="newEntryRetractArea" style="margin-top: 10px;">
-            <button class="retract-button" onclick="toggleRetract('newEntryContent')">
-                ➕ Enviar Novo Erro para a Base <span style="font-size: 12px; opacity: 0.7;">▼</span>
-            </button>
-            <div id="newEntryContent" class="retracted-content">
-                <label style="display:block; margin-top:10px; font-weight:bold; color:#334155;">Erro:</label>
-                <textarea id="newErrorInput" rows="2" placeholder="Cole a mensagem de erro aqui..."></textarea>
-                
-                <label style="display:block; margin-top:10px; font-weight:bold; color:#334155;">Solução:</label>
-                <textarea id="newSolutionInput" rows="3" placeholder="Descreva o passo a passo da solução..."></textarea>
-                
-                <button class="btn-success" onclick="generateCopyAndEmail()" style="width:100%; margin:15px 0;">Copiar e Abrir E-mail</button>
-            </div>
+    <div id="chatStream">
+        <div class="message ai-msg">
+            Olá! Sou o assistente Bsoft. <br>
+            Posso ajudar com erros do sistema, manuais ou dúvidas técnicas. <br>
+            <b>Qual é a situação?</b>
         </div>
     </div>
 
-    <script>
-        // 🛑 CONFIGURAÇÕES 🛑
-        const GITHUB_RAW_URL = "https://raw.githubusercontent.com/lucasborgescamargo1994-blip/Pessoal/main/banco_dados.txt.txt";
-        const GITHUB_PAGE_URL = "https://github.com/lucasborgescamargo1994-blip/Pessoal/blob/main/banco_dados.txt.txt";
-        const GEMINI_API_KEY = "AIzaSyBUJ43suRdhmhfdr6RNncMsMPySv7d2nj8";
-        const CORRECT_PASSWORD = "camargo02";
-        const DEST_EMAIL = "lucas.borges@nstech.com.br";
+    <div class="suggestions" id="topTermsBar">
+        <span>Em alta:</span> 
+        <a onclick="fillAndSend('CT-e sem averbação')">CT-e Averbação</a>
+        <a onclick="fillAndSend('Erro de validação')">Erro Validação</a>
+        <a onclick="fillAndSend('MDF-e Encerrado')">MDF-e</a>
+    </div>
 
-        let fileContent = "";
+    <div class="input-area">
+        <input type="text" id="searchInput" placeholder="Digite sua dúvida..." autofocus>
+        <button class="send-btn" onclick="handleChat()">➤</button>
+    </div>
+</div>
 
-        // --- CARREGAR BANCO DE DADOS ---
-        async function loadData() {
+<script>
+    // --- CONFIGURAÇÕES ---
+    const GITHUB_RAW_URL = "https://raw.githubusercontent.com/lucasborgescamargo1994-blip/Pessoal/main/banco_dados.txt.txt";
+    const GITHUB_PAGE_URL = "https://github.com/lucasborgescamargo1994-blip/Pessoal/blob/main/banco_dados.txt.txt";
+    const GEMINI_API_KEY = "AIzaSyBUJ43suRdhmhfdr6RNncMsMPySv7d2nj8"; 
+    const CORRECT_PASSWORD = "camargo02";
+
+    let fileContent = "";
+    let chatHistory = []; // Memória da conversa
+
+    // Sinônimos (COPIADO DA SUA LÓGICA FUNCIONAL)
+    const SINONIMOS = {
+        "imprimir": ["gerar", "emitir", "visualizar", "danfe", "dacte", "damdf"],
+        "gerar": ["emitir", "fazer", "imprimir", "criar"],
+        "averbação": ["averbar", "seguro", "atm", "porto seguro"],
+        "ct-e": ["cte", "conhecimento", "transporte"],
+        "mdf-e": ["mdfe", "manifesto"],
+        "cancelar": ["estornar", "anular", "inutilizar"],
+        "pagamento": ["financeiro", "baixa", "receber", "contas"],
+        "cliente": ["remetente", "destinatário", "tomador"]
+    };
+
+    // --- INICIALIZAÇÃO ---
+    window.onload = () => {
+        loadData();
+        const input = document.getElementById('searchInput');
+        input.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") handleChat();
+        });
+        input.focus();
+    };
+
+    async function loadData() {
+        try {
+            const response = await fetch(`${GITHUB_RAW_URL}?t=${Date.now()}`);
+            if (!response.ok) throw new Error("Erro GitHub");
+            fileContent = await response.text();
+            console.log("Banco carregado.");
+        } catch (e) {
+            appendMessage('ai', "⚠️ Erro ao carregar banco de dados. O sistema funcionará apenas com IA Genérica.");
+        }
+    }
+
+    // --- LÓGICA DO CHAT (MISTURA DA UX NOVA COM A LÓGICA ANTIGA) ---
+    function handleChat() {
+        const input = document.getElementById('searchInput');
+        const query = input.value.trim();
+        if (!query) return;
+
+        // 1. Exibir mensagem do usuário
+        appendMessage('user', query);
+        input.value = "";
+
+        // 2. Executar Lógica de Busca Robusta (A SUA LÓGICA)
+        const results = searchDatabaseLogic(query);
+        let contextForAI = "Não há dados específicos no manual para esta dúvida.";
+
+        // 3. Se houver resultados, cria o Card Retrátil
+        if (results.length > 0) {
+            createRetractableResultCard(results);
+            // Prepara texto para a IA
+            contextForAI = results.slice(0, 4).map(r => r.block).join("\n---\n");
+        }
+
+        // 4. Chama a IA com Rotação de Modelos
+        askAIWithRotation(query, contextForAI);
+    }
+
+    // --- LÓGICA DE BUSCA (A QUE FUNCIONA) ---
+    function searchDatabaseLogic(query) {
+        if (!fileContent) return [];
+        
+        const qLower = query.toLowerCase();
+        const stopWords = ["como", "fazer", "o", "a", "de", "do", "da", "em", "para", "erro", "no", "na", "está", "com", "queria", "saber"];
+        let searchTerms = qLower.split(' ').filter(word => !stopWords.includes(word) && word.length > 2);
+
+        // Expansão de Termos
+        let expandedTerms = [...searchTerms];
+        searchTerms.forEach(term => {
+            for (let chave in SINONIMOS) {
+                if (term === chave || SINONIMOS[chave].includes(term)) {
+                    expandedTerms.push(chave, ...SINONIMOS[chave]);
+                }
+            }
+        });
+        expandedTerms = [...new Set(expandedTerms)];
+
+        const blocks = fileContent.split('###');
+        let scoredResults = [];
+
+        blocks.forEach(block => {
+            if (!block.trim()) return;
+            let score = 0;
+            const blockLower = block.toLowerCase();
+
+            // Pontuação Pesada (Igual ao seu código)
+            if (blockLower.includes(qLower)) score += 150;
+            searchTerms.forEach(word => { if (blockLower.includes(word)) score += 40; });
+            expandedTerms.forEach(word => { if (blockLower.includes(word)) score += 15; });
+
+            if (score > 0) {
+                scoredResults.push({ block, score });
+            }
+        });
+
+        // Ordenar por score
+        return scoredResults.sort((a, b) => b.score - a.score);
+    }
+
+    // --- FUNÇÕES DE UI (Card e Balões) ---
+    function appendMessage(sender, text) {
+        const stream = document.getElementById('chatStream');
+        const div = document.createElement('div');
+        div.className = `message ${sender === 'user' ? 'user-msg' : 'ai-msg'}`;
+        div.innerHTML = text; 
+        stream.appendChild(div);
+        stream.scrollTop = stream.scrollHeight;
+        return div; // Retorna para podermos editar depois (ex: loading)
+    }
+
+    function createRetractableResultCard(results) {
+        const stream = document.getElementById('chatStream');
+        const id = "res-" + Date.now();
+        
+        const div = document.createElement('div');
+        div.className = "db-result-card";
+        div.innerHTML = `
+            <button class="db-header-btn" onclick="toggleResult('${id}')">
+                <span>🔍 Encontramos ${results.length} no manual técnico</span>
+                <span>▼</span>
+            </button>
+            <div id="${id}" class="db-content">
+                ${results.slice(0, 5).map(r => `
+                    <div class="result-item">
+                        ${formatBlock(r.block)}
+                        <div style="font-size:10px; color:#94a3b8; text-align:right; margin-top:5px;">Precisão: ${r.score}</div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        stream.appendChild(div);
+        stream.scrollTop = stream.scrollHeight;
+    }
+
+    function toggleResult(id) {
+        const el = document.getElementById(id);
+        el.style.display = (el.style.display === 'block') ? 'none' : 'block';
+    }
+
+    function formatBlock(b) {
+        return b.trim()
+            .replace(/erro:/gi, '<strong style="color:#b45309">❌ ERRO:</strong>')
+            .replace(/solução:/gi, '<br><strong style="color:#15803d">✅ SOLUÇÃO:</strong>')
+            .replace(/\n/g, ' ');
+    }
+
+    // --- IA COM ROTAÇÃO DE MODELOS (DO SEU CÓDIGO) ---
+    async function askAIWithRotation(question, context) {
+        // Balão de Loading
+        const loadingDiv = appendMessage('ai', '<em>🧠 Analisando manual e processando...</em>');
+
+        // Lista de modelos (Do seu código funcional)
+        const modelosParaTentar = [
+            "gemma-3-27b-it", 
+            "gemini-2.0-flash-lite",
+            "gemini-1.5-flash",
+            "gemini-pro"
+        ];
+
+        // Histórico para Contexto (Limitado aos últimos 4 pares)
+        const historyContext = chatHistory.slice(-4).map(h => `${h.role}: ${h.text}`).join('\n');
+
+        async function tentarModelo(index) {
+            if (index >= modelosParaTentar.length) {
+                loadingDiv.innerHTML = "❌ Todos os modelos estão ocupados ou indisponíveis. Tente novamente.";
+                return;
+            }
+
+            const MODELO_ATUAL = modelosParaTentar[index];
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODELO_ATUAL}:generateContent?key=${GEMINI_API_KEY}`;
+
             try {
-                // Usando cache buster para evitar erros de cache/CORS
-                const response = await fetch(`${GITHUB_RAW_URL}?t=${Date.now()}`);
-                if (!response.ok) throw new Error("Erro ao acessar GitHub");
-                fileContent = await response.text();
-                displayMessage("✅ <b>Sistema Pronto!</b> Banco de dados Bsoft carregado com sucesso.", "success");
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: `
+                            Você é o Suporte Bsoft. 
+                            Manual Técnico (prioridade máxima):
+                            ${context}
+                            
+                            Histórico da conversa:
+                            ${historyContext}
+                            
+                            Pergunta atual: ${question}
+                            Responda de forma técnica e amigável.
+                        `}] }]
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) throw new Error("Erro API");
+                if (!data.candidates) throw new Error("Sem resposta");
+
+                let aiText = data.candidates[0].content.parts[0].text;
+                
+                // Sucesso! Atualiza a mensagem de loading
+                loadingDiv.innerHTML = aiText.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+
+                // Salva no histórico
+                chatHistory.push({ role: 'User', text: question });
+                chatHistory.push({ role: 'AI', text: aiText });
+
             } catch (e) {
-                displayMessage("❌ Erro ao carregar banco de dados. Verifique a conexão.", "error");
+                console.warn(`Falha no modelo ${MODELO_ATUAL}, tentando próximo...`);
+                tentarModelo(index + 1); // Tenta o próximo recursivamente
             }
         }
 
-        // --- IA GEMINI (AJUSTADA) ---
-        async function askGeminiAI(question, context) {
-            const container = document.getElementById('aiContainer');
-            const responseText = document.getElementById('aiResponseText');
-            container.style.display = "block";
-            
-            // Lista de modelos que vimos na sua chave
-            const modelosParaTentar = [
-                "gemma-3-27b-it", 
-                "gemini-2.0-flash-lite",
-                "gemini-pro-latest"
-            ];
+        // Inicia a tentativa
+        tentarModelo(0);
+    }
 
-            async function tentarModelo(index) {
-                if (index >= modelosParaTentar.length) {
-                    responseText.innerHTML = "❌ Todos os modelos da sua chave estão sem cota no momento. Tente novamente em alguns minutos.";
-                    return;
-                }
+    // --- UTILS ---
+    function checkPassword() {
+        if (prompt("Senha:") === CORRECT_PASSWORD) window.open(GITHUB_PAGE_URL, '_blank');
+    }
+    
+    function fillAndSend(txt) {
+        document.getElementById('searchInput').value = txt;
+        handleChat();
+    }
+</script>
 
-                const MODELO_ATUAL = modelosParaTentar[index];
-                responseText.innerHTML = `<em>🧠 Analisando via ${MODELO_ATUAL}...</em>`;
-
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODELO_ATUAL}:generateContent?key=${GEMINI_API_KEY}`;
-                
-                try {
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            contents: [{ parts: [{ text: `Você é suporte Bsoft. Contexto: ${context}\n\nPergunta: ${question}` }] }]
-                        })
-                    });
-
-                    const data = await response.json();
-
-                    if (!response.ok) {
-                        if (response.status === 429 || (data.error && data.error.message.includes("quota"))) {
-                            console.warn(`Cota excedida no modelo ${MODELO_ATUAL}. Tentando o próximo...`);
-                            return tentarModelo(index + 1);
-                        }
-                        throw new Error(data.error ? data.error.message : "Erro desconhecido");
-                    }
-
-                    let aiMsg = data.candidates[0].content.parts[0].text;
-                    responseText.innerHTML = aiMsg
-                        .replace(/\n/g, '<br>')
-                        .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
-
-                } catch (e) {
-                    console.error(`Erro no modelo ${MODELO_ATUAL}:`, e);
-                    return tentarModelo(index + 1);
-                }
-            }
-
-            tentarModelo(0);
-        }
-
-        const SINONIMOS = {
-            "imprimir": ["gerar", "emitir", "visualizar", "danfe", "dacte", "damdf"],
-            "gerar": ["emitir", "fazer", "imprimir", "criar"],
-            "averbação": ["averbar", "seguro", "atm", "porto seguro"],
-            "ct-e": ["cte", "conhecimento", "transporte"],
-            "mdf-e": ["mdfe", "manifesto"],
-            "cancelar": ["estornar", "anular", "inutilizar"],
-            "pagamento": ["financeiro", "baixa", "receber", "contas"],
-            "cliente": ["remetente", "destinatário", "tomador"]
-        };
-
-        // --- BUSCA ---
-        function performGeneralSearch(customTerm = null) {
-            const input = document.getElementById('searchInput');
-            let query = (customTerm || input.value).trim().toLowerCase();
-            if (!query) return;
-
-            updateSearchLog(query);
-
-            const stopWords = ["como", "fazer", "o", "a", "de", "do", "da", "em", "para", "erro", "no", "na", "está", "com", "queria", "saber"];
-            let searchTerms = query.split(' ').filter(word => !stopWords.includes(word) && word.length > 2);
-
-            let expandedTerms = [...searchTerms];
-            searchTerms.forEach(term => {
-                for (let chave in SINONIMOS) {
-                    if (term === chave || SINONIMOS[chave].includes(term)) {
-                        expandedTerms.push(chave, ...SINONIMOS[chave]);
-                    }
-                }
-            });
-            expandedTerms = [...new Set(expandedTerms)];
-
-            const blocks = fileContent.split('###');
-            let scoredResults = [];
-
-            blocks.forEach(block => {
-                if (!block.trim()) return;
-                let score = 0;
-                const blockLower = block.toLowerCase();
-
-                if (blockLower.includes(query)) score += 150;
-
-                searchTerms.forEach(word => {
-                    if (blockLower.includes(word)) score += 40;
-                });
-
-                expandedTerms.forEach(word => {
-                    if (blockLower.includes(word)) score += 15;
-                });
-
-                if (score > 0) {
-                    scoredResults.push({ block, score });
-                }
-            });
-
-            scoredResults.sort((a, b) => b.score - a.score);
-
-            if (scoredResults.length > 0) {
-                const contextForAI = scoredResults.slice(0, 4).map(r => r.block).join("\n---\n");
-                
-                let foundHTML = `<div style="color:#4338ca; font-size:15px; margin-bottom:15px; display:flex; align-items:center; gap:5px;">
-                                    🔍 <b>Encontramos ${scoredResults.length} correspondências no manual:</b>
-                                 </div>`;
-                
-                scoredResults.forEach((res, index) => {
-                    if (index < 5) {
-                        foundHTML += `
-                            <div style="background:white; padding:15px; border-radius:8px; margin-bottom:12px; border-left:5px solid #2563eb; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-                                ${formatBlock(res.block)}
-                                <div style="font-size:10px; color:#94a3b8; margin-top:8px; text-align:right;">Precisão: ${res.score} pts</div>
-                            </div>`;
-                    }
-                });
-
-                displayMessage(foundHTML);
-                askGeminiAI(query, contextForAI);
-            } else {
-                displayMessage("⚠️ Não encontrei termo exato no manual. Consultando IA Geral...");
-                askGeminiAI(query, "Não há dados específicos no arquivo TXT.");
-            }
-        }
-
-        // --- FUNÇÃO DE FORMATAÇÃO AJUSTADA ---
-        function formatBlock(b) {
-            let cleanBlock = b.trim();
-            cleanBlock = cleanBlock.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, '');
-
-            let erroParte = '<strong style="color: #b45309; display: inline-block; font-size:1.05em;">❌ ERRO:</strong>';
-            let solucaoParte = '<div style="margin-top: 10px;"><strong style="color: #15803d; display: inline-block; font-size:1.05em;">✅ SOLUÇÃO:</strong>';
-
-            return cleanBlock
-                .replace(/erro:/gi, erroParte)
-                .replace(/solução:/gi, solucaoParte)
-                .replace(/\n/g, ' ') 
-                .concat('</div>');
-        }
-
-        // --- UTILITÁRIOS ---
-        function displayMessage(m, type) {
-            const a = document.getElementById('messageArea');
-            a.innerHTML = m;
-            // Verde suave para sucesso, Amarelo padrão para busca
-            a.style.backgroundColor = type === 'success' ? '#dcfce7' : '#fffbeb'; 
-            a.style.borderColor = type === 'success' ? '#86efac' : '#fcd34d';
-            if(type === 'success') a.style.color = '#14532d';
-        }
-
-        function toggleRetract(id) {
-            const c = document.getElementById(id);
-            const isOpen = c.style.maxHeight && c.style.maxHeight !== "0px";
-            c.style.maxHeight = isOpen ? "0px" : c.scrollHeight + "px";
-        }
-
-        function checkPasswordAndRedirect() {
-            if (prompt("Senha de Admin:") === CORRECT_PASSWORD) window.open(GITHUB_PAGE_URL, '_blank');
-            else alert("Senha errada.");
-        }
-
-        function generateCopyAndEmail() {
-            const e = document.getElementById('newErrorInput').value;
-            const s = document.getElementById('newSolutionInput').value;
-            const code = `###\nErro: ${e}\nSolução: ${s}`;
-            navigator.clipboard.writeText(code);
-            window.location.href = `mailto:${DEST_EMAIL}?subject=Update Bsoft&body=${encodeURIComponent(code)}`;
-            alert("Copiado! Envie o e-mail que abriu.");
-        }
-
-        function updateSearchLog(t) {
-            let log = JSON.parse(localStorage.getItem('searchLog') || '{}');
-            log[t.toLowerCase()] = (log[t.toLowerCase()] || 0) + 1;
-            localStorage.setItem('searchLog', JSON.stringify(log));
-            renderTopTerms();
-        }
-
-        function renderTopTerms() {
-            const list = document.getElementById('topTermsList');
-            let log = JSON.parse(localStorage.getItem('searchLog') || '{}');
-            const sorted = Object.entries(log).sort((a,b) => b[1]-a[1]).slice(0,5);
-            list.innerHTML = sorted.map(i => `<li><a href="#" onclick="performGeneralSearch('${i[0]}');return false">${i[0]}</a></li>`).join('');
-        }
-
-        function clearSearchLog() { localStorage.removeItem('searchLog'); renderTopTerms(); }
-
-        // Inicialização Consolidada
-        window.onload = () => {
-            loadData();
-            renderTopTerms();
-            document.getElementById('searchInput').focus(); // Foco no input ao abrir
-
-            // Escutar Enter
-            const input = document.getElementById('searchInput');
-            input.addEventListener("keypress", function(event) {
-                if (event.key === "Enter") {
-                    event.preventDefault();
-                    performGeneralSearch();
-                }
-            });
-
-            document.getElementById('toggleDbButton').onclick = () => {
-                const db = document.getElementById('databaseContent');
-                db.style.display = db.style.display === 'none' ? 'block' : 'none';
-                db.value = fileContent;
-            };
-        };
-    </script>
 </body>
 </html>
