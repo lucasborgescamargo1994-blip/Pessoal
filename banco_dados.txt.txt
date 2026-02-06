@@ -1,7 +1,9 @@
 Erro: Como cadastrar minha empresa no sistema?
 Solução: Vai no menu Financeiro, Cadastros básicos, Empresa. Clica em adicionar, preenche os dados obrigatórios e os que necessita, após isso basta salvar. Se caso for para cadastrar uma filial de uma empresa já cadastrada no sistema, seleciona a empresa Matriz e clica na opção criar Filial, após preenche os dados e clica em salvar.
 ###
-
+Erro: Como cadastrar um talão ou vários talões para a empresa.
+Solução: Vai no menu em Transportes, Configurações, Tipos de talões. Clica em adicionar, seleciona o Tipo (conforme o documento que necessita, conhecimento, recibo de frete, Manifesto, etc), a descrição e demais dados conforme necessidade, após dados preenchidos clica em salvar. Depois de criado o talão seleciona ele, clica na opção visualizar e na guia Talões Liberados clica em adicionar (Será os números do documento o qual inicia e termina, se nunca emitiu na vida pode colocar do 1 até 99999, caso for cliente migrado de outro sistema deve colocar a sequência correta para não gerar rejeição na SEFAZ).
+###
 
 
 
@@ -333,6 +335,7 @@ Solução: Sim, basta utilizar os filtros dentro da emissão do Contrato de fret
 Erro: Cliente reclamou que não estava aparecendo um CFOP específico, que era o 6932 - Prestação de serviço de transporte interestadual iniciada em UF diferente da do prestador (inter-estadual).
 Solução: Verifica o preenchimento do Ct-e e marca a caixinha para mostrar início e fim da prestação de serviço para verificar se a UF de início do frete é a mesma da empresa, se for dai realmente não vai aparecer esse CFOP. O Sistema sempre recomenda os CFOP conforme o que é preenchido. 
 ###
+
 
 
 
