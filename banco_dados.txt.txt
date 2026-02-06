@@ -3,6 +3,79 @@ Solução: Vai no menu Financeiro, Cadastros básicos, Empresa. Clica em adicion
 ###
 Erro: Como cadastrar um talão ou vários talões para a empresa.
 Solução: Vai no menu em Transportes, Configurações, Tipos de talões. Clica em adicionar, seleciona o Tipo (conforme o documento que necessita, conhecimento, recibo de frete, Manifesto, etc), a descrição e demais dados conforme necessidade, após dados preenchidos clica em salvar. Depois de criado o talão seleciona ele, clica na opção visualizar e na guia Talões Liberados clica em adicionar (Será os números do documento o qual inicia e termina, se nunca emitiu na vida pode colocar do 1 até 99999, caso for cliente migrado de outro sistema deve colocar a sequência correta para não gerar rejeição na SEFAZ). Lembrar de vincular o talão na agência para que apareça no momento de criação do documento referente ao talão. Se caso o cliente tiver apenas talão para homologação, lembre-se de criar o talão para produção, terá que marcar o talão como ativo não, e Aguarda autorização produção sim, depois deve verificar o sino de notificação o termo para assinar e liberar o talão para produção (Apenas Gerente de recursos pode fazer isso).
+Dentro do talão tem essas opções para configurar:
+Controle de numeração por agência? *	Sim Não
+Tipo transporte *	Municipal Intermunicipal
+Permitir apenas municípios diferentes *	Sim Não
+Enviar p/ Sintegra? *	Sim Não 
+Talão é do tipo CT-e *	Sim Não
+Ambiente do CT-e *	Homologação Produção
+Aguarda autorização produção	Sim Não
+Quadro motorista é obrigatorio? *	Sim Não 
+Quadro NF é obrigatorio? *	Sim Não 
+N.º Doc / Referência é obrigatório? *	Sim Não 
+Número do conhecimento é obrigatório? *	Sim Não 
+Obrigar Ordem de Carregamento	Sim Não Definido na agência
+Pode definir n.º? *	Sim Não
+Controle de numeração	Sim Não
+Imprime DACTE sem averbar?	Sim Não 
+Tipo exportação contábil *	Não exportar Conhecimento Serviços
+Emite contrato de frete? *	Sempre
+Nunca
+Opcional (por padrão desmarcado)
+Opcional (por padrão marcado)
+Lê talão do Recibo? *	Sim Não 
+Valida dados do contratado para o eSocial?	Sim Não
+Permite criar documento para contratado com contrato em aberto?	Sim Não
+Pago por terceiros?	Sim Não 
+Controle Emissão Contrato de frete? *	Sim Não 
+Imprimir no Manifesto?	Sim Não
+Visível no follow up?	Sim Não
+Mesmo talão na parcela do adiant.? *	Sim Não
+Classificação para fins estatísticos	Coleta Entrega Ambos
+Usa Pagador? *	Sim Não
+Remetente de e-mail	E-mail da pessoa da empresa
+E-mail do usuário logado
+Outro e-mail 
+Considerar ocorrências na transferência de vínculos?	Sim Não
+Alertar sobre obrigatoriedade do MDF-e?	Sim Não
+Informar pontos intermediários	Sim Não 
+Obriga Data de Previsão de Pagamento do Saldo no contrato	Sim Não
+Obriga origem e destino no contrato	Sim Não
+Permite competência do contrato de frete diferente do CT-e?	Sim Não 
+Permite emissão de CIOT para TAC Agregado?	Sim Não
+Atualizar data de emissão	Sim Não 
+Restringir OCs de clientes diferentes	Sim Não
+Gerar título a receber?	Sim Não Baseado no parâmetro 
+Tipo de documento do título a receber	Definir manualmente Baseado no parâmetro 
+Permite definir CST manualmente?	Não Baseado no parâmetro 
+Permite faturar na emissão	Sim Não
+Formas de pagamento bloqueadas	 
+Emissor terceiro	
+
+ 
+ 
+E-mails para envio automático do CT-e	
+ 
+Apresenta no relatório 12 meses de transporte?	Sim Não 
+Alertar cotação de frete em aberto?	Sim Não
+Ignorar alertas de averbação?	Sim Não
+Incluir contratado na tag autXML?	Sim Não
+Utiliza CT-e Globalizado?	Sim Não
+Ignorar validações para CT-e Globalizado	Sim Não 
+CT-e Outros serviços	Sim Não
+Modalidade *	Rodoviário Aquaviário
+Ler tipo de operação TMS	
+Não lê
+Ocorrências automáticas	Sim Não
+Talão exclusivo para importação?	Sim Não
+Habilita bloco benefício fiscal?	Sim Não
+Permite emissão de CT-e Simplificado	Sim Não
+Sugestão de valores CBS e IBS
+Observações automáticas
+Integração fiscal/contábil
+Observações (Possível configurar manual o que quiser)
+
 ###
 
 
@@ -335,6 +408,7 @@ Solução: Sim, basta utilizar os filtros dentro da emissão do Contrato de fret
 Erro: Cliente reclamou que não estava aparecendo um CFOP específico, que era o 6932 - Prestação de serviço de transporte interestadual iniciada em UF diferente da do prestador (inter-estadual).
 Solução: Verifica o preenchimento do Ct-e e marca a caixinha para mostrar início e fim da prestação de serviço para verificar se a UF de início do frete é a mesma da empresa, se for dai realmente não vai aparecer esse CFOP. O Sistema sempre recomenda os CFOP conforme o que é preenchido. 
 ###
+
 
 
 
