@@ -1,90 +1,256 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-    <title>Erros e Soluções Bsoft TMS v3 (IA)</title>
+    <title>Suporte Inteligente Bsoft TMS</title>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
     <style>
+        :root {
+            --primary-color: #2563eb; /* Azul Vibrante */
+            --primary-hover: #1d4ed8;
+            --bg-glass: rgba(255, 255, 255, 0.95);
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            --radius: 12px;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            margin: 10px;
-            background-color: #f4f4f9;
-            background-image: url("https://bsoft.com.br/blog/wp-content/uploads/2025/03/bsoft-960x500.webp");
+            font-family: 'Segoe UI', Inter, system-ui, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f2f5;
+            background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url("https://bsoft.com.br/blog/wp-content/uploads/2025/03/bsoft-960x500.webp");
             background-repeat: no-repeat;
             background-size: cover;
             background-attachment: fixed;
+            background-position: center;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
         }
-        h1 { color: #000; border-bottom: 2px solid #ccc; padding-bottom: 5px; text-shadow: 1px 1px 2px white; }
-        
+
+        /* Container Principal (Card Branco) */
+        .main-container {
+            background-color: var(--bg-glass);
+            width: 100%;
+            max-width: 800px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 30px;
+            backdrop-filter: blur(5px);
+            margin-top: 20px;
+        }
+
+        h1 { 
+            color: #1e293b; 
+            font-size: 24px;
+            margin-top: 0;
+            border-bottom: 2px solid #e2e8f0; 
+            padding-bottom: 15px; 
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Área de Busca */
+        .search-wrapper {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        #searchInput { 
+            flex: 1;
+            padding: 12px 15px; 
+            border: 2px solid #e2e8f0; 
+            border-radius: 8px; 
+            font-size: 16px;
+            transition: border-color 0.2s;
+            outline: none;
+        }
+
+        #searchInput:focus {
+            border-color: var(--primary-color);
+        }
+
+        /* Botões */
+        button { 
+            padding: 12px 20px; 
+            background-color: var(--primary-color); 
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-weight: 600;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        button:hover { 
+            background-color: var(--primary-hover); 
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary { background-color: #64748b; }
+        .btn-secondary:hover { background-color: #475569; }
+
+        .btn-danger { background-color: #ef4444 !important; }
+        .btn-danger:hover { background-color: #dc2626 !important; }
+
+        .btn-success { background-color: #10b981 !important; }
+        .btn-success:hover { background-color: #059669 !important; }
+
+        .protected-button { background-color: #334155 !important; font-size: 13px; padding: 8px 15px; }
+
         /* Container IA */
         #aiContainer {
-            margin: 15px 0; padding: 15px;
-            border: 1px solid #4338ca; background-color: rgba(238, 242, 255, 0.9);
-            color: #1e1b4b; border-radius: 8px; display: none;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin: 20px 0; 
+            padding: 20px;
+            border-left: 5px solid #4338ca; 
+            background: linear-gradient(to right, #eef2ff, #fff);
+            color: #1e1b4b; 
+            border-radius: 8px; 
+            display: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            animation: fadeIn 0.5s ease;
         }
-        .ai-title { font-weight: bold; color: #4338ca; margin-bottom: 8px; display: flex; align-items: center; }
+        .ai-title { font-weight: bold; color: #4338ca; margin-bottom: 10px; font-size: 1.1em; }
         
-        #searchInput { padding: 10px; width: 40%; border: 1px solid #ccc; border-radius: 4px; }
-        button { padding: 10px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-top: 5px; }
-        button:hover { background-color: #0056b3; }
-        .protected-button { background-color: #dc3545 !important; }
-        
+        /* Área de Mensagens (Resultados do Banco) */
         #messageArea {
-    margin-top: 15px;
-    padding: 10px;
-    border: 1px solid #ffc107;
-    background-color: rgba(255, 243, 205, 0.9);
-    border-radius: 4px;
-    display: block;
-    /* Altere de 'pre-wrap' para 'normal' para evitar espaços indesejados do TXT */
-    white-space: normal; 
-}
-        #databaseContent { width: 98%; min-height: 200px; display: none; margin-top: 10px; font-family: monospace; }
-        
-        .retract-button { background-color: #343a40; color: white; width: 100%; padding: 10px; border: none; text-align: left; border-radius: 4px; cursor: pointer; display: flex; justify-content: space-between; margin-bottom: 5px; }
-        .retracted-content { padding: 0 18px; background-color: rgba(248, 249, 250, 0.9); max-height: 0; overflow: hidden; transition: 0.3s ease-out; border: 1px solid #ddd; }
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #fcd34d;
+            background-color: #fffbeb; /* Amarelo bem suave */
+            border-radius: 8px;
+            display: block;
+            white-space: normal; 
+            color: #451a03;
+        }
 
+        /* Acordeões (Retract) */
+        .retract-button { 
+            background-color: #f1f5f9; 
+            color: #334155; 
+            width: 100%; 
+            padding: 12px 15px; 
+            border: 1px solid #e2e8f0; 
+            text-align: left; 
+            border-radius: 8px; 
+            display: flex; 
+            justify-content: space-between; 
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        .retract-button:hover { background-color: #e2e8f0; color: #0f172a; transform: none; }
+        
+        .retracted-content { 
+            padding: 0 15px; 
+            background-color: #fff; 
+            max-height: 0; 
+            overflow: hidden; 
+            transition: max-height 0.3s ease-out; 
+            border-left: 2px solid #e2e8f0;
+            margin-bottom: 10px;
+        }
+
+        /* Tags de Termos */
+        #topTermsList li {
+            display: inline-block;
+            background: #e0f2fe;
+            margin: 3px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            transition: background 0.2s;
+        }
+        #topTermsList li:hover { background: #bae6fd; }
+        #topTermsList a { text-decoration: none; color: #0284c7; font-weight: 500; }
+
+        /* Utilitários */
+        hr { border: 0; height: 1px; background: #e2e8f0; margin: 25px 0; }
+        textarea { 
+            width: 100%; 
+            border: 1px solid #ccc; 
+            border-radius: 6px; 
+            padding: 8px; 
+            font-family: inherit;
+            box-sizing: border-box; /* Garante que padding não estoure largura */
+        }
+        #databaseContent { display: none; margin-top: 10px; font-family: monospace; background: #1e1e1e; color: #00ff00; padding: 15px; border-radius: 8px; }
+
+        /* Animação */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Mobile */
         @media screen and (max-width: 600px) {
-            #searchInput { width: 100%; }
-            button { width: 100%; }
-            body { background-image: none; }
+            body { padding: 10px; background-attachment: scroll; }
+            .main-container { padding: 15px; margin-top: 0; }
+            .search-wrapper { flex-direction: column; }
+            #searchInput, button { width: 100%; }
+            h1 { font-size: 20px; }
         }
     </style>
 </head>
 <body>
-    <h1>🔎 Erros e soluções Bsoft TMS</h1>
 
-    <input type="text" id="searchInput" placeholder="Descreva o erro ou termo...">
-    <button onclick="performGeneralSearch()">Buscar com IA</button>
-    <button id="toggleDbButton">Ver Banco de Dados</button>
-    <button class="protected-button" onclick="checkPasswordAndRedirect()">🔑 Abrir GitHub</button>
-
-    <div id="aiContainer">
-        <div class="ai-title">🤖 Assistente IA Bsoft:</div>
-        <div id="aiResponseText">Processando...</div>
-    </div>
-
-    <hr>
-    
-    <div id="topTermsArea">
-        <button class="retract-button" onclick="toggleRetract('topTermsContent')">🔥 Termos Mais Buscados <span>▼</span></button>
-        <div id="topTermsContent" class="retracted-content">
-            <ul id="topTermsList" style="list-style:none; padding:10px 0;"></ul>
-            <button onclick="clearSearchLog()" style="background-color:#dc3545; font-size:12px;">Limpar Histórico</button>
+    <div class="main-container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1>🔎 Bsoft TMS <span style="font-size: 14px; background:#e0e7ff; color:#4338ca; padding:4px 8px; border-radius:4px;">AI Support v3</span></h1>
+            <button class="protected-button" onclick="checkPasswordAndRedirect()">🔑 GitHub</button>
         </div>
-    </div>
 
-    <div id="messageArea">Aguarde, carregando banco de dados...</div>
-    <textarea id="databaseContent" readonly></textarea>
+        <div class="search-wrapper">
+            <input type="text" id="searchInput" placeholder="Descreva o erro (Ex: CT-e sem averbação)..." autofocus>
+            <button onclick="performGeneralSearch()">✨ Buscar com IA</button>
+        </div>
 
-    <div id="newEntryRetractArea" style="margin-top: 20px;">
-        <button class="retract-button" onclick="toggleRetract('newEntryContent')">➕ Enviar Novo Erro <span>▼</span></button>
-        <div id="newEntryContent" class="retracted-content">
-            <label style="display:block; margin-top:10px;">Erro:</label>
-            <textarea id="newErrorInput" rows="2" style="width:100%"></textarea>
-            <label style="display:block; margin-top:10px;">Solução:</label>
-            <textarea id="newSolutionInput" rows="3" style="width:100%"></textarea>
-            <button onclick="generateCopyAndEmail()" style="background-color:#28a745; width:100%; margin:10px 0;">Copiar e Enviar</button>
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-bottom: 10px;">
+            <button id="toggleDbButton" class="btn-secondary" style="font-size: 12px; padding: 8px 12px;">📂 Ver Banco de Dados</button>
+        </div>
+
+        <div id="aiContainer">
+            <div class="ai-title">🤖 Assistente IA Bsoft:</div>
+            <div id="aiResponseText">Processando...</div>
+        </div>
+
+        <div id="messageArea">Aguarde, carregando banco de dados...</div>
+        <textarea id="databaseContent" readonly></textarea>
+
+        <hr>
+        
+        <div id="topTermsArea">
+            <button class="retract-button" onclick="toggleRetract('topTermsContent')">
+                🔥 Termos Mais Buscados <span style="font-size: 12px; opacity: 0.7;">▼</span>
+            </button>
+            <div id="topTermsContent" class="retracted-content">
+                <ul id="topTermsList" style="list-style:none; padding:10px 0;"></ul>
+                <button class="btn-danger" onclick="clearSearchLog()" style="font-size:12px; padding: 5px 10px;">Limpar Histórico</button>
+                <div style="height: 10px;"></div>
+            </div>
+        </div>
+
+        <div id="newEntryRetractArea" style="margin-top: 10px;">
+            <button class="retract-button" onclick="toggleRetract('newEntryContent')">
+                ➕ Enviar Novo Erro para a Base <span style="font-size: 12px; opacity: 0.7;">▼</span>
+            </button>
+            <div id="newEntryContent" class="retracted-content">
+                <label style="display:block; margin-top:10px; font-weight:bold; color:#334155;">Erro:</label>
+                <textarea id="newErrorInput" rows="2" placeholder="Cole a mensagem de erro aqui..."></textarea>
+                
+                <label style="display:block; margin-top:10px; font-weight:bold; color:#334155;">Solução:</label>
+                <textarea id="newSolutionInput" rows="3" placeholder="Descreva o passo a passo da solução..."></textarea>
+                
+                <button class="btn-success" onclick="generateCopyAndEmail()" style="width:100%; margin:15px 0;">Copiar e Abrir E-mail</button>
+            </div>
         </div>
     </div>
 
@@ -105,7 +271,7 @@
                 const response = await fetch(`${GITHUB_RAW_URL}?t=${Date.now()}`);
                 if (!response.ok) throw new Error("Erro ao acessar GitHub");
                 fileContent = await response.text();
-                displayMessage("✅ Banco de dados carregado!", "success");
+                displayMessage("✅ <b>Sistema Pronto!</b> Banco de dados Bsoft carregado com sucesso.", "success");
             } catch (e) {
                 displayMessage("❌ Erro ao carregar banco de dados. Verifique a conexão.", "error");
             }
@@ -113,191 +279,176 @@
 
         // --- IA GEMINI (AJUSTADA) ---
         async function askGeminiAI(question, context) {
-    const container = document.getElementById('aiContainer');
-    const responseText = document.getElementById('aiResponseText');
-    container.style.display = "block";
-    
-    // Lista de modelos que vimos na sua chave, do melhor para o que tem mais cota
-    const modelosParaTentar = [
-    "gemma-3-27b-it", // Adicione este no topo da lista
-    "gemini-2.0-flash-lite",
-    "gemini-pro-latest"
-];
+            const container = document.getElementById('aiContainer');
+            const responseText = document.getElementById('aiResponseText');
+            container.style.display = "block";
+            
+            // Lista de modelos que vimos na sua chave
+            const modelosParaTentar = [
+                "gemma-3-27b-it", 
+                "gemini-2.0-flash-lite",
+                "gemini-pro-latest"
+            ];
 
-    async function tentarModelo(index) {
-        if (index >= modelosParaTentar.length) {
-            responseText.innerHTML = "❌ Todos os modelos da sua chave estão sem cota no momento. Tente novamente em alguns minutos.";
-            return;
-        }
+            async function tentarModelo(index) {
+                if (index >= modelosParaTentar.length) {
+                    responseText.innerHTML = "❌ Todos os modelos da sua chave estão sem cota no momento. Tente novamente em alguns minutos.";
+                    return;
+                }
 
-        const MODELO_ATUAL = modelosParaTentar[index];
-        responseText.innerHTML = `<em>Pensando na resposta...</em>`;
+                const MODELO_ATUAL = modelosParaTentar[index];
+                responseText.innerHTML = `<em>🧠 Analisando via ${MODELO_ATUAL}...</em>`;
 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODELO_ATUAL}:generateContent?key=${GEMINI_API_KEY}`;
-        
-        try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: `Você é suporte Bsoft. Contexto: ${context}\n\nPergunta: ${question}` }] }]
-                })
-            });
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODELO_ATUAL}:generateContent?key=${GEMINI_API_KEY}`;
+                
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: `Você é suporte Bsoft. Contexto: ${context}\n\nPergunta: ${question}` }] }]
+                        })
+                    });
 
-            const data = await response.json();
+                    const data = await response.json();
 
-            if (!response.ok) {
-                // Se o erro for cota (429), tenta o próximo modelo da lista
-                if (response.status === 429 || (data.error && data.error.message.includes("quota"))) {
-                    console.warn(`Cota excedida no modelo ${MODELO_ATUAL}. Tentando o próximo...`);
+                    if (!response.ok) {
+                        if (response.status === 429 || (data.error && data.error.message.includes("quota"))) {
+                            console.warn(`Cota excedida no modelo ${MODELO_ATUAL}. Tentando o próximo...`);
+                            return tentarModelo(index + 1);
+                        }
+                        throw new Error(data.error ? data.error.message : "Erro desconhecido");
+                    }
+
+                    let aiMsg = data.candidates[0].content.parts[0].text;
+                    responseText.innerHTML = aiMsg
+                        .replace(/\n/g, '<br>')
+                        .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+
+                } catch (e) {
+                    console.error(`Erro no modelo ${MODELO_ATUAL}:`, e);
                     return tentarModelo(index + 1);
                 }
-                throw new Error(data.error ? data.error.message : "Erro desconhecido");
             }
 
-            // Se chegou aqui, deu certo!
-            let aiMsg = data.candidates[0].content.parts[0].text;
-            responseText.innerHTML = aiMsg
-                .replace(/\n/g, '<br>')
-                .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
-
-        } catch (e) {
-            console.error(`Erro no modelo ${MODELO_ATUAL}:`, e);
-            return tentarModelo(index + 1);
+            tentarModelo(0);
         }
-    }
 
-    // Inicia a primeira tentativa
-    tentarModelo(0);
-}
+        const SINONIMOS = {
+            "imprimir": ["gerar", "emitir", "visualizar", "danfe", "dacte", "damdf"],
+            "gerar": ["emitir", "fazer", "imprimir", "criar"],
+            "averbação": ["averbar", "seguro", "atm", "porto seguro"],
+            "ct-e": ["cte", "conhecimento", "transporte"],
+            "mdf-e": ["mdfe", "manifesto"],
+            "cancelar": ["estornar", "anular", "inutilizar"],
+            "pagamento": ["financeiro", "baixa", "receber", "contas"],
+            "cliente": ["remetente", "destinatário", "tomador"]
+        };
 
-const SINONIMOS = {
-    "imprimir": ["gerar", "emitir", "visualizar", "danfe", "dacte", "damdf"],
-    "gerar": ["emitir", "fazer", "imprimir", "criar"],
-    "averbação": ["averbar", "seguro", "atm", "porto seguro"],
-    "ct-e": ["cte", "conhecimento", "transporte"],
-    "mdf-e": ["mdfe", "manifesto"],
-    "cancelar": ["estornar", "anular", "inutilizar"],
-    "pagamento": ["financeiro", "baixa", "receber", "contas"],
-    "cliente": ["remetente", "destinatário", "tomador"]
-};
         // --- BUSCA ---
         function performGeneralSearch(customTerm = null) {
-    const input = document.getElementById('searchInput');
-    let query = (customTerm || input.value).trim().toLowerCase();
-    if (!query) return;
+            const input = document.getElementById('searchInput');
+            let query = (customTerm || input.value).trim().toLowerCase();
+            if (!query) return;
 
-    updateSearchLog(query);
+            updateSearchLog(query);
 
-    // 1. Limpeza de "Stop Words" (palavras que não ajudam na busca)
-    const stopWords = ["como", "fazer", "o", "a", "de", "do", "da", "em", "para", "erro", "no", "na", "está", "com", "queria", "saber"];
-    let searchTerms = query.split(' ').filter(word => !stopWords.includes(word) && word.length > 2);
+            const stopWords = ["como", "fazer", "o", "a", "de", "do", "da", "em", "para", "erro", "no", "na", "está", "com", "queria", "saber"];
+            let searchTerms = query.split(' ').filter(word => !stopWords.includes(word) && word.length > 2);
 
-    // 2. Expansão por Sinônimos
-    // Se o usuário digita "imprimir", o sistema também vai "pontuar" quem tem "gerar" ou "emitir"
-    let expandedTerms = [...searchTerms];
-    searchTerms.forEach(term => {
-        for (let chave in SINONIMOS) {
-            if (term === chave || SINONIMOS[chave].includes(term)) {
-                expandedTerms.push(chave, ...SINONIMOS[chave]);
+            let expandedTerms = [...searchTerms];
+            searchTerms.forEach(term => {
+                for (let chave in SINONIMOS) {
+                    if (term === chave || SINONIMOS[chave].includes(term)) {
+                        expandedTerms.push(chave, ...SINONIMOS[chave]);
+                    }
+                }
+            });
+            expandedTerms = [...new Set(expandedTerms)];
+
+            const blocks = fileContent.split('###');
+            let scoredResults = [];
+
+            blocks.forEach(block => {
+                if (!block.trim()) return;
+                let score = 0;
+                const blockLower = block.toLowerCase();
+
+                if (blockLower.includes(query)) score += 150;
+
+                searchTerms.forEach(word => {
+                    if (blockLower.includes(word)) score += 40;
+                });
+
+                expandedTerms.forEach(word => {
+                    if (blockLower.includes(word)) score += 15;
+                });
+
+                if (score > 0) {
+                    scoredResults.push({ block, score });
+                }
+            });
+
+            scoredResults.sort((a, b) => b.score - a.score);
+
+            if (scoredResults.length > 0) {
+                const contextForAI = scoredResults.slice(0, 4).map(r => r.block).join("\n---\n");
+                
+                let foundHTML = `<div style="color:#4338ca; font-size:15px; margin-bottom:15px; display:flex; align-items:center; gap:5px;">
+                                    🔍 <b>Encontramos ${scoredResults.length} correspondências no manual:</b>
+                                 </div>`;
+                
+                scoredResults.forEach((res, index) => {
+                    if (index < 5) {
+                        foundHTML += `
+                            <div style="background:white; padding:15px; border-radius:8px; margin-bottom:12px; border-left:5px solid #2563eb; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                                ${formatBlock(res.block)}
+                                <div style="font-size:10px; color:#94a3b8; margin-top:8px; text-align:right;">Precisão: ${res.score} pts</div>
+                            </div>`;
+                    }
+                });
+
+                displayMessage(foundHTML);
+                askGeminiAI(query, contextForAI);
+            } else {
+                displayMessage("⚠️ Não encontrei termo exato no manual. Consultando IA Geral...");
+                askGeminiAI(query, "Não há dados específicos no arquivo TXT.");
             }
         }
-    });
-    // Remove duplicatas dos termos expandidos
-    expandedTerms = [...new Set(expandedTerms)];
-
-    const blocks = fileContent.split('###');
-    let scoredResults = [];
-
-    // 3. Algoritmo de Pontuação por Relevância
-    blocks.forEach(block => {
-        if (!block.trim()) return;
-        
-        let score = 0;
-        const blockLower = block.toLowerCase();
-
-        // Bonus: Frase exata no bloco (Peso máximo)
-        if (blockLower.includes(query)) score += 150;
-
-        // Bonus: Palavras originais da busca (Peso alto)
-        searchTerms.forEach(word => {
-            if (blockLower.includes(word)) score += 40;
-        });
-
-        // Bonus: Sinônimos encontrados (Peso médio)
-        expandedTerms.forEach(word => {
-            if (blockLower.includes(word)) score += 15;
-        });
-
-        if (score > 0) {
-            scoredResults.push({ block, score });
-        }
-    });
-
-    // 4. Ordenação (Os mais relevantes primeiro)
-    scoredResults.sort((a, b) => b.score - a.score);
-
-    // 5. Apresentação e Envio para IA
-    if (scoredResults.length > 0) {
-        // Pegamos os 4 melhores blocos para dar de "comida" para a IA
-        const contextForAI = scoredResults.slice(0, 4).map(r => r.block).join("\n---\n");
-        
-        let foundHTML = `<div style="color:#4338ca; font-size:14px; margin-bottom:10px;">🔍 <b>Encontramos ${scoredResults.length} correspondências no manual Bsoft:</b></div>`;
-        
-        scoredResults.forEach((res, index) => {
-            // Mostra apenas os 5 primeiros na tela para não ficar gigante, o resto a IA lê
-            if (index < 5) {
-                foundHTML += `
-                    <div style="background:white; padding:10px; border-radius:5px; margin-bottom:10px; border-left:4px solid #007bff;">
-                        ${formatBlock(res.block)}
-                        <div style="font-size:9px; color:#bbb; margin-top:5px;">Índice de Confiança: ${res.score} pts</div>
-                    </div>`;
-            }
-        });
-
-        displayMessage(foundHTML);
-        
-        // Pergunta à IA usando o contexto enriquecido
-        askGeminiAI(query, contextForAI);
-    } else {
-        displayMessage("⚠️ Não encontrei esse termo exato no manual. Perguntando à IA sobre conhecimentos gerais...");
-        askGeminiAI(query, "Não há dados específicos no arquivo TXT.");
-    }
-}
 
         // --- FUNÇÃO DE FORMATAÇÃO AJUSTADA ---
-function formatBlock(b) {
-    // 1. Remove espaços e quebras de linha EXATAMENTE no início e fim do bloco total
-    let cleanBlock = b.trim();
-    
-    // 2. Garante que o texto comece imediatamente, removendo espaços invisíveis e tabs
-    cleanBlock = cleanBlock.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, '');
+        function formatBlock(b) {
+            let cleanBlock = b.trim();
+            cleanBlock = cleanBlock.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, '');
 
-    // 3. Formatação dos rótulos
-    // Usamos display: inline-block para garantir que o ícone e o texto fiquem na mesma linha
-    let erroParte = '<strong style="color: #856404; display: inline-block;">❌ ERRO:</strong>';
-    let solucaoParte = '<div style="margin-top: 8px;"><strong style="color: #155724; display: inline-block;">✅ SOLUÇÃO:</strong>';
+            let erroParte = '<strong style="color: #b45309; display: inline-block; font-size:1.05em;">❌ ERRO:</strong>';
+            let solucaoParte = '<div style="margin-top: 10px;"><strong style="color: #15803d; display: inline-block; font-size:1.05em;">✅ SOLUÇÃO:</strong>';
 
-    return cleanBlock
-        .replace(/erro:/gi, erroParte)
-        .replace(/solução:/gi, solucaoParte)
-        .replace(/\n/g, ' ') // Transforma quebras internas em espaço simples para colar o texto no rótulo
-        .concat('</div>');
-}
+            return cleanBlock
+                .replace(/erro:/gi, erroParte)
+                .replace(/solução:/gi, solucaoParte)
+                .replace(/\n/g, ' ') 
+                .concat('</div>');
+        }
+
         // --- UTILITÁRIOS ---
         function displayMessage(m, type) {
             const a = document.getElementById('messageArea');
             a.innerHTML = m;
-            a.style.backgroundColor = type === 'success' ? '#d4edda' : 'rgba(255, 243, 205, 0.9)';
+            // Verde suave para sucesso, Amarelo padrão para busca
+            a.style.backgroundColor = type === 'success' ? '#dcfce7' : '#fffbeb'; 
+            a.style.borderColor = type === 'success' ? '#86efac' : '#fcd34d';
+            if(type === 'success') a.style.color = '#14532d';
         }
 
         function toggleRetract(id) {
             const c = document.getElementById(id);
-            c.style.maxHeight = (c.style.maxHeight === "0px" || !c.style.maxHeight) ? c.scrollHeight + "px" : "0px";
+            const isOpen = c.style.maxHeight && c.style.maxHeight !== "0px";
+            c.style.maxHeight = isOpen ? "0px" : c.scrollHeight + "px";
         }
 
         function checkPasswordAndRedirect() {
-            if (prompt("Senha:") === CORRECT_PASSWORD) window.open(GITHUB_PAGE_URL, '_blank');
+            if (prompt("Senha de Admin:") === CORRECT_PASSWORD) window.open(GITHUB_PAGE_URL, '_blank');
             else alert("Senha errada.");
         }
 
@@ -321,30 +472,23 @@ function formatBlock(b) {
             const list = document.getElementById('topTermsList');
             let log = JSON.parse(localStorage.getItem('searchLog') || '{}');
             const sorted = Object.entries(log).sort((a,b) => b[1]-a[1]).slice(0,5);
-            list.innerHTML = sorted.map(i => `<li style="display:inline-block; background:#eee; margin:2px; padding:5px; border-radius:3px;"><a href="#" onclick="performGeneralSearch('${i[0]}');return false" style="text-decoration:none; color:#007bff;">${i[0]}</a></li>`).join('');
+            list.innerHTML = sorted.map(i => `<li><a href="#" onclick="performGeneralSearch('${i[0]}');return false">${i[0]}</a></li>`).join('');
         }
 
         function clearSearchLog() { localStorage.removeItem('searchLog'); renderTopTerms(); }
 
+        // Inicialização Consolidada
         window.onload = () => {
             loadData();
             renderTopTerms();
-            document.getElementById('toggleDbButton').onclick = () => {
-                const db = document.getElementById('databaseContent');
-                db.style.display = db.style.display === 'none' ? 'block' : 'none';
-                db.value = fileContent;
-            };
-        };
-		window.onload = () => {
-            loadData();
-            renderTopTerms();
+            document.getElementById('searchInput').focus(); // Foco no input ao abrir
 
-            // --- NOVO: Escutar a tecla ENTER no campo de busca ---
+            // Escutar Enter
             const input = document.getElementById('searchInput');
             input.addEventListener("keypress", function(event) {
                 if (event.key === "Enter") {
-                    event.preventDefault(); // Evita recarregar a página
-                    performGeneralSearch(); // Chama sua função de busca
+                    event.preventDefault();
+                    performGeneralSearch();
                 }
             });
 
