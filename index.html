@@ -335,6 +335,25 @@ function formatBlock(b) {
                 db.value = fileContent;
             };
         };
+		window.onload = () => {
+            loadData();
+            renderTopTerms();
+
+            // --- NOVO: Escutar a tecla ENTER no campo de busca ---
+            const input = document.getElementById('searchInput');
+            input.addEventListener("keypress", function(event) {
+                if (event.key === "Enter") {
+                    event.preventDefault(); // Evita recarregar a página
+                    performGeneralSearch(); // Chama sua função de busca
+                }
+            });
+
+            document.getElementById('toggleDbButton').onclick = () => {
+                const db = document.getElementById('databaseContent');
+                db.style.display = db.style.display === 'none' ? 'block' : 'none';
+                db.value = fileContent;
+            };
+        };
     </script>
 </body>
 </html>
