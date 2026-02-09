@@ -507,7 +507,24 @@ Data: data da troca ou reinício do medidor.
 Último uso registrado anteriormente: informar a última medida registrada no sistema antes da necessidade de registrar a manutenção do medidor.
 Primeiro uso registrado no novo medidor: informar a primeira leitura realizada no novo medidor.
 Após o cadastro na rotina Manutenção do Medidor, ao verificarmos o equipamento veremos que o sistema já considera a existência do novo medidor e com a leitura atualizada.
-
+###
+Erro: Cliente precisa de auxílio com manutenção, no assunto Cadastro de Combustíveis.
+Solução: [Manutenção] Cadastro de Combustíveis:
+O cadastro de combustíveis no sistema é necessário para que o usuário possa realizar lançamentos nas ferramentas de Abastecimentos.
+Esse cadastro propriamente dito não é realizado dentro do módulo Manutenção, mas sim na ferramenta “Produtos” existente no menu Financeiro / Configurações / Produtos e Serviços / Produtos ou então em “Estoque / Produtos” (a ferramenta em si é a mesma, porém acessada por caminhos diferentes).
+Além de poder mencionar um determinado combustível nas ferramentas relacionadas a abastecimentos, no cadastro de Tipos de Equipamentos podemos vincular qual combustível é compatível a cada tipo de equipamento. Dessa forma, o fato de um equipamento ser vinculado a um determinado tipo de equipamento fará com que, no momento de cadastrar um abastecimento, o sistema sugira apenas os combustíveis definidos para aquele tipo.
+Exemplo de identificação do combustível no tipo de equipamento
+Cadastro do combustível
+Uma vez na ferramenta “Produtos” vamos clicar em Adicionar para iniciar o cadastro. Na imagem abaixo foram destacados os campos indispensáveis para a correta identificação do combustível no sistema:
+Família: a família utilizada, obrigatoriamente, precisa ter o nome interno “Combustível” para que o sistema considere o produto vinculado a ela como sendo de fato um combustível.
+Descrição: campo para informar o nome do combustível (Etanol, Gasolina Comum, Gasolina Aditivada, Diesel S500, GNV, etc…).
+Produto cadastrado no sistema
+Com pelo essas informações definidas (principalmente a “Família”), já temos condições de utilizar o combustível nas ferramentas em que temos essa opção.
+Utilização
+Temos a possibilidade de vincular um combustível a um Tipo de Equipamento:
+Etanol que cadastramos já consta na listagem para poder ser vinculado ao tipo de equipamento
+Nas ferramentas de abastecimentos também podemos utilizar o combustível:
+O equipamento está vinculado ao Tipo de Equipamento “Veículos Leves”, que possui o Etanol como um dos combustíveis vinculados
 
 
 
@@ -1533,6 +1550,7 @@ Solução: Sim, basta utilizar os filtros dentro da emissão do Contrato de fret
 Erro: Cliente reclamou que não estava aparecendo um CFOP específico, que era o 6932 - Prestação de serviço de transporte interestadual iniciada em UF diferente da do prestador (inter-estadual).
 Solução: Verifica o preenchimento do Ct-e e marca a caixinha para mostrar início e fim da prestação de serviço para verificar se a UF de início do frete é a mesma da empresa, se for dai realmente não vai aparecer esse CFOP. O Sistema sempre recomenda os CFOP conforme o que é preenchido. 
 ###
+
 
 
 
