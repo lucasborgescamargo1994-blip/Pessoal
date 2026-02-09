@@ -71,7 +71,32 @@ Sugestão de valores CBS e IBS
 Observações automáticas
 Integração fiscal/contábil
 Observações (Possível configurar manual o que quiser)
-
+###
+Erro: Como emitir um Ct-e no Bsoft TMS?
+Solução: Vai no menu lateral esquerdo em Transportes, Conhecimentos. Ou pesquisa por Conhecimentos na barra de pesquisa do menu por Conhecimentos. Você pode adicionar na tela inicial um atalho para a rotina. Tem três maneiras para emitir um Ct-e, a primeira é de forma manual a qual você irá clicar no ícone + verde para adicionar e selecionar a opção Preenchimento Manual. A segunda forma é utilizando um xml da nota fiscal e/ou conhecimento para que o sistema preencha de forma automática as informações que contém no arquivo, assim poupando bastante trabalho. A terceira forma é pela chave de acesso da nota (para as informações puxar de forma automática igual no arquivo XML, deve possuir o módulo de consulta garantida do nsdocs). Depois de utilizada uma das opções, o sistema irá apresentar duas guias, a primeira é Dados básicos, o qual você irá preencher todas as informações obrigatórias (possuem um asterísco *) e as demais que necessitar conforme o tipo de ct-e que irá emitir. Segue abaixo todas as opções que o sistema apresenta na tela Dados básico:
+Forma de Emissão Normal	Rascunho	Numeração Posterior
+Agência *	
+Comissiona outra Agência *	Sim Não
+Talão *	
+Número
+Data de Emissão * 09/02/2026 09:10
+Data de Previsão de Saída	
+Perfil de apropriação *	
+Pedido/Cotação	
+Importar Notas do Pedido  Vincular Ordem já Carregada
+Vínculo com OC	
+Vincular várias OC	Sim Não 
+Vínculo com Manifesto	Não Vincular Criar Manifesto Vincular a Manifesto existente
+Vínculo com Viagem	Não Vincular Criar Viagem Vincular à Viagem existente
+Vínculo com NF-e	  
+Consulta GarantidaEnviar XML da NF-e
+Enviar XML da DC-e
+Rota de Distribuição	
+Identificação do Pedido	
+Lotação	Sim Não 
+Comboio	Sim Não
+Informações Complementares.	
+###
 
 
 
@@ -402,6 +427,7 @@ Solução: Sim, basta utilizar os filtros dentro da emissão do Contrato de fret
 Erro: Cliente reclamou que não estava aparecendo um CFOP específico, que era o 6932 - Prestação de serviço de transporte interestadual iniciada em UF diferente da do prestador (inter-estadual).
 Solução: Verifica o preenchimento do Ct-e e marca a caixinha para mostrar início e fim da prestação de serviço para verificar se a UF de início do frete é a mesma da empresa, se for dai realmente não vai aparecer esse CFOP. O Sistema sempre recomenda os CFOP conforme o que é preenchido. 
 ###
+
 
 
 
