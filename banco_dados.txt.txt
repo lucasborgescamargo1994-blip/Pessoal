@@ -1215,6 +1215,139 @@ Destaque no Documento: O valor do pedágio deve ser destacado no Conhecimento de
 Exceção (Carga Lotação/VPO): A única situação em que o valor do pedágio não entra na base de cálculo do ICMS é quando se trata de transporte de carga completa (lotação) e o contratante (embarcador) fornece o Vale-Pedágio Obrigatório (VPO) de forma antecipada, conforme a Lei Federal nº 10.209/2001, pois nesse caso a transportadora não assume o ônus financeiro.
 Carga Fracionada: Na carga fracionada, a antecipação do VPO pelo embarcador não é obrigatória, e a prática comum é a transportadora incluir o custo do pedágio no valor total do frete, o que o torna tributável pelo ICMS. 
 
+###
+Erro: Cliente precisa editar uma regra de cálculo para ICMS no sistema.
+Solução: Basta ir em regras Transporte, Configurações, Regras. Ideal é clonar a regra que deseja usar como base para evitar de gerar erro em uma funcional e não poder voltar atrás com a edição. Primeiro faz o teste na clonada para depois editar na regra original.  Segue abaixo um exemplo de regra para ICMS Demonstrativo e todas as opções que o sistema dá para configurar:
+Tipo *	
+
+Regra Empresa / Negociação com Cliente
+Descrição *	
+ICMS Demonstrativo
+Nome interno	
+Regra pag. motorista	
+ 
+Liberado na cotação de frete?	Sim Não
+Regra ativa?	Sim Não
+Restrito?	Sim Não
+Tipo Faturamento *	Total prestação Composição frete 
+Base Margem Bruta	Total prestação Base Resultado Composição Frete 
+Detalhamento
+Editar em uma janela externa
+
+Cálculos - Conhecimento de transporte/Contrato de Frete
+Campos
+tarifaDigitada, tarifaCalculada, valorFrete, baseCalculo, aliquota, valorICMS, valoresOutros, valorPedagioConhecimento, totalPrestacao, Gris, valorSeguro, diaria, valorSeguroAduaneiro,baseResultadoCT,totalServico
+
+Campos editáveis
+tarifaDigitada, valorFrete, baseCalculo, aliquota, valorICMS, valoresOutros, valorPedagioConhecimento, totalPrestacao, Gris, valorSeguro, diaria, valorSeguroAduaneiro,baseResultadoCT,totalServico
+
+Cálculos
+def("tarifaCalculada",0);
+if ( obt("tarifaDigitada") > 0)
+   def("valorFrete", (obt("merc_quantKg[]")) * obt("tarifaDigitada"));
+if ( obt("aliquota") > 0)
+def("baseCalculo", (obt("valorFrete") + obt("valoresOutros")));
+if ( obt("aliquota") < 1)
+def("baseCalculo",0);
+valor = obt("baseCalculo") * (obt("aliquota")/100);
+def("valorICMS",valor);
+def("totalPrestacao",  (obt("valorFrete") + obt("valoresOutros") + obt("valorSeguro") + obt("diaria")));
+Campos que não vão aparecer no bloco de componentes do valor da prestação de serviço do DACTE
+tarifaImpressadiariaGrisvalorFretevalorICMSvaloresOutrosvalorPedagioConhecimentovalorSegurovalorSeguroAduaneiro	
+
+Funções disponíveis para uso:
+obt() - Retornar o valor do campo e aplica formatação, caso necessária.
+def() - Define o valor do campo e aplica formatação, caso necessária.
+obtGlob(nome) - Retornar o valor de um acumulador global.
+defGlob(nome,valor) - Define o valor de um acumulador global.
+obtStr() - Obtem valor do campo sem aplicar formatação.
+defStr() - Define valor do campo sem aplicar formatação.
+montaObs() - Define o conteúdo do campo "Observações" em tela. Note que o campo só será preenchido quando estiver vazio. Para forçar a atualização do conteúdo é necessário informar um parâmetro com o valor 'true', por exemplo: montaObs(true);
+montaObsChave() - Possui a mesma finalidade da função montaObs(), porém é possível informar a chave de busca, por exemplo: montaObsChave('CTR'). Assim como na função montaObs(), para forçar a atualização do conteúdo é necessário informar um segundo parâmetro com o valor 'true', por exemplo: montaObsChave('CTR', true);
+montaObsPV() - Define o conteúdo do campo "Observações do Pedido de Venda" em tela. Note que o campo só será preenchido quando estiver vazio. Para forçar a atualização do conteúdo é necessário informar um parâmetro com o valor 'true', por exemplo: montaObsPV(true);
+montaObsPVChave() - Possui a mesma finalidade da função montaObsPV(), porém é possível informar a chave de busca, por exemplo: montaObsPVChave('PED'). Assim como na função montaObsPV(), para forçar a atualização do conteúdo é necessário informar um segundo parâmetro com o valor 'true', por exemplo: montaObsPVChave('PED', true);
+Observação - As funções montaObs() e montaObsChave() só são válidas em regras do tipo "Regra Empresa / Negociação com Cliente"
+arredondaISS() - Aplica o arredondamento no valor do ISS calculado utilizando as regras de arredondamento previstas na ferramenta "Modelos de Notas Fiscais".
+O objeto "tabelaPrecos" possui as seguintes propriedades:
+natureza, limiteMin, limiteMax, percentualPedagio, percentualSeguro, valorFreteMinimo, valorExcesso, Gris, percentualGris, valorSeguroAduaneiro, valorContainer.
+Ex.: tabelaPrecos.natureza;
+Também é possível efetuar uma chamada aos valores outros, definido na rotina "Tabela de preços valores outros", através da chamada do nome interno
+Ex.: tabelaPrecos.nomeInternoTipoValoresOutros;
+Obtendo outros valores do conhecimento / contrato de frete
+É possível efetuar uma chamada aos valores outros, definido na rotina "Tipo valores outros", utilizando o nome interno especificado no campo desejado.
+Ex. conhecimento:
+def("outrosValores[nomeInterno]", valorAtribuído);
+obt("outrosValores[nomeInterno]");
+Ex. contrato de frete:
+def("outrosValoresCF[nomeInterno]", valorAtribuído);
+obt("outrosValoresCF[nomeInterno]");
+Obtendo/definindo valores dos campos tipos TAG CT-e
+Para obter e definir o valor de um campo tipo TAGS CT-e e sua informação for alfanumérico utilize os métodos obtStr e defStr, respectivamente. Quando se tratar de valores numéricos, utilize obt e def, respectivamente.
+Ex. alfanumério:
+obtStr("tagsCTe[nomeInterno]");
+defStr("tagsCTe[nomeInterno]", "valorAtribuído");
+Ex. numérico:
+obt("tagsCTe[nomeInterno]");
+def("tagsCTe[nomeInterno]", valorAtribuído);
+Para coletar os dados dos documentos inseridos no Contrato de frete utilizar os seguintes nomes:
+totalPedagio, totalPeso, totalValor, totalValorMerc, totalBaseResultado, totalVolume, totalCubagem, totalPesoCubado, totalPesoTaxado, totalTarifaMotoristaCalculada, totalTarifaMotoristaDigitada e totalValorTotalOrigem
+Também é possível obter os totais dos valores da composição de frete, exemplo:
+COM_RF.composicaoFrete("totalPrestacao");
+COM_RF.composicaoFrete("outrosValores_nomeInterno");
+Para auxiliar na criação da regra também podemos contar com os campos "Peso Total" e "Quantidade Total".
+Peso Total - Utilizamos obt("merc_quantKg")
+Quantidade Total - Utilizamos obt("merc_quant")
+No contrato de frete é possível obter.
+COM_RF.permissaoVeiculoAbastecimento - Retorna true se a categoria do veículo possuir permissão para abastecimento.
+Outros valores disponiveis:
+totalPrestacaoTerceiraAba - Somatório do valor frete dos conhecimentos envolvidos
+totalPrestacaoSegundaAba - Somatório do total da prestação
+Em ambos os casos sugere-se definir no conhecimento a variável baseResultadoCt e utilizar a variável totalBaseResultado para efetuar os cálculos.
+Valores não visíveis em tela
+dados_tipoDocProprietario - Retorna J para pessoa jurídica e F para pessoa física
+dados_tipoProp - Retorna E para ETC, C para CTC, EQ para Equiparado e T para 'TAC'
+dados_enquadramentoProp - Retorna s para Optante pelo Simples, g para Lucro Geral, r para Lucro Real, p para Lucro Presumido
+dados_nroDependentes - Retorna o número de dependentes para IRRF
+dados_frotaPropria - Retorna 1 para frota própria e 0 para frota terceiros
+Utilizar combinado aos operadores lógicos de javascript. Exemplo: $V(dados_tipoProp)
+Faturamento de conhecimento:
+Para regras de faturamento é possível utilizar os seguintes campos do conhecimento:
+dados_regraFrete, dados_clienteCTRC_id, dados_tiposTaloes_id, dados_tipoQuebra
+dados_cidadeColeta, dados_estadoColeta, dados_nomeRemetente
+dados_cidadeDestino, dados_estadoDestino
+dados_pesoMercadorias, dados_quantMercadorias, dados_valorMercadorias
+dados_totalPrestacaoCT, dados_totalServicoCT
+Para os campos acima do tipo texto utilizar o método $V, conforme exemplo:
+$V('dados_tipoQuebra')
+Para os campos acima do tipo valor utilizar o método obt, conforme exemplo:
+obt('totalPrestacaoCT');
+Também é possível obter os valores outros do conhecimento:
+obt('outrosValores[nomeInterno]');
+Validação
+Observação
+O campo "Validação" é tratado somente quando tiver código e neste caso deverá TERMINAR com uma expressão de retorno:
+return true; // - Salvar;
+return false; // - Não salvar (Padrão).
+Cálculos - Ordem de carregamento
+Campos
+tarifaDigitada, tarifaCalculada, valorFrete, baseCalculo, aliquota, valorICMS, valoresOutros, valorPedagioConhecimento, totalPrestacao
+Campos Editáveis
+Cálculos
+Validação
+
+
+
+
+
+
+
+
+
+
+
+###
+Erro: Cliente perguntou sobre a tabela do ICMS, Imposto de renda e do INSS, se é configurável ou é automática.
+Solução: A resposta pode variar muito de cliente para cliente, mas em resumo o sistema segue sim a tabela que é disponibilizada pela receita federal, e dentro do talão se estiver marcado para preencher conforme tabela irá utilizá-la. Porém que deve definir o ICMS é sempre o contador, pois pode ter regras de excessão conforme a atividade e tipo da empresa, pois por exemplo Cooperativas de transporte tem tributação com alíquotas reduzidas. Sempre oriente o cliente questionar o contador se deve utilizar a tabela da receita federal ou configurar alíquotas manualmente no sistema.
 
 ###
 Erro: Cliente precisa cancelar ct-e e gostaria de saber como faz.
@@ -1550,6 +1683,7 @@ Solução: Sim, basta utilizar os filtros dentro da emissão do Contrato de fret
 Erro: Cliente reclamou que não estava aparecendo um CFOP específico, que era o 6932 - Prestação de serviço de transporte interestadual iniciada em UF diferente da do prestador (inter-estadual).
 Solução: Verifica o preenchimento do Ct-e e marca a caixinha para mostrar início e fim da prestação de serviço para verificar se a UF de início do frete é a mesma da empresa, se for dai realmente não vai aparecer esse CFOP. O Sistema sempre recomenda os CFOP conforme o que é preenchido. 
 ###
+
 
 
 
