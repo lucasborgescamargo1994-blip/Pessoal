@@ -625,6 +625,45 @@ Notificações  Não Sim
 ###
 Erro: Cliente perguntou se tem como fazer complemento de valores para um contrato de frete, ou gerar um novo com a mesma operação CIOT e VPO.
 Solução: Para esses casos, tem opção do cancelamento gerencial que caso for usuário gerente de recursos da para habilitar, porém vale salientar que o contrato por não estar integrado com a operadora não terá validade fiscal, orientar a verificar com o contador se dessa forma evita multas com a ANTT. O ideal é cancelar toda a operação e emitir um novo contrato de frete.
+###
+Erro: Dúvidas referente ao nsdocs.
+Solução: Segue algumas informações a respeito do nsdocs:
+nsdocs
+
+Configurações iniciais: 
+- Cadastro da empresa
+- Parâmetros do Sistema
+- Certificado e agendamento:
+Instalar certificado da empresa (A1 na nuvem ou A3 localmente), e após isso programar os agendamentos (acessar cadastro, empresas, alterar):
+obs. Recomendado colocar a Opção ciência da operação (para puxar dados completos dos documentos) e intervalo mínimo a cada 1 hora.
+ 
+
+- NSU (número sequencial único): 
+Se em algum momento foi utilizado outro sistema para a busca e importação de arquivos para seu CNPJ/CPF, é necessário saber qual foi o último NSU importado, assim juntamente com nosso Suporte Técnico, é possível configurar esta numeração no nsdocs.
+
+Caso este seja o primeiro sistema de importação e ainda não tenha sido realizado nenhuma pesquisa, é importante ressaltar que será possível buscar apenas os documentos emitidos a partir do momento em que realizar sua primeira Consulta na SEFAZ.
+
+Importante: só é possível excluir documentos que foram recebidos no sistema nos meses anteriores ao atual.
+
+Ciência da operação: Este evento não representa a Manifestação do Destinatário sobre a operação, mas unicamente dá condições para que o Destinatário efetue o download do arquivo XML.
+Confirmação da Operação: tem a finalidade de informar que as operações descritas na NF-e foram realizadas, sendo considerado como uma Manifestação conclusiva. Após a Confirmação da Operação pelo Destinatário, a Empresa Emitente fica impedida de Cancelar a NF-e.
+Operação não Realizada: tem como finalidade possibilitar ao Destinatário da NF-e informar que, por algum motivo, a operação legalmente acordada entre as partes não foi realizada.
+Desconhecimento da operação: Em resumo, o Destinatário declara que a operação descrita na NF-e não foi por ele solicitada.
+Prazo para realizar manifestação conclusiva é de 180 dias.
+
+Evento de desacordo da operação da CT-e:
+ 
+
+1 - A Consulta Garantida funciona para importação de CT-e ou NFC-e? 
+R: Não, o serviço é exclusive para importação de NF-e.
+2 - O consumo do nsdocs é acumulativo? Ou seja, o que eu não uso no mês acumula para o outro? 
+R: Não, o consumo não é acumulativo. Os créditos restantes não sobram para serem consumidos no mês seguinte.
+3 - É possível utilizar a Consulta Garantida via API? 
+R: Não, atualmente este recurso não está disponível.
+###
+
+
+
 
 
 ###
@@ -952,6 +991,7 @@ Solução: Sim, basta utilizar os filtros dentro da emissão do Contrato de fret
 Erro: Cliente reclamou que não estava aparecendo um CFOP específico, que era o 6932 - Prestação de serviço de transporte interestadual iniciada em UF diferente da do prestador (inter-estadual).
 Solução: Verifica o preenchimento do Ct-e e marca a caixinha para mostrar início e fim da prestação de serviço para verificar se a UF de início do frete é a mesma da empresa, se for dai realmente não vai aparecer esse CFOP. O Sistema sempre recomenda os CFOP conforme o que é preenchido. 
 ###
+
 
 
 
