@@ -81,7 +81,7 @@ Talão *
 Número
 Data de Emissão * 09/02/2026 09:10
 Data de Previsão de Saída	
-Perfil de apropriação *	
+Perfil de apropriação 	
 Pedido/Cotação	
 Importar Notas do Pedido  Vincular Ordem já Carregada
 Vínculo com OC	
@@ -96,6 +96,53 @@ Identificação do Pedido
 Lotação	Sim Não 
 Comboio	Sim Não
 Informações Complementares.	
+###
+Erro: Como emitir um Mdf-e no sistema Bsoft TMS?
+Solução: Caso for emitir um MDf-e para um Ct-e, você pode criá-lo junto da criação do Ct-e marcando na guia Dados básicos a opção Criar Manifesto em Vínculo com Manifesto. Para gerar de forma manual o Mdf-e, basta no menu lateral esquerdo ir em Transporte, Manifesto de Carga ou pesquisar na barra de pesquisa do Menu por Manifesto de Carga. Clica no ícone + verde para adicionar que irá apresentar as seguintes opções de preenhcimento:
+
+Agência *	
+ 
+Talão *	
+ 
+Data de Emissão * 09/02/2026 09:17
+Número	
+Origem *	 
+Destino	
+Km Inicial	
+Data de Saída 
+Observação	
+Observação padrão do talão selecionado
+Documento a Vincular:	Conhecimento de Transporte	Nota Fiscal	Chave de Acesso de NF-e
+Alterar Observações dos Conhecimentos Sim Não 
+Conhecimentos Adicionar em Lote Adicionar via Código de Barras 
+Adicionar Chave de Acesso de CT-es de Terceiros
+Totais
+Peso (kg) 0,000
+Quantidade 0
+Cubagem (m³) 0,000
+Valor Total (R$) 0,00
+Detalhamento da Carga
+Produto Predominante	
+Tipo de Carga	
+5 - Carga Geral
+NCM	
+CEP de Carregamento	
+CEP de Descarregamento	
+MOTORISTA
+Motorista
+Veículo Principal Vinculado 01 Vinculado 02
+Contratado
+Enviar Manifesto para a Plataforma Comprovei
+Alterar Motoristas dos Conhecimentos	Sim Não 
+Atualizar campo lotação?	Sim Não 
+Auxiliares / Outros Motoristas
+Responsável pelo Registro das Ocorrências no Aplicativo
+Responsável	
+Celular	
+Definir Seguradoras manualmente
+Definir CIOT manualmente Caso não informado manualmente, os CIOTs serão obtidos dos CT-es listados acima. Clique para visualizá-los
+Vale-Pedágio 
+Pago Por		Tipo de Dispositivo	Operadora de Vale-Pedágio / Empresa Fornecedora	Número do Comprovante	Valor do Pedágio	VPO ANTT
 ###
 
 
@@ -427,6 +474,7 @@ Solução: Sim, basta utilizar os filtros dentro da emissão do Contrato de fret
 Erro: Cliente reclamou que não estava aparecendo um CFOP específico, que era o 6932 - Prestação de serviço de transporte interestadual iniciada em UF diferente da do prestador (inter-estadual).
 Solução: Verifica o preenchimento do Ct-e e marca a caixinha para mostrar início e fim da prestação de serviço para verificar se a UF de início do frete é a mesma da empresa, se for dai realmente não vai aparecer esse CFOP. O Sistema sempre recomenda os CFOP conforme o que é preenchido. 
 ###
+
 
 
 
