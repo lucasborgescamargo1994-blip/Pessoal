@@ -79,6 +79,7 @@ Agência *
 Comissiona outra Agência *	Sim Não
 Talão *	
 Número
+Emitir contrato de frete
 Data de Emissão * 09/02/2026 09:10
 Data de Previsão de Saída	
 Perfil de apropriação 	
@@ -144,9 +145,96 @@ Definir CIOT manualmente Caso não informado manualmente, os CIOTs serão obtido
 Vale-Pedágio 
 Pago Por		Tipo de Dispositivo	Operadora de Vale-Pedágio / Empresa Fornecedora	Número do Comprovante	Valor do Pedágio	VPO ANTT
 ###
+Erro: Como criar um contrato de frete (ou Recibo de Frete) no sistema Bsoft TMS?
+Solução: Você pode criar de duas formas, ou no momento da emissão do Ct-e marcando a caixinha da opção Emitir contrato de frete, ou no menu lateral esquerdo do sistema vai em Transporte, Contrato de Frete, pode também utilizar a caixa de pesquisa e digitar Contrato de Frete. Clica no ícone + verde para adicionar. Segue abaixo as opções de preenchimento em um contrato de frete:
+Filtro de Documento (Apenas para filtrar documentos que será vinculado ao contrato de frete, MDF-e, Ct-e, etc)
+Contratado
+Motorista 
+Agência
+Manifesto 
+N.º Doc.*
+Veículo 
+Período de Emissão 
+até 
+Desconsiderar CT-es Complementares
+Documento	Data de Emissão	Pedágio	Peso	
+Documento	Data de Emissão	Pedágio	Peso	
 
-
-
+Dados
+Motorista *
+Veículo Principal * Vinculado 01 * Vinculado 02
+Contratado *
+Agência *
+Talão *
+N.º
+Data de Emissão * 09/02/2026 09:25
+Forma de Pagamento *
+Operadora de crédito
+Data Inicial da Viagem
+Data Final da Viagem
+Informações para Cálculo do Frete Mínimo 
+Origem 
+CEP
+Destino
+CEP
+Tabela *
+Tipo de Carga *
+Km *
+N.º Eixos *
+Frete de Retorno *
+Frete Mínimo *
+NCM Geral
+Valores
+Regra *
+Adiantamento 70% - Clone
+Tipo de Quebra *
+Tolerância	
+Volumes	0
+Cubagem	0,000
+Tarifa do Motorista	R$	0,00
+Peso de Coleta 0,0000
+Diária	R$	
+Outros Descontos	R$	
+Outros Acréscimos	R$	
+Peso de chegada		
+Quantidade de Dias		
+Valor Frete	R$	
+Valor Total do Frete	R$	
+Pedágio CT-e	R$	
+% Adiantamento	R$	
+Máximo Permitido	R$	
+% Adiantamento	R$	
+Embarcador	R$	
+Desconto INSS
+Desconto SEST/SENAT
+Base de Cálculo IR	R$	
+Desconto IRRF	R$	
+Desconto de Seguro	R$	
+Valor de Pedágio Sugerir Pedágio Consultar Custos na QualP	R$	
+Frete Líquido	R$	
+Adiantamento
+Parc.
+Combustível	
+Peso de Chegada	
+Desconto de Quebra de Peso	R$	
+Saldo	R$	
+Saldo de Combustível	R$	
+Complemento	R$	
+Resultado	R$	
+Contratos anteriores Informações do IRRF Visualizar Contratos Em Aberto do Contratado
+Teto do INSS	R$ 
+Desconto mensal de INSS do Contratado	R$ 
+Observações 
+Consultar Modelos Limpar Observação Sugerir Observação Mostra as Observações para pagamento do Contrato de Frete
+Dados de Pagamento Informações do Contrato de Frete
+CIOT
+Operadora de Crédito *
+Contrato
+Número do Cartão 
+Notificações  Não Sim
+###
+Erro: Cliente perguntou se tem como fazer complemento de valores para um contrato de frete, ou gerar um novo com a mesma operação CIOT e VPO.
+Solução: Para esses casos, tem opção do cancelamento gerencial que caso for usuário gerente de recursos da para habilitar, porém vale salientar que o contrato por não estar integrado com a operadora não terá validade fiscal, orientar a verificar com o contador se dessa forma evita multas com a ANTT. O ideal é cancelar toda a operação e emitir um novo contrato de frete.
 
 
 ###
@@ -474,6 +562,7 @@ Solução: Sim, basta utilizar os filtros dentro da emissão do Contrato de fret
 Erro: Cliente reclamou que não estava aparecendo um CFOP específico, que era o 6932 - Prestação de serviço de transporte interestadual iniciada em UF diferente da do prestador (inter-estadual).
 Solução: Verifica o preenchimento do Ct-e e marca a caixinha para mostrar início e fim da prestação de serviço para verificar se a UF de início do frete é a mesma da empresa, se for dai realmente não vai aparecer esse CFOP. O Sistema sempre recomenda os CFOP conforme o que é preenchido. 
 ###
+
 
 
 
