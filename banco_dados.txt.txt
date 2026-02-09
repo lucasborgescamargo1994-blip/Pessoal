@@ -675,7 +675,9 @@ Carga Fracionada: Na carga fracionada, a antecipação do VPO pelo embarcador n�
 
 
 ###
-
+Erro: Cliente precisa cancelar ct-e e gostaria de saber como faz.
+Solução: Certo, se ele estiver dentro do prazo de cancelamento que é 8 horas para o MT e 168 horas para demais estados e também não estar com MDF-e vinculado que esteja encerrado ou verificado, basta ir na tela dos ct-e, selecionar o que deseja cancelar, Clica no ícone da Receita federal (Ct-e), e executa a opção de cancelamento na SEFAZ. Se estiver fora das condições citadas, deve entrar em contato com o contador para o mesmo abrir chamado na SEFAZ solicitando autorização para o cancelamento extemporâneo do Ct-e em questão.
+###
 
 
 
@@ -1005,6 +1007,7 @@ Solução: Sim, basta utilizar os filtros dentro da emissão do Contrato de fret
 Erro: Cliente reclamou que não estava aparecendo um CFOP específico, que era o 6932 - Prestação de serviço de transporte interestadual iniciada em UF diferente da do prestador (inter-estadual).
 Solução: Verifica o preenchimento do Ct-e e marca a caixinha para mostrar início e fim da prestação de serviço para verificar se a UF de início do frete é a mesma da empresa, se for dai realmente não vai aparecer esse CFOP. O Sistema sempre recomenda os CFOP conforme o que é preenchido. 
 ###
+
 
 
 
