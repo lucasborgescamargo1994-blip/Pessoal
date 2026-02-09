@@ -539,7 +539,7 @@ O equipamento está vinculado ao Tipo de Equipamento “Veículos Leves”, que 
 
 
 
-
+//Erros e dúvidas Fiscal e sistema no geral:
 ###
 Erro: Dúvidas referente aos documento que podem ser emitidos no sistema: Ct-e, Mdf-e, Notas fiscais (NF-e), NFS-e (Nota fiscal de Serviço).
 Solução: Segue abaixo todo um manual referente aos documentos fiscais que podem ser gerados no sistema:
@@ -1550,6 +1550,7 @@ Solução: Sim, basta utilizar os filtros dentro da emissão do Contrato de fret
 Erro: Cliente reclamou que não estava aparecendo um CFOP específico, que era o 6932 - Prestação de serviço de transporte interestadual iniciada em UF diferente da do prestador (inter-estadual).
 Solução: Verifica o preenchimento do Ct-e e marca a caixinha para mostrar início e fim da prestação de serviço para verificar se a UF de início do frete é a mesma da empresa, se for dai realmente não vai aparecer esse CFOP. O Sistema sempre recomenda os CFOP conforme o que é preenchido. 
 ###
+
 
 
 
