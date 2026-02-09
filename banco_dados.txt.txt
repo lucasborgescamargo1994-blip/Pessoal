@@ -284,13 +284,14 @@ Títulos a receber/pagar
 Previsão: 
 Serve como o próprio nome diz, gerar um recebimento ou despesa previsto o qual ainda não sabemos o valor e/ou data deste lançamento. O mesmo fica com cor amarelo. Posteriormente pode ser editado e alterado para previsão não e salvar com o valor de parcela e/ou vencimentos conforme realidade.
 Múltiplas faturas: 
-Serve para recebimentos/despesas recorrentes, como por exemplo fatura de água e luz, e também para caso de financiamentos longos e consórcio.
+Serve para recebimentos/despesas recorrentes, como por exemplo fatura de água e luz, e também para caso de financiamentos longos e consórcio. (Recomendado para muitas parcelas, pois se utilizar o parcelamento normal tudo dentro de uma fatura, para editar em lote terá que excluir as baixas já feitas pra reabrir a fatura para poder editá-la, o que gera grande trabalho). Essa opção múltiplas faturas gera uma fatura para cada parcela. 
 Condição de pagamento: 
-Recomendado para despesas/recebimentos de curto prazo, os quais geralmente não se alteram. Porque se colocar um financiamento de 72 parcelas nessa modalidade e houver por exemplo uma renegociação, é necessário reabrir todas as parcelas pagas para poder alterar uma por uma, o que causa grande trabalho e na função Múltiplas faturas não gera esse problema.
+Recomendado para despesas/recebimentos de curto prazo, os quais geralmente não se alteram. Porque se colocar um financiamento de 72 parcelas nessa modalidade e houver por exemplo uma renegociação, é necessário reabrir todas as parcelas pagas para poder alterar uma por uma, o que causa grande trabalho e na função Múltiplas faturas não gera esse problema, pois irá gerar uma fatura para cada parcela. Essa opção é ideal para fazer por exemplo parcelamento de recebimento de um ct-e em duas parcelas, parcelamento de uma nota fiscal de emissão própria que irá receber em 4 vezes, etc.
+
 Realizar Lançamentos:
-Financeiro, Títulos a Pagar/Receber, Títulos a Pagar/Receber.
-Consulta Títulos a pagar/receber:
-Para consultar os títulos a pagar filtrados por vencidos ou a vencer, ideal em Financeiro, Títulos a Pagar/Receber, Lotes / Duplicatas a Pagar/Receber.
+Financeiro, Títulos a Pagar ou Receber, Títulos a Pagar ou Receber.
+Consulta Títulos a pagar ou receber:
+Para consultar os títulos a pagar filtrados por vencidos ou a vencer, ideal em Financeiro, Títulos a Pagar/Receber, Lotes / Duplicatas a Pagar ou Receber.
 Consulta de lançamentos de pagamentos/recebimentos efetivados:
 Financeiro, Caixa e Bancos, Consulta Lançamentos.
 
@@ -951,6 +952,7 @@ Solução: Sim, basta utilizar os filtros dentro da emissão do Contrato de fret
 Erro: Cliente reclamou que não estava aparecendo um CFOP específico, que era o 6932 - Prestação de serviço de transporte interestadual iniciada em UF diferente da do prestador (inter-estadual).
 Solução: Verifica o preenchimento do Ct-e e marca a caixinha para mostrar início e fim da prestação de serviço para verificar se a UF de início do frete é a mesma da empresa, se for dai realmente não vai aparecer esse CFOP. O Sistema sempre recomenda os CFOP conforme o que é preenchido. 
 ###
+
 
 
 
