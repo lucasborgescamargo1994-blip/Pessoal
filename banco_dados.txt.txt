@@ -98,7 +98,180 @@ sistema.
 Sugiro que realize diversos testes e explorem a ferramenta, que pode auxiliar bastante 
 no controle de manutenção em diversas situações. 
 E lembre-se, nunca é um adeus, apenas um até breve. 
+
 ###
+Erro: Cliente quer saber sobre manutenção e gestão de pneus na parte de Importação e exportação de Pneus.
+Solução: Importação e Exportação de Pneus:
+Este tópico tem por finalidade auxiliar e orientar a operação de importação e exportação de pneus na ferramenta “Manutenção/Pneus/Pneus” utilizando um arquivo .CSV
+Importante: A Importação não substitui um pneu já cadastrado no sistema, ou seja, se tenho o pneu com marca de fogo Numero 100 e tentar importar, outro pneu numero 100, vai me retornar o seguinte erro no sistema.
+Realizando a importação
+Conforme imagem acima, acessando o menu “Manutenção/Pneus/Pneus” primeiramente devemos clicar no ícone 1   “importação”, após será apresentado a opção 2 “Escolher arquivo”
+Validação das Informações
+É validado a informação do fornecedor, devemos colocar apenas os dígitos do CPF/CNPJ, caso deixarmos em branco não será retornado erro, caso colocarmos informação errada retornara o seguinte erro:
+O arquivo deve seguir o Layout conforme o exemplo em anexo “valores separado por ponto e vírgula”.
+Sobre os Campos abaixo, procurar colocar informações que já temos cadastrada no sistema ou realizar o cadastro antes de importar, pois caso o sistema não encontre as informações colocada, ele “NÃO” vai rejeitar a importação, ele vai somente deixar em branco, sem preenchimento. 
+Campos mencionados:
+a)Marca
+b)Tipo
+c)Modelo
+d)Tamanho 
+e)Estrutura 
+f)Banda de Rodagem     
+Arquivo modelo
+Segue abaixo o link para download de um arquivo modelo, importado com sucesso.
+ARQUIVO-MODELO-PNEUSBaixar
+Exportando Pneus
+Na tarefa 385887 disponibilizamos foi disponibilizado a operação de exportação.
+A exportação deverá gerar um arquivo CSV contendo as mesmas colunas que hoje esperamos no arquivo utilizado para importação.
+Obs : A exportação não possui filtro ou seja clicando no icone exportar o sistema exporta para um atrquivo CSV todos pneus cadastrado no sistema.
+###
+Erro: Cliente quer saber sobre gestão e manutenção de pneus no sistema, referente a Modelos dos Pneus.
+Solução: [Manutenção] Modelos dos Pneus
+Para cada situação e veículo podem existir modelos específicos de pneus. Sendo assim, no sistema temos a possibilidade de cadastrar todos os modelos utilizados pela empresa para que no cadastro de um pneu possa ser inserida essa informação.
+
+Assim como a ferramenta “Tipos de Pneus”, o cadastro dos “Modelos dos Pneus” pode ser um pouco subjetivo, ou seja, cada cliente pode ter um determinado entendimento sobre o que registrar em cada cadastro. Entretanto, para exemplificar o cadastramento de modelos de pneus, tomemos por base, por exemplo, os modelos Radial e Convencional, mas poderíamos, por exemplo, ter partido para o cadastro de modelos específicos de uma determinada marca de pneus.
+
+
+Diagonal (convencional)
+
+Os pneus diagonais são compostos principalmente por suas lonas interiores, no sentido diagonal ao centro do pneu, que são responsáveis pela capacidade de carga destes. A lona é uma camada dentro do pneu que pode ser construída com vários materiais, incluindo borracha, aço, nylon e fibra de vidro.
+
+A estrutura única maximiza a área de contato com o solo, aumentando a tração. Além disso, os pneus diagonais possuem uma excelente estabilidade graças à sua rigidez. As lonas múltiplas oferecem versatilidade e durabilidade, e essas lonas mudam com base no uso pretendido do pneu.
+Radial
+Os pneus radiais apresentam uma lona radial ao centro do pneu, que funcionam na direção horizontal ao deslocamento que é responsável pela capacidade de carga deste e mais algumas lonas no topo que são responsáveis pela resistência a furos e agressões. Esta estrutura garante menos aquecimento, maior performance do pneu e um percurso mais suave, ou seja, o operador trabalha mais confortavelmente.
+Pelo seu formato privilegiado, é um pneu inovador capaz de fornecer uma capacidade de carga superior, redução da compactação do solo, enquanto fornece uma melhor tração. O pneu radial garante uma elevada aderência ao piso. Ele é construído para fornecer vida útil mais longa, bem como melhor dirigibilidade e durabilidade.
+No geral, os pneus radiais possuem uma capacidade de carga elevada e um desgaste uniforme. Resiste bem a choques e instabilidades nos pisos.
+Configuração
+A configuração é realizada no menu Manutenção / Configurações / Domínios:
+É importante definir corretamente o “Nome Interno” utilizado na configuração, pois deve corresponder com o que desejamos cadastrar.
+Utilização
+Os modelos de pneus cadastrados no sistema são utilizados, principalmente, na ferramenta “Pneus”, onde são realizados os cadastros de pneus:
+[Manutenção] Tamanho dos Pneus
+O tamanho é uma característica importante a ser observada na aquisição de um pneu, sendo indicado sempre seguir o que determinar o manual do proprietário.
+As especificações (tipo, largura e altura) de um pneu são normalmente expressas em polegadas e impressas, pelo fabricante, na carcaça.
+Tomemos como exemplo um pneu 295/80 R22.5:
+295 corresponde à largura do pneu, indicada em milímetros. 
+80 quer dizer que a altura deste pneu é 80% da sua largura. Não existindo este número, significa que largura e altura se equivalem. 
+R informa que é um pneu de construção radial. Se não existir este “R”, o pneu é de construção diagonal – lona. 
+22.5 indica o aro em que o pneu será montado, em polegadas.
+Configuração
+Primeiramente, podemos configurar em Manutenção / Configurações / Domínios os tamanhos dos pneus que poderemos selecionar no sistema:
+É importante definir corretamente o “Nome Interno” utilizado na configuração, pois deve corresponder com o que desejamos cadastrar.
+Assim que cadastrados na ferramenta “Domínio” esses registros ficarão disponíveis no menu Manutenção / Configurações / Tamanho Pneu:
+Tamanhos de pneus cadastrados
+O cadastro dos tamanhos dos pneus também pode ser realizado diretamente na ferramenta Tamanho Pneu, mas desde que haja o registro da ferramenta na rotina “Domínios”, conforme demonstrado mais acima.
+Utilização
+Os tamanhos de pneus cadastrados no sistema são utilizados, principalmente, na ferramenta “Pneus”, onde são realizados os cadastros de pneus:
+Além de poder indicar o tamanho do pneu na ferramenta de cadastro, também é possível utilizar essa opção na emissão do Relatório de Pneus.
+###
+Erro: Cliente quer saber sobre gestão e manutenção de Pneus, na parte de Tipos de Pneus.
+Solução: [Manutenção] Tipos de Pneus
+Para cada situação e veículo existem tipos de pneus específicos. Sendo assim, no sistema temos a possibilidade de cadastrar todos os tipos utilizados pela empresa para que no cadastro de um pneu possa ser inserida essa informação.
+Conhecendo os tipos de pneus
+Para realizar a escolha correta dos pneus para o caminhão, é preciso ficar atento a dois fatores que influenciam nesse momento. O primeiro é o trajeto na qual ele realizará a maior parte da viagem e o segundo qual carga será transportada. Esses dois pontos influenciam diretamente na escolha, porém a velocidade média trafegada, e a posição da montagem também tem parte nos tipos de pneus ideais.
+Pneu de Alta Severidade
+Indicado para trajetos urbanos de transporte. Isso porque o percurso do caminhão exige manobras, maior aceleração e frenagem variadas. Caminhões que geralmente utiliza esse tipo de pneu são os de entregas que possuem diversos pontos de paradas durante seu caminho.
+Pneu de Baixa Severidade
+Para os caminhoneiros que andam com maior frequência em rodovias, o tipo de pneu ideal é o de baixa severidade, já que o mesmo é compatível com viagens longas em rodovias bem asfaltadas. Isso porque esses pneus auxiliam na velocidade e economia de combustível do caminhão. Tal tipo de pneu é utilizado em caminhões que realizam viagens longas, retas e em asfaltos com boas condições.
+Pneu de Média Severidade
+O tipo de pneu de média severidade é o mais utilizado por frotas de transporte no Brasil, visto que fica entre os dois citados anteriormente. Ele é o tipo mais indicado para trajetos regionais presentes no Brasil, que possuem grande número de aclives e declives.
+Pneu Misto
+Trajetos de asfalto e trechos de terra são ótimos com pneu misto, já que conseguem trafegar bem tanto em estrada de terra, como em asfalto. O caminhão que mais utiliza o pneu misto é o caminhão de lixo e o agrícola.
+Pneu Off road
+Os pneus off-road são utilizados geralmente por caminhões mineradores, já que são ideais para trafegar em locais acidentados, extremamente brutos, com pedras e terra.
+Obs.: podem existir outros tipos além dos citados aqui, bem como o cliente também pode ter outro entendimento sobre o que cadastrar na ferramenta Tipos de Pneus, uma vez que essa definição de “tipo” pode ser um tanto subjetiva.
+Configuração
+Primeiramente, podemos configurar em Manutenção / Configurações / Domínios os tipos de pneus que poderemos selecionar no sistema:
+É importante definir corretamente o “Nome Interno” utilizado na configuração, pois deve corresponder com o que desejamos cadastrar.
+Assim que cadastrados na ferramenta “Domínio” esses registros ficarão disponíveis no menu Manutenção / Configurações / Tipo Pneu:
+Tipos de pneus cadastrados
+O cadastro dos tipos de pneus também pode ser realizado diretamente na ferramenta Tipo Pneu, mas desde que haja o registro da ferramenta na rotina “Domínios”, conforme demonstrado mais acima.
+Utilização
+Os tipos de pneus cadastrados no sistema são utilizados, principalmente, na ferramenta “Pneus”, onde são realizados os cadastros de pneus:
+Além de poder indicar o tipo do pneu na ferramenta de cadastro, também é possível utilizar essa opção na emissão do Relatório de Pneus.
+###
+Erro: Cliente precisa de auxílio com manutenção e gestão de pneus, na parte de Indisponibilidade dos Pneus.
+Solução: [Manutenção] Indisponibilidade dos pneus:
+Quando um pneu não estiver disponível para utilização pelos equipamentos da empresa é possível definí-lo como indisponível no sistema.
+Um pneu pode ficar indisponível para utilização por vários motivos. Pode ser, por exemplo, porque sua vida útil terminou ou porque foi para o conserto. Quando essas situações ocorrem, o correto é que o usuário indique que o pneu está indisponível. Dessa forma, sistema não permitirá que o pneu seja utilizado por algum equipamento até que seja sinalizado como disponível novamente.
+Configuração
+No menu Manutenção / Configurações / Domínios podemos cadastrar as “justificativas” de indisponibilidades dos pneus.
+É importante definir corretamente o “Nome Interno” utilizado na configuração, pois deve corresponder com o que desejamos cadastrar.
+Essas “justificativas” ficarão disponíveis no menu Manutenção / Configurações / Indisponibilidades dos pneus.
+O cadastro das indisponibilidades dos pneus também pode ser realizado diretamente na ferramenta Indisponibilidades dos pneus, mas desde que haja o registro da ferramenta na rotina “Domínios”, conforme demonstrado mais acima.
+Definindo um pneu como indisponível para utilização
+Desde que o pneu não esteja alocado em nenhum equipamento é possível torná-lo indisponível pela ferramenta Pneus:
+Após salvar o registro ele aparecerá na listagem identificado como “Indisponível”:
+Em nosso exemplo o pneu foi indisponibilizado para uso pela empresa porque foi encaminhado para reparos. Então, quando ele retornar e puder ser novamente utilizado poderemos torná-lo disponível novamente:
+Também é possível tornar um pneu indisponível através do menu Manutenção / Pneus / Manutenção de Pneus.
+Nessa ferramenta o usuário pode buscar pelo equipamento que possui o pneu que deve ser inutilizado e então arrastá-lo para a opção “sucatear”:
+Depois dessa ação, o pneu já não constará mais no diagrama:
+E como podemos verificar na listagem da ferramenta Pneus, o pneu tornou-se indisponível.
+###
+Erro: Cliente precisa de ajuda com manutenção e gestão de pneus, no assunto Recapagem de Pneus.
+Solução: [Manutenção] Recapagem de pneus:
+A recapagem é uma técnica muito usada pelos motoristas para aproveitar por mais tempo os pneus de seu veículo. No material a seguir vamos ver como registrar no sistema as recapagens realizadas nos pneus cadastrados no módulo Manutenção.
+O que é recapagem de pneus?
+Trata-se de um procedimento realizado no mundo todo que substitui a borracha da banda de rodagem, gerando muita economia para o dono do veículo, seja uma empresa, seja uma pessoa física.
+Ela apareceu devido à possibilidade de reaproveitar com segurança a carcaça dos pneus, que são fabricados com estrutura para receber diferentes recapagens. Caso a carcaça esteja em bom estado, o produto pode receber mais de um recapeamento.
+Há dois tipos de recapagem de pneus:
+a quente: é usado o “camelback“, uma banda de rodagem crua que, ao ser colocada no pneu, dá origem a um desenho depois de submetida a um molde com temperatura de 150º C;
+a frio: é usado um pneu pré-moldado com um desenho e aplica-se uma cola no lado oposto àquele em que será aplicada a banda de rodagem nova (a banda e a carcaça se fundem a uma temperatura aproximada de 110º C).
+Configurações
+Primeiramente, podemos configurar em Manutenção / Configurações / Domínios os tipos de recapagens que poderemos selecionar no sistema:
+É importante definir corretamente o “Nome Interno” utilizado na configuração, pois deve corresponder com o que desejamos cadastrar.
+Assim que cadastrados na ferramenta “Domínio” esses registros ficarão disponíveis no menu Manutenção / Configurações / Tipos de Recapagem:
+O cadastro dos tipos de recapagem também pode ser realizado diretamente na ferramenta Tipos de Recapagem, mas desde que haja o registro da ferramenta na rotina “Domínios”, conforme demonstrado mais acima.
+Recapagens
+No menu Manutenção / Pneus / Recapagens podemos cadastrar as recapagens realizadas:
+Status do serviço: campo para o usuário informar se o registro que está criando no sistema é de uma recapagem que ainda está aguardando conclusão ou já foi concluída.
+Serviço pendente: indica que a recapagem ainda não está concluída.
+Serviço já realizado: indica que a recapagem já está concluída.
+Pneu: campo para informar um pneu cadastrado no sistema.
+Só é possível selecionar um pneu que esteja em estoque, ou seja, um pneu que não esteja alocado em um equipamento, não esteja pendente de conclusão de uma recapagem ou então indisponível por outro motivo.
+Enviado para serviço em: informar a data em que o pneu foi encaminhado para a realização do serviço de recapagem.
+Entrega prevista para / Recebido em: data de previsão da conclusão da recapagem ou a data de recebimento do pneu pós execução do serviço. A opção que estará disponível em tela dependerá de qual opção foi selecionada em “Status do serviço”.
+Valor: informar o valor do serviço.
+Profundidade: campo para informar a profundidade do sulco do pneu.
+Os sulcos são as ranhuras dos pneus. Elas são responsáveis pelo escoamento da água da chuva e por manter a aderência do veículo ao solo. Com o seu desgaste, o escoamento fica comprometido devido à pouca profundidade dos mesmos, e então o motorista começa a sentir dificuldades na frenagem em pista molhada. O pneu “careca” aumenta o risco de aquaplanagem (quando o motorista aciona os freios sem controle do veículo em pista molhada, deslizando no espelho d’água).
+A legislação trata o limite de 1,6mm como o ponto mínimo de borracha que o pneu deve ter para poder estar em uso.
+Tipo: campo para informar o tipo de recapagem realizada.
+Recapadora: identificação do fornecedor do serviço.
+Estoque: esse campo só estará disponível se o “Status do serviço” for Serviço já realizado.
+As opções para esse campo devem ser cadastradas em Manutenção / Configurações / Domínios, conforme exemplo:
+O cadastro deve ser feito conforme necessidade da empresa
+Observações.: campo de texto para informações gerais.
+Após o cadastro podemos ver o registro na listagem da ferramenta:
+Também é possível identificar as recapagens existentes e lançar novas diretamente na visualização do cadastro de um pneu (menu Manutenção / Pneus / Pneus):
+Manutenção de Pneus
+Uma outra forma de registro da recapagem no sistema é através do menu Manutenção / Pneus / Manutenção de Pneus. Nessa ferramenta pode-se selecionar o equipamento desejado e arrastar um pneu até a marcação “recapar”, desde que exista um diagrama de pneus configurado e os pneus devidamente alocados ao equipamento.
+Depois que o pneu for recolocado em uso novamente ele aparecerá no diagrama já identificado com uma recapagem realizada.
+###
+Erro: Cliente precisa de suporte para gestão e manutenção de pneus, no assunto Custo dos pneus.
+Solução: [Manutenção] Custos dos pneus:
+A ferramenta Custos registra de forma automática, além de permitir também o registro manual, os acontecimentos que se traduzem em custos/despesas relacionados aos pneus dos equipamentos da empresa.
+O sistema registra automaticamente gastos como a aquisição e recapagem de um pneu, porém o usuário também pode registrar manualmente outros valores como, por exemplo, algum serviços de borracharia.
+O custo com a aquisição de um pneu é registrado automaticamente na ferramenta Custo a partir da inserção de um novo pneu no sistema (através da ferramenta Pneus). A recapagem, se inserida no sistema através da ferramenta Recapagens, também alimenta a ferramenta Custos.
+Menu Manutenção / Pneus / Custos:
+Inserção manual de um custo
+Data: informar a data de ocorrência do gasto.
+Valor: informar o valor gasto.
+Pneu: campo para informar um pneu cadastrado no sistema.
+Só é possível selecionar um pneu que não esteja em uso, ou seja, um pneu que não esteja alocado em um equipamento.
+Exemplo do pneu disponível
+Fornecedor: identificação do fornecedor do serviço.
+Serv. Aplicado: campo de texto para descrever o serviço realizado.
+Obs.: campo de texto para informações gerais.
+Depois de cadastrado o custo é possível identificá-lo na listagem da ferramenta:
+Também é possível identificar os existentes e lançar novos custos de um pneu diretamente na visualização de seu cadastro:
+Identificando os custos no relatório de Pneus
+Os custos poderão ser vistos nos relatórios de pneus, pois neles existe uma coluna chamada “Custo Total Atual”, que representará exatamente o custo acumulado daquele determinado pneu.
+###
+
+
+
+
+
 
 
 
@@ -1123,6 +1296,7 @@ Solução: Sim, basta utilizar os filtros dentro da emissão do Contrato de fret
 Erro: Cliente reclamou que não estava aparecendo um CFOP específico, que era o 6932 - Prestação de serviço de transporte interestadual iniciada em UF diferente da do prestador (inter-estadual).
 Solução: Verifica o preenchimento do Ct-e e marca a caixinha para mostrar início e fim da prestação de serviço para verificar se a UF de início do frete é a mesma da empresa, se for dai realmente não vai aparecer esse CFOP. O Sistema sempre recomenda os CFOP conforme o que é preenchido. 
 ###
+
 
 
 
