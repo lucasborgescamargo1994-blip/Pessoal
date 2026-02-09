@@ -102,9 +102,7 @@ Erro: Como emitir um Mdf-e no sistema Bsoft TMS?
 Solução: Caso for emitir um MDf-e para um Ct-e, você pode criá-lo junto da criação do Ct-e marcando na guia Dados básicos a opção Criar Manifesto em Vínculo com Manifesto. Para gerar de forma manual o Mdf-e, basta no menu lateral esquerdo ir em Transporte, Manifesto de Carga ou pesquisar na barra de pesquisa do Menu por Manifesto de Carga. Clica no ícone + verde para adicionar que irá apresentar as seguintes opções de preenhcimento:
 
 Agência *	
- 
 Talão *	
- 
 Data de Emissão * 09/02/2026 09:17
 Número	
 Origem *	 
@@ -141,6 +139,9 @@ Responsável pelo Registro das Ocorrências no Aplicativo
 Responsável	
 Celular	
 Definir Seguradoras manualmente
+Definir Informações do Pagamento do MDF-e manualmente (obs. 
+A Nota Técnica 2025.001 estabelece a obrigatoriedade do preenchimento dos dados de pagamento no MDF-e, com vigência a partir de outubro.
+O preenchimento deste bloco será necessário sempre que o MDF-e possuir apenas um documento transportado ou quando o contratado for um TAC.)
 Definir CIOT manualmente Caso não informado manualmente, os CIOTs serão obtidos dos CT-es listados acima. Clique para visualizá-los
 Vale-Pedágio 
 Pago Por		Tipo de Dispositivo	Operadora de Vale-Pedágio / Empresa Fornecedora	Número do Comprovante	Valor do Pedágio	VPO ANTT
@@ -562,6 +563,7 @@ Solução: Sim, basta utilizar os filtros dentro da emissão do Contrato de fret
 Erro: Cliente reclamou que não estava aparecendo um CFOP específico, que era o 6932 - Prestação de serviço de transporte interestadual iniciada em UF diferente da do prestador (inter-estadual).
 Solução: Verifica o preenchimento do Ct-e e marca a caixinha para mostrar início e fim da prestação de serviço para verificar se a UF de início do frete é a mesma da empresa, se for dai realmente não vai aparecer esse CFOP. O Sistema sempre recomenda os CFOP conforme o que é preenchido. 
 ###
+
 
 
 
