@@ -660,6 +660,20 @@ R: Não, o serviço é exclusive para importação de NF-e.
 R: Não, o consumo não é acumulativo. Os créditos restantes não sobram para serem consumidos no mês seguinte.
 3 - É possível utilizar a Consulta Garantida via API? 
 R: Não, atualmente este recurso não está disponível.
+
+###
+Erro: Dúvidas referente ao VPO (Vale pedágio obrigatório).
+Solução: Segue informações sobre o VPO (Vale pedágio obrigatório):
+Quando é carga fracionada e o pedágio é cobrado junto com o frete, o valor do pedágio entra na base de calculo do ICMS? Se sim, porque?
+Sim, o valor do pedágio cobrado junto com o frete na modalidade de carga fracionada entra na base de cálculo do ICMS. 
+Isso ocorre porque, quando a transportadora assume o ônus do pagamento do pedágio e o debita ao tomador do serviço (o embarcador), essa importância é considerada uma despesa acessória que compõe o preço total da prestação do serviço de transporte, sobre o qual incide o ICMS. 
+Pontos-chave:
+Composição do Preço: Para fins de legislação do ICMS, todas as importâncias cobradas do cliente, mesmo a título de ressarcimento (como seguro, taxas e pedágio), integram a base de cálculo do imposto.
+Destaque no Documento: O valor do pedágio deve ser destacado no Conhecimento de Transporte Eletrônico (CT-e) em campo próprio, mas compõe o valor total da prestação de serviço e, consequentemente, a base de cálculo do ICMS.
+Exceção (Carga Lotação/VPO): A única situação em que o valor do pedágio não entra na base de cálculo do ICMS é quando se trata de transporte de carga completa (lotação) e o contratante (embarcador) fornece o Vale-Pedágio Obrigatório (VPO) de forma antecipada, conforme a Lei Federal nº 10.209/2001, pois nesse caso a transportadora não assume o ônus financeiro.
+Carga Fracionada: Na carga fracionada, a antecipação do VPO pelo embarcador não é obrigatória, e a prática comum é a transportadora incluir o custo do pedágio no valor total do frete, o que o torna tributável pelo ICMS. 
+
+
 ###
 
 
@@ -991,6 +1005,7 @@ Solução: Sim, basta utilizar os filtros dentro da emissão do Contrato de fret
 Erro: Cliente reclamou que não estava aparecendo um CFOP específico, que era o 6932 - Prestação de serviço de transporte interestadual iniciada em UF diferente da do prestador (inter-estadual).
 Solução: Verifica o preenchimento do Ct-e e marca a caixinha para mostrar início e fim da prestação de serviço para verificar se a UF de início do frete é a mesma da empresa, se for dai realmente não vai aparecer esse CFOP. O Sistema sempre recomenda os CFOP conforme o que é preenchido. 
 ###
+
 
 
 
