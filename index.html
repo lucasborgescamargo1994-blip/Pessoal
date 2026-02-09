@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <title>Bsoft TMS AI Chat - V5 Stable</title>
+    <title>Bsoft TMS AI Chat - V6 Mobile</title>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> 
     <style>
         :root {
             --primary-color: #2563eb;
@@ -33,7 +33,7 @@
         header {
             padding: 15px 20px; border-bottom: 1px solid #e2e8f0;
             display: flex; justify-content: space-between; align-items: center;
-            background: rgba(255,255,255,0.95); z-index: 10;
+            background: rgba(255,255,255,0.98); z-index: 10;
         }
         h1 { margin: 0; font-size: 18px; color: #1e293b; display: flex; align-items: center; gap: 8px; }
         .badge { font-size: 11px; background:#dcfce7; color:#166534; padding:3px 8px; border-radius:12px; font-weight: bold; }
@@ -90,21 +90,42 @@
         #searchInput { 
             flex: 1; padding: 12px 15px; border: 2px solid #e2e8f0; 
             border-radius: 24px; font-size: 15px; outline: none; transition: 0.2s;
+            -webkit-appearance: none; /* Remove bordas nativas iOS */
         }
         #searchInput:focus { border-color: var(--primary-color); }
         .send-btn { 
             width: 45px; height: 45px; background: var(--primary-color); color: white; 
             border: none; border-radius: 50%; cursor: pointer; font-size: 18px;
             display: flex; justify-content: center; align-items: center; transition: 0.2s;
+            flex-shrink: 0; /* Não encolher no mobile */
         }
         .send-btn:hover { transform: scale(1.05); background: var(--primary-hover); }
 
         /* Termos sugeridos */
-        .suggestions { padding: 8px 20px; background: #f1f5f9; font-size: 12px; white-space: nowrap; overflow-x: auto; border-top: 1px solid #e2e8f0; }
+        .suggestions { padding: 10px 20px; background: #f1f5f9; font-size: 12px; white-space: nowrap; overflow-x: auto; border-top: 1px solid #e2e8f0; -webkit-overflow-scrolling: touch; }
         .suggestions span { margin-right: 10px; color: #64748b; }
-        .suggestions a { color: #2563eb; text-decoration: none; cursor: pointer; margin-right: 8px; }
+        .suggestions a { 
+            color: #2563eb; text-decoration: none; cursor: pointer; 
+            margin-right: 8px; background: white; padding: 4px 10px; 
+            border-radius: 12px; border: 1px solid #e2e8f0; display: inline-block;
+        }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- OTIMIZAÇÃO MOBILE --- */
+        @media screen and (max-width: 600px) {
+            body { background: white; height: 100%; display: block; }
+            .main-container { 
+                width: 100%; max-width: 100%; height: 100vh; 
+                border-radius: 0; box-shadow: none; 
+            }
+            header { padding: 12px 15px; }
+            h1 { font-size: 16px; }
+            .message { max-width: 90%; font-size: 14px; padding: 10px 14px; }
+            .input-area { padding: 10px 15px 15px 15px; }
+            #searchInput { font-size: 16px; /* Evita zoom no iPhone */ padding: 10px 15px; }
+            .send-btn { width: 40px; height: 40px; font-size: 16px; }
+        }
     </style>
 </head>
 <body>
@@ -112,7 +133,7 @@
 <div class="main-container">
     <header>
         <h1>🤖 Suporte Bsoft <span class="badge">Online</span></h1>
-        <button onclick="checkPassword()" style="border:none; background:none; cursor:pointer; font-size:18px;">🔑</button>
+        <button onclick="checkPassword()" style="border:none; background:none; cursor:pointer; font-size:18px; padding: 5px;">🔑</button>
     </header>
 
     <div id="chatStream">
@@ -144,9 +165,9 @@
     const CORRECT_PASSWORD = "camargo02";
 
     let fileContent = "";
-    let chatHistory = []; // Memória da conversa
+    let chatHistory = []; 
 
-    // Sinônimos (COPIADO DA SUA LÓGICA FUNCIONAL)
+    // Sinônimos 
     const SINONIMOS = {
         "imprimir": ["gerar", "emitir", "visualizar", "danfe", "dacte", "damdf"],
         "gerar": ["emitir", "fazer", "imprimir", "criar"],
@@ -158,7 +179,6 @@
         "cliente": ["remetente", "destinatário", "tomador"]
     };
 
-    // --- INICIALIZAÇÃO ---
     window.onload = () => {
         loadData();
         const input = document.getElementById('searchInput');
@@ -175,44 +195,64 @@
             fileContent = await response.text();
             console.log("Banco carregado.");
         } catch (e) {
-            appendMessage('ai', "⚠️ Erro ao carregar banco de dados. O sistema funcionará apenas com IA Genérica.");
+            appendMessage('ai', "⚠️ Erro ao carregar banco de dados.");
         }
     }
 
-    // --- LÓGICA DO CHAT (MISTURA DA UX NOVA COM A LÓGICA ANTIGA) ---
+    // --- LÓGICA PRINCIPAL ALTERADA ---
     function handleChat() {
         const input = document.getElementById('searchInput');
         const query = input.value.trim();
         if (!query) return;
 
-        // 1. Exibir mensagem do usuário
         appendMessage('user', query);
         input.value = "";
 
-        // 2. Executar Lógica de Busca Robusta (A SUA LÓGICA)
         const results = searchDatabaseLogic(query);
-        let contextForAI = "Não há dados específicos no manual para esta dúvida.";
+        let contextForAI = "";
 
-        // 3. Se houver resultados, cria o Card Retrátil
+        // CENÁRIO 1: Encontrou no Manual
         if (results.length > 0) {
             createRetractableResultCard(results);
-            // Prepara texto para a IA
-            contextForAI = results.slice(0, 4).map(r => r.block).join("\n---\n");
+            contextForAI = `
+            CONTEXTO: O usuário perguntou algo que CONSTÁ no manual técnico.
+            DADOS DO MANUAL:
+            ${results.slice(0, 4).map(r => r.block).join("\n---\n")}
+            INSTRUÇÃO: Use as informações acima para responder.`;
+        } 
+        // CENÁRIO 2: Não encontrou (Fallback Inteligente)
+        else {
+            contextForAI = `
+            CONTEXTO: O usuário fez uma pergunta que NÃO consta no manual técnico interno (banco de dados vazio para este termo).
+            
+            INSTRUÇÃO OBRIGATÓRIA:
+            1. Use seu conhecimento geral de IA, mas RESTRITO EXCLUSIVAMENTE ao contexto de TRANSPORTADORAS, LOGÍSTICA e SISTEMAS TMS.
+            2. Tente ajudar com conceitos gerais de emissão, Sefaz ou transporte.
+            3. Se a pergunta for sobre um botão específico, erro de código interno ou algo que você não tenha certeza absoluta:
+            
+            COMANDO FINAL: Responda informando que não encontrou no manual e sugira: "Por favor, contate o seu líder imediato ou supervisor."
+            `;
+            
+            // Pequeno feedback visual
+            setTimeout(() => {
+                const stream = document.getElementById('chatStream');
+                const info = document.createElement('div');
+                info.style.cssText = "font-size:11px; color:#64748b; text-align:center; margin-bottom:10px;";
+                info.innerText = "🔍 Não encontrado no manual. Buscando na base de conhecimento geral de Logística...";
+                stream.appendChild(info);
+            }, 500);
         }
 
-        // 4. Chama a IA com Rotação de Modelos
         askAIWithRotation(query, contextForAI);
     }
 
-    // --- LÓGICA DE BUSCA (A QUE FUNCIONA) ---
+    // --- LÓGICA DE BUSCA (MANTIDA) ---
     function searchDatabaseLogic(query) {
         if (!fileContent) return [];
-        
         const qLower = query.toLowerCase();
         const stopWords = ["como", "fazer", "o", "a", "de", "do", "da", "em", "para", "erro", "no", "na", "está", "com", "queria", "saber"];
         let searchTerms = qLower.split(' ').filter(word => !stopWords.includes(word) && word.length > 2);
 
-        // Expansão de Termos
         let expandedTerms = [...searchTerms];
         searchTerms.forEach(term => {
             for (let chave in SINONIMOS) {
@@ -230,22 +270,17 @@
             if (!block.trim()) return;
             let score = 0;
             const blockLower = block.toLowerCase();
-
-            // Pontuação Pesada (Igual ao seu código)
             if (blockLower.includes(qLower)) score += 150;
             searchTerms.forEach(word => { if (blockLower.includes(word)) score += 40; });
             expandedTerms.forEach(word => { if (blockLower.includes(word)) score += 15; });
 
-            if (score > 0) {
-                scoredResults.push({ block, score });
-            }
+            if (score > 0) scoredResults.push({ block, score });
         });
 
-        // Ordenar por score
         return scoredResults.sort((a, b) => b.score - a.score);
     }
 
-    // --- FUNÇÕES DE UI (Card e Balões) ---
+    // --- UI ---
     function appendMessage(sender, text) {
         const stream = document.getElementById('chatStream');
         const div = document.createElement('div');
@@ -253,13 +288,12 @@
         div.innerHTML = text; 
         stream.appendChild(div);
         stream.scrollTop = stream.scrollHeight;
-        return div; // Retorna para podermos editar depois (ex: loading)
+        return div;
     }
 
     function createRetractableResultCard(results) {
         const stream = document.getElementById('chatStream');
         const id = "res-" + Date.now();
-        
         const div = document.createElement('div');
         div.className = "db-result-card";
         div.innerHTML = `
@@ -292,12 +326,10 @@
             .replace(/\n/g, ' ');
     }
 
-    // --- IA COM ROTAÇÃO DE MODELOS (DO SEU CÓDIGO) ---
+    // --- IA / API ---
     async function askAIWithRotation(question, context) {
-        // Balão de Loading
-        const loadingDiv = appendMessage('ai', '<em>🧠 Analisando manual e processando...</em>');
-
-        // Lista de modelos (Do seu código funcional)
+        const loadingDiv = appendMessage('ai', '<em>🧠 Processando...</em>');
+        
         const modelosParaTentar = [
             "gemma-3-27b-it", 
             "gemini-2.0-flash-lite",
@@ -305,12 +337,11 @@
             "gemini-pro"
         ];
 
-        // Histórico para Contexto (Limitado aos últimos 4 pares)
         const historyContext = chatHistory.slice(-4).map(h => `${h.role}: ${h.text}`).join('\n');
 
         async function tentarModelo(index) {
             if (index >= modelosParaTentar.length) {
-                loadingDiv.innerHTML = "❌ Todos os modelos estão ocupados ou indisponíveis. Tente novamente.";
+                loadingDiv.innerHTML = "❌ Todos os modelos estão ocupados. Tente novamente.";
                 return;
             }
 
@@ -323,44 +354,34 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         contents: [{ parts: [{ text: `
-                            Você é o Suporte Bsoft. 
-                            Manual Técnico (prioridade máxima):
+                            Você é o Suporte Especialista Bsoft TMS.
                             ${context}
                             
-                            Histórico da conversa:
+                            Histórico recente:
                             ${historyContext}
                             
                             Pergunta atual: ${question}
-                            Responda de forma técnica e amigável.
                         `}] }]
                     })
                 });
 
                 const data = await response.json();
-
                 if (!response.ok) throw new Error("Erro API");
-                if (!data.candidates) throw new Error("Sem resposta");
-
-                let aiText = data.candidates[0].content.parts[0].text;
                 
-                // Sucesso! Atualiza a mensagem de loading
+                let aiText = data.candidates[0].content.parts[0].text;
                 loadingDiv.innerHTML = aiText.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
-
-                // Salva no histórico
+                
                 chatHistory.push({ role: 'User', text: question });
                 chatHistory.push({ role: 'AI', text: aiText });
 
             } catch (e) {
-                console.warn(`Falha no modelo ${MODELO_ATUAL}, tentando próximo...`);
-                tentarModelo(index + 1); // Tenta o próximo recursivamente
+                console.warn(`Falha no modelo ${MODELO_ATUAL}, trocando...`);
+                tentarModelo(index + 1);
             }
         }
-
-        // Inicia a tentativa
         tentarModelo(0);
     }
 
-    // --- UTILS ---
     function checkPassword() {
         if (prompt("Senha:") === CORRECT_PASSWORD) window.open(GITHUB_PAGE_URL, '_blank');
     }
