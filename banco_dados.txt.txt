@@ -1,3 +1,117 @@
+//Assuntos setor Gestão:
+###
+Erro: Como fazer um plano de manutenção no Bsoft TMS?
+Solução: O Plano de manutenção do sistema é uma ferramenta para que o usuário seja alertado 
+de quando precisará realizar uma manutenção do veículo. 
+Nessa ferramenta apenas veículos controlados (Frota Própria) podem ser utilizados, 
+desta forma, na tela o veículo é selecionado como Equipamento. 
+Equipamentos que não são veículos também podem ser controlados. 
+Para criar o plano de manutenção você deve ir a tela Manutenção > Configurações > 
+Planos de Manutenção 
+Por padrão o sistema já vem configurado com dois planos de manutenção cadastrados 
+como exemplo, um para veículos de tração e outro para veículos reboque. 
+Ao clicar sobre o botão de adição ( + ), observamos a tela da seguinte forma: 
+Classificação: Pública 
+É por esta tela que vamos definir principalmente a quais tipos de equipamentos o 
+plano de manutenção vai servir. 
+Os campos Descrição serve para informarmos o nome/identificação do plano. Já o 
+campo Responsável serve para definirmos o nome de um responsável pela verificação 
+e funcionamento do plano. 
+Caso você deseje que um plano não seja mais exibido, poderá utilizar da ferramenta de 
+deixá-lo ativo ou não: 
+O campo Repetição, é um campo onde há mais de uma possibilidade de configuração: 
+Fixa: Define fixamente quais serão os dados referente à Medidor, Repetição e Quando 
+já dentro do Plano. 
+Sugerir para os itens: Sugere para os itens relacionados ao plano, mas ainda dá a 
+opção de mudar quando necessário. 
+Definida nos itens: Permite que apenas dentro do item seja definido como será 
+controlado o Medidor, Repetição e Quando. 
+Classificação: Pública 
+Dependendo da Repetição informada, ainda na mesma tela temos a opção do 
+preenchimento de mais campos. 
+O campo Medidor por exemplo, podemos definir como será o controle de medição, se 
+será pelo Km, por Hora ou a cada Tempo (em dias). 
+No campo Repetição abaixo do campo Medidor, podemos definir o seguinte: 
+Fixo (Sem repetição): Esta opção permite que seja feito o controle, sem que se repita 
+mais de uma vez. Como exemplo, podemos citar uma revisão de concessionária dos 
+primeiros 10 mil Km(s), a mesma acontecerá somente uma vez. 
+Periódica: Como o nome já nos indica, é definido o período em que vai ocorrer uma 
+repetição do mesmo. Como exemplo, podemos citar a troca de óleo de motor, feita a 
+cada tanto tempo/km. 
+Já o campo Quando, tem as seguintes possibilidades: 
+Classificação: Pública 
+Definidos os demais campos, podemos partir para a seleção de quais Tipos de 
+Equipamentos desejamos realizar o determinado controle, e para que o sistema 
+alerte. 
+Para definirmos, temos o seguinte campo: 
+Onde, tudo o que é passado à direita, poderá ser realizado o controle. 
+E por fim, podemos definir a qual empresa será referente este plano, e quais serão o(s) 
+e-mail(s) para notificação dos alertas do plano: 
+Ao realizar o cadastro do Plano com sucesso, partimos então para o cadastro de Itens 
+do Plano, cujo qual o sistema já redireciona para o cadastro em seguida: 
+ 
+Aqui, clicando em incluir, estaremos já dentro da criação de um Item referente ao 
+plano cadastrado.  
+No cadastro do Item, podemos definir a Descrição, seu Tipo, os Medidores e se 
+necessário, os demais campos como: Componentes, Serviços e Procedimentos. 
+Aqui temos um exemplo de um item de Troca de Filtros: 
+
+Sobre os Alertas referente às manutenções, é de extrema importância que a 
+configuração do Plano de Manutenção esteja bem definida, e que os procedimentos 
+internos de lançamentos de abastecimentos e viagens, estejam ocorrendo 
+perfeitamente. 
+Indo para a parte prática, vamos até a tela de Equipamentos no menu Manutenção > 
+Equipamentos. 
+Já de cara na tela, podemos verificar a seguinte coluna: 
+Esta coluna detalha, se há algum equipamento com um Alerta em aberto, onde não foi 
+tomado nenhuma ação em cima deste alerta. 
+Também temos a opção de filtrar nesta tela, apenas os equipamentos com alertas: 
+
+Para visualizarmos os alertas referentes a determinado equipamento, basta 
+selecionarmos ele e clicar sobre o botão de visualizar: 
+ 
+ 
+Já na tela do equipamento, podemos selecionar a aba Alertas: 
+ 
+Além de verificar os alertas existentes, aprovados e rejeitados dentro do equipamento, 
+podemos também assinalar/aprovar e rejeitar alertas por esta tela: 
+ 
+Ao clicar sobre a opção de Assinalar Execução, poderá informar a Leitura 
+(Km/horímetro) do veículo, a data e uma observação: 
+Para que os Alertas apareçam na Home do sistema, teremos que verificar uma breve 
+configuração. 
+ 
+Configuração esta que fica no menu Ambiente > Alertas > Tipos de Alertas. 
+ 
+Nesta tela, identificamos a opção com o Projeto Manutenção e a Descrição Alertas 
+dos Equipamentos, e clicamos em visualizar a mesma. 
+Já visualizando, verificamos quais usuários responsáveis por receber este tipo de 
+alerta, seja na tela inicial ou pelo e-mail: 
+ 
+ 
+Ainda no menu Manutenção, temos o relatório de Alertas: Manutenção > Relatórios > 
+Alertas dos Equipamentos. 
+Nesta tela de relatórios, possuímos vários filtros para que seja possível obter os alertas 
+em formato de relatório, para uma melhor visualização: 
+Este foi um breve manual sobre como utilizar o Plano de Manutenção dentro do 
+sistema. 
+Sugiro que realize diversos testes e explorem a ferramenta, que pode auxiliar bastante 
+no controle de manutenção em diversas situações. 
+E lembre-se, nunca é um adeus, apenas um até breve. 
+###
+
+
+
+
+
+
+
+
+
+
+
+
+
 ###
 Erro: Dúvidas referente aos documento que podem ser emitidos no sistema: Ct-e, Mdf-e, Notas fiscais (NF-e), NFS-e (Nota fiscal de Serviço).
 Solução: Segue abaixo todo um manual referente aos documentos fiscais que podem ser gerados no sistema:
@@ -1007,6 +1121,7 @@ Solução: Sim, basta utilizar os filtros dentro da emissão do Contrato de fret
 Erro: Cliente reclamou que não estava aparecendo um CFOP específico, que era o 6932 - Prestação de serviço de transporte interestadual iniciada em UF diferente da do prestador (inter-estadual).
 Solução: Verifica o preenchimento do Ct-e e marca a caixinha para mostrar início e fim da prestação de serviço para verificar se a UF de início do frete é a mesma da empresa, se for dai realmente não vai aparecer esse CFOP. O Sistema sempre recomenda os CFOP conforme o que é preenchido. 
 ###
+
 
 
 
