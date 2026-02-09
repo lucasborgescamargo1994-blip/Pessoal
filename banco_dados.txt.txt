@@ -795,7 +795,9 @@ Solução: Certo, se ele estiver dentro do prazo de cancelamento que é 8 horas 
 
 
 
-
+###
+Erro: Quer que preencha de forma automática a classificação tributária e CST dos novos impostos IBS e CBS.
+Solução: Vai em tipos de talões, edita o talão de Ct-e da empresa que deseja, e em "Sugestão de valores CBS e IBS" coloca o CST e Código de Classificação Tributária desejada.
 ###
 Erro: Ao criar múltiplos Conhecimentos com parâmetro de criação, pode apresentar um erro de natureza.
 Solução: No parâmetro de criação de CT-e a partir de NF-e, mudar a opção Frete para remetente.
@@ -1121,6 +1123,7 @@ Solução: Sim, basta utilizar os filtros dentro da emissão do Contrato de fret
 Erro: Cliente reclamou que não estava aparecendo um CFOP específico, que era o 6932 - Prestação de serviço de transporte interestadual iniciada em UF diferente da do prestador (inter-estadual).
 Solução: Verifica o preenchimento do Ct-e e marca a caixinha para mostrar início e fim da prestação de serviço para verificar se a UF de início do frete é a mesma da empresa, se for dai realmente não vai aparecer esse CFOP. O Sistema sempre recomenda os CFOP conforme o que é preenchido. 
 ###
+
 
 
 
