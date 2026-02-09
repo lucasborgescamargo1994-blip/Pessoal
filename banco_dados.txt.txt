@@ -161,6 +161,229 @@ A não conversão do RPS dentro do prazo legal pode acarretar penalidades.
 
 
 
+###
+Erro: Cliente perguntou a respeito de frete mínimo.
+Solução: Temos a cálculadora de frete mínimo que pode ser utilizada pelo link:
+https://bsoft.com.br/calculadora-de-frete-minimo-tabela-antt
+Aplicativo: Frete Mínimo desenvolvido pela Bsoft by nstech
+
+obs. Carga de Alto Desempenho:
+Tempo de operação: O tempo total para carga e descarga é de no máximo três horas.
+Responsabilidade: O contratante é responsável tanto pelo carregamento quanto pelo descarregamento da carga.
+Contrato: É necessário um contrato que comprove a prestação do serviço de transporte de alto desempenho. 
+###
+Erro: Cliente quer saber mais informações sobre diferença de Carga Lotação e Carga Fracionada.
+Solução: Diferença entre lotação e fracionada na prática:
+
+O que é Carga Lotação?
+A carga lotação (ou carga fechada) é caracterizada por: 
+Ocupação da totalidade do espaço ou capacidade do veículo por mercadorias de um único cliente (embarcador).
+O veículo segue diretamente do ponto de origem para um destino final único, sem desvios para outras coletas ou entregas intermediárias. 
+Nesse caso, geralmente, é emitido apenas um Conhecimento de Transporte Eletrônico (CT-e) para acobertar toda a carga. 
+
+O que é Carga Fracionada?
+A carga fracionada, por outro lado, ocorre quando: 
+O mesmo veículo transporta cargas de diferentes clientes (múltiplos remetentes e/ou destinatários).
+Há múltiplas coletas e/ou entregas, resultando em um trajeto com várias paradas. 
+
+###
+Erro: Cliente tinha dúvidas referente a controle de viagens no sistema Bsoft TMS.
+Solução: Segue manual sobre controle de viagens:
+Controle de Viagens
+
+Primeiro necessário cadastrar Modelos em Controle de Viagens, Configurações, Despesas, Modelos.
+Os Modelos servem como base para os cadastros de Tipos de Item, sendo uma informação obrigatória para cadastrar estes itens posteriormente.
+Modelos:
+·       Descrição: preencha com a descrição do Modelo;
+·       Fornecedor: define se o fornecedor é informado no lançamento ou se permanece fixo;
+·       Tipo do Documento: refere-se ao tipo de documento do Financeiro e define se o fornecedor é informado no lançamento ou se permanece fixo;
+·       Numeração: define o comportamento do campo “Número” no lançamento da despesa, podendo ser configurado para definir no lançamento ou seguir a numeração do tipo de documento. Também define se o campo é obrigatório;
+·       Tipo de Pagamento: define quais tipos de pagamento são permitidos no lançamento, podendo ser marcadas múltiplas opções (normalmente todas são marcadas, para que o cliente defina no momento de criar a despesa);
+·       Tipo de Item de Despesa Sugerido: indica se o sistema sugere um tipo de despesa para o lançamento e se essa sugestão pode ser editada (normalmente esse campo é deixado em branco);
+·       Integrar com Financeiro?: indica se há integração com o Financeiro e, em caso positivo, se será gerado um título a pagar ou um pagamento.
+Tipos de Item:
+Esse cadastro define realmente o que é a Despesa, se é Comissão, Abastecimento, etc
+·       Descrição: preencha com a descrição do Modelo.
+·       Tipo: define o tipo da despesa — Abastecimento, Multa, Comissões ou Outros. Essa definição também influencia o comportamento dos itens nos relatórios; por exemplo, Abastecimento é utilizado para cálculo de médias, enquanto Comissões são consideradas no Acerto do Motorista;
+·       Plano de Contas Gerencial: define se o plano gerencial pode ser informado no lançamento ou se permanece fixo;
+·       Apropriações Possíveis: define onde o tipo de item pode ser apropriado. Normalmente, todas as opções são habilitadas para que o cliente escolha no momento do lançamento;
+·       Hodômetro: define se o campo Hodômetro é de preenchimento obrigatório. Essa opção só fica disponível se, nas Apropriações Possíveis, estiver selecionado Veículo e/ou Veículo da Viagem;
+·       Valor: define se o valor será informado no lançamento ou se permanece fixo.
+
+Viagens
+Acessar Controle de Viagens, Configurações, Viagens.
+Primeiro Cadastrar Regras de Cálculo em Controle de Viagens | Configurações | Viagens | Documentos | Regras de Cálculo. Seleciona qual deseja e clica em Visualizar, na aba Cálculo de Despesas ou Receitas clica em adicionar.
+Cálculos de Despesas: obs. Geralmente utilizado para já vincular uma despesa fixa em todo CT-e ou colocar o pedágio como um custo da empresa por exemplo.
+·       Apropriar em: define onde essa despesa será apropriada;
+·       Tipo de Item: define qual Item de despesa já cadastrado será utilizado como Despesa;
+·       Fornecedor: define o Fornecedor da Despesa;
+·       Tipo de Documento: define o Tipo de Documento da Despesa;
+·       Expressão: define qual valor e qual será o cálculo que o Sistema buscará para o lançamento da Despesa.
+Classificações de Viagem:
+As Classificações de Viagem servem para classificar as viagens conforme a necessidade. Para cadastrar uma nova classificação, acesse o menu Controle de Viagens | Configurações | Viagens | Classificações de Viagem. Na tela, clique no botão “+” Adicionar.
+A única informação do Cadastro é a Descrição, sendo um cadastro simples apenas para um Controle interno.
+Regras de Comissionamento
+Possível parametrizar para gerar automaticamente as comissões do motorista, sendo possível configurar por faixa ou fixo.
+·       Descrição: nome da regra que será cadastrada;
+·       Aplicar em: define onde a regra será aplicada;
+o      Acertos de Motorista: aplica a regra nos acertos, podendo ser utilizada em mais de um documento e em múltiplas viagens;
+o      Documentos da Viagem: aplica a regra diretamente nos documentos da viagem, sendo possível configurar uma regra específica para cada documento;
+o      Viagens: aplica a regra à viagem como um todo, com a possibilidade de uma regra por viagem.
+·       Vigência: define o período de validade da regra (o campo de vigência final não é obrigatório);
+·       Tipo de Item de Despesa: define o item que será utilizado para o lançamento da despesa. É necessário que exista um item cadastrado com o tipo “Comissão”, e esse item deve ter um gerencial definido (Definir dentro da criação do Tipo de Item a Conta Gerencial como Fixo).
+Documentos
+Além dos campos marcados como obrigatórios, podemos configurar a obrigatoriedade dos campos Data de Saída/Data de Chegada e Km Inicial/Km Final através dos parâmetros controle_viagens_documentos_obrigatoriedade_datas e controle_viagens_documentos_km_inicial_final_obrigatorio.
+·       Tipo: define se será “Conhecimento” ou “Outros”; ao selecionar Conhecimento, será habilitado o campo para importação do conhecimento; ao selecionar Outros, serão habilitados os campos para preenchimento manual;
+·       Cliente: localize o cadastro de Pessoa para definir como Cliente;
+·       Número: informe o Número do Documento da Viagem;
+·       Data de Saída / Data de Chegada: define as Datas da Viagem realizada;
+·       Km Inicial / Km Final: deve ser informado a quilometragem do Veículo que realizou essa Entrega;
+·       Características do Frete: indica se há Frete de Retorno e/ou Frete Vazio; essas informações são exibidas no Espelho da Viagem/Acerto;
+·       Informações da Carga: permite o preenchimento das informações da Carga Transportada;
+·       Origem / Destino: campos obrigatórios que indicam a UF e a Cidade de Origem e Destino da Viagem;
+·       Observação: campo para inserir uma Observação relacionada ao Documento da Viagem;
+·       Receitas:
+o   Lançar Receita para o Documento: a receita será vinculada ao documento, permitindo o cálculo de comissões a partir dela (normalmente a opção mais utilizada);
+o   Lançar Receita para o Veículo: a receita será vinculada ao veículo; não fará parte do resultado da viagem e não permitirá o cálculo de comissões (opção menos utilizada).
+Obs: vale lembrar que quando define o Tipo “Conhecimento” existe a configuração de Receita automática que foi explicada anteriormente, no menu Controle de Viagens | Configurações | Viagens | Documentos | Regras de Cálculo | Cálculos de Receita. Caso marque para lançar receita novamente terá duas Receitas para um mesmo documento.
+Aba Manifestos
+Após a importação, os CT-es vinculados ao Manifesto são cadastrados automaticamente na aba Documentos, facilitando o processo de importação.
+Lançamento de Despesas
+Acessar controle de viagens, Despesas.
+Quando uma Despesa é lançada e associada a uma viagem, para gerar um Título de pagamento da mesma, basta selecionar em Controles de Viagens/Despesas, e clicar em Integração com o financeiro, Gerar Título a Pagar.
+Vínculo de Abastecimentos no Controle de Despesas
+Para vincular, basta clicar no ícone   , que fica em Manutenção/Abastecimentos.
+Se selecionar Veículo da Viagem, a Despesa será apropriada ao Veículo e será habilitada a opção para selecionar a Viagem à qual ela será vinculada.
+Vínculo de Notas de Entrada no Controle de Despesas
+Ir em Financeiro/Notas Fiscais/Notas Fiscais, seleciona a nota e clica em Gerenciar Despesa  .
+  Gerar Despesa: ao selecionar essa opção, será aberta a tela de Despesas - Inclusão, com os dados da Nota de Entrada já importados. Será necessário informar apenas o Tipo de Item, a Apropriação e o Tipo de Pagamento;
+Lançamento de Adiantamentos e Devoluções, Receitas e Recebimentos pelos Motoristas
+Acessar Controle de Viagens, Adiantamentos e devoluções.
+
+Receitas
+Para lançar Receitas acesse o menu Controle de Viagens | Receitas.
+As Receitas que foram criadas a partir dos Documentos da Viagem também aparecerão nessa tela. Nessa tela pode clicar no botão “+” Adicionar.
+Recebimento pelos Motoristas
+Para lançar os Recebimentos pelos Motoristas acesse o menu Controle de Viagens | Recebimentos pelos Motoristas.
+Essa função serve para quando o Motorista recebe o valor total ou parcial do Frete do seu cliente, ou seja, a receita vai primeiro para o Motorista e no acerto é repassado para a empresa o valor.
+Acertos de Motoristas
+Para acessar a tela de Acertos de Motoristas, vá ao menu Controle de Viagens | Acertos de Motoristas.
+Nesta tela, serão listados todos os acertos já realizados no sistema. Para criar um novo acerto, clique no botão “+ Adicionar”.
+Fazendo isso abrirá a tela de Acertos de Motoristas - Inclusão. Lembrando das Configurações Iniciais, aqui utilizaremos as Regras de Comissionamento.
+Dashboards
+Acessar Controle de Viagens, Dashboards, Gestão Operacional.
+Relatórios
+Acessar Controle de Viagens, Relatórios.
+Relatório de acerto de motoristas tem dois modelos, o Listagem de Acertos - Saldo de Acertos trás formato de lista, Análise de Resultado é um modelo analítico.
+
+
+###
+Erro: Cliente tem dúvidas referente a lançamentos financeiros no sistema Bsoft TMS, que se referem a Títulos/Duplicatas a receber/pagar.
+Solução: Segue manual referente a títulos/duplicatas a receber/pagar:
+Títulos a receber/pagar
+Previsão: 
+Serve como o próprio nome diz, gerar um recebimento ou despesa previsto o qual ainda não sabemos o valor e/ou data deste lançamento. O mesmo fica com cor amarelo. Posteriormente pode ser editado e alterado para previsão não e salvar com o valor de parcela e/ou vencimentos conforme realidade.
+Múltiplas faturas: 
+Serve para recebimentos/despesas recorrentes, como por exemplo fatura de água e luz, e também para caso de financiamentos longos e consórcio.
+Condição de pagamento: 
+Recomendado para despesas/recebimentos de curto prazo, os quais geralmente não se alteram. Porque se colocar um financiamento de 72 parcelas nessa modalidade e houver por exemplo uma renegociação, é necessário reabrir todas as parcelas pagas para poder alterar uma por uma, o que causa grande trabalho e na função Múltiplas faturas não gera esse problema.
+Realizar Lançamentos:
+Financeiro, Títulos a Pagar/Receber, Títulos a Pagar/Receber.
+Consulta Títulos a pagar/receber:
+Para consultar os títulos a pagar filtrados por vencidos ou a vencer, ideal em Financeiro, Títulos a Pagar/Receber, Lotes / Duplicatas a Pagar/Receber.
+Consulta de lançamentos de pagamentos/recebimentos efetivados:
+Financeiro, Caixa e Bancos, Consulta Lançamentos.
+
+Transferências:
+ Pode ser realizado em Financeiro, Caixas e Bancos, Transferências.
+Pode ser consultado a transferência em Financeiro, Caixas e Bancos, Consulta Lançamentos.
+
+
+Gerencial e Apropriação (Centro de Custo):
+Para lembrar as definições desses cadastros, lembre:
+Gerenciais = O QUE (Qual tipo de despesa/receita ou frete)
+Apropriação (Centro de Custo) = PARA QUEM (Para situações não detalhadas geralmente coloca a empresa, para quem precisa um controle maior coloca detalhado, por exemplo despesa de combustível, com o veículo placa tal). A apropriação vai para o centro de custo, que fica separado das contas gerenciais. A ideia é não bagunçar ambos e ter um controle maior e detalhado conforme o cliente precisar.
+
+
+IMPORTANTE!
+Os Gerenciais de Prefixo 1 são referente as Receitas (devem ser usados nos Títulos a Receber);
+Os Gerenciais de Prefixo 2 são referente as Despesas (devem ser usados nos Títulos a Pagar).
+IMPORTANTE!
+Cada Empresa, Agência ou Placa de Frota Própria cria automaticamente um Centro de Custo (Apropriação), com isso não é necessária a criação manual para esses casos.
+
+Notas Fiscais
+
+Pode ser usado para registrar entrada de notas emitidas por terceiros ou emissão própria. Para emitir é necessário ter cadastrado o Modelo de Notas e Tipos de Operações (cadastro de CFOP).
+Cadastro Modelos de Notas:
+ Acessar Financeiro, Configurações, Fiscal, Modelos de Notas.
+Cadastro dos Tipos de Operações:
+Acessar Financeiro, Configurações, Fiscal, Tipos de Operações.
+O cadastro dos Tipos de Operações deve ser realizado de acordo com o controle desejado pelo cliente. 
+O sistema já traz 4 modelos padrões cadastrados: 
+• 0000 Entrada Simples: não realiza nenhum controle, apenas a entrada;
+• 0000 Financeiro: para controle de contas a pagar;
+• 0000 Estoque: para gerar movimentações de entrada de mercadorias;
+• 0000 Financeiro / Estoque: geração de contas a pagar e movimentação de estoque.
+Para controle de estoque é necessário ter cadastrado um almoxarifado, para gerenciar o mesmo acessar Estoque | Configurações | Almoxarifados. Também é necessário selecionar o Tipo de Operação configurado adequadamente para realizar movimentação de estoque.
+Com tudo configurado, já pode ser emitida a nota fiscal por esses três modos:
+• Via lançamento manual (sem utilização de arquivo XML): 
+Acessar Financeiro, Notas Fiscais, Notas Fiscais e adicionar.
+Após colocar os dados obrigatórios, basta clicar em cadastrar. Na sequência deve colocar os produtos vinculados a nota:
+• CFOP: CFOP do item da nota. Esse campo é meramente informativo e não determina o comportamento da nota. Ao deixar vazio é preenchido automaticamente com o CFOP principal da nota;
+• Almoxarifado: fica visível caso utilize um Tipo de Operação para controle de Estoque, esse campo determina para qual Almoxarifado a mercadoria deve ser alocada;
+• Família: este campo serve apenas para restringir os resultados da pesquisa do campo "Produto" a seguir. Não é de preenchimento obrigatório;
+• Produto: campo que indica o produto que está sendo dado a entrada. Caso o produto ainda não esteja cadastrado, é necessário cadastrá-lo clicando no ícone de adição (+) ao lado.
+• Descrição Item: descrição do produto que está sendo dada entrada;
+• Quantidade: quantidade do produto;
+• Unidade: unidade de medida do produto;
+• V. Unitário: valor unitário do produto. É possível informar o valor unitário e a quantidade e o sistema calcular o valor total, ou ainda, é possível informar a quantidade e o valor total e o sistema calcular o valor unitário;
+• V. Total: valor total do item (quantidade x valor unitário).
+Se você estiver usando uma operação configurada para gerar um lançamento financeiro, os campos do quadro Apropriação são habilitados para preenchimento do Gerencial e Centro de Custo.
+
+• Através da importação de um arquivo XML (a ferramenta Notas Fiscais permite a importação de XML de NF-e e de CT-e);
+Acessar Financeiro, Notas Fiscais, Notas Fiscais e no ícone Importar NF-e  . Após escolhe arquivo, coloca Modelo, Natureza Operação e Almoxarifado. Ao realizar essa ação, caso o Produto e a Unidade de medida não estejam cadastrados no sistema, alertas são exibidos na tela, para o usuário realizar os cadastros. Esses cadastros podem ser feitos vinculando-os a unidades/produtos já existentes ou criando novos cadastros sem copiar os dados de outro. Após clicar em Enviar Arquivo, pode solicitar as seguintes mensagens:
+ALERTA DE UNIDADE DE MEDIDA:
+ 
+
+Vincular a unidade existente: essa funcionalidade é empregada quando o sistema não identifica uma unidade correspondente àquela indicada na Nota Fiscal Eletrônica (NF-e), mas já possui uma unidade de medida cadastrada. Por exemplo, no sistema pode estar cadastrada a unidade de medida "T" para tonelada, enquanto na NF-e foi mencionado "TON". Ao selecionar essa opção, o usuário deve indicar qual cadastro será utilizado como referência para criar o novo registro;
+ 
+Cadastrar nova unidade: um novo cadastro é realizado, onde é necessário selecionar a categoria correspondente: massa, volume, quantidade ou comprimento. Em seguida, insira a descrição correspondente que deseja que seja registrada no sistema.
+ 
+
+ALERTA DE PRODUTO:
+ 
+
+Cadastrar: essa opção abre a tela de cadastro manual de produtos, onde devem ser preenchidos os campos necessários;
+Cadastrar produto com base em produto já existente: essa opção é válida para quando a empresa tiver um produto genérico com configurações básicas que qualquer cadastro de produtos que ela realize precise ter. Dessa forma, ao escolher um produto base para que o novo item seja cadastrado, o sistema criará um novo produto replicando as mesmas informações contidas naquele usado como base. Para fazer a vinculação clicamos na opção destacada na imagem acima e selecionamos o produto que servirá de base para o novo cadastro.
+ 
+
+Após salvar o cadastro basta continuar com a importação da nota normalmente.
+Vincular a um produto existente: é possível vincular o produto a um produto que já esteja cadastrado no sistema. Dessa forma, evita-se ter um mesmo produto cadastrado diversas vezes com apenas algumas variações em suas descrições.
+ 
+
+Esta opção, "Vincular a um produto existente", somente é exibida se o emissor da nota que está sendo registrada já estiver cadastrado na ferramenta Pessoas. Isso porque, ao realizar esse vínculo, também vincula o código do produto ao fornecedor. Assim, ao importar uma nota que inclua um produto cujo código já esteja vinculado a um produto existente no sistema, a tela de notas não emitirá um alerta ao usuário, pois o produto já está registrado.
+Após concluir o cadastro do produto, é necessário clicar no botão "Importar NF-e" para registrar a Nota Fiscal Eletrônica (NF-e) correspondente ao produto cadastrado.
+
+• Via repositório de NF-e (caso o cliente possua o nsdocs). 
+Através do Menu Financeiro/Notas Fiscais/Notas Fiscais: Acessar Financeiro, Notas Fiscais, Notas Fiscais e no ícone Importar NF-e  . Na opopção Repositório NF-e Recebidas buscar pela nota a ser importada. Caso tiver mais de 100 notas refinar a busca para que possa ser encontrada. 
+Então é exibida a tela para de Alteração da Nota Fiscal. Confira se todas as informações estão corretas. Caso esteja utilizando uma operação com lançamento de Contas a Pagar, é necessário informar uma Condição de Pagamento. E após Salvar a inclusão, na aba Rateios, é necessário informar o "Gerencial" e a "Apropriação".
+Através do menu nsdocs | Repositório de NF-e: Existem duas formas para criar a NF-e no módulo financeiro:
+ Selecionar a NF-e desejada e clicar no botão "Criar NF-e no Módulo Financeiro". Vai no menu nsdocs, Repositório NF-e, seleciona a nota e clica na opção Criar NF-e no módulo Financeiro . Após isso só preencher Modelo, Natureza e Amoxarifado e criar NF-e.
+
+Selecionar a NF-e desejada e clicar com o botão direito do mouse, em seguida escolher a opção "Criar NF-e no Módulo Financeiro".
+
+
+
+Em seguida, clique em Salvar e depois em Gravar para finalizar o processo.
+###
+ 
+
+
+
+
+
+
+
 
 ###
 Erro: Como cadastrar minha empresa no sistema?
@@ -728,6 +951,7 @@ Solução: Sim, basta utilizar os filtros dentro da emissão do Contrato de fret
 Erro: Cliente reclamou que não estava aparecendo um CFOP específico, que era o 6932 - Prestação de serviço de transporte interestadual iniciada em UF diferente da do prestador (inter-estadual).
 Solução: Verifica o preenchimento do Ct-e e marca a caixinha para mostrar início e fim da prestação de serviço para verificar se a UF de início do frete é a mesma da empresa, se for dai realmente não vai aparecer esse CFOP. O Sistema sempre recomenda os CFOP conforme o que é preenchido. 
 ###
+
 
 
 
