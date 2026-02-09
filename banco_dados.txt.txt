@@ -267,8 +267,246 @@ Também é possível identificar os existentes e lançar novos custos de um pneu
 Identificando os custos no relatório de Pneus
 Os custos poderão ser vistos nos relatórios de pneus, pois neles existe uma coluna chamada “Custo Total Atual”, que representará exatamente o custo acumulado daquele determinado pneu.
 ###
+Erro: Cliente precisa saber como faz lançamentos referente a abastecimentos no sistema Bsoft TMS.
+Solução: [Manutenção] Abastecimentos Gerais:
 
-
+Embora existam ferramentas específicas para registro de abastecimentos próprio e realizados em terceiros, o sistema também conta com um local que serve como uma espécie de atalho para os dois controles citados e permite centralizar os lançamentos de abastecimentos.
+A ferramenta em questão fica no menu Manutenção / Abastecimentos Gerais e possibilita aos usuários lançamentos de abastecimentos realizados em terceiros e os abastecimentos próprios:
+Opção “Adicionar abastecimento terceiros”
+Opção “Adicionar abastecimento próprio”
+Ao acessar cada uma das opções o usuário vai se deparar com as mesmas telas das ferramentas Abastecimentos e Abastecimentos Próprios, respectivamente.
+Cada registro feito utilizando essas ferramentas fica disponível na listagem da Abastecimentos Gerais:
+Um registro feito diretamenta na ferramenta Abastecimentos e que consta em Abastecimentos Gerais
+###
+Erro: Cliente precisa de auxílio com o App Gestor, na parte de manuteção.
+Solução: APP Gestor – Manutenção:
+O APP Gestor é o aplicativo onde o cliente pode utilizar o sistema através de seu dispositivo móvel (smartphone ou tablet) para acompanhamento gerencial de suas operações.
+O app conta com a possibilidade de acompanhamento de informações dos módulos Financeiro, Transporte, CRM, Ordens de Serviço e Manutenção, sendo que no presente material vamos focar no Manutenção (CMMS).
+Ativação do projeto na área do cliente
+O primeiro passo é a ativação do projeto APP Manutenção na área do cliente, pois sem ele não há como ter acesso aos dados do módulo Manutenção no aplicativo. Essa ativação deve ser realizada após negociação comercial.
+Liberação de rotinas aos usuários
+Outro ponto que deve ser observado é a liberação de acesso às rotinas específicas do app para o módulo Manutenção aos usuário que utilizarão o aplicativo. São elas:
+Abastecimentos (manutencao_app_abastecimentos)
+Alertas (manutencao_app_alertas)
+Documentos (manutencao_app_docsEquipamentos)
+Financeiro do Equipamento (manutencao_app_financeiroEquipamento)
+KPIs (manutencao_app_kpi)
+Pneus (manutencao_app_pneus)
+Instalação
+Acesse a loja de aplicativos de seu dispositivo móvel (Android ou iOS), localize o aplicativo DATAMEX ou BSOFT e faça a instalação.
+Acessando o aplicativo
+Após realizar a instalação do app, quando o usuário abri-lo pela primeira vez será solicitado o domínio a ser utilizado, que corresponde ao endereço do sistema. Exemplo: datamex.e-login.net / sistema.bsoft.app
+Após inserir o domínio, informe o seu usuário e senha de acesso (é a mesma utilizada para acessar o sistema).
+A seguir temos a tela inicial do aplicativo:
+Utilização
+Clicando no menu e indo na opção Manutenção teremos as ferramentas disponíveis para esse módulo:
+Financeiro do Equipamento
+Essa opção é utilizada para que o gestor possa fazer uma análise de resultado por equipamentos. As informações serão obtidas a partir dos lançamentos financeiros (títulos a pagar, títulos a receber, pagamentos e recebimentos)  apropriados aos centros de custos vinculados nos equipamentos.
+Ao acessar a ferramenta será apresentado o formulário para preenchimento dos requisitos que serão levados em consideração para demonstrar as informações.
+É possível definir um equipamento ou grupo de equipamentos específico ou então deixar esses campos vazios para que o sistema considere todos os equipamentos cadastrados.
+Além disso, também é possível indicar o período desejado para análise.
+Caso existam informações, o sistema mostrará a lista de equipamentos que possuem lançamentos financeiros no período e o resultado de cada um:
+Clicando no ícone destacado abaixo o sistema permite ao usuário definir se quer considerar eventuais títulos lançados como previsões:
+Clicando em um equipamento é possível ter um detalhamento das informações como total de litros de combustível abastecidos, quilometragem rodada, média de consumo, custo médio por km rodado, receita média por km rodado e resultado financeiro por km rodado:
+Uma vez no detalhamento das informações de um equipamento ainda é possível verificar quais lançamentos compõem as saídas e as entradas. Para isso basta clicar em uma das opções (em Saídas ou em Entradas):
+Nesse exemplo clicamos em Saídas e o sistema está mostrando a origem do valor
+Clicando na linha desejada o app mostrará a lista de lançamentos onde aquela conta gerencial foi utilizada:
+Pneus
+Essa opção é utilizada para uma análise referente aos pneus dos equipamentos. São mostrados os principais indicadores: pneus que mais rodaram, os com maior número de recapagens, os com maior custo e a vida média com base na marca dos pneus.
+Ao acessar a ferramenta o usuário pode optar pela Visão Padrão, que mostrará os principais indicadores, ou então pelo Formulário, onde poderá buscar informações com base em informações determinadas.
+Visão Padrão
+Ao clicar no indicador desejado o app mostrará mais informações:
+Alguns indicadores ainda possuem um detalhamento quando o usuário clica na linha desejada:
+Formulário
+Já na opção Formulário é possível definir os critérios desejados para visualizar apenas as informações dos pneus desejados:
+Já na listagem com os pneus apresentados é possível clicar naquele desejado para visualizar suas informações:
+Abastecimentos
+Essa opção é utilizada obter a relação de abastecimentos realizados em determinado período.
+Ao acessar a ferramenta será apresentado o formulário para preenchimento dos requisitos que serão levados em consideração para demonstrar as informações.
+É possível definir um equipamento ou grupo de equipamentos específico ou então deixar esses campos vazios para que o sistema considere todos os equipamentos cadastrados.
+Além disso, também é possível indicar o período desejado para análise.
+De acordo com o preenchimento do formulário as informações serão disponibilizadas.
+No Resumo Geral o app mostra, em relação ao período definido, a quantidade de quilômetros percorridos pelos equipamentos (ou horas trabalhadas, caso o equipamento tenha um medidor de horas), a quantidade abastecida e o valor monetário total correspondente aos litros abastecidos.
+IMPORTANTE: no quadro Resumo Geral as informações são montadas desconsiderando o primeiro abastecimento do período.
+Veja abaixo o relatório do sistema para melhor entendimento:
+Os valores destacados na coluna Litros representam os 135 litros apresentados no Resumo Geral.
+Os valores destacados na coluna Valor representam os R$810,65 apresentados no Resumo Geral.
+Os valores destacados na coluna Uso representam os 255km apresentados no Resumo Geral.
+No quadro com a listagem de equipamentos é possível ver informações como a descrição do equipamento, a média de consumo, o uso (quilometragem rodada no período), o total de litros abastecidos e o valor gasto com os abastecimentos.
+Note que diferentemente do quadro Resumo Geral a listagem dos equipamentos considera os valores totais de litros abastecidos no período e também o valor.
+Clicando em um dos equipamentos é possível obter um detalhamento ainda maior das informações relacionadas a ele:
+Também é possível obter as informações de cada abastecimento, basta clicar em uma das linhas:
+Alertas
+Nessa opção é possível identificar os alertas gerados para cada equipamento.
+Ao acessar a ferramenta serão apresentadas a quantidade de equipamentos com alertas e o total de tipos de alertas:
+Ao clicar em Equipamentos com alertas o app vai detalhar as informações, sendo que na parte superior temos um gráfico demonstrando qual equipamento possui a maior quantidade de alertas:
+Clicando em qualquer equipamentos é possível verificar quais os alertas estão ativos:
+Já na opção Tipos de alertas veremos os tipos de alertas que representam os alertas ativos nos equipamentos. Assim como a opção anterior, essa também conta com um gráfico apresentando a fatia que cada tipo de alerta representa do total de alertas ativos.
+Clicando em um dos tipos de alertas será mostrado quais equipamentos possuem esse tipo de alerta ativo, bem como a data em que esse tipo de alerta foi gerado e a quilometragem ou horas que o equipamentos possuía na ocasião:
+Documentos
+Aqui podemos verificar a relação de documentos dos equipamentos, sejam eles vencidos ou a vencer.
+Ao acessar a ferramenta serão apresentadas a quantidade de documentos vencidos e a vencer:
+É importante destacar que é possível definir se a apresentação dos documentos a vencer será com base nos próximos 30 ou 60 dias:
+Acessando a opção Vencidos veremos a relação dos documentos vencidos, bem como o equipamento ao qual pertencem:
+Acessando a opção A vencer também temos a relação dos documentos a vencer e o equipamento ao qual pertencem:
+KPIs
+A opção KPIs conta, atualmente, com um dashboard mostrando a Idade média da frota de equipamentos da empresa:
+Clicando no dashboard o app mostrará quantos veículos estão ativos na frota da empresa, o veículo mais antigo, o mais novo e se há algum veículo sem o Ano/modelo preenchido (no cadastro de Veículos do menu Transporte).
+###
+Erro: Cliente precisa de ajuda na parte de Manutenção, gestão de Multas.
+Solução: [Manutenção] Multas:
+No módulo Manutenção temos uma ferramenta específica para registro e controle de autuações de trânsito (multas) aplicadas aos veículos e seus condutores.
+O controle das multas tem integração com o módulo Financeiro. Dessa forma, podemos gerar títulos a receber (para situações onde a empresa vai ser reembolsada pelo motorista que cometeu a infração) e títulos a pagar (para casos em que a própria empresa realizará o pagamento da multa).
+Configurações iniciais
+Primeiramente, é preciso configurar as contas gerenciais que serão utilizadas pelo sistema para a eventual criação do título a apagar ou a receber a partir do registro de uma multa. Além disso, também é possível definir via parâmetro o tipo de documento que será utilizado na criação dos títulos.
+Parâmetros que precisam ser configurados:
+Código gerencial do titulo a pagar da multa (man_codigoGerencialTituloAPagarMulta)
+Código gerencial do título a receber da multa (man_codigoGerencialTituloAReceberMulta)
+Tipo de documento dos títulos a pagar/receber da multa (man_tipoDocumentoTitulosMulta)
+Tipos de Infrações
+Primeiramente, vejamos como cadastrar os tipos de infrações que poderão ser utilizadas, pois é informação obrigatório no cadastro de uma nova multa.
+Acessar o menu Manutenção / Multas / Tipos de Infrações e clicar em “Adicionar”:
+Código: você pode informar o código que vem descrito no próprio auto de infração ou então utilizar uma codificação própria para a empresa.
+Descrição: descrever o auto de infração (ex: excesso de velocidade, estacionar em local proibido, etc). Essa informação costuma constar no auto de infração.
+Classificação: classificar a infração entre leve, média, grave e gravíssima.
+Pontos: o próprio sistema sugere os pontos que cada classificação de infração gera na CNH do motorista, mas a informação pode ser modificada pelo usuário.
+Valor: campo para determinar o valor da infração.
+Após o cadastro temos o tipo de infração na listagem da ferramenta:
+Multas
+Os registros de multas em si são inseridos no sistema através do menu Manutenção / Multas / Multas, conforme exemplo:
+Veículo: campo para definição da placa do veículo autuado. Os registros disponíveis são os cadastrados no menu Manutenção / Equipamentos.
+Condutor infrator: informar o nome do motorista do veículo.
+Auto de infração: informar o código que consta no auto de infração.
+Infração: informar o tipo de infração, que já deve ter sido previamente cadastrado no menu Manutenção / Multas / Tipos de Infrações.
+Ocorrida em: informar a data/hora da infração.
+Classificação: se no cadastro do Tipo de Infração já constar a classificação, esse campo será preenchido automaticamente, senão basta informar a classificação correta.
+Pontos: se no cadastro do Tipo de Infração já constar a pontuação, esse campo será preenchido automaticamente, senão basta informar a pontuação correta.
+Valor da infração: se no cadastro do Tipo de Infração já constar o valor da infração, esse campo será preenchido automaticamente, senão basta informar o valor correto.
+Desconto (%): campo para determinar se há algum percentual de desconto para pagamento da infração.
+Valor: campo preenchido automaticamente pelo sistema já calculando o valor de desconto, caso exista.
+Vence em: informar a data de vencimento da multa.
+Situação do reconhecimento do condutor: permite indicar a situação do motorista perante a multa.
+Recebida em: informar a data de recebimento do auto de infração.
+CEP: informar o CEP do local onde ocorreu a infração.
+UF: UF onde ocorreu a infração.
+Cidade: campo preenchido automaticamente pelo sistema com base no CEP e UF indicados.
+Bairro: campo preenchido automaticamente pelo sistema com base no CEP e UF indicados, mas que pode ser corrigido pelo usuário, caso necessário.
+Endereço: campo preenchido automaticamente pelo sistema com base no CEP e UF indicados, mas que pode ser corrigido e/ou complementado pelo usuário.
+Órgão responsável pelo recolhimento: informar o órgão que receberá o pagamento (por exemplo, se a multa foi aplicada por agentes municipais de trânsito o órgão será a prefeitura da cidade). O cadastro deve ser realizado na ferramenta Pessoas e não está condicionado ao vínculo com um grupo específico de Pessoas.
+Órgão autuador: informar qual órgão foi responsável pela autuação (por exemplo, pode ter sido polícia militar, polícia rodoviária estadual ou federal, secretaria municipal de trânsito, entre outros).
+Descrição do agente autuador: campo de texto livre onde pode ser preenchido o nome da pessoa que aplicou a autuação.
+Pago por: informar se a autuação será paga pelo condutor do veículo, pela própria empresa ou pelo cliente.
+Pagador: campo para informar o nome da pessoa ou empresa que realizará o pagamento. Se no campo anterior for informador “Condutor”, o nome do motorista será preenchido automaticamente.
+Recurso enviado em: informar a data de envio do recurso para o órgão responsável.
+Recurso retomado em: informar a data da resposta disponibilizada pelo órgão para onde foi enviado o recurso.
+Observação: campo livre para qualquer informação que o usuário acredite ser importante.
+Uma vez que a multa tenha sido cadastrada ela poderá ser acessada através da listagem da ferramenta e até que seja realizada alguma das ações disponíveis sua situação constará como “Registrada”:
+Ações disponíveis
+Ao selecionar um registro o sistema dá as seguintes possibilidades:
+Aguardar recurso: ao utilizar essa opção o sistema vai solicitar ao usuário a data de envio do recurso para o órgão responsável. A data informada será automaticamente preenchida no campo “Recurso enviado em”, que pode ser visto na visualização ou edição da multa.
+Confirmar: confirmar a multa significa informar ao sistema que é uma multa que precisará ser efetivamente paga. A confirmação poderá se dar, por exemplo, devido ao indeferimento do recurso ou simplesmente porque a autuação será paga mesmo sem a tentativa do recurso.
+Cancelar: o cancelamento poderá ser utilizado, por exemplo, se o recurso foi deferido e a autuação não for mais cobrada.
+Gerenciar título a pagar: ao utilizar essa opção pela primeira vez para uma multa, o sistema vai permitir que o usuário gere o título a pagar.
+Título a pagar criado. O sistema não permite sua remoção pela tela de títulos, mas apenas pela tela de Multas, porém é possível editá-lo.
+Caso o usuário acione novamente a ação, o sistema demonstra as opções disponíveis.
+Gerenciar título a receber: ao utilizar essa opção pela primeira vez para uma multa, o sistema vai permitir que o usuário gere o título a receber.
+Título a receber criado. O sistema não permite sua remoção pela tela de títulos, mas apenas pela tela de Multas, porém é possível editá-lo.
+Caso o usuário acione novamente a ação, o sistema demonstra as opções disponíveis.
+Na visualização da multa é possível identificar os títulos criados, lembrando que é possível criar um título a pagar e um a receber para a mesma multa.
+Relatório de Multas
+Através do menu Manutenção / Relatórios / Multas é possível obter a relação de multas agrupadas por equipamento ou por condutor e utilizando diversos critérios que a ferramenta dispõe.
+Exemplo do modelo “Listagem de Multas – Agrupadas por Equipamento”
+Dashboard
+No menu Manutenção / Dashboard / Gestão de Multas os usuários podem acessar um painel que contém diversas informações acerca do controle de multas, conforme exemplo:
+###
+Erro: Cliente precisa de ajuda com Manutenção, na parte de Grupos de Demonstrativo Financeiro.
+Solução: [Manutenção] Grupos de Demonstrativo Financeiro:
+A configuração da rotina Grupos de Demonstrativo Financeiro (menu Manutenção / Configurações / Grupos de Demonstrativo Financeiro) é utilizada pelo sistema apenas para apresentação de informações no modelo “Resumo por Equipamento” do relatório Financeiro dos Equipamentos.
+Normalmente, para análise do resultado da frota própria são utilizados os grupos de despesas e o de receitas do plano de contas gerencial, sendo que para as receitas da frota costuma ser identificado pelo nível “3” e fica específico para registro dos créditos de viagem. Em relação às despesas usamos o grupo “2” do plano de contas gerencial, que é o das despesas da empresa e que também tem suas contas utilizadas em conjunto com a apropriação do equipamento em lançamentos financeiros.
+Configuração
+Segue forma de configuração correta dos campos, lembrando que ela é utilizada apenas para montagem de parte do modelo “Resumo por Equipamento” do relatório Financeiro dos Equipamentos:
+Conta: campo para definição da conta ou grupo de contas gerenciais que será levada em consideração
+Ordem: baseado na conta ou grupo de contas escolhido no campo anterior, o sistema preencherá a ordem automaticamente com o nível da conta ou grupo escolhido.
+Tipo: informar se a conta ou grupo de contas escolhido refere-se à entradas ou saídas.
+Totaliza Resultado?: a configuração desse campo não terá nenhuma interferência no relatório. Pode ficar preenchido com Sim ou Não, que não haverá diferença.
+Nome Totalizador: campo para definir o nome da coluna que aparecerá no relatório.
+Exibe Relatório Gerencial: sempre marcar SIM, pois senão o relatório não apresentará corretamente as informações.
+Ordem: campo também sem relevância, ou seja, não interfere em nada no relatório.
+###
+Erro: Cliente precisa de auxílio com manutenção, na parte de Grupos de Equipamentos.
+Solução: [Manutenção] Grupos de Equipamentos:
+Os grupos de equipamentos servem basicamente para o agrupamento de algumas informações relacionadas à frota e que podem ser verificadas através de relatórios. Também há a possibilidade de suas configurações definirem, para situações específicas, o comportamento da integração do módulo Manutenção com o módulo Financeiro.
+Geralmente, as áreas que possuem o módulo Manutenção também possuem o TMS. A configuração básica do TMS para áreas novas de clientes já costuma trazer dois Grupos de Veículos configurados: Frota Própria e Frota Terceiros.
+Devido às configurados do Grupo de Veículos “Frota Própria”, o sistema cria automaticamente no módulo Manutenção um Grupo de Equipamentos com a mesma descrição do Grupo de Veículos.
+Dessa forma, também podemos afirmar que se for criado manualmente um grupo de veículos no Transporte, que seja frota própria, automaticamente será criado um grupo de equipamentos no Manutenção.
+Um Grupo de Veículos criado no TMS dá origem a um Grupo de Equipamentos exatamente com as configurações da imagem
+AQUI você pode obter maiores informações sobre a configuração da ferramenta Grupo de Veículos do TMS.
+Reflexos nos módulos Financeiro e Manutenção
+Obs.: na sequência utilizaremos para os exemplos um veículo vinculado ao grupo de veículos e ao grupo de equipamentos “FROTA PRÓPRIA – TESTE”.
+Vejamos o que ocorre ao criarmos um Conhecimento pelo TMS utilizando um veículo vinculado a um grupo de veículos definido como “frota própria”
+Criação de um título a receber (previsão = SIM) com valor igual ao total da prestação do CT-e, usando a conta gerencial definida na aba “Dados empresa transporte” do cadastro da empresa do talão do Conhecimento e a apropriação definida na configuração da agência usada para emissão do documento.
+Esse lançamento serve para o controle financeiro da empresa.
+Título a receber criado pela emissão do CTe e que será substituído por outro título quando for criado o faturamento
+Local de configuração da conta gerencial usada no título a receber
+Local de configuração da apropriação (centro de custos) usada no título a receber
+Criação de um lançamento de recebimento com valor conforme configurado no Grupo de Veículos, utilizando a conta gerencial também definida no Grupo de Veículos. A apropriação é a definida no cadastro do próprio veículo no TMS, que consequentemente é a mesma apropriação definida no cadastro do equipamento no módulo Manutenção. A apropriação usada foi a ligada ao veículo/equipamento porque na configuração do Grupo de Veículo está definido para apropriar por “Equipamento” e não por “Viagem”. Caso fosse por “Viagem”, o sistema criaria um centro de custos a cada viagem realizada pelo veículo. UTILIZE SEMPRE A APROPRIAÇÃO POR EQUIPAMENTO E NUNCA POR VIAGEM.
+Esse lançamento é o “crédito de viagem”, que é utilizado para o controle de receitas geradas pela frota própria, e normalmente não deve aparecer em relatórios de análise financeira da empresa (por isso se utiliza uma conta gerencial de um grupo diferente). Tal lançamento deve refletir apenas no relatório Financeiro dos Equipamentos do módulo Manutenção.
+Recebimento criado devido à configuração para gerar crédito de viagem
+Local de configuração onde é definido que haverá crédito de viagem e também onde são definidas as contas financeira e gerencial usadas no recebimento
+Local onde está definida a apropriação (centro de custos) do veículo
+Vejamos o que ocorre ao criarmos uma viagem manualmente pelo cadastro do Equipamento no módulo Manutenção (o equipamento está vinculado a um veículo do TMS, pois foi criado automaticamente no momento do cadastramento do veículo)
+Criação de um lançamento de recebimento com valor conforme preenchido na inserção da viagem. A conta gerencial também foi definida na inserção da viagem, pois nesse ponto o sistema olha o Grupo de Equipamentos, mas como o grupo nasce sem essa conta definida o sistema acusa erro caso não preenchamos a conta. A apropriação é a definida no cadastro do próprio veículo no TMS, que consequentemente é a mesma apropriação definida no cadastro do equipamento no módulo Manutenção. A conta financeira é a definda no Grupo de Veículos.
+Esse lançamento é o “crédito de viagem”, é utilizado para o controle de receitas geradas pela frota própria e normalmente não deve aparecer em relatórios do módulo Financeiro, mas apenas no relatório Financeiro dos Equipamentos do módulo Manutenção (por isso se utiliza uma conta gerencial de um grupo diferente).
+Inserção da viagem sem haver uma conta gerencial informada para o sistema realizar o lançamento e o erro que é apresentado
+Em destaque o campo onde o sistema procura a conta gerencial que seria usada no lançamento de recebimento no Financeiro
+O usuário pode acessar a configuração do Grupo de Equipamento e fixar uma conta gerencial, pois assim o sistema a utilizará e não apresentará mais o erro nas viagens criadas manualmente. Deverá ser utilizada a mesma conta gerencial definida no cadastro do Grupo de Veículos para manter uma coerência, ou seja, a receita da frota ser registrada sempre na mesma conta gerencial, que é criada especialmente para esse controle.
+Inserção da viagem informando manualmente a conta gerencial de receitas da frota
+Configuração
+Em ambos os casos dos exemplos (viagem criada pela tela de Conhecimento e viagem manual) o sistema gerou um recebimento para representar a receita gerada pela frota própria.
+Esse recebimento só aconteceu porque é isso que vem determinado por padrão no Grupo de Equipamentos (menu Manutenção / Configurações / Grupos de Equipamentos):
+No campo “Tipo” a opção padrão do sistema é “Lançamento”
+A seguir vamos ver o que significam os campos existentes na tela, pois vale lembrar que também podemos criar Grupos de Equipamentos de forma manual:
+Nível: nesse campo pode-se definir o nível hierárquico do grupo de equipamento, isto é, se ele será um grupo sintético ou se ele estará dentro de outro grupo já existente, tornando-se assim um subgrupo.
+Grupo: descrição do grupo de equipamento.
+E-mail responsável: campo para definição do endereço de e-mail do responsável por esse grupo de equipamentos.
+No cadastro de um equipamento há um campo que define o “Tipo Responsável” por ele e possui as opções “Equipamento”, “Grupo” e “Plano”. Caso seja definido que o “Tipo Responsável” pelo equipamento é o GRUPO, será justamente o e-mail definido aqui nesse campo o alvo de mensagens que o sistema poderá enviar automaticamente (a depender de configurações).
+Sugere dados de viagem anterior
+Sim: na viagem criada manualmente o sistema trará preenchidos em tela o campo “Origem” e “Km inicial” baseado na última viagem cadastrada.
+Não: todos os campos da tela estarão em branco e o usuário precisará realizar o preenchimento.
+Campos que vão ser considerados para bloquear lançamento de viagem manual: valida a criação de novas viagens conforme as seguintes regras (elas podem ser usadas individualmente ou em conjunto):
+Cidade: a cidade de origem tem que ser a mesma de destino da última viagem.
+Km: define a quilometragem máxima entre uma viagem e outra conforme especificado no campo que é disponibilizado ao selecionar essa opção.
+Gerar Crédito: se definido “NÃO”, não haverá integração com o módulo financeiro, ou seja, nenhum lançamento financeiro será criado quando da inserção de uma nova viagem, seja ela automática (pela tela de Conhecimentos) ou manual. Já se definido “SIM”, são disponibilizados os campos abaixo:
+Gerencial: campo para definição da conta gerencial para representar a receita gerada pela frota própria (preferencialmente usar a mesma conta definida no Grupo de Veículos da frota própria).
+Tipo: campo para definir qual ação será realizada no módulo financeiro quando uma viagem for criada.
+Lançamento: cria um lançamento de recebimento (opção mais indicada).
+Fatura: cria um título a receber.
+Faturas (Apenas para viagens manuais): essa opção vai criar recebimentos quando a viagem for automática (criada pela tela de Conhecimentos) e um título a receber quando for uma viagem manual (criada manualmente pela aba “Viagens” no cadastro do Equipamento).
+Comissão motorista: determina se será criado título a pagar que representará o valor de comissão que a empresa pagará ao motorista.
+A conta gerencial utilizada pelo sistema é definida no parâmetro “Gerencial utilizado para sugestão da comissão do motorista no fechamento de suprimento” (man_FrotaGerencialComissaoViagem).
+Exemplo de grupos de equipamentos, sendo que temos alguns grupos e subgrupos
+IMPORTANTE:
+Recomenda-se fortemente utilizar o controle de viagens apropriando por EQUIPAMENTO e nunca por VIAGEM.
+Apropriar por viagem vai fazer o sistema criar um centro de custos a cada nova viagem do veículo. A longo prazo gera um transtorno gigante na área do cliente porque haverão milhares de centros de custos no Financeiro.
+O parâmetro “Modo de apropriação padrão ao criar viagem” (man_modoApropriacaoPadraoViagem) é utilizado pelo sistema para definir como será a apropriação do controle de viagem, se será por Equipamento ou por Viagem, porém ele só é considerado quando a viagem for criada manualmente pelo módulo Manutenção usando um Equipamento que não possua vínculo com um Veículo do TMS. O indicado também é que o valor do parâmetro seja sempre “Equipamento”.
+###
+Erro: Cliente precisa de ajuda com a parte de Manutenção, no assunto Manutenção do Medidor.
+Solução: [Manutenção] Manutenção do Medidor:
+A ferramenta Manutenção do Medidor é utilizada basicamente para informar a troca do medidor (hodômetro, horímetro, etc) de um equipamento.
+A “troca” mencionada pode ser:
+A substituição física de um medidor por outro devido a algum problema no item;
+Para sinalizar ao sistema que o medidor atual chegou ao seu limite de leitura e retornou ao início novamente (por exemplo, um hodômetro que chegou até a quilometragem 999.999 e voltou para o zero). Nesses casos, o sistema precisa receber essa atualização para poder continuar realizando os controles que demandem de medição, seja em horas, quilômetros e etc.
+Para melhor entendimento, vejamos o exemplo a seguir onde o medidor de um equipamento chegou ao km limite e o sistema não permite mais nenhum registro:
+Em 07/11/2022 a quilometragem atingiu o limite 999.999
+Mensagem apresentada ao tentar inserir quilometragem maior do que a suportada pelo tipo de equipamento
+Registrando a manutenção do medidor
+Para resolver essa questão é necessário ir até o menu Manutenção / Manutenção do Medidor e clicar em “Adicionar”:
+Equipamento: campo para informar o equipamento que terá a informação registrada.
+Observação: campo livre para qualquer informação pertinente ao ocorrido.
+Data: data da troca ou reinício do medidor.
+Último uso registrado anteriormente: informar a última medida registrada no sistema antes da necessidade de registrar a manutenção do medidor.
+Primeiro uso registrado no novo medidor: informar a primeira leitura realizada no novo medidor.
+Após o cadastro na rotina Manutenção do Medidor, ao verificarmos o equipamento veremos que o sistema já considera a existência do novo medidor e com a leitura atualizada.
 
 
 
@@ -1295,6 +1533,7 @@ Solução: Sim, basta utilizar os filtros dentro da emissão do Contrato de fret
 Erro: Cliente reclamou que não estava aparecendo um CFOP específico, que era o 6932 - Prestação de serviço de transporte interestadual iniciada em UF diferente da do prestador (inter-estadual).
 Solução: Verifica o preenchimento do Ct-e e marca a caixinha para mostrar início e fim da prestação de serviço para verificar se a UF de início do frete é a mesma da empresa, se for dai realmente não vai aparecer esse CFOP. O Sistema sempre recomenda os CFOP conforme o que é preenchido. 
 ###
+
 
 
 
