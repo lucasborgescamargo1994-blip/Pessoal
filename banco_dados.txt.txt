@@ -1,3 +1,168 @@
+###
+Erro: Dúvidas referente aos documento que podem ser emitidos no sistema: Ct-e, Mdf-e, Notas fiscais (NF-e), NFS-e (Nota fiscal de Serviço).
+Solução: Segue abaixo todo um manual referente aos documentos fiscais que podem ser gerados no sistema:
+CT-e
+obs. Sempre orientar primeiro de tudo se é possível fazer o cancelamento do CT-e que é o mais fácil, caso não for possível faz um complementar, e caso não tiver outro jeito faz o de Substituição.
+
+Faturar CT-e:
+Pode ser feito em Transporte/Conhecimentos, seleciona as CT-e a ser faturado e escolhe Faturar, e se quer fazer Fatura individual ou agrupada. Outra forma é em Transporte/Faturamento.
+No momento de realizar o Faturamento do CT-e, quem define o cliente é o Pagador indicado na emissão do CT-e.
+Quando é transporte de mercadoria própria não é obrigatório emitir CT-e, apenas a MDF-e.
+Quando contratado uma transportadora para realizar transporte, a transportadora fica responsável pela emissão do CT-e 
+CT-e Subcontratação: esse tipo de situação se refere a quando uma transportadora contrata uma outra transportadora para realizar o transporte por completo.
+CFOP quando o estado não permite a dispensa de emissão do CTe pelo subcontratado:
+5352 – PRESTACAO SERVICO TRANSPORTE P/ ESTAB. INDUSTRIAL
+Quando o estado permite a dispensa de emissão:
+5360 – PRESTAÇÃO DE SERVIÇO DE TRANSPORTE A CONTRIBUINTE SUBSTITUTO EM RELAÇÃO AO SERVIÇO DE TRANSPORTE.
+Observações: 	
+Quando o estado não permitir a dispensa de emissão do CTe:
+“Transporte realizado por subcontratação firmado com a TRANSPORTADORA ENTREGA JÁ LTDA, CNPJ 12.345.678/0001-90, IE 4352589.”
+Quando o estado permitir a dispensa de emissão do CTe:
+“Transporte realizado por subcontratação firmado com a TRANSPORTADORA ENTREGA JÁ LTDA, CNPJ 12.345.678/0001-90, IE 4352589. Este documento não tem valor para efeito de crédito do ICMS.”
+CT-e Redespacho é quando é contratada uma outra transportadora para fazer apenas uma parte do percurso, ou seja, não faz ele por completo. 
+Da mesma forma que existe o Redespacho, há a possibilidade de uso do Tipo do serviço Redespacho intermediário, a diferença seria que nesse caso são envolvidas 3 transportadoras ou mais
+CT-e Globalizado é uma ferramenta de simplificação para transportadoras que realizam coletas ou entregas múltiplas em uma mesma região, evitando a burocracia de emitir dezenas de documentos individuais. Exige pelo menos 5 documentos fiscais.
+CT-e Substituição: 
+Para geração do CT-e de substituição existem algumas regras:
+Prazos importantes:
+Registro do evento de desacordo: até 45 dias após a emissão do CT-e original. 
+Emissão do CT-e substituto: até 60 dias após a emissão do CT-e original.
+
+- Serve para alterar o tomador (desde que esteja informado no cte como remetente, destinatario, recebedor ou expedidor) e alterar o valor; 
+- Não pode ser emitido se houver CT-e Complementar para o CT-e a ser substituído (mesmo se o complementar estiver cancelado); 
+- Não pode ser emitido para um CT-e Complementar (devido ao Tipo de CT-e); 
+- É possível emitir um CT-e de substituição para um CT-e de substituição; 
+- Para qualquer situação é obrigatório o CT-e a ser substituído possuir o Evento de Prestação em Desacordo; 
+- Se a alteração necessária é do tomador, no CT-e original o novo tomador já deve estar envolvido com participante (remetente, destinatário, expedidor, recebedor). Caso não esteja envolvido, deverá ser uma filial inscrita na mesma UF; 
+- CT-e de Substituição não pode ser cancelado; 
+- É possível emitir Carta de Correção para CT-e de Substituição;
+- Não é possível emitir Carta de Correção para CT-e Substituído (que possuí um CT-e de Substituição vinculado).
+CT-e Simplificado:
+Permite agrupar várias entregas e/ou coletas em um documento, desde que sejam de um único tomador de serviço. Ou seja, mesmo que a operação de transporte intermunicipal ou interestadual tenha vários remetentes ou destinatários, é possível agrupá-las no mesmo CTe. Requer apenas dois documentos fiscais.
+obs: Todas as coletas precisam ser realizadas no mesmo estado e todas entregas precisam ser na mesma cidade , mesmo que o transporte seja interestadual. Por exemplo, todas as coletas precisam ser realizadas no Paraná e todas as entregas na cidade de São Paulo / SP. As entregas realizadas precisam se encaixar dentro do mesmo CFOP; As operações de transporte precisam estar submetidas à mesma tributação.
+CT-e Complementar:
+Um CTe complementar pode incluir informações como valores de frete, impostos (ICMS), pedágio, taxas e reentrega, que estavam incorretos ou faltaram no CTe original. É obrigatório que as informações sobre remetente, destinatário, tomador, tipo de serviço, CFOP e dados da NFe vinculada sejam idênticas ao documento original. As únicas alterações permitidas são os valores, que devem ser a diferença entre o valor correto e o valor original.
+Como diz o nome ele apenas complementa, não substitui nenhuma informação.
+Cancelamento:
+Um CT-e não pode ser cancelado se o serviço de transporte já tiver sido iniciado
+A mercadoria já tiver sido consultada em alguma barreira fiscal ou radar 
+Ou se o CT-e estiver vinculado a um MDF-e (Manifesto de Documentos Fiscais Eletrônico) que ainda não foi cancelado. 
+Também não é possível cancelar um CT-e complementar ou um CT-e de substituição. 
+Não é possível cancelar um CTe que tenha Carta de correção vinculada e também não é possível cancelar a Carta de Correção.
+Prazos para cancelamento:
+- No Mato Grosso (MT) é de 8 horas
+- No restante do Brasil o prazo é de 168 horas (7
+dias)
+
+CFOP: Esse código identifica que operação está sendo feita. Ele é um código de 4
+dígitos, abaixo estão listados os CFOPs que podem ser usados no CT-e:
+5351 - Prest. de Serv. de Transp. Estadual
+5352 - Prest. de Serviço de Transp. Estab. Industrial
+5353 - Prest. de Serviço de Transp. Estabelecimento comercial
+5354 - Prest. de Serv. de Transp. Serv. de Comunicação
+5355 - Prest. de Serv. de Transp. Distribuição Elétrica
+5356 - Prest de Serv Transp a Estabel de Produtor Rural
+5357 - Prest. de Serv. de Transp.Não contribuinte
+5360 - Transporte a contribuinte substituto em relação ao serviço de transporte
+5932 - Prest. Serviço de Transporte iniciada em UF dif. Prestador
+6351 - Prest. de Serv. de Transp. Interstadual
+6352- Prest. Serviço de Transp. Estabelecimento industrial
+6353 - Prest. de Serv. de Transp. a Est. Com.
+6354 - Prest. de Serv. de Transp. Serv. de Comunicação
+6355 - Prest. de Serv. de Transp. Distribuição Elétrica
+6356 - Prest de Serv Transp a estabel de Produtor Rural
+6357 - Prest. de Serv. de Transp.Não contribuinte
+6360 - Transporte a contribuinte substituto em relação ao serviço de transporte
+6932 - Prest. Serviço de Transporte iniciada em UF dif. Prestador
+
+O primeiro dígito do CFOP indica se ele é uma Entrada ou uma Saída:
+1 - Entrada Estadual
+2 - Entrada Interestadual
+3 - Entrada Internacional
+5 - Saída Estadual
+6 - Saída Interestadual
+7 - Saída Internacional
+
+Responsabilidade de informar o CFOP e dar consultoria é da contabilidade, porém existem algumas questões que podemos alertá-lo e até 2 CFOPs em específico podemos orientar:
+Obs: Apenas o 5932 e 6932 podem ser orientados pelo suporte pois são únicos para esse tipo de operação
+- Quando observarmos que a operação é Interestadual podemos informar que o CFOP iniciará com 6. Ex: SP x PR
+- Quando observarmos que a operação é Estadual podemos informar que o CFOP iniciará com 5. Ex: PR x PR
+- Quando o transporte inicia em um estado diferente da empresa o CFOP terá o fim 932 
+Ex:
+Transportadora PR e transporte SC x SC = CFOP 5932
+Transportadora PR e transporte SC x RS = CFOP 6932
+
+Chave de acesso CT-e:
+ 
+
+
+CIOT (CÓDIGO IDENTIFICADOR DA OPERAÇÃO DE TRANSPORTE)
+
+O CIOT (Código Identificador da Operação de Transporte) é exigido pela ANTT (Agência Nacional de Transportes Terrestres) nas seguintes situações: 
+Contratação de Transportador Autônomo de Cargas (TAC): Sempre que uma empresa (embarcador ou transportadora) contrata um motorista autônomo (pessoa física, com veículo registrado no CPF), a geração do CIOT é obrigatória.
+Contratação de TAC Equiparado: Aplica-se a empresas de transporte (CNPJ) que possuem até três veículos automotores de carga em sua frota registrados na ANTT.
+Contratação de Cooperativas de Transporte de Cargas (CTC): A contratação de cooperativas também exige a emissão do CIOT. 
+Quando NÃO é obrigatório:
+Frota Própria: Empresas que realizam o transporte de cargas utilizando exclusivamente seus próprios veículos e motoristas (contratados via CLT) não precisam emitir o CIOT. 
+
+
+
+
+___________________________________________________________________________
+
+
+MDF-e
+Quando é transporte de mercadoria própria não é necessário emitir CT-e, apenas a MDF-e.
+Exemplo de agrupamento de MDF-E:
+1 - Recife/PE - Itaiba/PE - 1 CTE
+2 - Recife/PE - Fortaleza/CE - 1 CTE
+3 - Petrolina/PE - Fortaleza/CE - 1 CTE
+Neste exemplo, é possível agrupar o CTE 2 e 3 no mesmo MDF-E por serem o mesmo estado destino. E no CTE 1 deve emitir um MDF-E a parte.
+Exemplo de 3 ct-e para 2 estados diferentes que estarão no mesmo caminhão:
+cte 1 - Sp - PR
+cte 2 - SP - PR
+cte 3 - SP - RS
+Deve ser feito 1 Mdf-e com o Ct-e 1 e 2, e outro mdf-e com o ct-e 3, pois é permitido fazer mais de um mdf-e para o mesmo veiculo desde que sejam estados destino diferentes.
+
+Site para consulta pela chave MDF-e: https://dfe-portal.svrs.rs.gov.br/Mdfe
+Prazo de cancelamento de até 24 horas.
+Pode ser emitida uma única MDF-e se for o mesmo UF de destino, idenpentente se são carregadas ou não no mesmo estado.
+Pode ser agrupados vários CT-e desde que sejam todas com mesmo UF de destino.
+As cargas no caminhão devem ser iguais ao que consta no CT-e para não haver divergência de informações, como o peso por exemplo.
+ 
+
+Carta de Correção Eletrônica (CC-e)
+
+A Carta de Correção (CCe) para o Conhecimento de Transporte Eletrônico (CT-e) serve para corrigir erros em um CT-e já emitido, sem a necessidade de cancelá-lo. Ela é usada para retificar informações que não alteram valores fiscais, como dados de endereço, descrição do produto ou informações adicionais. No entanto, não pode corrigir dados como base de cálculo, alíquota, valor do imposto, dados cadastrais do emitente ou destinatário, ou data de emissão
+O que a Carta de Correção pode corrigir
+Dados de endereço: Rua, número, bairro, cidade, CEP do remetente, destinatário ou local de entrega.
+Informações da carga: Descrição do produto (desde que não altere a alíquota de impostos), peso, volume e quantidade.
+Dados do documento: CFOP (desde que não altere a natureza dos impostos) e informações adicionais como observações. 
+O que a Carta de Correção não pode corrigir
+Valores: Base de cálculo, alíquota, diferença de preço, quantidade, valor da prestação de serviço (frete, pedágio, etc.).
+Identificação de partes: Dados cadastrais do emitente, tomador, remetente ou destinatário.
+Datas: Data de emissão ou saída.
+Mercadorias: Descrição da mercadoria se a alteração for afetar a alíquota de impostos. 
+
+
+NFS-E
+
+A respeito da NFS-e, primeiramente é emitida a RPS, que significa Recibo Provisório de Serviços. É um documento fiscal temporário usado para registrar a prestação de serviços quando não é possível emitir a Nota Fiscal de Serviços Eletrônica (NFS-e) no momento da transação, seja por problemas técnicos ou para agilizar o processo em empresas com alto volume de emissões. O RPS deve ser convertido em uma NFS-e dentro de um prazo estabelecido pela prefeitura, geralmente de até 10 dias. 
+Situações de uso
+Falha no sistema: Quando o sistema da prefeitura para emissão online da NFS-e está indisponível (ex: falta de conexão com a internet), o RPS é usado para comprovar o serviço. 
+Alto volume de transações: Empresas que emitem muitas notas, como estacionamentos, podem gerar o RPS para cada transação e, posteriormente, enviar todos os recibos em lote para serem convertidos em NFS-e. 
+O que acontece depois
+Após a emissão do RPS, a empresa deve convertê-lo em uma NFS-e. 
+A conversão é feita enviando os dados do RPS (geralmente em arquivo XML) para a prefeitura, que emitirá a nota fiscal eletrônica definitiva. 
+A não conversão do RPS dentro do prazo legal pode acarretar penalidades. 
+
+
+
+
+
+
+
+###
 Erro: Como cadastrar minha empresa no sistema?
 Solução: Vai no menu Financeiro, Cadastros básicos, Empresa. Clica em adicionar, preenche os dados obrigatórios e os que necessita, após isso basta salvar. Se caso for para cadastrar uma filial de uma empresa já cadastrada no sistema, seleciona a empresa Matriz e clica na opção criar Filial, após preenche os dados e clica em salvar.
 ###
@@ -563,6 +728,7 @@ Solução: Sim, basta utilizar os filtros dentro da emissão do Contrato de fret
 Erro: Cliente reclamou que não estava aparecendo um CFOP específico, que era o 6932 - Prestação de serviço de transporte interestadual iniciada em UF diferente da do prestador (inter-estadual).
 Solução: Verifica o preenchimento do Ct-e e marca a caixinha para mostrar início e fim da prestação de serviço para verificar se a UF de início do frete é a mesma da empresa, se for dai realmente não vai aparecer esse CFOP. O Sistema sempre recomenda os CFOP conforme o que é preenchido. 
 ###
+
 
 
 
