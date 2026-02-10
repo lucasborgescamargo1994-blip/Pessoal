@@ -1342,7 +1342,24 @@ Validação
 
 
 
-
+###
+Erro: Situações e regras para emissão de MDF-e, quando é entregas no mesmo estado porém em cidades diferentes.
+Solução: Sim, é possível emitir um único MDF-e para cidades diferentes, desde que todas as descargas ocorram dentro do mesmo estado (UF). 
+Se a viagem envolver entregas em estados (UFs) diferentes, a regra muda: é necessário emitir um MDF-e para cada estado de descarregamento. 
+Aqui estão as regras detalhadas para consolidar em um só MDF-e (Carga Fracionada/Vários Destinos):
+Como fazer um só MDF-e para várias cidades
+Mesma UF: As cidades de destino devem estar dentro da mesma unidade federativa (ex: carregar em SP e entregar em Campinas, Sorocaba e Santos).
+Inclusão no Sistema: No emissor de MDF-e, na aba de "Municípios de Descarregamento", você adiciona todos os municípios onde haverá entregas.
+Vinculação: O manifesto deve conter todos os CT-es (Conhecimentos de Transporte) ou NF-es (Notas Fiscais) de todos os destinatários daquela carga fracionada.
+Percurso: Informe corretamente as UFs de percurso, se houver, até o destino final. 
+Quando NÃO fazer um só (Estados Diferentes)
+Se o veículo carregar no Paraná e for entregar mercadorias em Minas Gerais e na Bahia, a lei exige a emissão de dois MDF-es distintos, um para cada UF de descarregamento. 
+MDF-e 1: Destino MG + Notas/CT-es de MG.
+MDF-e 2: Destino BA + Notas/CT-es de BA.
+Pontos de Atenção
+Encerramento: Após a última entrega, o MDF-e deve ser encerrado imediatamente para liberar o veículo para novas viagens e evitar o bloqueio pela SEFAZ (após 30 dias de um MDF-e não encerrado).
+Carga Própria: Se for carga própria (nota própria), a obrigatoriedade segue a mesma lógica intermunicipal/interestadual.
+Multa: A emissão incorreta, especialmente ao não separar por estado (UF) em viagens interestaduais, pode resultar em multas de cerca de R$ 550,00. 
 ###
 Erro: Como cancelar gerencialmente um conhecimento (Ct-e), Contrato de frete, Nota fiscal (NF-e), Nota Fiscal de Serviço (NFS-e)?
 Solução: Para cancelar gerencialmente um Ct-e ou Contrato de frete, deve possuir a funcionalidade atribuida ao usuário do sistema, lembrando que só é possível conceder aos usuários se o gerente de recursos estiver em contato ou no mínimo logado no sistema da máquina acessada. Segue as funcionalidades disponíveis para cada documento e seus respectivos códigos:
@@ -1690,6 +1707,7 @@ Solução: Sim, basta utilizar os filtros dentro da emissão do Contrato de fret
 Erro: Cliente reclamou que não estava aparecendo um CFOP específico, que era o 6932 - Prestação de serviço de transporte interestadual iniciada em UF diferente da do prestador (inter-estadual).
 Solução: Verifica o preenchimento do Ct-e e marca a caixinha para mostrar início e fim da prestação de serviço para verificar se a UF de início do frete é a mesma da empresa, se for dai realmente não vai aparecer esse CFOP. O Sistema sempre recomenda os CFOP conforme o que é preenchido. 
 ###
+
 
 
 
