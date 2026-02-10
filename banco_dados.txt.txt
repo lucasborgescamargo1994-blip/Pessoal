@@ -1343,8 +1343,13 @@ Validação
 
 
 
-
-
+###
+Erro: Como cancelar gerencialmente um conhecimento (Ct-e), Contrato de frete, Nota fiscal (NF-e), Nota Fiscal de Serviço (NFS-e)?
+Solução: Para cancelar gerencialmente um Ct-e ou Contrato de frete, deve possuir a funcionalidade atribuida ao usuário do sistema, lembrando que só é possível conceder aos usuários se o gerente de recursos estiver em contato ou no mínimo logado no sistema da máquina acessada. Segue as funcionalidades disponíveis para cada documento e seus respectivos códigos:
+	390	Quem pode cancelar contrato de frete gerencialmente?	 	
+	252	Quem pode cancelar NF-e gerencialmente	 	
+	211	Quem pode cancelar CT-e gerencialmente	 	
+	188	Quem pode cancelar gerencialmente uma NFSe
 ###
 Erro: Cliente perguntou sobre a tabela do ICMS, Imposto de renda e do INSS, se é configurável ou é automática.
 Solução: A resposta pode variar muito de cliente para cliente, mas em resumo o sistema segue sim a tabela que é disponibilizada pela receita federal, e dentro do talão se estiver marcado para preencher conforme tabela irá utilizá-la. Porém que deve definir o ICMS é sempre o contador, pois pode ter regras de excessão conforme a atividade e tipo da empresa, pois por exemplo Cooperativas de transporte tem tributação com alíquotas reduzidas. Sempre oriente o cliente questionar o contador se deve utilizar a tabela da receita federal ou configurar alíquotas manualmente no sistema.
@@ -1685,6 +1690,7 @@ Solução: Sim, basta utilizar os filtros dentro da emissão do Contrato de fret
 Erro: Cliente reclamou que não estava aparecendo um CFOP específico, que era o 6932 - Prestação de serviço de transporte interestadual iniciada em UF diferente da do prestador (inter-estadual).
 Solução: Verifica o preenchimento do Ct-e e marca a caixinha para mostrar início e fim da prestação de serviço para verificar se a UF de início do frete é a mesma da empresa, se for dai realmente não vai aparecer esse CFOP. O Sistema sempre recomenda os CFOP conforme o que é preenchido. 
 ###
+
 
 
 
