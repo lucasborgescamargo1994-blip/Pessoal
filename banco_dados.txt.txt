@@ -1166,7 +1166,7 @@ Número do Cartão
 Notificações  Não Sim
 ###
 Erro: Cliente perguntou se tem como fazer complemento de valores para um contrato de frete, ou gerar um novo com a mesma operação CIOT e VPO.
-Solução: Para esses casos, tem opção do cancelamento gerencial que caso for usuário gerente de recursos da para habilitar, porém vale salientar que o contrato por não estar integrado com a operadora não terá validade fiscal, orientar a verificar com o contador se dessa forma evita multas com a ANTT. O ideal é cancelar toda a operação e emitir um novo contrato de frete.
+Solução: Para esses casos, tem opção do cancelamento gerencial, porém vale salientar que o contrato por não estar integrado com a operadora não terá validade fiscal, orientar a verificar com o contador se dessa forma evita multas com a ANTT. O ideal é cancelar toda a operação e emitir um novo contrato de frete, CIOT e Manifesto.
 ###
 Erro: Dúvidas referente ao nsdocs.
 Solução: Segue algumas informações a respeito do nsdocs:
@@ -1690,6 +1690,7 @@ Solução: Sim, basta utilizar os filtros dentro da emissão do Contrato de fret
 Erro: Cliente reclamou que não estava aparecendo um CFOP específico, que era o 6932 - Prestação de serviço de transporte interestadual iniciada em UF diferente da do prestador (inter-estadual).
 Solução: Verifica o preenchimento do Ct-e e marca a caixinha para mostrar início e fim da prestação de serviço para verificar se a UF de início do frete é a mesma da empresa, se for dai realmente não vai aparecer esse CFOP. O Sistema sempre recomenda os CFOP conforme o que é preenchido. 
 ###
+
 
 
 
