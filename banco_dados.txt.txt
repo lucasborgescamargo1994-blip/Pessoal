@@ -1711,6 +1711,29 @@ Solução: Sim, basta utilizar os filtros dentro da emissão do Contrato de fret
 Erro: Cliente reclamou que não estava aparecendo um CFOP específico, que era o 6932 - Prestação de serviço de transporte interestadual iniciada em UF diferente da do prestador (inter-estadual).
 Solução: Verifica o preenchimento do Ct-e e marca a caixinha para mostrar início e fim da prestação de serviço para verificar se a UF de início do frete é a mesma da empresa, se for dai realmente não vai aparecer esse CFOP. O Sistema sempre recomenda os CFOP conforme o que é preenchido. 
 ###
+Erro: Como entrar em contato com a BSOFT TMS?
+Solução: Caso já tenha o sistema contratado conosco, no menu lateral do sistema em Opções do Sistema, tem a opção Suporte que lhe dará as opções para contato: Ticket, Telefone, Chat, Financeiro, Manuais, Remoto. Por telefone temos os seguintes contatos disponíveis: Números de telefones disponíveis:
+SP - São Paulo
+(11) 2189-0124
+PR - Curitiba
+(41) 3211-1217
+MG - Belo Horizonte
+(31) 3268-9302
+
+Números de telefones alternativos
+SP - São Paulo
+(11) 4063-1592
+
+Nosso atendimento via telefone funciona de
+
+Segunda à Sexta
+das 8:00 às 18:00 (Exceto feriados)
+
+Sábados
+das 8:00 às 12:00
+(Horário de Brasília)
+###
+
 
 
 
