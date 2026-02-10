@@ -1371,6 +1371,9 @@ Solução: Para cancelar gerencialmente um Ct-e ou Contrato de frete, deve possu
 Erro: Cliente perguntou sobre a tabela do ICMS, Imposto de renda e do INSS, se é configurável ou é automática.
 Solução: A resposta pode variar muito de cliente para cliente, mas em resumo o sistema segue sim a tabela que é disponibilizada pela receita federal, e dentro do talão se estiver marcado para preencher conforme tabela irá utilizá-la. Porém que deve definir o ICMS é sempre o contador, pois pode ter regras de excessão conforme a atividade e tipo da empresa, pois por exemplo Cooperativas de transporte tem tributação com alíquotas reduzidas. Sempre oriente o cliente questionar o contador se deve utilizar a tabela da receita federal ou configurar alíquotas manualmente no sistema.
 ###
+Erro: nsdocs não estava recepcionando notas da filial.
+Solução: Certificado foi atualizado na matriz, porém não na filial. Mesmo que seja o mesmo certificado pra ambas, deve ir em Cadastro, Empresas, depois clica em salvar e vai aparecer a lista das empresas e status dos certificados de cada uma, se estiver expirado basta selecionar a empresa, clicar em alterar, vai na guia Certificados e Agendamentos e adiciona o certificado.
+###
 Erro: Erro ao tentar enviar MDF-e para o SEFAZ: Detalhes técnicos: O valor 'NOME DO TOMADOR X DO CT-e' do campo 'xNome' não é válido. Caminho XML: /*/infANTT/infPag/xNome.
 Solução: Atualizar o nome no cadastro de pessoas conforme consta no SEFAZ corrige o problema, geralmente é por conta de possuir no nome caracteres não aceitos pelo SEFAZ e sistema.
 ###
@@ -1707,6 +1710,7 @@ Solução: Sim, basta utilizar os filtros dentro da emissão do Contrato de fret
 Erro: Cliente reclamou que não estava aparecendo um CFOP específico, que era o 6932 - Prestação de serviço de transporte interestadual iniciada em UF diferente da do prestador (inter-estadual).
 Solução: Verifica o preenchimento do Ct-e e marca a caixinha para mostrar início e fim da prestação de serviço para verificar se a UF de início do frete é a mesma da empresa, se for dai realmente não vai aparecer esse CFOP. O Sistema sempre recomenda os CFOP conforme o que é preenchido. 
 ###
+
 
 
 
