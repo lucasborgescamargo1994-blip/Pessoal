@@ -1340,8 +1340,9 @@ Validação
 
 
 
-
-
+###
+Erro: Não é possível e não consegue víncular uma segunda ou terceira placa no conjunto do caminhão, nem na opção Vinculação de Motorista e nem em Conjuntos de Veículos.
+Solução: Verificar qual categoria foi atribuída em todas as placas envolvidas, se por exemplo a placa principal é um caminhão e a outra é carrega, deve cadastrar a principal na categoria CAVALO e a outra em carrega. Outro exemplo clássico de erro é colocar uma terceira placa, a primeira deve ser o CAVALO, a segunda um SEMI-REBOQUE 1 e a terceira SEMI-REBOQUE 2.
 ###
 Erro: Situações e regras para emissão de MDF-e, quando é entregas no mesmo estado porém em cidades diferentes.
 Solução: Sim, é possível emitir um único MDF-e para cidades diferentes, desde que todas as descargas ocorram dentro do mesmo estado (UF). 
@@ -1710,6 +1711,7 @@ Solução: Sim, basta utilizar os filtros dentro da emissão do Contrato de fret
 Erro: Cliente reclamou que não estava aparecendo um CFOP específico, que era o 6932 - Prestação de serviço de transporte interestadual iniciada em UF diferente da do prestador (inter-estadual).
 Solução: Verifica o preenchimento do Ct-e e marca a caixinha para mostrar início e fim da prestação de serviço para verificar se a UF de início do frete é a mesma da empresa, se for dai realmente não vai aparecer esse CFOP. O Sistema sempre recomenda os CFOP conforme o que é preenchido. 
 ###
+
 
 
 
