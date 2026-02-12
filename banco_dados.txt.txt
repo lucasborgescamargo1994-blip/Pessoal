@@ -1797,6 +1797,22 @@ Solução: O erro estava na informação de pagador das NFE, o que deixou dentro
         4=Transporte Próprio por conta do Destinatário;
         9=Sem Ocorrência de Transporte.
 ###
+Erro: Como configurar regra para tabela de preços, principalmente quando a mesma possui tipo valores outros e também no ct-e possui valores outros?
+Solução: Segue abaixo exemplo de como configurar, não se deve colocar o comando obt("") para a tabela de preço, se colocar vai gerar erro. Segue abaixo exemplo:
+Campos tipos outros na tabela de preço(nome interno): valorfixo e valorvariavel
+Campos tipos outros no conhecimento: outrosValores[valorfixo] e outrosValores[valorvariavel]
+
+Regra digitada:
+def("tarifaCalculada",0);
+def("outrosValores[valorfixo]", tabelaPrecos.valorfixo);
+def("outrosValores[valorvariavel]", tabelaPrecos.valorvariavel);
+if ( obt("outrosValores[valorvariavel]") > 0)
+  def("valorFrete", (obt("outrosValores[cubagem]")) * obt("outrosValores[valorvariavel]"));
+if ( obt("outrosValores[valorfixo]") > 0)
+  def("valorFrete", (obt("outrosValores[cubagem]")) * obt("outrosValores[valorfixo]"));
+def("totalPrestacao",  (obt("valorFrete") + obt("valoresOutros") + obt("valorSeguro") + obt("diaria")));
+
+###
 Erro: Usuário pediu para deixar como padrão uma regra de cálculo do frete.
 Solução: Ir em parâmetros, pesquisar pelo nome interno: transp_regraConhecimentoPadrao. Colocar a regra padrão desejada e na justificativa o protocolo do atendimento.
 ###
@@ -1952,6 +1968,7 @@ Sábados
 das 8:00 às 12:00
 (Horário de Brasília)
 ###
+
 
 
 
