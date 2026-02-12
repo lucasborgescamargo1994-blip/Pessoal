@@ -1507,7 +1507,58 @@ A Série do RPS e da NFS deve ser obtida junto a área técnica pelo contato: su
 ITAJAÍ – SC:
 
 Os modelos de notas RPS e NFS-e devem ter as séries RP1 e A1 respectivamente.
+###
+Erro: Para cadastrar uma tabela de preços (Tabela de Frete), é preciso se atentar a vários detalhes para que a mesma se aplique e funcione no momento de criação do documento, seja ele CT-e, conhecimento, minuta, etc.
+Solução: Ao criar uma tabela de preços, você precisa vincular a uma tabela de preço no primeiro campo, e dentro desse campo se clicar em + e editar ou na criação de um novo, vai ter lá no final a parte de cliente para colocar um específico. Acontece que esse campo só pode ser preenchido caso o pagador/tomador do serviço for o mesmo, pois se a tabela for para apenas se aplicar para critério de remetente e/ou destinatário, deve-se deixar em branco esse campo. Tudo o que estiver dentro dos critérios, deve estar preenchido exatamente conforme consta na tabela. Se o documento atender aos critérios, irá gerar os Valores de retorno que configurou. Segue abaixo todos os campos que possui dentro da tabela de frete para configurar:
+Critérios
+Tabela de preços *	
 
+ 
+ 
+Frete:	Rem.	Dest.	Rec.	Exp.	Outro	Indiferente
+Remetente	Pessoa específica Grupo de pessoas
+Destinatário	Pessoa específica Grupo de pessoas
+Recebedor	Pessoa específica Grupo de pessoas
+Expedidor	Pessoa específica Grupo de pessoas
+Rota distribuição	
+Mercadoria	
+Cat. veíc.	
+Agência 
+Tipo de carga	
+Regra frete	
+Tipo limitador	Mínimo	Máximo	
+Tipo limitador	Mínimo	Máximo	
+Tipo contêiner	
+Tam. contêiner	
+Cheio/Vazio	
+Origem
+UF orig.	
+Cid. orig.	
+Mesorreg. orig.	
+Grupo Cidade orig.	
+Faixa de CEP	
+Destino
+UF dest.	
+Cid. dest.	
+Mesorreg. dest.	
+Grupo Cidade dest.
+Faixa de CEP
+
+Valores de retorno
+Regra frete
+Tarifa real
+Tarifa final
+Outros
+Frete mínimo
+Diária
+Frete valor
+Valor contêiner
+Total prestação
+Pedágio
+Fração pedágio
+Seguro
+Gris
+Outros
 ###
 Erro: Cliente está tentando vincular uma terceira e/ou quarta placa no Conjunto de veículos ou na Vinculação de motoristas e está apresentando erro que a segunda, terceira ou até quarta placa não permite assumir posição.
 Solução: Verificar qual categoria foi atribuída em todas as placas envolvidas, se por exemplo a placa principal é um caminhão e a outra é carrega, deve cadastrar a principal na categoria CAVALO e a outra em carrega. Outro exemplo clássico de erro é colocar uma terceira placa, a primeira deve ser o CAVALO, a segunda um SEMI-REBOQUE 1 e a terceira SEMI-REBOQUE 2. Se caso for quatro placas totais, da certo também, exemplo CAVALO + SEMI-REBOQUE 1 + DOLLY + SEMI-REBOQUE 2.
@@ -1901,6 +1952,7 @@ Sábados
 das 8:00 às 12:00
 (Horário de Brasília)
 ###
+
 
 
 
