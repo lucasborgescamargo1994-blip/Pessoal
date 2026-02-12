@@ -1030,6 +1030,121 @@ Identificação do Pedido
 Lotação	Sim Não 
 Comboio	Sim Não
 Informações Complementares.	
+
+Depois de preenchido os dados da tela de dados básicos conforme a operação, clica em avançar e vai em Dados de Frete para preencher o restante das informações, as que são obrigatórias acompanham um asterísco* e o sistema ao tentar salvar faltando algo importante irá notificar solicitando o preenchimento. Segue tela de opções para preenchimento na guia Dados de Frete:
+Envolvidos
+Remetente *
+Destinatário *
+Recebedor
+Expedidor
+Pagador do Frete *
+Remetente	Destinatário	Recebedor	Expedidor	Outro
+Início/Fim da Prestação Entrega/Coleta
+Km 
+Previsão de Chegada
+Natureza da Operação *
+Definir CST
+Motorista e Veículo
+Ir para Veículos
+Ir para Conjuntos de Veículos
+Ir para Vinculação de Motorista
+Consultar Situação do Motorista
+Motorista
+Veículo Principal
+Vinculado 02
+Contratado
+Seguro
+Responsável *
+Emi - Emitente
+Seguradora *
+SEGURADORA A DEFINIR
+N.º Apólice *
+XXXXX
+ Atenção: Sem a consulta do motorista, o seguro pode não cobrir o sinistro. Clique e entenda.
+Documentos 
+1
+    Obtem dados de NF-e pré cadastradas não carregadas e que sejam do mesmo remetente e destinatário desse conhecimento 
+NF-e	Outros	Relação de Chaves
+NF-e – Chave de Acesso
+Natureza da Carga
+Data de Emissão
+12/02/2026
+Tipo
+S
+N.º NF-e
+Série
+Peso (kg)
+Quantidade
+Espécie
+Cubagem (m³) Calcular Cubagem
+Marca
+CFOP
+PIN Suframa
+Valor do Produto
+BC de ICMS
+Valor do ICMS
+BC de ICMS-ST
+Valor ICMS-ST
+Outros
+Valor do Documento
+NCM
+Definir Quantidades de Cargas Manualmente Definir Cargas Perigosas/Químicas
+Totais da Carga Transportada
+Peso (kg)
+0
+Cubagem (m³)
+0
+Produto Predominante
+Valor Total (R$)
+0
+Quantidades
+Detalhamento da Carga
+Tipo de Carga
+Composição do Frete 
+Sugerir Tabela
+Informações
+Tabela de Preços
+Regra *
+Detalhamento da Regra
+Consultar QualP
+Tarifa Final
+Tarifa Real
+Frete Valor
+Base de Cálculo
+Alíquota (%)
+Valor do ICMS
+Outros
+Pedágio
+Diária
+Seguro
+Total Prestação
+ Clique aqui para verificar o CST que será aplicado no CT-e após salvá-lo.
+Impostos CBS e IBS
+CST
+Código de Classificação Tributária
+Base de Cálculo
+0,00
+IBS Municipal
+Alíquota (%)
+0,00
+Valor Final
+0,00
+IBS Estadual
+Alíquota (%)
+0,10
+Valor Final
+0,00
+CBS
+Alíquota (%)
+0,90
+Valor Final
+0,00
+Vale-Pedágio
+Pago Por		Tipo de Dispositivo	Operadora de Vale-Pedágio / Empresa Fornecedora	Número do Comprovante	Valor do Pedágio	VPO ANTT	 
+* As opções correspondentes a Recebedor e Expedidor do campo "Pago por" ficam desabilitadas quando eles não são preenchidos como Envolvidos.
+Observações do Conhecimento 
+Observações do Pedido de Venda 
+  
 ###
 Erro: Como emitir um Mdf-e no sistema Bsoft TMS?
 Solução: Caso for emitir um MDf-e para um Ct-e, você pode criá-lo junto da criação do Ct-e marcando na guia Dados básicos a opção Criar Manifesto em Vínculo com Manifesto. Para gerar de forma manual o Mdf-e, basta no menu lateral esquerdo ir em Transporte, Manifesto de Carga ou pesquisar na barra de pesquisa do Menu por Manifesto de Carga. Clica no ícone + verde para adicionar que irá apresentar as seguintes opções de preenhcimento:
@@ -2022,6 +2137,7 @@ Sábados
 das 8:00 às 12:00
 (Horário de Brasília)
 ###
+
 
 
 
