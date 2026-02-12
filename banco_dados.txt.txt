@@ -1338,7 +1338,175 @@ Validação
 
 
 
+//Assuntos N2
+###
+Erro: Como configurar o sistema Bsoft TMS para emissão de Nota fiscal de Serviço (NFS-e, ou NFSE)?
+Solução:
+Configurando e Integrando NFS-e (RPS) com prefeituras
 
+Nesse material veremos como realizar as configurações para emissão de NFS-e.
+
+Considerações iniciais
+Conteúdo abordado nesse material:
+O que é RPS?
+Cadastrando modelos de notas
+Cadastrando um layout de impressão para a NFS-e
+Vinculando Serviços às ATIVIDADES
+Emitindo e enviando uma NFS-e
+O foco é a emissão pela tela de Notas Fiscais do menu Financeiro.
+Antes de iniciar o processo de integração, certifique-se de que a empresa já possui acesso ao portal da prefeitura para emissão de NFS-e da cidade em questão. Também é importante que o cadastro da pessoa vinculada à empresa definida no modelo de nota fiscal seja revisado para garantir que dados como inscrição municipal, e-mail, telefones e endereço estejam preenchidos corretamente.
+Na parte referente à configuração dos talões serão abordados apenas os principais campos referentes à emissão de NFSe em si, porém uma abordagem mais detalhada sobre a ferramenta Modelos de Notas pode ser acessada AQUI.
+Configurações relativas à retenção de tributos como o ISS, que pode ser o caso do seu cliente, podem ser acessadas AQUI.
+Ao final do material observar as peculiaridades de cada prefeitura.
+1 – O que é RPS?
+O RPS é o Recibo Provisório de Serviços. Documento autorizado pelo Fisco e fornecido pelo contribuinte ao tomador do serviço contendo os dados de uma prestação de serviços que deverão ser informados ou transmitidos posteriormente ao Fisco Municipal quando não for possível a geração imediata da respectiva NFS-e. O RPS é valido por 10 dias a contar da data de sua emissão. Após a emissão do Recibo Provisório de Serviços, o prestador de serviços deverá substituí-lo por uma Nota Fiscal de Serviços Eletrônica – NFS-e no prazo de 10 dias, a contar da data de emissão do RPS.
+
+O RPS dentro da integração com sistemas nada mais é do que um pré cadastro da Nota fiscal de serviços. Quando integramos, integramos o RPS. Então, caso esteja tudo OK, a prefeitura nos retorna um número de nota válido, que substituirá o RPS cadastrado no sistema por uma NFS-e. Por isso sempre temos que cadastrar 02 modelos de nota, onde um deles representa o RPS e o outro a NFS-e.
+
+2 – Cadastrando modelos de notas
+Para integração com as prefeituras é necessário cadastrarmos dois modelos de nota. A seguir será mostrado o cadastro de cada um deles através do menu Financeiro / Configurações / Fiscal / Modelos de notas.
+
+2.1 – Cadastrando modelo de nota do tipo “NFS-e Próprio”
+
+Empresa: informar a empresa que emitirá a NFS-e. Caso o campo “Empresa” não esteja visível na configuração do talão, siga as seguintes orientações para habilitá-lo:
+Mude o valor do parâmetro “finan_controleEmpresa” para SIM, mas somente para os usuários Admin e Suporte.
+Em clientes muito antigos pode ocorrer do sistema não estar configurado para trabalhar com empresas (parâmetro “finan_controleEmpresa” = NÃO) e por isso essa ação torna-se necessária.
+Através da visualização do cadastro da empresa pela qual acontecerá a emissão das notas vincule os usuários Admin e Suporte a ela.
+Descrição: Aqui deve-se informar um nome sugestivo como, por exemplo, “NFS-e Rio Grande”, “NFS-e Pelotas”, etc.
+esse modelo não vai aparecer como opção de modelo de NF no momento da emissão, pois apenas os modelos do tipo “RPS” aparecem na seleção de modelos.
+Série: Informar uma série para a nota, caso necessário.
+Tipo de Modelo: Selecionar NFS-e próprio.
+Ambiente NFSe: A virada para produção só é possível com o aval de algum usuário com permissão para tal. Detalhes AQUI.
+Utiliza serviços: Definir como SIM, pois dessa forma a aba “Serviços” na visualização de um registro da tela de Notas Fiscais estará disponível para que o usuário insira os serviços que precisa relacionar na NFS-e.
+A opção “Utiliza produtos” deve ficar definida como NÃO, pois para NFS-e não devem ser relacionados produtos, mas apenas serviços.
+A opção “Utilza Notas Terceiros” deve ficar definida como NÃO, pois normalmente ela é utilizada para encarte de notas de entrada.
+Imprimir nota: Informar SIM para habilitar o campo “Layout Nota Fiscal”.
+Localidade: Selecionar a cidade da prefeitura a ser integrada. A lista de cidades atendidas pode ser verificada AQUI.
+Arrendodar valor do ISSQN: definir de acordo com a forma de trabalho da prefeitura em questão.
+Layout Nota fiscal: Selecionar um layout especifico para a NFS-e em questão (na sequência do material há uma explicação específica sobre layouts).
+A configuração do layout consiste em algumas SQL que fornecerão informações para preenchimento do “corpo” da NFS-e. São informações que a empresa deseja colocar como a descrição dos serviços, valores, condições de pagamento, vencimento, etc.
+Para configuração de um layout é importante a participação do cliente no sentido de nos auxiliar na definição das informações que deseja ou que pelo menos ele nos forneça notas que tenham sido emitidas diretamente no portal das prefeituras.
+
+Exemplo de uma NFS-e e com destaque para o conteúdo que é preenchido com o layout de impressão. NFS-e integrada com a prefeitura de Santa Cruz do Sul-RS.
+Remetente NF-e/NFS-e: Será o e-mail de envio da NFS-e para o cliente.
+2.2 – Cadastrando modelo de nota do tipo “RPS”
+
+Empresa: informar a empresa que emitirá a NFS-e. Caso o campo “Empresa” não esteja visível na configuração do talão, siga as seguintes orientações para habilitá-lo:
+Mude o valor do parâmetro “finan_controleEmpresa” para SIM, mas somente para os usuários Admin e Suporte.
+Em clientes muito antigos pode ocorrer do sistema não estar configurado para trabalhar com empresas (parâmetro “finan_controleEmpresa” = NÃO) e por isso essa ação torna-se necessária.
+Através da visualização do cadastro da empresa pela qual acontecerá a emissão das notas vincule os usuários Admin e Suporte a ela.
+Descrição: Aqui deve se informar um nome sugestivo como, por exemplo, “RPS Rio Grande”, “RPS Pelotas”, etc.
+Esse é o modelo que vai aparecer para o usuário selecionar no momento da emissão de uma NFS-e.
+Série: Informar uma série para a nota, caso necessário.
+Tipo do Modelo: Selecionar RPS.
+Ambiente NFSe: A virada para produção só é possível com o aval de algum usuário com permissão para tal. Detalhes AQUI.
+Utiliza serviços: Definir como SIM, pois dessa forma a aba “Serviços” na visualização de um registro da tela de Notas Fiscais estará disponível para que o usuário insira os serviços que precisa relacionar na NFS-e.
+A opção “Utiliza produtos” deve ficar definida como NÃO, pois para NFS-e não devem ser relacionados produtos, mas apenas serviços.
+A opção “Utilza Notas Terceiros” deve ficar definida como NÃO, pois normalmente ela é utilizada para encarte de notas de entrada.
+Imprimir nota: Informar SIM para habilitar o campo “Layout Nota Fiscal”.
+Localidade: Selecionar a cidade da prefeitura a ser integrada. A lista de cidades atendidas pode ser verificada aqui.
+Arrendodar valor do ISSQN: definir de acordo com a forma de trabalho da prefeitura em questão.
+Layout Nota fiscal: Selecionar um layout especifico para a NFS-e em questão.
+Modelo NFS-e: Aqui deve ser selecionado o modelo de nota do tipo NFS-e previamente cadastrado.
+Remetente NF-e/NFSe: Será o e-mail de envio da NFS-e para o cliente.
+Senha RPS: Este campo só será mostrado caso a prefeitura a ser integrada necessite de alguma senha.
+Dependendo da localidade, ao invés de “Senha RPS” a opção demonstrada pode ser “Token”.
+Na maioria dos casos a autenticação é feita utilizando o certificado digital instalado na área do cliente. Nesses casos o campo “Senha RPS” ou “Token” não são exibidos.
+3 – Cadastrando um layout de impressão para a NFS-e
+Através do menu Configurações / Impressão / Layouts de Impressão temos duas formas de incluir um layout para integração:
+
+Exportando de uma área que já possua o layout (que seja igual ou parecido com o que se necessita) e o importando na área desejada.
+Cadastrando manualmente.
+3.1 – Importando o layout de outra área (esse é o caminho sugerido)
+Descobrir o nome de alguma área que tenha NFS-e cadastrada e funcionando.
+Após acessar a área, ir até a ferramenta Layouts de Impressão, selecionar o modelo desejado (o que estiver vinculado ao talão de NFS-e utilizado pelo cliente) e clicar em “Exportar”, conforme imagem abaixo.
+
+Acesse a área do cliente que irá utilizar o layout, vá até a ferramenta Layouts de Impressão e clique em “Importar”. O sistema vai solicitar o local onde está o arquivo anteriormente gerado, então basta selecioná-lo e confirmar:
+
+3.2 – Criando um layout do zero
+No menu Configurações / Impressão / Layouts de Impressão clique em “Adicionar”:
+
+Preencha os campos conforme a imagem abaixo e clique em “Cadastrar”.
+Importante:
+Número Máximo de Colunas: 100
+Número Máximo de Linhas: 20
+
+Selecione o modelo criado e clique em “Visualizar”:
+
+Clique em “Adicionar” e insira os itens da nota como, por exemplo, os serviços. Observe o exemplo:
+
+
+4 – Vinculando Serviços às ATIVIDADES
+É importante frisar que na implantação de NFS-e é necessário definir junto à contabilidade da empresa quais os códigos das atividades de serviços prestados pela empresa. Essas atividades e seus respectivos códigos existem nos sistemas das prefeituras e por isso podem variar de cidade para cidade. Tais atividades e códigos devem ser cadastrados no Datamex para posterior vinculação aos serviços que são informados na emissão da NFS-e.
+
+4.1 – Cadastrando atividades
+No menu Configurações / Cadastros Básicos / Atividades, clicar em “Adicionar” e prrencher os campos necessários.
+
+Dependendo da localidade informada podem aparecer diferentes campos na tela, conforme vemos nas imagens abaixo:
+
+
+Para Itajaí – SC apareceu o campo “Código de tributação no município”.
+
+Para Rio Grande – RS apareceu o campo “Item da lista de serviço”.
+
+Para Navegantes – SC apareceu o campo “Item da lista de serviço”.
+
+Exemplo da tela com algumas atividades cadastradas.
+4.2 – Vinculação das Atividades aos Serviços
+No menu Financeiro / Configurações / Produtos e Serviços / Serviços, selecionar o serviço que já deverá ter sido previamente cadastrado, clicar em “Visualizar”.
+
+Depois, basta ir até a abra “Atividades Produtos e serviços” e clicar em “Adicionar”:
+
+
+Para um único serviço podem ser incluídas diversas atividades, pois cada cidade possui um código próprio.
+
+Todos os serviços que serão utilizados para emissão de NFSe precisam ter uma vinculação com um tipo de atividade utilizado na prefeitura.
+
+5 – Emitindo e enviando uma NFS-e
+A emissão de NFS-e é realizada no menu Financeiro / Notas Fiscais / Notas Fiscais.
+
+5.1 – Criando a nota
+Uma vez na ferramenta Notas Fiscais, clique em “Adicionar” para então entrar na tela abaixo:
+
+
+Depois dessa etapa ainda haverá a parte onde o serviço é inserido na nota.
+Tipo: Escolher a opção Saída.
+Operação: Escolher o Tipo de Operação cadastrado para utilização na emissão de NFS-e. Podem ter sido cadastrados vários tipos, então é preciso atentar-se bem e escolher o correto para a nota em questão.
+Modelo: Escolher o modelo de RPS previamente criado.
+Tributação do serviço: Escolher o tipo de tributação da nota. Essa definição deve ser fornecida pelo cliente ou sua contabilidade, pois está intimamente ligada na forma de tributação do ISS, podendo até mesmo indicar se haverá ou não retenção desse tributo.
+Local da prestação do Serviço: Aqui deve ser informado em que cidade o serviço foi prestado.
+Os demais campos e procedimentos não serão tratados neste manual, pois fazem parte dos procedimentos já utilizados para emissão de qualquer tipo de NF.
+
+5.2 – Integrando com a prefeitura
+Após gravar a nota, selecione o registro na listagem e clique na operação extra “NFS-e”.
+Depois de clicar na operação extra “NFS-e” são mostradas as opções possíveis em relação à nota. Selecione a opção desejada e clique em “Executar”.
+
+Operação extra “NFSe”
+
+Opções que aparecem após clicar na operação extra “NFSe”.
+* O sistema usado por algumas prefeituras pode não fornecer a impressão do documento pelo webservice. Nesses casos a impressão gerada pelo Datamex é uma impressão “não oficial”. Nessa situação a impressão “oficial” pode ser realizada pelo cliente diretamente no portal da prefeitura onde normalmente emitiria a nota.
+
+PECULIARIDADES DAS PREFEITURAS (as informações abaixo podem estar desatualizadas, por isso é sempre bom trabalhar em conjunto com o cliente para que obtenha as informações junto à sua prefeitura)
+
+PELOTAS – RS:
+
+Cancelamento de notas deve ser feito presencialmente junto à prefeitura.
+Deve ser obtido o token para configuração do modelo de nota.
+Este Token deve ser obtido pelo cliente no portal da Prefeitura de acordo com esta orientação  https://intra.avmb-asten.com.br/repositorio/Suporte/NfseToken.pdf
+RIO GRANDE – RS:
+
+Não é necessário ter certificado digital, porém é necessário senha para a emissão de notas.
+O bloco de descrição do serviço, que é preenchido com a impressão definida por um layout posicionado, utiliza uma fonte mono espaçada, ou seja, os caracteres não ocupam um espaço padrão, cada caractere ocupa um espaço especifico como por exemplo o caractere “i” ocupa 1/3 do espaço do caractere “U”. Sendo assim, é impossível definir com exatidão a posição dos campos a serem impressos.
+Tópicos relacionados:
+Credenciamento de empresa para emitir NFSe em Rio Grande
+Obtendo os XML de NFSe diretamente do portal.
+NOVO HAMBURGO – RS:
+
+É necessário realizar o credenciamento da empresa junto à prefeitura para emissão de notas no ambiente de INTEGRAÇÃO.
+A Série do RPS e da NFS deve ser obtida junto a área técnica pelo contato: suporte@notaeletronica.com.br (Nota Control Tecnologia LTDA).
+ITAJAÍ – SC:
+
+Os modelos de notas RPS e NFS-e devem ter as séries RP1 e A1 respectivamente.
 
 ###
 Erro: Cliente está tentando vincular uma terceira e/ou quarta placa no Conjunto de veículos ou na Vinculação de motoristas e está apresentando erro que a segunda, terceira ou até quarta placa não permite assumir posição.
@@ -1733,6 +1901,7 @@ Sábados
 das 8:00 às 12:00
 (Horário de Brasília)
 ###
+
 
 
 
