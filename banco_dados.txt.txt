@@ -579,6 +579,8 @@ Emissão do CT-e substituto: até 60 dias após a emissão do CT-e original.
 - CT-e de Substituição não pode ser cancelado; 
 - É possível emitir Carta de Correção para CT-e de Substituição;
 - Não é possível emitir Carta de Correção para CT-e Substituído (que possuí um CT-e de Substituição vinculado).
+O passo a passo para emitir o Ct-e de substituição:
+- Primeiro o tomador deve já ter feito o evento de prestação em desacordo, com o evento feito, basta ir até o sistema em Transporte, Conhecimentos. Clica em adicionar + e preenchimento manual. Preenche os dados de Agência e talão, e lá em baixo em Tipo do CT-e * coloca a opção substituição.
 CT-e Simplificado:
 Permite agrupar várias entregas e/ou coletas em um documento, desde que sejam de um único tomador de serviço. Ou seja, mesmo que a operação de transporte intermunicipal ou interestadual tenha vários remetentes ou destinatários, é possível agrupá-las no mesmo CTe. Requer apenas dois documentos fiscais.
 obs: Todas as coletas precisam ser realizadas no mesmo estado e todas entregas precisam ser na mesma cidade , mesmo que o transporte seja interestadual. Por exemplo, todas as coletas precisam ser realizadas no Paraná e todas as entregas na cidade de São Paulo / SP. As entregas realizadas precisam se encaixar dentro do mesmo CFOP; As operações de transporte precisam estar submetidas à mesma tributação.
@@ -926,7 +928,7 @@ Em seguida, clique em Salvar e depois em Gravar para finalizar o processo.
 
 
 
-
+// Passo a passo e cadastros no sistema com opções.
 
 ###
 Erro: Como cadastrar minha empresa no sistema?
@@ -1334,8 +1336,60 @@ tarifaDigitada, tarifaCalculada, valorFrete, baseCalculo, aliquota, valorICMS, v
 Campos Editáveis
 Cálculos
 Validação
+###
+Erro: Como criar um Ct-e (conhecimento) no sistema?
+Solução: Vai em Transporte, Conhecimento. Clica no ícone + para adicionar. 
 
 
+Opções de preenchimento na guia Dados básicos:
+Forma de Emissão	
+Normal	Rascunho	Numeração Posterior
+Agência *	
+Acelera Transportes
+Comissiona outra Agência *	Sim Não
+Talão *	
+Acelera Transportes
+Série: 1	Utilizado para emissão em Ambiente de Homologação da SEFAZ
+Modalidade *	
+Rodoviário
+Número	
+  Emitir contrato de frete
+Data de Emissão *	
+12/02/2026 17:18
+ 
+Data de Previsão de Saída	
+ 
+Pedido/Cotação	
+
+ 
+
+
+ Importar Notas do Pedido  Vincular Ordem já Carregada
+Vínculo com OC	
+
+ 
+ 
+Vincular várias OC	Sim Não 
+Vínculo com Manifesto	Não Vincular Criar Manifesto Vincular a Manifesto existente
+Vínculo com Viagem	Não Vincular Criar Viagem Vincular à Viagem existente
+Vínculo com NF-e	
+
+ 
+  
+Consulta GarantidaEnviar XML da NF-e
+Enviar XML da DC-e
+Rota de Distribuição	
+
+ 
+Identificação do Pedido	
+Lotação	Sim Não 
+Comboio	Sim Não
+Globalizado	Sim Não
+Tipo de Serviço *	(Normal, Subcontratação, Redespacho, Redespacho Intermediário, Vinculado Multimodal)
+Tipo do CT-e *	(Normal, Complemento de Valores ou Substituição)
+ 
+Informações Complementares	
+###
 
 
 //Assuntos N2
@@ -1968,6 +2022,7 @@ Sábados
 das 8:00 às 12:00
 (Horário de Brasília)
 ###
+
 
 
 
