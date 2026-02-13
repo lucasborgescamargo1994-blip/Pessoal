@@ -1760,6 +1760,11 @@ Solução: Para cancelar gerencialmente um Ct-e ou Contrato de frete, deve possu
 	211	Quem pode cancelar CT-e gerencialmente	 	
 	188	Quem pode cancelar gerencialmente uma NFSe
 ###
+Erro: Como faz para alterar o valor que será averbado no ct-e?
+Solução: Para utilizar esta opção do valor assegurado ser diferente do valor total das mercadorias, deve-se criar um campo no "Tipo valores outros", com o nome interno 'vCargaSeg'. Se este campo for populado, este será o valor assegurado, caso contrário o comportamento permanece o mesmo do parâmetro. 
+parâmetro: transp_vCargaCTe
+Esse parâmetro é vital para o funcionamento da função, pois é ele quem vai permitir considerar o valor digitado no campo criado. Reforçando que não é necessário criar na regra pra puxar os valores das notas, pois se o valor estiver zerado, o parâmetro considera o valor das notas.
+###
 Erro: Cliente perguntou sobre a tabela do ICMS, Imposto de renda e do INSS, se é configurável ou é automática.
 Solução: A resposta pode variar muito de cliente para cliente, mas em resumo o sistema segue sim a tabela que é disponibilizada pela receita federal, e dentro do talão se estiver marcado para preencher conforme tabela irá utilizá-la. Porém que deve definir o ICMS é sempre o contador, pois pode ter regras de excessão conforme a atividade e tipo da empresa, pois por exemplo Cooperativas de transporte tem tributação com alíquotas reduzidas. Sempre oriente o cliente questionar o contador se deve utilizar a tabela da receita federal ou configurar alíquotas manualmente no sistema.
 ###
@@ -2140,6 +2145,7 @@ Sábados
 das 8:00 às 12:00
 (Horário de Brasília)
 ###
+
 
 
 
