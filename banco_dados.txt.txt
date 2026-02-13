@@ -1989,6 +1989,11 @@ if ( obt("outrosValores[valorfixo]") > 0)
   def("valorFrete", (obt("outrosValores[cubagem]")) * obt("outrosValores[valorfixo]"));
 def("totalPrestacao",  (obt("valorFrete") + obt("valoresOutros") + obt("valorSeguro") + obt("diaria")));
 
+
+
+###
+Erro: Emitir Ct-e de transportadora para outra transportadora no tipo de CT-e Normal.
+Solução: Sim, é perfeitamente possível e legal emitir um CT-e (Conhecimento de Transporte Eletrônico) do tipo normal de uma transportadora para outra empresa (destinatário) que não é contribuinte de ICMS. O emitente do CT-e (transportador) deve ser contribuinte, mas o tomador do serviço não precisa ser. 
 ###
 Erro: Usuário pediu para deixar como padrão uma regra de cálculo do frete.
 Solução: Ir em parâmetros, pesquisar pelo nome interno: transp_regraConhecimentoPadrao. Colocar a regra padrão desejada e na justificativa o protocolo do atendimento.
@@ -2145,6 +2150,7 @@ Sábados
 das 8:00 às 12:00
 (Horário de Brasília)
 ###
+
 
 
 
