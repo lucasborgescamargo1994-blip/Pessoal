@@ -1735,6 +1735,9 @@ Outros
 Erro: Cliente está tentando vincular uma terceira e/ou quarta placa no Conjunto de veículos ou na Vinculação de motoristas e está apresentando erro que a segunda, terceira ou até quarta placa não permite assumir posição.
 Solução: Verificar qual categoria foi atribuída em todas as placas envolvidas, se por exemplo a placa principal é um caminhão e a outra é carrega, deve cadastrar a principal na categoria CAVALO e a outra em carrega. Outro exemplo clássico de erro é colocar uma terceira placa, a primeira deve ser o CAVALO, a segunda um SEMI-REBOQUE 1 e a terceira SEMI-REBOQUE 2. Se caso for quatro placas totais, da certo também, exemplo CAVALO + SEMI-REBOQUE 1 + DOLLY + SEMI-REBOQUE 2.
 ###
+Erro: Cliente reclamando que o layout do ct-e está  ruim, que as observações estão amontoadas e não separadas (mesmo no talão estando certo), também quando o cliente é de migração e reclama que está diferente o DACTE, gerando duas páginas quando tem várias notas no mesmo ct-e.
+Solução: Alterar o parâmetro 1593 - Modelo Espelho DACTE PDF para 1.0. Esse Layout não tem nenhum defeito e é mais organizado nas informações que o 2.0.
+###
 Erro: Situações e regras para emissão de MDF-e, quando é entregas no mesmo estado porém em cidades diferentes.
 Solução: Sim, é possível emitir um único MDF-e para cidades diferentes, desde que todas as descargas ocorram dentro do mesmo estado (UF). 
 Se a viagem envolver entregas em estados (UFs) diferentes, a regra muda: é necessário emitir um MDF-e para cada estado de descarregamento. 
@@ -2150,6 +2153,7 @@ Sábados
 das 8:00 às 12:00
 (Horário de Brasília)
 ###
+
 
 
 
