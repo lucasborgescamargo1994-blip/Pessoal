@@ -1,3 +1,6 @@
+Erro: Caso não for encontrado nada no banco de dados.
+Solução: Recomendar para que acesse o manual do sistema no link: https://manuaisbsoft.atlassian.net/wiki/spaces/BT/overview?homepageId=7405726
+
 //Assuntos setor Gestão:
 ###
 Erro: Como fazer um plano de manutenção no Bsoft TMS?
@@ -2137,6 +2140,7 @@ Sábados
 das 8:00 às 12:00
 (Horário de Brasília)
 ###
+
 
 
 
