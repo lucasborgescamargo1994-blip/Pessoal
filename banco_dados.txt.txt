@@ -2142,6 +2142,9 @@ Caso ainda não possua um cadastro no Help Desk, poderá se cadastrar pela opç�
 
 As solicitações poderão ser enviadas a qualquer momento. Elas serão analisadas e respondidas o mais breve possível. 
 ###
+Erro: Como baixar o suporte remoto Teamviewer?
+Solução: Dentro do seu sistema Bsoft TMS, procure no menu por suporte e clique nele. Vai na opção remoto, vai aparecer abaixo: Para download do suporte remoto CLIQUE AQUI. Basta clicar no CLIQUE AQUI que o download irá começar. Após baixar, basta passar para o operador a ID e senha de acesso.
+###
 Erro: Como entrar em contato com a BSOFT TMS?
 Solução: Caso já tenha o sistema contratado conosco, no menu lateral do sistema em Opções do Sistema, tem a opção Suporte que lhe dará as opções para contato: Ticket, Telefone, Chat, Financeiro, Manuais, Remoto. Por telefone temos os seguintes contatos disponíveis: Números de telefones disponíveis:
 SP - São Paulo
@@ -2164,6 +2167,7 @@ Sábados
 das 8:00 às 12:00
 (Horário de Brasília)
 ###
+
 
 
 
