@@ -296,9 +296,9 @@ Financeiro do Equipamento (manutencao_app_financeiroEquipamento)
 KPIs (manutencao_app_kpi)
 Pneus (manutencao_app_pneus)
 Instalação
-Acesse a loja de aplicativos de seu dispositivo móvel (Android ou iOS), localize o aplicativo DATAMEX ou BSOFT e faça a instalação.
+Acesse a loja de aplicativos de seu dispositivo móvel (Android ou iOS), localize o aplicativo BSOFT e faça a instalação.
 Acessando o aplicativo
-Após realizar a instalação do app, quando o usuário abri-lo pela primeira vez será solicitado o domínio a ser utilizado, que corresponde ao endereço do sistema. Exemplo: datamex.e-login.net / sistema.bsoft.app
+Após realizar a instalação do app, quando o usuário abri-lo pela primeira vez será solicitado o domínio a ser utilizado, que corresponde ao endereço do sistema. Exemplo: sistema.bsoft.app
 Após inserir o domínio, informe o seu usuário e senha de acesso (é a mesma utilizada para acessar o sistema).
 A seguir temos a tela inicial do aplicativo:
 Utilização
@@ -1609,7 +1609,7 @@ Clique em “Adicionar” e insira os itens da nota como, por exemplo, os servi�
 
 
 4 – Vinculando Serviços às ATIVIDADES
-É importante frisar que na implantação de NFS-e é necessário definir junto à contabilidade da empresa quais os códigos das atividades de serviços prestados pela empresa. Essas atividades e seus respectivos códigos existem nos sistemas das prefeituras e por isso podem variar de cidade para cidade. Tais atividades e códigos devem ser cadastrados no Datamex para posterior vinculação aos serviços que são informados na emissão da NFS-e.
+É importante frisar que na implantação de NFS-e é necessário definir junto à contabilidade da empresa quais os códigos das atividades de serviços prestados pela empresa. Essas atividades e seus respectivos códigos existem nos sistemas das prefeituras e por isso podem variar de cidade para cidade. Tais atividades e códigos devem ser cadastrados no Bsoft TMS para posterior vinculação aos serviços que são informados na emissão da NFS-e.
 
 4.1 – Cadastrando atividades
 No menu Configurações / Cadastros Básicos / Atividades, clicar em “Adicionar” e prrencher os campos necessários.
@@ -1656,7 +1656,7 @@ Depois de clicar na operação extra “NFS-e” são mostradas as opções poss
 Operação extra “NFSe”
 
 Opções que aparecem após clicar na operação extra “NFSe”.
-* O sistema usado por algumas prefeituras pode não fornecer a impressão do documento pelo webservice. Nesses casos a impressão gerada pelo Datamex é uma impressão “não oficial”. Nessa situação a impressão “oficial” pode ser realizada pelo cliente diretamente no portal da prefeitura onde normalmente emitiria a nota.
+* O sistema usado por algumas prefeituras pode não fornecer a impressão do documento pelo webservice. Nesses casos a impressão gerada pelo Bsoft TMS é uma impressão “não oficial”. Nessa situação a impressão “oficial” pode ser realizada pelo cliente diretamente no portal da prefeitura onde normalmente emitiria a nota.
 
 PECULIARIDADES DAS PREFEITURAS (as informações abaixo podem estar desatualizadas, por isso é sempre bom trabalhar em conjunto com o cliente para que obtenha as informações junto à sua prefeitura)
 
@@ -2167,6 +2167,7 @@ Sábados
 das 8:00 às 12:00
 (Horário de Brasília)
 ###
+
 
 
 
