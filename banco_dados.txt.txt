@@ -1995,6 +1995,10 @@ def("totalPrestacao",  (obt("valorFrete") + obt("valoresOutros") + obt("valorSeg
 
 
 ###
+Erro: A opção de Substituição não aparece no Tipo de Ct-e.
+Solução: Se não estiver aparecendo o tipo de ct-e Substituição, deve habilitar uma rotina chamada transp_substituicaoCTRC. 
+
+###
 Erro: Emitir Ct-e de transportadora para outra transportadora no tipo de CT-e Normal.
 Solução: Sim, é perfeitamente possível e legal emitir um CT-e (Conhecimento de Transporte Eletrônico) do tipo normal de uma transportadora para outra empresa (destinatário) que não é contribuinte de ICMS. O emitente do CT-e (transportador) deve ser contribuinte, mas o tomador do serviço não precisa ser. 
 ###
@@ -2167,6 +2171,7 @@ Sábados
 das 8:00 às 12:00
 (Horário de Brasília)
 ###
+
 
 
 
