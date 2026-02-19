@@ -1504,7 +1504,7 @@ Lotação	Sim Não
 Comboio	Sim Não
 Globalizado	Sim Não
 Tipo de Serviço *	(Normal, Subcontratação, Redespacho, Redespacho Intermediário, Vinculado Multimodal)
-Tipo do CT-e *	(Normal, Complemento de Valores ou Substituição)
+Tipo do CT-e *	(Normal, Complemento de Valores (Complementar) ou Substituição)
  
 Informações Complementares	
 ###
@@ -2171,6 +2171,7 @@ Sábados
 das 8:00 às 12:00
 (Horário de Brasília)
 ###
+
 
 
 
