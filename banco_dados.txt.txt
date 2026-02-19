@@ -2110,7 +2110,7 @@ Link componente: https://ajuda.e-login.net/postagem/componente-java-datamex-para
 Erro: Problema de NSU no nsdocs. Alguém consultou com o certificado da empresa em outro sistema e o NSU do nsdocs está fora de sequência.
 Solução: Verificar o último NSU que consta no erro, pedir senha master para um lider, logar na sua máquina no nsdocs com e-mail e senha master segurando o ctrl. Clicar na flecha esquerda do pesquisar sefaz e alterar o NSU.
 ###
-Erro: Precisava acessar área datamex para importar dados de regras, ct-e, nf-e, etc.
+Erro: Como faço para acessar e/ou fazer login na área datamex do cliente para importar dados de regras, ct-e, nf-e, etc. (Quando o cliente tem o sistema Datamex e tem o TMS, da para importas as coisas do Datamex para o TMS por conta de serem o mesmo sistema.
 Solução: entra em https://suporte.e-login.net/ , vai em central de atendimento, pesquisa a empresa, digita senha coca e clica em abrir área que vai apresentar a senha para logar na área do cliente datamex.
 ###
 Erro: Dúvidas e parâmetros de como utilizar Comissionamento Transporte (Comissão dos Corretores).
@@ -2167,6 +2167,7 @@ Sábados
 das 8:00 às 12:00
 (Horário de Brasília)
 ###
+
 
 
 
