@@ -1734,6 +1734,7 @@ Outros
 ###
 Erro: Como fazer um relatório personalizado/customizado para o cliente?
 Solução:Para fazer um relatório personalizado/customizado, você deve ir em Transporte, EDI, Assistente de Relatórios. Clica em adicionar e monta o relatório conforme necessidade do cliente. Para adicionar uma informação no relatório seleciona a fonte do dado em Origem e em Dados que vai aparecer em um quadro os dados. Arrasta ele até a Expressão. Caso o cliente queira que seja feito cálculos no relatório personalizado, basta faze-los dentro da expressão, por exemplo: Quer fazer valor do frete divididos pelo valor total das notas e multiplicados por 100, e com arredondamento para duas casas decimais (usa função ROUND): ROUND(composicaoFrete.totalPrestacao/notasFiscais.valorNotas*100, 2)
+Obs. Caso necessitar funções para colocar na expressão, pesquisa no google por funções SQL.
 ###
 Erro: Cliente está tentando vincular uma terceira e/ou quarta placa no Conjunto de veículos ou na Vinculação de motoristas e está apresentando erro que a segunda, terceira ou até quarta placa não permite assumir posição.
 Solução: Verificar qual categoria foi atribuída em todas as placas envolvidas, se por exemplo a placa principal é um caminhão e a outra é carrega, deve cadastrar a principal na categoria CAVALO e a outra em carrega. Outro exemplo clássico de erro é colocar uma terceira placa, a primeira deve ser o CAVALO, a segunda um SEMI-REBOQUE 1 e a terceira SEMI-REBOQUE 2. Se caso for quatro placas totais, da certo também, exemplo CAVALO + SEMI-REBOQUE 1 + DOLLY + SEMI-REBOQUE 2.
@@ -2174,4 +2175,5 @@ Sábados
 das 8:00 às 12:00
 (Horário de Brasília)
 ###
+
 
