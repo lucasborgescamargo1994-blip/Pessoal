@@ -1152,48 +1152,59 @@ Observações do Pedido de Venda
 Erro: Como emitir um Mdf-e no sistema Bsoft TMS?
 Solução: Caso for emitir um MDf-e para um Ct-e, você pode criá-lo junto da criação do Ct-e marcando na guia Dados básicos a opção Criar Manifesto em Vínculo com Manifesto. Para gerar de forma manual o Mdf-e, basta no menu lateral esquerdo ir em Transporte, Manifesto de Carga ou pesquisar na barra de pesquisa do Menu por Manifesto de Carga. Clica no ícone + verde para adicionar que irá apresentar as seguintes opções de preenhcimento:
 
-Agência *	
-Talão *	
-Data de Emissão * 09/02/2026 09:17
-Número	
-Origem *	 
-Destino	
+Agência *	EXEMPLO AGENCIA LTDA
+Talão *	MDF-e - EXEMPLO AGENCIA LTDA
+Série	2
+Data de Emissão * 20/02/2026 07:06
+Número	654
+Origem * PE - Abreu e Lima
+Destino * BA - Feira de Santana
 Km Inicial	
 Data de Saída 
+ Data de Encerramento automático  
+Percurso PE - AL - SE - BA  (X) Sugerir percurso automaticamente 
 Observação	
 Observação padrão do talão selecionado
-Documento a Vincular:	Conhecimento de Transporte	Nota Fiscal	Chave de Acesso de NF-e
+Documento a Vincular (Conhecimento de Transporte	Nota Fiscal	Chave de Acesso de NF-e)
 Alterar Observações dos Conhecimentos Sim Não 
-Conhecimentos Adicionar em Lote Adicionar via Código de Barras 
+Conhecimentos Adicionar em Lote Adicionar via Código de Barras
+654/CT-e - EXEMPLO CONHECIMENTO
 Adicionar Chave de Acesso de CT-es de Terceiros
 Totais
-Peso (kg) 0,000
-Quantidade 0
-Cubagem (m³) 0,000
-Valor Total (R$) 0,00
+Peso (kg) 
+26.9,878
+Quantidade 
+3.90
+Cubagem (m³) 
+0,000
+Valor Total (R$) 
+10275,65
 Detalhamento da Carga
 Produto Predominante	
+Diversos
 Tipo de Carga	
 5 - Carga Geral
-NCM	
+NCM *	
+2309.90.10
 CEP de Carregamento	
+50000-820
 CEP de Descarregamento	
-MOTORISTA
-Motorista
-Veículo Principal Vinculado 01 Vinculado 02
-Contratado
-Enviar Manifesto para a Plataforma Comprovei
-Alterar Motoristas dos Conhecimentos	Sim Não 
-Atualizar campo lotação?	Sim Não 
-Auxiliares / Outros Motoristas
-Responsável pelo Registro das Ocorrências no Aplicativo
-Responsável	
-Celular	
-Definir Seguradoras manualmente
-Definir Informações do Pagamento do MDF-e manualmente (obs. 
-A Nota Técnica 2025.001 estabelece a obrigatoriedade do preenchimento dos dados de pagamento no MDF-e, com vigência a partir de outubro.
-O preenchimento deste bloco será necessário sempre que o MDF-e possuir apenas um documento transportado ou quando o contratado for um TAC.)
-Definir CIOT manualmente Caso não informado manualmente, os CIOTs serão obtidos dos CT-es listados acima. Clique para visualizá-los
+00000-000
+
+Motorista xxx.xxx.xxx-xx - MOTORISTA EXEMPLO
+Veículo Principal XXX-XXXX
+Vinculado 01 * XXX-XXXX
+Contratado XX.XXX.XXX/XXXX-XX - FULANO EXEMPLO TRANSPORTADORA (ETC)
+( ) Enviar Manifesto para a Plataforma Comprovei
+Alterar Motoristas dos Conhecimentos	()Sim  ()Não 
+
+( ) Auxiliares / Outros Motoristas
+
+( ) Definir Seguradoras manualmente
+
+( ) Definir CIOT manualmente Caso não informado manualmente, os CIOTs serão obtidos dos CT-es listados acima. Clique para visualizá-los
+( ) Definir Informações do Pagamento do MDF-e manualmente
+
 Vale-Pedágio 
 Pago Por		Tipo de Dispositivo	Operadora de Vale-Pedágio / Empresa Fornecedora	Número do Comprovante	Valor do Pedágio	VPO ANTT
 ###
@@ -2175,5 +2186,6 @@ Sábados
 das 8:00 às 12:00
 (Horário de Brasília)
 ###
+
 
 
