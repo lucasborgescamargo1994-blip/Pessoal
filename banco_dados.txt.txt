@@ -1162,7 +1162,7 @@ Destino * BA - Feira de Santana
 Km Inicial	
 Data de Saída 
  Data de Encerramento automático  
-Percurso PE - AL - SE - BA  (X) Sugerir percurso automaticamente 
+Percurso PE - AL - SE - BA + (clicar no mais para adicionar percurso manualmente)  (X) Sugerir percurso automaticamente 
 Observação	
 Observação padrão do talão selecionado
 Documento a Vincular (Conhecimento de Transporte	Nota Fiscal	Chave de Acesso de NF-e)
@@ -2186,6 +2186,7 @@ Sábados
 das 8:00 às 12:00
 (Horário de Brasília)
 ###
+
 
 
 
