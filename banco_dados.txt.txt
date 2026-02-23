@@ -1877,6 +1877,9 @@ Solução: Passar para o setor integrações.
 Erro: Veículo em nome de uma empresa, ANTT em nome de uma pessoa física, e motorista não é essa pessoa física.
 Solução: Cadastrar em Pessoas o proprietário do veículo (empresa), a pessoa física com a ANTT como arrendatário e proprietário de veículo, e motorista como motorista.
 ###
+Erro: Auxílio com emissão de nota fiscal que estava dando erro ao gerar financeiro. Estava conflitando com título a receber. Não estava localizando o lançamento no consulta lançamentos.
+Solução: Problema era a conta financeira que não estava marcado permissão para usuário editar e liberar saldo.
+###
 Erro: Cliente cobrando modelo e se o sistema está preparado para o CBS e IBS da reforma tributária.
 Solução: Repassa a eles que ainda não está em vigor e o ano que vem será o primeiro ano para testes, no momento não conseguimos disponibilizar esse novo modelo porque ainda não está liberado pela Sefaz e dessa forma não irá validar.
 ###
@@ -2186,6 +2189,7 @@ Sábados
 das 8:00 às 12:00
 (Horário de Brasília)
 ###
+
 
 
 
