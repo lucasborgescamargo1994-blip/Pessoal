@@ -656,8 +656,6 @@ Frota Própria: Empresas que realizam o transporte de cargas utilizando exclusiv
 
 
 ___________________________________________________________________________
-
-
 MDF-e
 Quando é transporte de mercadoria própria não é necessário emitir CT-e, apenas a MDF-e.
 Exemplo de agrupamento de MDF-E:
@@ -677,9 +675,7 @@ Pode ser emitida uma única MDF-e se for o mesmo UF de destino, idenpentente se 
 Pode ser agrupados vários CT-e desde que sejam todas com mesmo UF de destino.
 As cargas no caminhão devem ser iguais ao que consta no CT-e para não haver divergência de informações, como o peso por exemplo.
  
-
 Carta de Correção Eletrônica (CC-e)
-
 A Carta de Correção (CCe) para o Conhecimento de Transporte Eletrônico (CT-e) serve para corrigir erros em um CT-e já emitido, sem a necessidade de cancelá-lo. Ela é usada para retificar informações que não alteram valores fiscais, como dados de endereço, descrição do produto ou informações adicionais. No entanto, não pode corrigir dados como base de cálculo, alíquota, valor do imposto, dados cadastrais do emitente ou destinatário, ou data de emissão
 O que a Carta de Correção pode corrigir
 Dados de endereço: Rua, número, bairro, cidade, CEP do remetente, destinatário ou local de entrega.
@@ -691,7 +687,6 @@ Identificação de partes: Dados cadastrais do emitente, tomador, remetente ou d
 Datas: Data de emissão ou saída.
 Mercadorias: Descrição da mercadoria se a alteração for afetar a alíquota de impostos. 
 
-
 NFS-E
 
 A respeito da NFS-e, primeiramente é emitida a RPS, que significa Recibo Provisório de Serviços. É um documento fiscal temporário usado para registrar a prestação de serviços quando não é possível emitir a Nota Fiscal de Serviços Eletrônica (NFS-e) no momento da transação, seja por problemas técnicos ou para agilizar o processo em empresas com alto volume de emissões. O RPS deve ser convertido em uma NFS-e dentro de um prazo estabelecido pela prefeitura, geralmente de até 10 dias. 
@@ -702,12 +697,6 @@ O que acontece depois
 Após a emissão do RPS, a empresa deve convertê-lo em uma NFS-e. 
 A conversão é feita enviando os dados do RPS (geralmente em arquivo XML) para a prefeitura, que emitirá a nota fiscal eletrônica definitiva. 
 A não conversão do RPS dentro do prazo legal pode acarretar penalidades. 
-
-
-
-
-
-
 ###
 Erro: Cliente perguntou a respeito de frete mínimo.
 Solução: Temos a cálculadora de frete mínimo que pode ser utilizada pelo link:
@@ -806,7 +795,6 @@ Ir em Financeiro/Notas Fiscais/Notas Fiscais, seleciona a nota e clica em Gerenc
   Gerar Despesa: ao selecionar essa opção, será aberta a tela de Despesas - Inclusão, com os dados da Nota de Entrada já importados. Será necessário informar apenas o Tipo de Item, a Apropriação e o Tipo de Pagamento;
 Lançamento de Adiantamentos e Devoluções, Receitas e Recebimentos pelos Motoristas
 Acessar Controle de Viagens, Adiantamentos e devoluções.
-
 Receitas
 Para lançar Receitas acesse o menu Controle de Viagens | Receitas.
 As Receitas que foram criadas a partir dos Documentos da Viagem também aparecerão nessa tela. Nessa tela pode clicar no botão “+” Adicionar.
@@ -822,8 +810,6 @@ Acessar Controle de Viagens, Dashboards, Gestão Operacional.
 Relatórios
 Acessar Controle de Viagens, Relatórios.
 Relatório de acerto de motoristas tem dois modelos, o Listagem de Acertos - Saldo de Acertos trás formato de lista, Análise de Resultado é um modelo analítico.
-
-
 ###
 Erro: Cliente tem dúvidas referente a lançamentos financeiros no sistema Bsoft TMS, que se referem a Títulos/Duplicatas a receber/pagar.
 Solução: Segue manual referente a títulos/duplicatas a receber/pagar:
@@ -834,25 +820,19 @@ Múltiplas faturas:
 Serve para recebimentos/despesas recorrentes, como por exemplo fatura de água e luz, e também para caso de financiamentos longos e consórcio. (Recomendado para muitas parcelas, pois se utilizar o parcelamento normal tudo dentro de uma fatura, para editar em lote terá que excluir as baixas já feitas pra reabrir a fatura para poder editá-la, o que gera grande trabalho). Essa opção múltiplas faturas gera uma fatura para cada parcela. 
 Condição de pagamento: 
 Recomendado para despesas/recebimentos de curto prazo, os quais geralmente não se alteram. Porque se colocar um financiamento de 72 parcelas nessa modalidade e houver por exemplo uma renegociação, é necessário reabrir todas as parcelas pagas para poder alterar uma por uma, o que causa grande trabalho e na função Múltiplas faturas não gera esse problema, pois irá gerar uma fatura para cada parcela. Essa opção é ideal para fazer por exemplo parcelamento de recebimento de um ct-e em duas parcelas, parcelamento de uma nota fiscal de emissão própria que irá receber em 4 vezes, etc.
-
 Realizar Lançamentos:
 Financeiro, Títulos a Pagar ou Receber, Títulos a Pagar ou Receber.
 Consulta Títulos a pagar ou receber:
 Para consultar os títulos a pagar filtrados por vencidos ou a vencer, ideal em Financeiro, Títulos a Pagar/Receber, Lotes / Duplicatas a Pagar ou Receber.
 Consulta de lançamentos de pagamentos/recebimentos efetivados:
 Financeiro, Caixa e Bancos, Consulta Lançamentos.
-
 Transferências:
  Pode ser realizado em Financeiro, Caixas e Bancos, Transferências.
 Pode ser consultado a transferência em Financeiro, Caixas e Bancos, Consulta Lançamentos.
-
-
 Gerencial e Apropriação (Centro de Custo):
 Para lembrar as definições desses cadastros, lembre:
 Gerenciais = O QUE (Qual tipo de despesa/receita ou frete)
 Apropriação (Centro de Custo) = PARA QUEM (Para situações não detalhadas geralmente coloca a empresa, para quem precisa um controle maior coloca detalhado, por exemplo despesa de combustível, com o veículo placa tal). A apropriação vai para o centro de custo, que fica separado das contas gerenciais. A ideia é não bagunçar ambos e ter um controle maior e detalhado conforme o cliente precisar.
-
-
 IMPORTANTE!
 Os Gerenciais de Prefixo 1 são referente as Receitas (devem ser usados nos Títulos a Receber);
 Os Gerenciais de Prefixo 2 são referente as Despesas (devem ser usados nos Títulos a Pagar).
@@ -860,7 +840,6 @@ IMPORTANTE!
 Cada Empresa, Agência ou Placa de Frota Própria cria automaticamente um Centro de Custo (Apropriação), com isso não é necessária a criação manual para esses casos.
 
 Notas Fiscais
-
 Pode ser usado para registrar entrada de notas emitidas por terceiros ou emissão própria. Para emitir é necessário ter cadastrado o Modelo de Notas e Tipos de Operações (cadastro de CFOP).
 Cadastro Modelos de Notas:
  Acessar Financeiro, Configurações, Fiscal, Modelos de Notas.
@@ -887,31 +866,18 @@ Após colocar os dados obrigatórios, basta clicar em cadastrar. Na sequência d
 • V. Unitário: valor unitário do produto. É possível informar o valor unitário e a quantidade e o sistema calcular o valor total, ou ainda, é possível informar a quantidade e o valor total e o sistema calcular o valor unitário;
 • V. Total: valor total do item (quantidade x valor unitário).
 Se você estiver usando uma operação configurada para gerar um lançamento financeiro, os campos do quadro Apropriação são habilitados para preenchimento do Gerencial e Centro de Custo.
-
 • Através da importação de um arquivo XML (a ferramenta Notas Fiscais permite a importação de XML de NF-e e de CT-e);
 Acessar Financeiro, Notas Fiscais, Notas Fiscais e no ícone Importar NF-e  . Após escolhe arquivo, coloca Modelo, Natureza Operação e Almoxarifado. Ao realizar essa ação, caso o Produto e a Unidade de medida não estejam cadastrados no sistema, alertas são exibidos na tela, para o usuário realizar os cadastros. Esses cadastros podem ser feitos vinculando-os a unidades/produtos já existentes ou criando novos cadastros sem copiar os dados de outro. Após clicar em Enviar Arquivo, pode solicitar as seguintes mensagens:
 ALERTA DE UNIDADE DE MEDIDA:
- 
-
 Vincular a unidade existente: essa funcionalidade é empregada quando o sistema não identifica uma unidade correspondente àquela indicada na Nota Fiscal Eletrônica (NF-e), mas já possui uma unidade de medida cadastrada. Por exemplo, no sistema pode estar cadastrada a unidade de medida "T" para tonelada, enquanto na NF-e foi mencionado "TON". Ao selecionar essa opção, o usuário deve indicar qual cadastro será utilizado como referência para criar o novo registro;
- 
 Cadastrar nova unidade: um novo cadastro é realizado, onde é necessário selecionar a categoria correspondente: massa, volume, quantidade ou comprimento. Em seguida, insira a descrição correspondente que deseja que seja registrada no sistema.
- 
-
 ALERTA DE PRODUTO:
- 
-
 Cadastrar: essa opção abre a tela de cadastro manual de produtos, onde devem ser preenchidos os campos necessários;
 Cadastrar produto com base em produto já existente: essa opção é válida para quando a empresa tiver um produto genérico com configurações básicas que qualquer cadastro de produtos que ela realize precise ter. Dessa forma, ao escolher um produto base para que o novo item seja cadastrado, o sistema criará um novo produto replicando as mesmas informações contidas naquele usado como base. Para fazer a vinculação clicamos na opção destacada na imagem acima e selecionamos o produto que servirá de base para o novo cadastro.
- 
-
 Após salvar o cadastro basta continuar com a importação da nota normalmente.
 Vincular a um produto existente: é possível vincular o produto a um produto que já esteja cadastrado no sistema. Dessa forma, evita-se ter um mesmo produto cadastrado diversas vezes com apenas algumas variações em suas descrições.
- 
-
 Esta opção, "Vincular a um produto existente", somente é exibida se o emissor da nota que está sendo registrada já estiver cadastrado na ferramenta Pessoas. Isso porque, ao realizar esse vínculo, também vincula o código do produto ao fornecedor. Assim, ao importar uma nota que inclua um produto cujo código já esteja vinculado a um produto existente no sistema, a tela de notas não emitirá um alerta ao usuário, pois o produto já está registrado.
 Após concluir o cadastro do produto, é necessário clicar no botão "Importar NF-e" para registrar a Nota Fiscal Eletrônica (NF-e) correspondente ao produto cadastrado.
-
 • Via repositório de NF-e (caso o cliente possua o nsdocs). 
 Através do Menu Financeiro/Notas Fiscais/Notas Fiscais: Acessar Financeiro, Notas Fiscais, Notas Fiscais e no ícone Importar NF-e  . Na opopção Repositório NF-e Recebidas buscar pela nota a ser importada. Caso tiver mais de 100 notas refinar a busca para que possa ser encontrada. 
 Então é exibida a tela para de Alteração da Nota Fiscal. Confira se todas as informações estão corretas. Caso esteja utilizando uma operação com lançamento de Contas a Pagar, é necessário informar uma Condição de Pagamento. E após Salvar a inclusão, na aba Rateios, é necessário informar o "Gerencial" e a "Apropriação".
@@ -919,18 +885,9 @@ Através do menu nsdocs | Repositório de NF-e: Existem duas formas para criar a
  Selecionar a NF-e desejada e clicar no botão "Criar NF-e no Módulo Financeiro". Vai no menu nsdocs, Repositório NF-e, seleciona a nota e clica na opção Criar NF-e no módulo Financeiro . Após isso só preencher Modelo, Natureza e Amoxarifado e criar NF-e.
 
 Selecionar a NF-e desejada e clicar com o botão direito do mouse, em seguida escolher a opção "Criar NF-e no Módulo Financeiro".
-
-
-
 Em seguida, clique em Salvar e depois em Gravar para finalizar o processo.
 ###
  
-
-
-
-
-
-
 // Passo a passo e cadastros no sistema com opções.
 
 ###
@@ -1033,7 +990,6 @@ Identificação do Pedido
 Lotação	Sim Não 
 Comboio	Sim Não
 Informações Complementares.	
-
 Depois de preenchido os dados da tela de dados básicos conforme a operação, clica em avançar e vai em Dados de Frete para preencher o restante das informações, as que são obrigatórias acompanham um asterísco* e o sistema ao tentar salvar faltando algo importante irá notificar solicitando o preenchimento. Segue tela de opções para preenchimento na guia Dados de Frete:
 Envolvidos
 Remetente *
@@ -1066,7 +1022,7 @@ XXXXX
  Atenção: Sem a consulta do motorista, o seguro pode não cobrir o sinistro. Clique e entenda.
 Documentos 
 1
-    Obtem dados de NF-e pré cadastradas não carregadas e que sejam do mesmo remetente e destinatário desse conhecimento 
+Obtem dados de NF-e pré cadastradas não carregadas e que sejam do mesmo remetente e destinatário desse conhecimento 
 NF-e	Outros	Relação de Chaves
 NF-e – Chave de Acesso
 Natureza da Carga
@@ -1151,7 +1107,6 @@ Observações do Pedido de Venda
 ###
 Erro: Como emitir um Mdf-e no sistema Bsoft TMS?
 Solução: Caso for emitir um MDf-e para um Ct-e, você pode criá-lo junto da criação do Ct-e marcando na guia Dados básicos a opção Criar Manifesto em Vínculo com Manifesto. Para gerar de forma manual o Mdf-e, basta no menu lateral esquerdo ir em Transporte, Manifesto de Carga ou pesquisar na barra de pesquisa do Menu por Manifesto de Carga. Clica no ícone + verde para adicionar que irá apresentar as seguintes opções de preenhcimento:
-
 Agência *	EXEMPLO AGENCIA LTDA
 Talão *	MDF-e - EXEMPLO AGENCIA LTDA
 Série	2
@@ -1190,21 +1145,16 @@ CEP de Carregamento
 50000-820
 CEP de Descarregamento	
 00000-000
-
 Motorista xxx.xxx.xxx-xx - MOTORISTA EXEMPLO
 Veículo Principal XXX-XXXX
 Vinculado 01 * XXX-XXXX
 Contratado XX.XXX.XXX/XXXX-XX - FULANO EXEMPLO TRANSPORTADORA (ETC)
 ( ) Enviar Manifesto para a Plataforma Comprovei
 Alterar Motoristas dos Conhecimentos	()Sim  ()Não 
-
 ( ) Auxiliares / Outros Motoristas
-
 ( ) Definir Seguradoras manualmente
-
 ( ) Definir CIOT manualmente Caso não informado manualmente, os CIOTs serão obtidos dos CT-es listados acima. Clique para visualizá-los
 ( ) Definir Informações do Pagamento do MDF-e manualmente
-
 Vale-Pedágio 
 Pago Por		Tipo de Dispositivo	Operadora de Vale-Pedágio / Empresa Fornecedora	Número do Comprovante	Valor do Pedágio	VPO ANTT
 ###
@@ -1302,38 +1252,28 @@ Solução: Para esses casos, tem opção do cancelamento gerencial, porém vale 
 Erro: Dúvidas referente ao nsdocs.
 Solução: Segue algumas informações a respeito do nsdocs:
 nsdocs
-
 Configurações iniciais: 
 - Cadastro da empresa
 - Parâmetros do Sistema
 - Certificado e agendamento:
 Instalar certificado da empresa (A1 na nuvem ou A3 localmente), e após isso programar os agendamentos (acessar cadastro, empresas, alterar):
 obs. Recomendado colocar a Opção ciência da operação (para puxar dados completos dos documentos) e intervalo mínimo a cada 1 hora.
- 
-
 - NSU (número sequencial único): 
 Se em algum momento foi utilizado outro sistema para a busca e importação de arquivos para seu CNPJ/CPF, é necessário saber qual foi o último NSU importado, assim juntamente com nosso Suporte Técnico, é possível configurar esta numeração no nsdocs.
-
 Caso este seja o primeiro sistema de importação e ainda não tenha sido realizado nenhuma pesquisa, é importante ressaltar que será possível buscar apenas os documentos emitidos a partir do momento em que realizar sua primeira Consulta na SEFAZ.
-
 Importante: só é possível excluir documentos que foram recebidos no sistema nos meses anteriores ao atual.
-
 Ciência da operação: Este evento não representa a Manifestação do Destinatário sobre a operação, mas unicamente dá condições para que o Destinatário efetue o download do arquivo XML.
 Confirmação da Operação: tem a finalidade de informar que as operações descritas na NF-e foram realizadas, sendo considerado como uma Manifestação conclusiva. Após a Confirmação da Operação pelo Destinatário, a Empresa Emitente fica impedida de Cancelar a NF-e.
 Operação não Realizada: tem como finalidade possibilitar ao Destinatário da NF-e informar que, por algum motivo, a operação legalmente acordada entre as partes não foi realizada.
 Desconhecimento da operação: Em resumo, o Destinatário declara que a operação descrita na NF-e não foi por ele solicitada.
 Prazo para realizar manifestação conclusiva é de 180 dias.
-
 Evento de desacordo da operação da CT-e:
- 
-
 1 - A Consulta Garantida funciona para importação de CT-e ou NFC-e? 
 R: Não, o serviço é exclusive para importação de NF-e.
 2 - O consumo do nsdocs é acumulativo? Ou seja, o que eu não uso no mês acumula para o outro? 
 R: Não, o consumo não é acumulativo. Os créditos restantes não sobram para serem consumidos no mês seguinte.
 3 - É possível utilizar a Consulta Garantida via API? 
 R: Não, atualmente este recurso não está disponível.
-
 ###
 Erro: Dúvidas referente ao VPO (Vale pedágio obrigatório).
 Solução: Segue informações sobre o VPO (Vale pedágio obrigatório):
@@ -1345,18 +1285,15 @@ Composição do Preço: Para fins de legislação do ICMS, todas as importância
 Destaque no Documento: O valor do pedágio deve ser destacado no Conhecimento de Transporte Eletrônico (CT-e) em campo próprio, mas compõe o valor total da prestação de serviço e, consequentemente, a base de cálculo do ICMS.
 Exceção (Carga Lotação/VPO): A única situação em que o valor do pedágio não entra na base de cálculo do ICMS é quando se trata de transporte de carga completa (lotação) e o contratante (embarcador) fornece o Vale-Pedágio Obrigatório (VPO) de forma antecipada, conforme a Lei Federal nº 10.209/2001, pois nesse caso a transportadora não assume o ônus financeiro.
 Carga Fracionada: Na carga fracionada, a antecipação do VPO pelo embarcador não é obrigatória, e a prática comum é a transportadora incluir o custo do pedágio no valor total do frete, o que o torna tributável pelo ICMS. 
-
 ###
 Erro: Cliente precisa editar uma regra de cálculo para ICMS no sistema.
 Solução: Basta ir em regras Transporte, Configurações, Regras. Ideal é clonar a regra que deseja usar como base para evitar de gerar erro em uma funcional e não poder voltar atrás com a edição. Primeiro faz o teste na clonada para depois editar na regra original.  Segue abaixo um exemplo de regra para ICMS Demonstrativo e todas as opções que o sistema dá para configurar:
 Tipo *	
-
 Regra Empresa / Negociação com Cliente
 Descrição *	
 ICMS Demonstrativo
 Nome interno	
 Regra pag. motorista	
- 
 Liberado na cotação de frete?	Sim Não
 Regra ativa?	Sim Não
 Restrito?	Sim Não
@@ -1364,14 +1301,11 @@ Tipo Faturamento *	Total prestação Composição frete
 Base Margem Bruta	Total prestação Base Resultado Composição Frete 
 Detalhamento
 Editar em uma janela externa
-
 Cálculos - Conhecimento de transporte/Contrato de Frete
 Campos
 tarifaDigitada, tarifaCalculada, valorFrete, baseCalculo, aliquota, valorICMS, valoresOutros, valorPedagioConhecimento, totalPrestacao, Gris, valorSeguro, diaria, valorSeguroAduaneiro,baseResultadoCT,totalServico
-
 Campos editáveis
 tarifaDigitada, valorFrete, baseCalculo, aliquota, valorICMS, valoresOutros, valorPedagioConhecimento, totalPrestacao, Gris, valorSeguro, diaria, valorSeguroAduaneiro,baseResultadoCT,totalServico
-
 Cálculos
 def("tarifaCalculada",0);
 if ( obt("tarifaDigitada") > 0)
@@ -1385,7 +1319,6 @@ def("valorICMS",valor);
 def("totalPrestacao",  (obt("valorFrete") + obt("valoresOutros") + obt("valorSeguro") + obt("diaria")));
 Campos que não vão aparecer no bloco de componentes do valor da prestação de serviço do DACTE
 tarifaImpressadiariaGrisvalorFretevalorICMSvaloresOutrosvalorPedagioConhecimentovalorSegurovalorSeguroAduaneiro	
-
 Funções disponíveis para uso:
 obt() - Retornar o valor do campo e aplica formatação, caso necessária.
 def() - Define o valor do campo e aplica formatação, caso necessária.
@@ -1468,8 +1401,6 @@ Validação
 ###
 Erro: Como criar um Ct-e (conhecimento) no sistema?
 Solução: Vai em Transporte, Conhecimento. Clica no ícone + para adicionar. 
-
-
 Opções de preenchimento na guia Dados básicos:
 Forma de Emissão	
 Normal	Rascunho	Numeração Posterior
@@ -1482,53 +1413,35 @@ Série: 1	Utilizado para emissão em Ambiente de Homologação da SEFAZ
 Modalidade *	
 Rodoviário
 Número	
-  Emitir contrato de frete
+Emitir contrato de frete
 Data de Emissão *	
 12/02/2026 17:18
- 
 Data de Previsão de Saída	
- 
 Pedido/Cotação	
-
- 
-
-
- Importar Notas do Pedido  Vincular Ordem já Carregada
+Importar Notas do Pedido  Vincular Ordem já Carregada
 Vínculo com OC	
-
- 
- 
 Vincular várias OC	Sim Não 
 Vínculo com Manifesto	Não Vincular Criar Manifesto Vincular a Manifesto existente
 Vínculo com Viagem	Não Vincular Criar Viagem Vincular à Viagem existente
 Vínculo com NF-e	
-
- 
-  
 Consulta GarantidaEnviar XML da NF-e
 Enviar XML da DC-e
 Rota de Distribuição	
-
- 
 Identificação do Pedido	
 Lotação	Sim Não 
 Comboio	Sim Não
 Globalizado	Sim Não
 Tipo de Serviço *	(Normal, Subcontratação, Redespacho, Redespacho Intermediário, Vinculado Multimodal)
 Tipo do CT-e *	(Normal, Complemento de Valores (Complementar) ou Substituição)
- 
 Informações Complementares	
 ###
-
 
 //Assuntos N2
 ###
 Erro: Como configurar o sistema Bsoft TMS para emissão de Nota fiscal de Serviço (NFS-e, ou NFSE)?
 Solução:
 Configurando e Integrando NFS-e (RPS) com prefeituras
-
 Nesse material veremos como realizar as configurações para emissão de NFS-e.
-
 Considerações iniciais
 Conteúdo abordado nesse material:
 O que é RPS?
@@ -1543,14 +1456,10 @@ Configurações relativas à retenção de tributos como o ISS, que pode ser o c
 Ao final do material observar as peculiaridades de cada prefeitura.
 1 – O que é RPS?
 O RPS é o Recibo Provisório de Serviços. Documento autorizado pelo Fisco e fornecido pelo contribuinte ao tomador do serviço contendo os dados de uma prestação de serviços que deverão ser informados ou transmitidos posteriormente ao Fisco Municipal quando não for possível a geração imediata da respectiva NFS-e. O RPS é valido por 10 dias a contar da data de sua emissão. Após a emissão do Recibo Provisório de Serviços, o prestador de serviços deverá substituí-lo por uma Nota Fiscal de Serviços Eletrônica – NFS-e no prazo de 10 dias, a contar da data de emissão do RPS.
-
 O RPS dentro da integração com sistemas nada mais é do que um pré cadastro da Nota fiscal de serviços. Quando integramos, integramos o RPS. Então, caso esteja tudo OK, a prefeitura nos retorna um número de nota válido, que substituirá o RPS cadastrado no sistema por uma NFS-e. Por isso sempre temos que cadastrar 02 modelos de nota, onde um deles representa o RPS e o outro a NFS-e.
-
 2 – Cadastrando modelos de notas
 Para integração com as prefeituras é necessário cadastrarmos dois modelos de nota. A seguir será mostrado o cadastro de cada um deles através do menu Financeiro / Configurações / Fiscal / Modelos de notas.
-
 2.1 – Cadastrando modelo de nota do tipo “NFS-e Próprio”
-
 Empresa: informar a empresa que emitirá a NFS-e. Caso o campo “Empresa” não esteja visível na configuração do talão, siga as seguintes orientações para habilitá-lo:
 Mude o valor do parâmetro “finan_controleEmpresa” para SIM, mas somente para os usuários Admin e Suporte.
 Em clientes muito antigos pode ocorrer do sistema não estar configurado para trabalhar com empresas (parâmetro “finan_controleEmpresa” = NÃO) e por isso essa ação torna-se necessária.
@@ -1569,11 +1478,9 @@ Arrendodar valor do ISSQN: definir de acordo com a forma de trabalho da prefeitu
 Layout Nota fiscal: Selecionar um layout especifico para a NFS-e em questão (na sequência do material há uma explicação específica sobre layouts).
 A configuração do layout consiste em algumas SQL que fornecerão informações para preenchimento do “corpo” da NFS-e. São informações que a empresa deseja colocar como a descrição dos serviços, valores, condições de pagamento, vencimento, etc.
 Para configuração de um layout é importante a participação do cliente no sentido de nos auxiliar na definição das informações que deseja ou que pelo menos ele nos forneça notas que tenham sido emitidas diretamente no portal das prefeituras.
-
 Exemplo de uma NFS-e e com destaque para o conteúdo que é preenchido com o layout de impressão. NFS-e integrada com a prefeitura de Santa Cruz do Sul-RS.
 Remetente NF-e/NFS-e: Será o e-mail de envio da NFS-e para o cliente.
 2.2 – Cadastrando modelo de nota do tipo “RPS”
-
 Empresa: informar a empresa que emitirá a NFS-e. Caso o campo “Empresa” não esteja visível na configuração do talão, siga as seguintes orientações para habilitá-lo:
 Mude o valor do parâmetro “finan_controleEmpresa” para SIM, mas somente para os usuários Admin e Suporte.
 Em clientes muito antigos pode ocorrer do sistema não estar configurado para trabalhar com empresas (parâmetro “finan_controleEmpresa” = NÃO) e por isso essa ação torna-se necessária.
@@ -1597,61 +1504,38 @@ Dependendo da localidade, ao invés de “Senha RPS” a opção demonstrada pod
 Na maioria dos casos a autenticação é feita utilizando o certificado digital instalado na área do cliente. Nesses casos o campo “Senha RPS” ou “Token” não são exibidos.
 3 – Cadastrando um layout de impressão para a NFS-e
 Através do menu Configurações / Impressão / Layouts de Impressão temos duas formas de incluir um layout para integração:
-
 Exportando de uma área que já possua o layout (que seja igual ou parecido com o que se necessita) e o importando na área desejada.
 Cadastrando manualmente.
 3.1 – Importando o layout de outra área (esse é o caminho sugerido)
 Descobrir o nome de alguma área que tenha NFS-e cadastrada e funcionando.
 Após acessar a área, ir até a ferramenta Layouts de Impressão, selecionar o modelo desejado (o que estiver vinculado ao talão de NFS-e utilizado pelo cliente) e clicar em “Exportar”, conforme imagem abaixo.
-
 Acesse a área do cliente que irá utilizar o layout, vá até a ferramenta Layouts de Impressão e clique em “Importar”. O sistema vai solicitar o local onde está o arquivo anteriormente gerado, então basta selecioná-lo e confirmar:
-
 3.2 – Criando um layout do zero
 No menu Configurações / Impressão / Layouts de Impressão clique em “Adicionar”:
-
 Preencha os campos conforme a imagem abaixo e clique em “Cadastrar”.
 Importante:
 Número Máximo de Colunas: 100
 Número Máximo de Linhas: 20
-
 Selecione o modelo criado e clique em “Visualizar”:
-
 Clique em “Adicionar” e insira os itens da nota como, por exemplo, os serviços. Observe o exemplo:
-
-
 4 – Vinculando Serviços às ATIVIDADES
 É importante frisar que na implantação de NFS-e é necessário definir junto à contabilidade da empresa quais os códigos das atividades de serviços prestados pela empresa. Essas atividades e seus respectivos códigos existem nos sistemas das prefeituras e por isso podem variar de cidade para cidade. Tais atividades e códigos devem ser cadastrados no Bsoft TMS para posterior vinculação aos serviços que são informados na emissão da NFS-e.
-
 4.1 – Cadastrando atividades
 No menu Configurações / Cadastros Básicos / Atividades, clicar em “Adicionar” e prrencher os campos necessários.
-
 Dependendo da localidade informada podem aparecer diferentes campos na tela, conforme vemos nas imagens abaixo:
-
-
 Para Itajaí – SC apareceu o campo “Código de tributação no município”.
-
 Para Rio Grande – RS apareceu o campo “Item da lista de serviço”.
-
 Para Navegantes – SC apareceu o campo “Item da lista de serviço”.
-
 Exemplo da tela com algumas atividades cadastradas.
 4.2 – Vinculação das Atividades aos Serviços
 No menu Financeiro / Configurações / Produtos e Serviços / Serviços, selecionar o serviço que já deverá ter sido previamente cadastrado, clicar em “Visualizar”.
-
 Depois, basta ir até a abra “Atividades Produtos e serviços” e clicar em “Adicionar”:
-
-
 Para um único serviço podem ser incluídas diversas atividades, pois cada cidade possui um código próprio.
-
 Todos os serviços que serão utilizados para emissão de NFSe precisam ter uma vinculação com um tipo de atividade utilizado na prefeitura.
-
 5 – Emitindo e enviando uma NFS-e
 A emissão de NFS-e é realizada no menu Financeiro / Notas Fiscais / Notas Fiscais.
-
 5.1 – Criando a nota
 Uma vez na ferramenta Notas Fiscais, clique em “Adicionar” para então entrar na tela abaixo:
-
-
 Depois dessa etapa ainda haverá a parte onde o serviço é inserido na nota.
 Tipo: Escolher a opção Saída.
 Operação: Escolher o Tipo de Operação cadastrado para utilização na emissão de NFS-e. Podem ter sido cadastrados vários tipos, então é preciso atentar-se bem e escolher o correto para a nota em questão.
@@ -1659,45 +1543,33 @@ Modelo: Escolher o modelo de RPS previamente criado.
 Tributação do serviço: Escolher o tipo de tributação da nota. Essa definição deve ser fornecida pelo cliente ou sua contabilidade, pois está intimamente ligada na forma de tributação do ISS, podendo até mesmo indicar se haverá ou não retenção desse tributo.
 Local da prestação do Serviço: Aqui deve ser informado em que cidade o serviço foi prestado.
 Os demais campos e procedimentos não serão tratados neste manual, pois fazem parte dos procedimentos já utilizados para emissão de qualquer tipo de NF.
-
 5.2 – Integrando com a prefeitura
 Após gravar a nota, selecione o registro na listagem e clique na operação extra “NFS-e”.
 Depois de clicar na operação extra “NFS-e” são mostradas as opções possíveis em relação à nota. Selecione a opção desejada e clique em “Executar”.
-
 Operação extra “NFSe”
-
 Opções que aparecem após clicar na operação extra “NFSe”.
 * O sistema usado por algumas prefeituras pode não fornecer a impressão do documento pelo webservice. Nesses casos a impressão gerada pelo Bsoft TMS é uma impressão “não oficial”. Nessa situação a impressão “oficial” pode ser realizada pelo cliente diretamente no portal da prefeitura onde normalmente emitiria a nota.
-
 PECULIARIDADES DAS PREFEITURAS (as informações abaixo podem estar desatualizadas, por isso é sempre bom trabalhar em conjunto com o cliente para que obtenha as informações junto à sua prefeitura)
-
 PELOTAS – RS:
-
 Cancelamento de notas deve ser feito presencialmente junto à prefeitura.
 Deve ser obtido o token para configuração do modelo de nota.
 Este Token deve ser obtido pelo cliente no portal da Prefeitura de acordo com esta orientação  https://intra.avmb-asten.com.br/repositorio/Suporte/NfseToken.pdf
 RIO GRANDE – RS:
-
 Não é necessário ter certificado digital, porém é necessário senha para a emissão de notas.
 O bloco de descrição do serviço, que é preenchido com a impressão definida por um layout posicionado, utiliza uma fonte mono espaçada, ou seja, os caracteres não ocupam um espaço padrão, cada caractere ocupa um espaço especifico como por exemplo o caractere “i” ocupa 1/3 do espaço do caractere “U”. Sendo assim, é impossível definir com exatidão a posição dos campos a serem impressos.
 Tópicos relacionados:
 Credenciamento de empresa para emitir NFSe em Rio Grande
 Obtendo os XML de NFSe diretamente do portal.
 NOVO HAMBURGO – RS:
-
 É necessário realizar o credenciamento da empresa junto à prefeitura para emissão de notas no ambiente de INTEGRAÇÃO.
 A Série do RPS e da NFS deve ser obtida junto a área técnica pelo contato: suporte@notaeletronica.com.br (Nota Control Tecnologia LTDA).
 ITAJAÍ – SC:
-
 Os modelos de notas RPS e NFS-e devem ter as séries RP1 e A1 respectivamente.
 ###
 Erro: Para cadastrar uma tabela de preços (Tabela de Frete), é preciso se atentar a vários detalhes para que a mesma se aplique e funcione no momento de criação do documento, seja ele CT-e, conhecimento, minuta, etc.
 Solução: Ao criar uma tabela de preços, você precisa vincular a uma tabela de preço no primeiro campo, e dentro desse campo se clicar em + e editar ou na criação de um novo, vai ter lá no final a parte de cliente para colocar um específico. Acontece que esse campo só pode ser preenchido caso o pagador/tomador do serviço for o mesmo, pois se a tabela for para apenas se aplicar para critério de remetente e/ou destinatário, deve-se deixar em branco esse campo. Tudo o que estiver dentro dos critérios, deve estar preenchido exatamente conforme consta na tabela. Se o documento atender aos critérios, irá gerar os Valores de retorno que configurou. Segue abaixo todos os campos que possui dentro da tabela de frete para configurar:
 Critérios
 Tabela de preços *	
-
- 
- 
 Frete:	Rem.	Dest.	Rec.	Exp.	Outro	Indiferente
 Remetente	Pessoa específica Grupo de pessoas
 Destinatário	Pessoa específica Grupo de pessoas
@@ -1726,7 +1598,6 @@ Cid. dest.
 Mesorreg. dest.	
 Grupo Cidade dest.
 Faixa de CEP
-
 Valores de retorno
 Regra frete
 Tarifa real
@@ -2192,6 +2063,7 @@ Sábados
 das 8:00 às 12:00
 (Horário de Brasília)
 ###
+
 
 
 
