@@ -161,10 +161,11 @@
     // --- CONFIGURAÇÕES ---
     const GITHUB_RAW_URL = "https://raw.githubusercontent.com/lucasborgescamargo1994-blip/Pessoal/main/banco_dados.txt.txt";
     const GITHUB_PAGE_URL = "https://github.com/lucasborgescamargo1994-blip/Pessoal/blob/main/banco_dados.txt.txt";
+    // Em vez de colocar a chave inteira:
 	const p1 = "AIzaSyBCzkv7";
 	const p2 = "zwGqEiz7dTmeKs";
 	const p3 = "yLJeTfdEGX04o";
-	const GEMINI_API_KEY = p1 + p2 + p3;
+	const GEMINI_API_KEY = p1 + p2 + p3; 
     const CORRECT_PASSWORD = "camargo02";
 
     let fileContent = "";
@@ -329,26 +330,30 @@
             .replace(/\n/g, ' ');
     }
 
-    // --- IA / API ---
+    // --- IA / API COM RETRY (3 TENTATIVAS POR MODELO) ---
     async function askAIWithRotation(question, context) {
-        const loadingDiv = appendMessage('ai', '<em>🧠 Digitando...</em>');
+        const loadingDiv = appendMessage('ai', '<em>🧠 Processando...</em>');
         
+        // Mantendo o seu modelo funcional preferido no topo
         const modelosParaTentar = [
-            "gemma-3-27b-it", 
-            "gemini-2.0-flash-lite",
-            "gemini-1.5-flash",
-            "gemini-pro"
+            "gemma-3-27b-it"
         ];
 
         const historyContext = chatHistory.slice(-4).map(h => `${h.role}: ${h.text}`).join('\n');
 
-        async function tentarModelo(index) {
+        // Função interna para gerenciar as tentativas
+        async function tentarModelo(index, tentativaAtual = 1) {
             if (index >= modelosParaTentar.length) {
-                loadingDiv.innerHTML = "❌ Todos os modelos estão ocupados. Tente novamente.";
+                loadingDiv.innerHTML = "❌ Todos os modelos estão ocupados. Tente novamente.<br>Foi atualizado os modelos?";
                 return;
             }
 
             const MODELO_ATUAL = modelosParaTentar[index];
+            const maxTentativas = 3;
+
+            // Feedback visual da tentativa para o usuário
+            loadingDiv.innerHTML = `<em>🧠 Pensando e digitando... (Tentativa ${tentativaAtual}/${maxTentativas})...</em>`;
+
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODELO_ATUAL}:generateContent?key=${GEMINI_API_KEY}`;
 
             try {
@@ -356,20 +361,16 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: `
-                            Você é o Suporte Especialista Bsoft TMS.
-                            ${context}
-                            
-                            Histórico recente:
-                            ${historyContext}
-                            
-                            Pergunta atual: ${question}
-                        `}] }]
+                        contents: [{ parts: [{ text: `Você é suporte Bsoft TMS. Contexto: ${context}\nPergunta: ${question}` }] }]
                     })
                 });
 
                 const data = await response.json();
-                if (!response.ok) throw new Error("Erro API");
+
+                // Se der erro ou a cota estiver ocupada
+                if (!response.ok || data.error) {
+                    throw new Error(data.error ? data.error.message : "Erro na resposta");
+                }
                 
                 let aiText = data.candidates[0].content.parts[0].text;
                 loadingDiv.innerHTML = aiText.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
@@ -378,11 +379,21 @@
                 chatHistory.push({ role: 'AI', text: aiText });
 
             } catch (e) {
-                console.warn(`Falha no modelo ${MODELO_ATUAL}, trocando...`);
-                tentarModelo(index + 1);
+                console.warn(`Falha no modelo ${MODELO_ATUAL} (Tentativa ${tentativaAtual}):`, e.message);
+
+                if (tentativaAtual < maxTentativas) {
+                    // Espera 1 segundo antes de tentar o MESMO modelo novamente
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    return tentarModelo(index, tentativaAtual + 1);
+                } else {
+                    // Se esgotou as 3 tentativas, passa para o PRÓXIMO modelo da lista
+                    console.error(`Esgotadas as tentativas para ${MODELO_ATUAL}. Pulando para o próximo.`);
+                    return tentarModelo(index + 1, 1);
+                }
             }
         }
-        tentarModelo(0);
+
+        tentarModelo(0, 1);
     }
 
     function checkPassword() {
