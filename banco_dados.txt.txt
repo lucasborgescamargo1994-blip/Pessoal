@@ -1757,6 +1757,9 @@ Solução: Repassa a eles que ainda não está em vigor e o ano que vem será o 
 Erro: Gostaria de que o relatório de conhecimentos aparecece apenas os Ct-e, e as Minutas não.
 Solução: Basta nos filtros dos relatórios selecionar o talão CT-e apenas.
 ###
+Erro: Cliente precisava que apareça uma tag específica no ct-e que é escrita. 
+Solução: Primeiramente, deve habilitar o parâmetro Mostrar bloco tags CTe? (transp_mostrarBlocoTagsCTe). Após configura a tag em Transportes, Configurações, Tags Ct-e.
+###
 Erro: Como enviar automaticamente o CT-e para o e-mail do cliente?
 Solução:  Menu Pessoas > Seleciona e edita o cadastro do cliente > Verifica o quadro "e-mail".
 Confere o parâmetro (Ambiente > Administração > Parâmetros > Cód. 2060) o valor deve ser "Cliente" ou o tipo de pessoa desejada.
@@ -2065,6 +2068,7 @@ das 8:00 às 12:00
 ###
 Erro: Cadastrei um "Tipo Valores Outros" e não aparece de jeito nenhum no CT-e, o que eu faço?
 Solução: O parâmetro de nome interno: "transp_mostrarBlocoOutrosValores" terá que estar ativo.
+
 
 
 
