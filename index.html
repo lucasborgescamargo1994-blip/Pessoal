@@ -330,31 +330,26 @@
             .replace(/\n/g, ' ');
     }
 
-    // --- IA / API COM RETRY (3 TENTATIVAS POR MODELO) ---
     async function askAIWithRotation(question, context) {
-        const loadingDiv = appendMessage('ai', '<em>🧠 Processando...</em>');
-        
-        // Mantendo o seu modelo funcional preferido no topo
-        const modelosParaTentar = [
-            "gemma-3-27b-it"
-        ];
+        const loadingDiv = appendMessage('ai', '<em>🧠 Iniciando busca técnica...</em>');
+        const MODELO_PRIMARY = "gemma-3-27b-it";
+        const maxTentativas = 5; // Reduzi para 5, pois com o tempo crescente elas são mais eficazes
 
-        const historyContext = chatHistory.slice(-4).map(h => `${h.role}: ${h.text}`).join('\n');
-
-        // Função interna para gerenciar as tentativas
-        async function tentarModelo(index, tentativaAtual = 1) {
-            if (index >= modelosParaTentar.length) {
-                loadingDiv.innerHTML = "❌ Todos os modelos estão ocupados. Tente novamente.<br>Foi atualizado os modelos?";
+        async function executarCiclo(tentativa) {
+            if (tentativa > maxTentativas) {
+                loadingDiv.innerHTML = "❌ O servidor está sob alta carga. Por favor, aguarde alguns segundos e clique no botão de enviar novamente.";
                 return;
             }
 
-            const MODELO_ATUAL = modelosParaTentar[index];
-            const maxTentativas = 3;
+            // Cálculo do tempo de espera: 2s, 4s, 8s... (Aumenta a cada erro)
+            const tempoEspera = Math.pow(2, tentativa) * 1000;
+            
+            loadingDiv.innerHTML = `<em>🧠 Buscando conhecimentos ${tentativa}/${maxTentativas}... (Aguarde sua resposta, digitando...)</em>`;
 
-            // Feedback visual da tentativa para o usuário
-            loadingDiv.innerHTML = `<em>🧠 Pensando e digitando... (Tentativa ${tentativaAtual}/${maxTentativas})...</em>`;
+            // Pausa obrigatória antes da nova tentativa
+            await new Promise(r => setTimeout(r, tempoEspera));
 
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODELO_ATUAL}:generateContent?key=${GEMINI_API_KEY}`;
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODELO_PRIMARY}:generateContent?key=${GEMINI_API_KEY}`;
 
             try {
                 const response = await fetch(url, {
@@ -367,9 +362,10 @@
 
                 const data = await response.json();
 
-                // Se der erro ou a cota estiver ocupada
+                // Se o erro for 429 (Too Many Requests) ou 503 (Service Unavailable)
                 if (!response.ok || data.error) {
-                    throw new Error(data.error ? data.error.message : "Erro na resposta");
+                    console.warn(`Tentativa ${tentativa} falhou. Aumentando intervalo para ${tempoEspera * 2 / 1000}s...`);
+                    return executarCiclo(tentativa + 1);
                 }
                 
                 let aiText = data.candidates[0].content.parts[0].text;
@@ -379,21 +375,11 @@
                 chatHistory.push({ role: 'AI', text: aiText });
 
             } catch (e) {
-                console.warn(`Falha no modelo ${MODELO_ATUAL} (Tentativa ${tentativaAtual}):`, e.message);
-
-                if (tentativaAtual < maxTentativas) {
-                    // Espera 1 segundo antes de tentar o MESMO modelo novamente
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                    return tentarModelo(index, tentativaAtual + 1);
-                } else {
-                    // Se esgotou as 3 tentativas, passa para o PRÓXIMO modelo da lista
-                    console.error(`Esgotadas as tentativas para ${MODELO_ATUAL}. Pulando para o próximo.`);
-                    return tentarModelo(index + 1, 1);
-                }
+                return executarCiclo(tentativa + 1);
             }
         }
 
-        tentarModelo(0, 1);
+        executarCiclo(1);
     }
 
     function checkPassword() {
