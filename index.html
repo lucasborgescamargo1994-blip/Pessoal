@@ -163,7 +163,7 @@
 <script>
     const GITHUB_RAW_URL = "https://raw.githubusercontent.com/lucasborgescamargo1994-blip/Pessoal/main/banco_dados.txt.txt";
     const GITHUB_PAGE_URL = "https://github.com/lucasborgescamargo1994-blip/Pessoal/blob/main/banco_dados.txt.txt";
-    
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8CAmTxO2pEmtc9ZILYJEBh3NX4j_RdlIk3-4gNfTnG3Ki-8_qWtYTCdfLUfHpPNep/exec";
     const p1 = "AIzaSyBCzkv7";
     const p2 = "zwGqEiz7dTmeKs";
     const p3 = "yLJeTfdEGX04o";
@@ -201,63 +201,62 @@
         } catch (e) { appendMessage('ai', "⚠️ Erro ao carregar banco de dados."); }
     }
 
-    // --- FUNÇÕES DE ANALYTICS ---
-    function logSearch(query, foundOffline) {
-        const log = {
-            termo: query,
-            data: new Date().toLocaleString(),
-            encontrouNoManual: foundOffline,
-            feedback: null
+    // --- FUNÇÕES DE ANALYTICS (GLOBAL VIA GOOGLE SHEETS) ---
+    async function logSearch(query, foundOffline) {
+        const payload = {
+            pergunta: query,
+            encontrou: foundOffline ? "Sim" : "Não",
+            feedback: "Pendente"
         };
-        searchLogs.push(log);
-        localStorage.setItem('bsoft_analytics', JSON.stringify(searchLogs));
+        try {
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify(payload)
+            });
+        } catch (e) { console.error("Erro log", e); }
     }
 
-    function showAnalytics() {
+    async function showAnalytics() {
         const modal = document.getElementById('resultsModal');
         const body = document.getElementById('modalBody');
         const title = document.getElementById('modalTitle');
         
-        title.innerText = "📊 Analytics de Uso (Histórico Local)";
-        
-        const total = searchLogs.length;
-        const noManual = searchLogs.filter(l => l.encontrouNoManual).length;
-        const falhas = total - noManual;
-
-        let html = `
-            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-bottom:20px; text-align:center;">
-                <div style="background:#eff6ff; padding:10px; border-radius:8px;"><strong>${total}</strong><br><small>Buscas</small></div>
-                <div style="background:#dcfce7; padding:10px; border-radius:8px;"><strong>${noManual}</strong><br><small>No Manual</small></div>
-                <div style="background:#fff7ed; padding:10px; border-radius:8px;"><strong>${falhas}</strong><br><small>Lacunas</small></div>
-            </div>
-            <table style="width:100%; font-size:12px; border-collapse: collapse;">
-                <tr style="background:#f1f5f9; text-align:left;">
-                    <th style="padding:8px;">Termo</th>
-                    <th style="padding:8px;">Manual?</th>
-                    <th style="padding:8px;">Feedback</th>
-                </tr>
-        `;
-
-        searchLogs.slice(-15).reverse().forEach(log => {
-            html += `
-                <tr style="border-bottom:1px solid #f1f5f9;">
-                    <td style="padding:8px;">${log.termo}</td>
-                    <td style="padding:8px;">${log.encontrouNoManual ? '✅' : '❌'}</td>
-                    <td style="padding:8px;">${log.feedback === 'positivo' ? '👍' : (log.feedback === 'negativo' ? '👎' : '-')}</td>
-                </tr>
-            `;
-        });
-
-        html += `</table><p style="font-size:10px; color:gray; margin-top:15px;">* Exibindo últimas 15 buscas gravadas no seu navegador.</p>`;
-        body.innerHTML = html;
+        title.innerText = "📊 Relatório Global de Operação";
+        body.innerHTML = "<em>Carregando dados da planilha global...</em>";
         modal.style.display = "block";
+
+        try {
+            const response = await fetch(SCRIPT_URL);
+            const data = await response.json();
+            
+            let html = `<table style="width:100%; font-size:12px; border-collapse: collapse;">
+                        <tr style="background:#f1f5f9; text-align:left;">
+                            <th style="padding:8px;">Data</th>
+                            <th style="padding:8px;">Pergunta</th>
+                            <th style="padding:8px;">Manual?</th>
+                            <th style="padding:8px;">Feedback</th>
+                        </tr>`;
+            
+            data.slice(1).reverse().slice(0, 20).forEach(row => {
+                const dt = row[0] ? new Date(row[0]).toLocaleDateString() : '-';
+                html += `<tr style="border-bottom:1px solid #eee;">
+                    <td style="padding:8px; color:gray;">${dt}</td>
+                    <td style="padding:8px;">${row[1]}</td>
+                    <td style="padding:8px;">${row[2] === "Sim" ? '✅' : '❌'}</td>
+                    <td style="padding:8px;">${row[3] || '-'}</td>
+                </tr>`;
+            });
+            html += "</table><p style='font-size:10px; color:gray; margin-top:10px;'>* Exibindo as últimas 20 interações globais.</p>";
+            body.innerHTML = html;
+        } catch (e) {
+            body.innerHTML = "❌ Erro ao buscar relatório global da planilha.";
+        }
     }
 
     function saveFeedback(logIndex, type, btn) {
-        if(searchLogs[logIndex]) {
-            searchLogs[logIndex].feedback = type;
-            localStorage.setItem('bsoft_analytics', JSON.stringify(searchLogs));
-        }
+        // Envia o feedback como uma nova entrada ou identificador na planilha
+        logSearch(`FEEDBACK_${type}: ${document.querySelectorAll('.user-msg').length > 0 ? 'Última Pergunta' : 'Feedback'}`, true);
         const parent = btn.parentElement;
         parent.querySelectorAll('button').forEach(b => b.className = 'feedback-btn');
         btn.classList.add(type === 'positivo' ? 'active-up' : 'active-down');
