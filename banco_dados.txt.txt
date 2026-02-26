@@ -1768,6 +1768,9 @@ Erro: MDF-e em circulação não sendo possível cancelamento e é preciso troca
 Solução: Emitir um novo MDF-e usando o mesmo CT-e e alterando o motorista. Já que o MDF-e anterior não pode ser cancelado, deve ser encerrado na SEFAZ.  E para emissão do novo pode ir no menu "Manifesto de cargas" > Clica no "+" para adicionar > Seleciona agência e talão > No campo "Conhecimentos" busca pelo número do CT-e. https://manuaisbsoft.atlassian.net/wiki/spaces/BT/pages/140574762/Emiss+o+de+MDF-e+Rodovi+rio
 O motorista não é um dado que sai no XML do CT-e, acredito que não teria problemas fiscais, mas caso queira, confirma com sua contabilidade. Então pode ser alterado.
 ###
+Erro: Como configurar sistema para realizar averbação automática.
+Solução: Para cadastrar a averbação automática deve ir em Transportes, Configurações, Apólices de Seguro. Adiciona uma nova e no final do cadastro dela tem a opção de averbação automática, coloca a opção AT&M (Por exemplo), e os dados da AT&M conforme está no portal AT&M.
+###
 Erro: Não aparece para colocar informações de pagamento no MDF-e
 Solução: Para apresentar o campo informações de pagamento, deve estar ou apenas 1 documento informado no MDF-e ou ser TAC. Em caso de TAC, colocar as informações de pagamento do TAC.
 ###
@@ -2068,6 +2071,7 @@ das 8:00 às 12:00
 ###
 Erro: Cadastrei um "Tipo Valores Outros" e não aparece de jeito nenhum no CT-e, o que eu faço?
 Solução: O parâmetro de nome interno: "transp_mostrarBlocoOutrosValores" terá que estar ativo.
+
 
 
 
