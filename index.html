@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <title>Suporte Bsoft TMS - IA</title>
+    <title>Suporte Bsoft TMS - IA (V2.1)</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> 
     <style>
@@ -37,6 +37,14 @@
         h1 { margin: 0; font-size: 18px; color: #1e293b; display: flex; align-items: center; gap: 8px; }
         .badge { font-size: 11px; background:#dcfce7; color:#166534; padding:3px 8px; border-radius:12px; font-weight: bold; }
 
+        /* Botão de Analytics no Header */
+        .btn-stats {
+            font-size: 14px; background: #f1f5f9; border: 1px solid #e2e8f0;
+            padding: 5px 12px; border-radius: 8px; cursor: pointer; color: #475569;
+            display: flex; align-items: center; gap: 5px; transition: 0.2s;
+        }
+        .btn-stats:hover { background: #e2e8f0; }
+
         #chatStream {
             flex: 1; padding: 20px; overflow-y: auto;
             display: flex; flex-direction: column; gap: 15px;
@@ -58,70 +66,45 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
 
-        /* BOTÃO AMARELO DE RESULTADOS OFFLINE */
+        /* Feedback UI */
+        .feedback-area {
+            display: flex; gap: 10px; margin-top: 10px; padding-top: 8px;
+            border-top: 1px dashed #e2e8f0; font-size: 12px; color: #64748b; align-items: center;
+        }
+        .feedback-btn {
+            background: white; border: 1px solid #e2e8f0; border-radius: 4px;
+            cursor: pointer; padding: 2px 8px; transition: 0.2s;
+        }
+        .feedback-btn:hover { background: #f1f5f9; }
+        .feedback-btn.active-up { background: #dcfce7; border-color: #22c55e; color: #166534; }
+        .feedback-btn.active-down { background: #fee2e2; border-color: #ef4444; color: #991b1b; }
+
         #btnOfflineResults {
-            display: none;
-            position: absolute;
-            right: 25px;
-            bottom: 110px;
-            background-color: #facc15;
-            color: #854d0e;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 25px;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            z-index: 100;
-            font-size: 14px;
-            transition: 0.3s;
+            display: none; position: absolute; right: 25px; bottom: 110px;
+            background-color: #facc15; color: #854d0e; border: none;
+            padding: 12px 20px; border-radius: 25px; font-weight: bold;
+            cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 100;
+            font-size: 14px; transition: 0.3s;
         }
         #btnOfflineResults:hover { background-color: #fde047; transform: scale(1.05); }
 
-        /* MODAL POP-UP */
         .modal {
-            display: none;
-            position: fixed;
-            z-index: 2000;
+            display: none; position: fixed; z-index: 2000;
             left: 0; top: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.6);
-            backdrop-filter: blur(5px);
+            background-color: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
         }
         .modal-content {
-            background-color: white;
-            margin: 5vh auto;
-            padding: 25px;
-            width: 90%; max-width: 700px;
-            border-radius: var(--radius);
-            max-height: 85vh;
-            overflow-y: auto;
-            position: relative;
-            box-shadow: var(--shadow);
+            background-color: white; margin: 5vh auto; padding: 25px;
+            width: 90%; max-width: 700px; border-radius: var(--radius);
+            max-height: 85vh; overflow-y: auto; position: relative; box-shadow: var(--shadow);
         }
-        .close-modal {
-            position: sticky; top: 0; float: right;
-            font-size: 28px; font-weight: bold; cursor: pointer; color: #94a3b8;
-        }
+        .close-modal { position: sticky; top: 0; float: right; font-size: 28px; font-weight: bold; cursor: pointer; color: #94a3b8; }
 
-        .input-area {
-            padding: 20px; background: white; border-top: 1px solid #e2e8f0;
-            display: flex; gap: 10px; align-items: center;
-        }
-        #searchInput { 
-            flex: 1; padding: 12px 15px; border: 2px solid #e2e8f0; 
-            border-radius: 24px; font-size: 15px; outline: none;
-        }
-        .send-btn { 
-            width: 45px; height: 45px; background: var(--primary-color); color: white; 
-            border: none; border-radius: 50%; cursor: pointer; font-size: 18px;
-            display: flex; justify-content: center; align-items: center;
-        }
+        .input-area { padding: 20px; background: white; border-top: 1px solid #e2e8f0; display: flex; gap: 10px; align-items: center; }
+        #searchInput { flex: 1; padding: 12px 15px; border: 2px solid #e2e8f0; border-radius: 24px; font-size: 15px; outline: none; }
+        .send-btn { width: 45px; height: 45px; background: var(--primary-color); color: white; border: none; border-radius: 50%; cursor: pointer; font-size: 18px; display: flex; justify-content: center; align-items: center; }
 
-        .result-item {
-            background: #f8fafc; padding: 15px; border-left: 4px solid #f59e0b;
-            margin-bottom: 15px; border-radius: 6px; font-size: 14px; color: #334155;
-        }
-
+        .result-item { background: #f8fafc; padding: 15px; border-left: 4px solid #f59e0b; margin-bottom: 15px; border-radius: 6px; font-size: 14px; color: #334155; }
         .suggestions { padding: 10px 20px; background: #f1f5f9; font-size: 12px; white-space: nowrap; overflow-x: auto; border-top: 1px solid #e2e8f0; }
         .suggestions a { color: #2563eb; text-decoration: none; cursor: pointer; margin-right: 8px; background: white; padding: 4px 10px; border-radius: 12px; border: 1px solid #e2e8f0; display: inline-block; }
 
@@ -130,6 +113,7 @@
         @media screen and (max-width: 600px) {
             .main-container { width: 100%; height: 100vh; border-radius: 0; }
             #btnOfflineResults { bottom: 130px; right: 15px; padding: 10px 15px; font-size: 12px; }
+            .btn-stats span { display: none; }
         }
     </style>
 </head>
@@ -138,7 +122,10 @@
 <div class="main-container">
     <header>
         <h1>🤖 Suporte Bsoft <span class="badge">Online</span></h1>
-        <button onclick="checkPassword()" style="border:none; background:none; cursor:pointer; font-size:18px; padding: 5px;">🔑</button>
+        <div style="display: flex; gap: 8px;">
+            <button class="btn-stats" onclick="showAnalytics()">📊 <span>Relatório</span></button>
+            <button onclick="checkPassword()" style="border:none; background:none; cursor:pointer; font-size:18px; padding: 5px;">🔑</button>
+        </div>
     </header>
 
     <div id="chatStream">
@@ -167,7 +154,7 @@
 <div id="resultsModal" class="modal">
     <div class="modal-content">
         <span class="close-modal" onclick="closeModal()">&times;</span>
-        <h2 style="color: #1e293b; font-size: 18px; margin-top: 0;">🔍 Manual Técnico: Resultados Offline</h2>
+        <h2 id="modalTitle" style="color: #1e293b; font-size: 18px; margin-top: 0;">🔍 Manual Técnico: Resultados Offline</h2>
         <hr style="border: 0; border-top: 1px solid #e2e8f0; margin-bottom: 20px;">
         <div id="modalBody"></div>
     </div>
@@ -186,6 +173,8 @@
     let fileContent = "";
     let chatHistory = []; 
     let currentResults = []; 
+    // Analytics: Carrega do navegador ou inicia vazio
+    let searchLogs = JSON.parse(localStorage.getItem('bsoft_analytics')) || [];
 
     const SINONIMOS = {
         "imprimir": ["gerar", "emitir", "visualizar", "danfe", "dacte", "damdf"],
@@ -209,10 +198,72 @@
         try {
             const response = await fetch(`${GITHUB_RAW_URL}?t=${Date.now()}`);
             fileContent = await response.text();
-            console.log("Banco carregado.");
         } catch (e) { appendMessage('ai', "⚠️ Erro ao carregar banco de dados."); }
     }
 
+    // --- FUNÇÕES DE ANALYTICS ---
+    function logSearch(query, foundOffline) {
+        const log = {
+            termo: query,
+            data: new Date().toLocaleString(),
+            encontrouNoManual: foundOffline,
+            feedback: null
+        };
+        searchLogs.push(log);
+        localStorage.setItem('bsoft_analytics', JSON.stringify(searchLogs));
+    }
+
+    function showAnalytics() {
+        const modal = document.getElementById('resultsModal');
+        const body = document.getElementById('modalBody');
+        const title = document.getElementById('modalTitle');
+        
+        title.innerText = "📊 Analytics de Uso (Histórico Local)";
+        
+        const total = searchLogs.length;
+        const noManual = searchLogs.filter(l => l.encontrouNoManual).length;
+        const falhas = total - noManual;
+
+        let html = `
+            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-bottom:20px; text-align:center;">
+                <div style="background:#eff6ff; padding:10px; border-radius:8px;"><strong>${total}</strong><br><small>Buscas</small></div>
+                <div style="background:#dcfce7; padding:10px; border-radius:8px;"><strong>${noManual}</strong><br><small>No Manual</small></div>
+                <div style="background:#fff7ed; padding:10px; border-radius:8px;"><strong>${falhas}</strong><br><small>Lacunas</small></div>
+            </div>
+            <table style="width:100%; font-size:12px; border-collapse: collapse;">
+                <tr style="background:#f1f5f9; text-align:left;">
+                    <th style="padding:8px;">Termo</th>
+                    <th style="padding:8px;">Manual?</th>
+                    <th style="padding:8px;">Feedback</th>
+                </tr>
+        `;
+
+        searchLogs.slice(-15).reverse().forEach(log => {
+            html += `
+                <tr style="border-bottom:1px solid #f1f5f9;">
+                    <td style="padding:8px;">${log.termo}</td>
+                    <td style="padding:8px;">${log.encontrouNoManual ? '✅' : '❌'}</td>
+                    <td style="padding:8px;">${log.feedback === 'positivo' ? '👍' : (log.feedback === 'negativo' ? '👎' : '-')}</td>
+                </tr>
+            `;
+        });
+
+        html += `</table><p style="font-size:10px; color:gray; margin-top:15px;">* Exibindo últimas 15 buscas gravadas no seu navegador.</p>`;
+        body.innerHTML = html;
+        modal.style.display = "block";
+    }
+
+    function saveFeedback(logIndex, type, btn) {
+        if(searchLogs[logIndex]) {
+            searchLogs[logIndex].feedback = type;
+            localStorage.setItem('bsoft_analytics', JSON.stringify(searchLogs));
+        }
+        const parent = btn.parentElement;
+        parent.querySelectorAll('button').forEach(b => b.className = 'feedback-btn');
+        btn.classList.add(type === 'positivo' ? 'active-up' : 'active-down');
+    }
+
+    // --- LÓGICA DE CHAT ---
     function handleChat() {
         const input = document.getElementById('searchInput');
         const query = input.value.trim();
@@ -224,27 +275,18 @@
         const results = searchDatabaseLogic(query);
         currentResults = results; 
         
-        // Controle do botão amarelo
+        // Registrar busca no analytics
+        logSearch(query, results.length > 0);
+        const logIndex = searchLogs.length - 1;
+
         const btnOffline = document.getElementById('btnOfflineResults');
         btnOffline.style.display = results.length > 0 ? "block" : "none";
 
-        let contextForAI = "";
+        let contextForAI = results.length > 0 
+            ? `DADOS DO MANUAL:\n${results.slice(0, 4).map(r => r.block).join("\n---\n")}`
+            : `Busca geral de logística/TMS.`;
 
-        if (results.length > 0) {
-            // REMOVIDO: createRetractableResultCard (O card de resultados no chat não aparece mais)
-            contextForAI = `DADOS DO MANUAL:\n${results.slice(0, 4).map(r => r.block).join("\n---\n")}`;
-        } else {
-            contextForAI = `Busca geral de logística/TMS.`;
-            setTimeout(() => {
-                const stream = document.getElementById('chatStream');
-                const info = document.createElement('div');
-                info.style.cssText = "font-size:11px; color:#64748b; text-align:center; margin-bottom:10px;";
-                info.innerText = "🔍 Não encontrado no manual. Buscando na base de conhecimento geral...";
-                stream.appendChild(info);
-            }, 500);
-        }
-
-        askAIWithRotation(query, contextForAI);
+        askAIWithRotation(query, contextForAI, logIndex);
     }
 
     function searchDatabaseLogic(query) {
@@ -252,7 +294,6 @@
         const qLower = query.toLowerCase();
         const stopWords = ["como", "fazer", "o", "a", "de", "do", "da", "em", "para", "erro", "no", "na", "está", "com"];
         let searchTerms = qLower.split(' ').filter(word => !stopWords.includes(word) && word.length > 2);
-
         const blocks = fileContent.split('###');
         let scoredResults = [];
 
@@ -264,13 +305,14 @@
             searchTerms.forEach(word => { if (blockLower.includes(word)) score += 40; });
             if (score > 0) scoredResults.push({ block, score });
         });
-
         return scoredResults.sort((a, b) => b.score - a.score);
     }
 
     function openModal() {
         const modal = document.getElementById('resultsModal');
         const body = document.getElementById('modalBody');
+        const title = document.getElementById('modalTitle');
+        title.innerText = "🔍 Manual Técnico: Resultados Offline";
         body.innerHTML = currentResults.map(r => `
             <div class="result-item">
                 ${formatBlock(r.block)}
@@ -303,14 +345,14 @@
             .replace(/\n/g, ' ');
     }
 
-    async function askAIWithRotation(question, context) {
+    async function askAIWithRotation(question, context, logIndex) {
         const loadingDiv = appendMessage('ai', '<em>🧠 Iniciando busca técnica...</em>');
         const MODELO_PRIMARY = "gemma-3-27b-it";
         const maxTentativas = 5;
 
         async function executarCiclo(tentativa) {
             if (tentativa > maxTentativas) {
-                loadingDiv.innerHTML = "❌ O servidor está sob alta carga. Tente novamente.";
+                loadingDiv.innerHTML = "❌ Servidor sobrecarregado. Tente novamente.";
                 return;
             }
             const tempoEspera = Math.pow(2, tentativa) * 1000;
@@ -330,7 +372,17 @@
                 
                 let aiText = data.candidates[0].content.parts[0].text;
                 loadingDiv.innerHTML = aiText.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
-                chatHistory.push({ role: 'AI', text: aiText });
+                
+                // Adicionar UI de Feedback
+                const fbDiv = document.createElement('div');
+                fbDiv.className = 'feedback-area';
+                fbDiv.innerHTML = `
+                    <span>Ajudou?</span>
+                    <button class="feedback-btn" onclick="saveFeedback(${logIndex}, 'positivo', this)">👍</button>
+                    <button class="feedback-btn" onclick="saveFeedback(${logIndex}, 'negativo', this)">👎</button>
+                `;
+                loadingDiv.appendChild(fbDiv);
+
             } catch (e) { return executarCiclo(tentativa + 1); }
         }
         executarCiclo(1);
