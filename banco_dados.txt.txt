@@ -2073,8 +2073,9 @@ Erro: Cadastrei um "Tipo Valores Outros" e não aparece de jeito nenhum no CT-e,
 Solução: O parâmetro de nome interno: "transp_mostrarBlocoOutrosValores" terá que estar ativo.
 ###
 Erro: Como eu configuro para que a apólice de seguro apareça nas observações do CT-e?
-Solução: Para configurar observação automática da apólice de seguro no Ct-e, você poderá ir até o talão de CT-e na tela | Transporte > Cofigurações > Tipos de Talões.
+Solução: Poderá ir até o talão de CT-e na tela | Transporte > Cofigurações > Tipos de Talões.
 Editar o talão de CT-e e marcar a opção "Seguradora" em "Observações automáticas".
+
 
 
 
