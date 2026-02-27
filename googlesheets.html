@@ -286,57 +286,45 @@
     }
 
 async function showAnalytics() {
-        const modal = document.getElementById('resultsModal');
-        const body = document.getElementById('modalBody');
-        const title = document.getElementById('modalTitle');
+    const modal = document.getElementById('resultsModal');
+    const body = document.getElementById('modalBody');
+    const title = document.getElementById('modalTitle');
+    
+    title.innerText = "📊 Relatório Global de Operação";
+    body.innerHTML = "<em>Carregando dados da planilha...</em>";
+    modal.style.display = "block";
+
+    try {
+        // AQUI ESTÁ O SEGREDO: o ?tipo=logs avisa o script para ler a aba de Logs
+        const response = await fetch(SCRIPT_URL + "?tipo=logs");
+        const data = await response.json();
         
-        title.innerText = "📊 Relatório Global de Operação";
-        body.innerHTML = "<em>Carregando dados da planilha global...</em>";
-        modal.style.display = "block";
+        let html = `<table style="width:100%; font-size:12px; border-collapse: collapse;">
+                    <tr style="background:#f1f5f9; text-align:left;">
+                        <th style="padding:8px; border-bottom: 2px solid #e2e8f0;">Data</th>
+                        <th style="padding:8px; border-bottom: 2px solid #e2e8f0;">Pergunta</th>
+                        <th style="padding:8px; border-bottom: 2px solid #e2e8f0; text-align:center;">Manual?</th>
+                        <th style="padding:8px; border-bottom: 2px solid #e2e8f0;">Feedback</th>
+                    </tr>`;
+        
+        // Pula o cabeçalho (index 0) e mostra os últimos 20
+        data.slice(1).reverse().slice(0, 20).forEach(row => {
+            const dt = row[0] ? new Date(row[0]).toLocaleDateString('pt-BR') : '-';
+            const manualIcon = row[2] === "Sim" ? "✅" : "❌";
 
-        try {
-            const response = await fetch(SCRIPT_URL);
-            const textData = await response.text(); // Lê como texto primeiro para validar
-            
-            let data;
-            try {
-                data = JSON.parse(textData); // Tenta converter para os dados da tabela
-            } catch (err) {
-                // Se o Google Script retornar aquela mensagem de erro em texto, cai aqui
-                body.innerHTML = `❌ <b>Erro de Retorno do Script:</b><br>O Google Apps Script não retornou a tabela. Ele retornou o seguinte texto:<br><br><em>"${textData}"</em><br><br><b>Correção:</b> Vá no seu Apps Script e garanta que a função doGet() esteja retornando ContentService.createTextOutput(JSON.stringify(data)).`;
-                return;
-            }
-            
-            let html = `<table style="width:100%; font-size:12px; border-collapse: collapse;">
-                        <tr style="background:#f1f5f9; text-align:left;">
-                            <th style="padding:8px; border-bottom: 2px solid #e2e8f0;">Data</th>
-                            <th style="padding:8px; border-bottom: 2px solid #e2e8f0;">Pergunta</th>
-                            <th style="padding:8px; border-bottom: 2px solid #e2e8f0; text-align:center;">Manual?</th>
-                            <th style="padding:8px; border-bottom: 2px solid #e2e8f0;">Feedback</th>
-                        </tr>`;
-            
-            // Pula o cabeçalho, inverte a ordem e pega os 20 últimos
-            data.slice(1).reverse().slice(0, 20).forEach(row => {
-                const dt = row[0] ? new Date(row[0]).toLocaleDateString('pt-BR') : '-';
-                
-                // Formatação visual dos ícones de Sim/Não
-                const manualIcon = row[2] === "Sim" 
-                    ? '<span style="background:#dcfce7; color:#166534; padding:2px 6px; border-radius:4px; font-weight:bold;">✅</span>' 
-                    : '<span style="background:#fee2e2; color:#991b1b; padding:2px 6px; border-radius:4px; font-weight:bold;">❌</span>';
-
-                html += `<tr style="border-bottom:1px solid #e2e8f0;">
-                    <td style="padding:10px 8px; color:#64748b;">${dt}</td>
-                    <td style="padding:10px 8px; font-weight:500;">${row[1]}</td>
-                    <td style="padding:10px 8px; text-align:center;">${manualIcon}</td>
-                    <td style="padding:10px 8px;">${row[3] || 'Pendente'}</td>
-                </tr>`;
-            });
-            html += "</table><p style='font-size:10px; color:gray; margin-top:10px;'>* Exibindo as últimas 20 interações globais.</p>";
-            body.innerHTML = html;
-        } catch (e) {
-            body.innerHTML = "❌ Erro ao buscar relatório global da planilha. Verifique a URL do SCRIPT_URL.";
-        }
+            html += `<tr style="border-bottom:1px solid #e2e8f0;">
+                <td style="padding:10px 8px;">${dt}</td>
+                <td style="padding:10px 8px;">${row[1]}</td>
+                <td style="padding:10px 8px; text-align:center;">${manualIcon}</td>
+                <td style="padding:10px 8px;">${row[3] || 'Pendente'}</td>
+            </tr>`;
+        });
+        html += "</table>";
+        body.innerHTML = html;
+    } catch (e) {
+        body.innerHTML = "❌ Erro ao carregar relatório.";
     }
+}
 
     // FEEDBACK (Mantendo sua lógica detalhada)
     function saveFeedback(logIndex, type, btn) {
@@ -432,7 +420,10 @@ async function showAnalytics() {
                         contents: [{ parts: [{ text: `Você é suporte Bsoft TMS, somente responderá se baseando no que estiver no banco de dados que você tem 
 						disponível para consultar, caso não encontrar retornará a seguinte mensagem:
 						Não encontramos o que procura no manual, podes clicar no feedback como negativo e deixar sua sugestão caso encontrar a solução
-						do seu problema, assim você me ajuda a conhecer mais sobre o assunto. Contexto: ${context}\nPergunta: ${question}` }] }]
+						do seu problema, assim você me ajuda a conhecer mais sobre o assunto. Preciso que responda as perguntas de forma bem detalhada com passo a passo se disponível no manual, apresentando o caminho de onde executar a operação que perguntarem no sistema.
+						Se por exemplo perguntarem "Como emitir um ct-e?" Você irá responder o passo a passo de como emitir no sistema.
+						Contexto: ${context}\nPergunta: ${question}` }] }]
+						
                     })
                 });
                 const data = await response.json();
