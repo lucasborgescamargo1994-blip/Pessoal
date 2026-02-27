@@ -453,13 +453,13 @@ function searchDatabaseLogic(query) {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: `Você é o Especialista de Suporte da Bsoft TMS. 
+                        contents: [{ parts: [{ text: `Você é o Especialista de Suporte do Sistema Bsoft TMS. 
 						CONTEXTO DO MANUAL: ${context}
     
 						Sua tarefa:
 						1. Se o CONTEXTO contiver a resposta, use-o como prioridade absoluta.
 						2. Se o CONTEXTO for insuficiente mas você souber a resposta por ser um procedimento padrão do TMS (como configurações de talão, impostos ou cadastros), responda de forma clara.
-						3. Se não tiver certeza absoluta, diga: "Não encontrei detalhes específicos no manual, mas geralmente isso é feito em [Setor/Tela]. Por favor, use o feedback negativo abaixo para nos dizer se isso ajudou, para que possamos atualizar nosso manual."
+						3. Se não tiver certeza absoluta, diga: "Não encontrei detalhes específicos no manual, mas você pode conferir em [Setor/Tela]. Por favor, use o feedback negativo abaixo para nos dizer se isso ajudou, para que possamos atualizar nosso manual."
     
     PERGUNTA DO USUÁRIO: ${question}` }] }]
                     })
