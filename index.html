@@ -15,26 +15,36 @@
 		
 		/* Estilo do campo de motivo do feedback */
 .reason-box {
-    display: none; /* Escondido por padrão */
-    gap: 5px;
+    display: none;
+    flex-direction: column; /* Coloca o botão abaixo do texto para dar mais espaço */
+    gap: 8px;
     margin-top: 10px;
-    animation: fadeIn 0.2s ease;
+    width: 100%;
 }
-.reason-box input {
-    flex: 1;
-    padding: 8px;
+
+.reason-box textarea {
+    width: 100%;
+    min-height: 80px; /* Altura inicial maior */
+    max-height: 300px; /* Limite para não quebrar o layout */
+    padding: 12px;
     border: 1px solid #cbd5e1;
-    border-radius: 6px;
-    font-size: 13px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: none; /* Remove o puxador manual para usar o automático */
     outline: none;
+    box-sizing: border-box;
 }
+
 .reason-box button {
-    background: #475569;
+    align-self: flex-end; /* Botão no canto inferior direito */
+    background: var(--primary-color);
     color: white;
     border: none;
-    padding: 5px 12px;
+    padding: 8px 20px;
     border-radius: 6px;
     cursor: pointer;
+    font-weight: bold;
 }
 
         body {
@@ -282,32 +292,37 @@
     const parent = btn.parentElement;
     
     if (type === 'positivo') {
-        // Fluxo positivo: Apenas registra e agradece
         logSearch("FEEDBACK_POSITIVO", true); 
         parent.innerHTML = "<span style='color:#166534; font-weight:bold;'>Obrigado! 👍</span>";
     } else {
-        // Fluxo negativo: Abre a caixa de texto
         parent.innerHTML = `
             <div class="reason-box" style="display:flex;">
-                <input type="text" id="reason_${logIndex}" placeholder="O que faltou na resposta?">
-                <button onclick="sendDetailedFeedback(${logIndex}, this)">Enviar</button>
+                <textarea 
+                    id="reason_${logIndex}" 
+                    placeholder="Pode detalhar o que houve? (Ex: Faltou o passo X, o erro persiste...)"
+                    oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"
+                ></textarea>
+                <button onclick="sendDetailedFeedback(${logIndex}, this)">Enviar Feedback</button>
             </div>
         `;
+        // Foca na caixa automaticamente ao abrir
+        setTimeout(() => document.getElementById(`reason_${logIndex}`).focus(), 100);
     }
 }
 
 	async function sendDetailedFeedback(logIndex, btn) {
-    const input = document.getElementById(`reason_${logIndex}`);
-    const motivo = input.value.trim();
+    const textarea = document.getElementById(`reason_${logIndex}`);
+    const motivo = textarea.value.trim();
     
-    if (!motivo) return; // Não envia se estiver vazio
+    if (!motivo) {
+        alert("Por favor, descreva o problema antes de enviar.");
+        return;
+    }
 
-    // Envia para a sua planilha usando a mesma lógica do logSearch
     logSearch(`FEEDBACK_NEGATIVO: ${motivo}`, false);
     
-    // Feedback visual final
     const container = btn.parentElement.parentElement;
-    container.innerHTML = "<span style='color:#991b1b; font-weight:bold;'>Feedback enviado. Obrigado!</span>";
+    container.innerHTML = "<span style='color:#991b1b; font-weight:bold;'>Feedback detalhado enviado. Obrigado pela ajuda!</span>";
 }
 
 
@@ -412,7 +427,10 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: `Você é suporte Bsoft TMS. Contexto: ${context}\nPergunta: ${question}` }] }]
+                        contents: [{ parts: [{ text: `Você é suporte Bsoft TMS, somente responderá se baseando no que estiver no banco de dados que você tem 
+						disponível para consultar, caso não encontrar retornará a seguinte mensagem:
+						Não encontramos o que procura no manual, podes clicar no feedback como negativo e deixar sua sugestão caso encontrar a solução
+						do seu problema, assim você me ajuda a conhecer mais sobre o assunto. Contexto: ${context}\nPergunta: ${question}` }] }]
                     })
                 });
                 const data = await response.json();
