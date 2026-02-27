@@ -218,6 +218,9 @@
         "mdf-e": ["mdfe", "manifesto"],
         "cancelar": ["estornar", "anular", "inutilizar"],
         "pagamento": ["financeiro", "baixa", "receber", "contas"],
+		"configurar": ["configuro", "parametrizo", "parametrizar", "settings"],
+		"Tem como": ["Como faz", "é possível", "Possível", "Possibilidade", "Como faz", "Tutorial"],
+		"Passo a passo": ["Como faz", "Tutorial", "Tem como", "Possibilidade", "Como faz", "Tutorial"],
         "cliente": ["remetente", "destinatário", "tomador"]
     };
 
@@ -352,24 +355,47 @@
         askAIWithRotation(query, contextForAI, logIndex);
     }
 
-    function searchDatabaseLogic(query) {
-        if (!fileContent) return [];
-        const qLower = query.toLowerCase();
-        const stopWords = ["como", "fazer", "o", "a", "de", "do", "da", "em", "para", "erro", "no", "na", "está", "com"];
-        let searchTerms = qLower.split(' ').filter(word => !stopWords.includes(word) && word.length > 2);
-        const blocks = fileContent.split('###');
-        let scoredResults = [];
+    // --- BUSCA OTIMIZADA COM SINÔNIMOS ---
+function searchDatabaseLogic(query) {
+    if (!fileContent) return [];
+    const qLower = query.toLowerCase();
+    
+    // Lista de stopWords para limpar a busca
+    const stopWords = ["como", "fazer", "o", "a", "de", "do", "da", "em", "para", "erro", "no", "na", "está", "com", "tem", "que"];
+    let searchTerms = qLower.split(' ').filter(word => !stopWords.includes(word) && word.length > 2);
 
-        blocks.forEach(block => {
-            if (!block.trim()) return;
-            let score = 0;
-            const blockLower = block.toLowerCase();
-            if (blockLower.includes(qLower)) score += 150;
-            searchTerms.forEach(word => { if (blockLower.includes(word)) score += 40; });
-            if (score > 0) scoredResults.push({ block, score });
+    // Adiciona sinônimos aos termos de busca
+    let expandedTerms = [...searchTerms];
+    searchTerms.forEach(term => {
+        for (let key in SINONIMOS) {
+            if (term.includes(key) || key.includes(term)) {
+                expandedTerms.push(...SINONIMOS[key]);
+            }
+        }
+    });
+
+    const blocks = fileContent.split('###');
+    let scoredResults = [];
+
+    blocks.forEach(block => {
+        if (!block.trim()) return;
+        let score = 0;
+        const blockLower = block.toLowerCase();
+
+        // Bonus por frase exata
+        if (blockLower.includes(qLower)) score += 200;
+
+        // Pontuação por termos expandidos
+        const uniqueTerms = [...new Set(expandedTerms)];
+        uniqueTerms.forEach(word => {
+            if (blockLower.includes(word)) score += 50;
         });
-        return scoredResults.sort((a, b) => b.score - a.score);
-    }
+
+        if (score > 10) scoredResults.push({ block, score });
+    });
+
+    return scoredResults.sort((a, b) => b.score - a.score);
+}
 
     function openModal() {
         const modal = document.getElementById('resultsModal');
@@ -427,10 +453,15 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: `Você é suporte Bsoft TMS, somente responderá se baseando no que estiver no banco de dados que você tem 
-						disponível para consultar, caso não encontrar retornará a seguinte mensagem:
-						Não encontramos o que procura no manual, podes clicar no feedback como negativo e deixar sua sugestão caso encontrar a solução
-						do seu problema, assim você me ajuda a conhecer mais sobre o assunto. Contexto: ${context}\nPergunta: ${question}` }] }]
+                        contents: [{ parts: [{ text: `Você é o Especialista de Suporte da Bsoft TMS. 
+						CONTEXTO DO MANUAL: ${context}
+    
+						Sua tarefa:
+						1. Se o CONTEXTO contiver a resposta, use-o como prioridade absoluta.
+						2. Se o CONTEXTO for insuficiente mas você souber a resposta por ser um procedimento padrão do TMS (como configurações de talão, impostos ou cadastros), responda de forma clara.
+						3. Se não tiver certeza absoluta, diga: "Não encontrei detalhes específicos no manual, mas geralmente isso é feito em [Setor/Tela]. Por favor, use o feedback negativo abaixo para nos dizer se isso ajudou, para que possamos atualizar nosso manual."
+    
+    PERGUNTA DO USUÁRIO: ${question}` }] }]
                     })
                 });
                 const data = await response.json();
