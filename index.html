@@ -453,15 +453,10 @@ function searchDatabaseLogic(query) {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: `Você é o Especialista de Suporte do Sistema Bsoft TMS. 
-						CONTEXTO DO MANUAL: ${context}
-    
-						Sua tarefa:
-						1. Se o CONTEXTO contiver a resposta, use-o como prioridade absoluta.
-						2. Se o CONTEXTO for insuficiente mas você souber a resposta por ser um procedimento padrão do TMS (como configurações de talão, impostos ou cadastros), responda de forma clara.
-						3. Se não tiver certeza absoluta, diga: "Não encontrei detalhes específicos no manual, mas você pode conferir em [Setor/Tela]. Por favor, use o feedback negativo abaixo para nos dizer se isso ajudou, para que possamos atualizar nosso manual."
-    
-    PERGUNTA DO USUÁRIO: ${question}` }] }]
+                        contents: [{ parts: [{ text: `Você é suporte Bsoft TMS, somente responderá se baseando no que estiver no banco de dados que você tem 
+						disponível para consultar, caso não encontrar retornará a seguinte mensagem:
+						Não encontramos o que procura no manual, podes clicar no feedback como negativo e deixar sua sugestão caso encontrar a solução
+						do seu problema, assim você me ajuda a conhecer mais sobre o assunto. Contexto: ${context}\nPergunta: ${question}` }] }]
                     })
                 });
                 const data = await response.json();
