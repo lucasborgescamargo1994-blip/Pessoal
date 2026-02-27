@@ -1,0 +1,37 @@
+:root {
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --bg-main: #f0f2f5;
+    --text-dark: #1e293b;
+    --glass: rgba(255, 255, 255, 0.96);
+}
+
+body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), 
+                url("https://bsoft.com.br/blog/wp-content/uploads/2025/03/bsoft-960x500.webp");
+    background-size: cover;
+    height: 100vh;
+    display: flex; justify-content: center; align-items: center;
+    margin: 0;
+}
+
+.main-container {
+    background: var(--glass);
+    width: 100%; max-width: 900px; height: 95vh;
+    border-radius: 16px; display: flex; flex-direction: column;
+    overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+/* Estilo das Bolhas de Chat */
+.message {
+    max-width: 80%; padding: 12px 16px; border-radius: 12px;
+    margin-bottom: 10px; animation: fadeIn 0.3s ease;
+}
+.user-msg { align-self: flex-end; background: var(--primary); color: white; border-bottom-right-radius: 2px; }
+.ai-msg { align-self: flex-start; background: white; border: 1px solid #e2e8f0; border-bottom-left-radius: 2px; }
+
+/* Área de Input */
+.input-area { padding: 20px; background: white; border-top: 1px solid #e2e8f0; display: flex; gap: 10px; }
+#searchInput { flex: 1; padding: 12px 20px; border-radius: 25px; border: 2px solid #e2e8f0; outline: none; }
+.send-btn { background: var(--primary); color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; }
