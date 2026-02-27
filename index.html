@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <title>Suporte Bsoft TMS - IA (V2.1)</title>
+    <title>Suporte Bsoft TMS - IA (V3.0 Sheets)</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> 
     <style>
@@ -13,39 +13,38 @@
             --radius: 16px;
         }
 		
-		/* Estilo do campo de motivo do feedback */
-.reason-box {
-    display: none;
-    flex-direction: column; /* Coloca o botão abaixo do texto para dar mais espaço */
-    gap: 8px;
-    margin-top: 10px;
-    width: 100%;
-}
+        .reason-box {
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 10px;
+            width: 100%;
+        }
 
-.reason-box textarea {
-    width: 100%;
-    min-height: 80px; /* Altura inicial maior */
-    max-height: 300px; /* Limite para não quebrar o layout */
-    padding: 12px;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    font-size: 14px;
-    font-family: inherit;
-    resize: none; /* Remove o puxador manual para usar o automático */
-    outline: none;
-    box-sizing: border-box;
-}
+        .reason-box textarea {
+            width: 100%;
+            min-height: 80px;
+            max-height: 300px;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: none;
+            outline: none;
+            box-sizing: border-box;
+        }
 
-.reason-box button {
-    align-self: flex-end; /* Botão no canto inferior direito */
-    background: var(--primary-color);
-    color: white;
-    border: none;
-    padding: 8px 20px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: bold;
-}
+        .reason-box button {
+            align-self: flex-end;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
 
         body {
             font-family: 'Segoe UI', Inter, system-ui, sans-serif;
@@ -71,13 +70,21 @@
         h1 { margin: 0; font-size: 18px; color: #1e293b; display: flex; align-items: center; gap: 8px; }
         .badge { font-size: 11px; background:#dcfce7; color:#166534; padding:3px 8px; border-radius:12px; font-weight: bold; }
 
-        /* Botão de Analytics no Header */
         .btn-stats {
             font-size: 14px; background: #f1f5f9; border: 1px solid #e2e8f0;
             padding: 5px 12px; border-radius: 8px; cursor: pointer; color: #475569;
             display: flex; align-items: center; gap: 5px; transition: 0.2s;
         }
         .btn-stats:hover { background: #e2e8f0; }
+
+        /* Estilo do Painel Admin */
+        #adminPanel {
+            display: none; flex-direction: column; gap: 10px; padding: 15px;
+            background: #fffbeb; border-bottom: 2px solid #fcd34d;
+        }
+        #adminPanel input, #adminPanel textarea {
+            padding: 10px; border: 1px solid #fcd34d; border-radius: 8px; outline: none; font-size: 14px;
+        }
 
         #chatStream {
             flex: 1; padding: 20px; overflow-y: auto;
@@ -100,7 +107,6 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
 
-        /* Feedback UI */
         .feedback-area {
             display: flex; gap: 10px; margin-top: 10px; padding-top: 8px;
             border-top: 1px dashed #e2e8f0; font-size: 12px; color: #64748b; align-items: center;
@@ -109,9 +115,6 @@
             background: white; border: 1px solid #e2e8f0; border-radius: 4px;
             cursor: pointer; padding: 2px 8px; transition: 0.2s;
         }
-        .feedback-btn:hover { background: #f1f5f9; }
-        .feedback-btn.active-up { background: #dcfce7; border-color: #22c55e; color: #166534; }
-        .feedback-btn.active-down { background: #fee2e2; border-color: #ef4444; color: #991b1b; }
 
         #btnOfflineResults {
             display: none; position: absolute; right: 25px; bottom: 110px;
@@ -120,7 +123,6 @@
             cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 100;
             font-size: 14px; transition: 0.3s;
         }
-        #btnOfflineResults:hover { background-color: #fde047; transform: scale(1.05); }
 
         .modal {
             display: none; position: fixed; z-index: 2000;
@@ -143,12 +145,6 @@
         .suggestions a { color: #2563eb; text-decoration: none; cursor: pointer; margin-right: 8px; background: white; padding: 4px 10px; border-radius: 12px; border: 1px solid #e2e8f0; display: inline-block; }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
-        @media screen and (max-width: 600px) {
-            .main-container { width: 100%; height: 100vh; border-radius: 0; }
-            #btnOfflineResults { bottom: 130px; right: 15px; padding: 10px 15px; font-size: 12px; }
-            .btn-stats span { display: none; }
-        }
     </style>
 </head>
 <body>
@@ -158,14 +154,24 @@
         <h1>🤖 Suporte Bsoft <span class="badge">Online</span></h1>
         <div style="display: flex; gap: 8px;">
             <button class="btn-stats" onclick="showAnalytics()">📊 <span>Relatório</span></button>
-            <button onclick="checkPassword()" style="border:none; background:none; cursor:pointer; font-size:18px; padding: 5px;">🔑</button>
+            <button onclick="openAdmin()" style="border:none; background:none; cursor:pointer; font-size:18px; padding: 5px;">🔑</button>
         </div>
     </header>
+
+    <div id="adminPanel">
+        <strong style="color: #92400e;">🛠️ Adicionar Erro ao Banco de Dados</strong>
+        <input type="text" id="newError" placeholder="Título do Erro (Ex: CT-e sem averbação)">
+        <textarea id="newSolution" placeholder="Solução detalhada..."></textarea>
+        <div style="display:flex; gap:10px; justify-content: flex-end;">
+            <button onclick="closeAdmin()" style="background:#e2e8f0; border:none; padding:5px 15px; border-radius:5px; cursor:pointer;">Cancelar</button>
+            <button onclick="saveToDatabase()" style="background:#d97706; color:white; border:none; padding:5px 15px; border-radius:5px; cursor:pointer; font-weight:bold;">Gravar na Planilha</button>
+        </div>
+    </div>
 
     <div id="chatStream">
         <div class="message ai-msg">
             Olá! Sou o assistente Bsoft. <br>
-            Posso ajudar com erros do sistema, manuais ou dúvidas técnicas. <br>
+            Base de dados sincronizada via <b>Google Sheets</b>. <br>
             <b>Qual é a situação?</b>
         </div>
     </div>
@@ -195,8 +201,7 @@
 </div>
 
 <script>
-    const GITHUB_RAW_URL = "https://raw.githubusercontent.com/lucasborgescamargo1994-blip/Pessoal/main/banco_dados.txt.txt";
-    const GITHUB_PAGE_URL = "https://github.com/lucasborgescamargo1994-blip/Pessoal/blob/main/banco_dados.txt.txt";
+    // Configurações mantidas
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8CAmTxO2pEmtc9ZILYJEBh3NX4j_RdlIk3-4gNfTnG3Ki-8_qWtYTCdfLUfHpPNep/exec";
     const p1 = "AIzaSyChy-QK5U1";
     const p2 = "-KJJUNYDrKa";
@@ -205,10 +210,8 @@
     const CORRECT_PASSWORD = "camargo02";
 
     let fileContent = "";
-    let chatHistory = []; 
     let currentResults = []; 
-    // Analytics: Carrega do navegador ou inicia vazio
-    let searchLogs = JSON.parse(localStorage.getItem('bsoft_analytics')) || [];
+    let searchLogs = [];
 
     const SINONIMOS = {
         "imprimir": ["gerar", "emitir", "visualizar", "danfe", "dacte", "damdf"],
@@ -218,9 +221,9 @@
         "mdf-e": ["mdfe", "manifesto"],
         "cancelar": ["estornar", "anular", "inutilizar"],
         "pagamento": ["financeiro", "baixa", "receber", "contas"],
-		"configurar": ["configuro", "parametrizo", "parametrizar", "settings"],
-		"Tem como": ["Como faz", "é possível", "Possível", "Possibilidade", "Como faz", "Tutorial"],
-		"Passo a passo": ["Como faz", "Tutorial", "Tem como", "Possibilidade", "Como faz", "Tutorial"],
+        "configurar": ["configuro", "parametrizo", "parametrizar", "settings"],
+        "Tem como": ["Como faz", "é possível", "Possível", "Possibilidade", "Tutorial"],
+        "Passo a passo": ["Como faz", "Tutorial", "Tem como"],
         "cliente": ["remetente", "destinatário", "tomador"]
     };
 
@@ -231,105 +234,123 @@
         input.focus();
     };
 
+    // CARREGA DADOS DA PLANILHA (Substitui o GitHub)
     async function loadData() {
-        try {
-            const response = await fetch(`${GITHUB_RAW_URL}?t=${Date.now()}`);
-            fileContent = await response.text();
-        } catch (e) { appendMessage('ai', "⚠️ Erro ao carregar banco de dados."); }
-    }
-
-    // --- FUNÇÕES DE ANALYTICS (GLOBAL VIA GOOGLE SHEETS) ---
-    async function logSearch(query, foundOffline) {
-        const payload = {
-            pergunta: query,
-            encontrou: foundOffline ? "Sim" : "Não",
-            feedback: "Pendente"
-        };
-        try {
-            fetch(SCRIPT_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                body: JSON.stringify(payload)
-            });
-        } catch (e) { console.error("Erro log", e); }
-    }
-
-    async function showAnalytics() {
-        const modal = document.getElementById('resultsModal');
-        const body = document.getElementById('modalBody');
-        const title = document.getElementById('modalTitle');
-        
-        title.innerText = "📊 Relatório Global de Operação";
-        body.innerHTML = "<em>Carregando dados da planilha global...</em>";
-        modal.style.display = "block";
-
         try {
             const response = await fetch(SCRIPT_URL);
             const data = await response.json();
-            
-            let html = `<table style="width:100%; font-size:12px; border-collapse: collapse;">
-                        <tr style="background:#f1f5f9; text-align:left;">
-                            <th style="padding:8px;">Data</th>
-                            <th style="padding:8px;">Pergunta</th>
-                            <th style="padding:8px;">Manual?</th>
-                            <th style="padding:8px;">Feedback</th>
-                        </tr>`;
-            
-            data.slice(1).reverse().slice(0, 20).forEach(row => {
-                const dt = row[0] ? new Date(row[0]).toLocaleDateString() : '-';
-                html += `<tr style="border-bottom:1px solid #eee;">
-                    <td style="padding:8px; color:gray;">${dt}</td>
-                    <td style="padding:8px;">${row[1]}</td>
-                    <td style="padding:8px;">${row[2] === "Sim" ? '✅' : '❌'}</td>
-                    <td style="padding:8px;">${row[3] || '-'}</td>
-                </tr>`;
-            });
-            html += "</table><p style='font-size:10px; color:gray; margin-top:10px;'>* Exibindo as últimas 20 interações globais.</p>";
-            body.innerHTML = html;
-        } catch (e) {
-            body.innerHTML = "❌ Erro ao buscar relatório global da planilha.";
+            // Transforma o JSON da planilha no formato de blocos que o chat entende
+            fileContent = data.map(item => `### ERRO: ${item.erro} SOLUÇÃO: ${item.solucao}`).join('\n\n');
+        } catch (e) { appendMessage('ai', "⚠️ Erro ao carregar banco de dados da planilha."); }
+    }
+
+    // ÁREA ADMINISTRATIVA
+    function openAdmin() {
+        if (prompt("Senha Administrativa:") === CORRECT_PASSWORD) {
+            document.getElementById('adminPanel').style.display = 'flex';
         }
     }
 
+    function closeAdmin() {
+        document.getElementById('adminPanel').style.display = 'none';
+    }
+
+    async function saveToDatabase() {
+        const erro = document.getElementById('newError').value.trim();
+        const solucao = document.getElementById('newSolution').value.trim();
+
+        if (!erro || !solucao) return alert("Preencha o erro e a solução!");
+
+        try {
+            await fetch(SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify({ action: "addKnowledge", erro: erro, solucao: solucao })
+            });
+            alert("Sucesso! O conhecimento foi enviado para a planilha.");
+            document.getElementById('newError').value = "";
+            document.getElementById('newSolution').value = "";
+            closeAdmin();
+            loadData(); // Recarrega o "cérebro" da IA com o novo dado
+        } catch (e) {
+            alert("Erro ao gravar na planilha.");
+        }
+    }
+
+    // ANALYTICS (Mantendo sua lógica de relatório)
+    async function logSearch(query, foundOffline) {
+        const payload = { pergunta: query, encontrou: foundOffline ? "Sim" : "Não", feedback: "Pendente" };
+        try {
+            fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+        } catch (e) { console.error("Erro log", e); }
+    }
+
+async function showAnalytics() {
+    const modal = document.getElementById('resultsModal');
+    const body = document.getElementById('modalBody');
+    const title = document.getElementById('modalTitle');
+    
+    title.innerText = "📊 Relatório Global de Operação";
+    body.innerHTML = "<em>Carregando dados da planilha...</em>";
+    modal.style.display = "block";
+
+    try {
+        // AQUI ESTÁ O SEGREDO: o ?tipo=logs avisa o script para ler a aba de Logs
+        const response = await fetch(SCRIPT_URL + "?tipo=logs");
+        const data = await response.json();
+        
+        let html = `<table style="width:100%; font-size:12px; border-collapse: collapse;">
+                    <tr style="background:#f1f5f9; text-align:left;">
+                        <th style="padding:8px; border-bottom: 2px solid #e2e8f0;">Data</th>
+                        <th style="padding:8px; border-bottom: 2px solid #e2e8f0;">Pergunta</th>
+                        <th style="padding:8px; border-bottom: 2px solid #e2e8f0; text-align:center;">Manual?</th>
+                        <th style="padding:8px; border-bottom: 2px solid #e2e8f0;">Feedback</th>
+                    </tr>`;
+        
+        // Pula o cabeçalho (index 0) e mostra os últimos 20
+        data.slice(1).reverse().slice(0, 20).forEach(row => {
+            const dt = row[0] ? new Date(row[0]).toLocaleDateString('pt-BR') : '-';
+            const manualIcon = row[2] === "Sim" ? "✅" : "❌";
+
+            html += `<tr style="border-bottom:1px solid #e2e8f0;">
+                <td style="padding:10px 8px;">${dt}</td>
+                <td style="padding:10px 8px;">${row[1]}</td>
+                <td style="padding:10px 8px; text-align:center;">${manualIcon}</td>
+                <td style="padding:10px 8px;">${row[3] || 'Pendente'}</td>
+            </tr>`;
+        });
+        html += "</table>";
+        body.innerHTML = html;
+    } catch (e) {
+        body.innerHTML = "❌ Erro ao carregar relatório.";
+    }
+}
+
+    // FEEDBACK (Mantendo sua lógica detalhada)
     function saveFeedback(logIndex, type, btn) {
-    const parent = btn.parentElement;
-    
-    if (type === 'positivo') {
-        logSearch("FEEDBACK_POSITIVO", true); 
-        parent.innerHTML = "<span style='color:#166534; font-weight:bold;'>Obrigado! 👍</span>";
-    } else {
-        parent.innerHTML = `
-            <div class="reason-box" style="display:flex;">
-                <textarea 
-                    id="reason_${logIndex}" 
-                    placeholder="Pode detalhar o que houve? (Ex: Faltou o passo X, o erro persiste...)"
-                    oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"
-                ></textarea>
-                <button onclick="sendDetailedFeedback(${logIndex}, this)">Enviar Feedback</button>
-            </div>
-        `;
-        // Foca na caixa automaticamente ao abrir
-        setTimeout(() => document.getElementById(`reason_${logIndex}`).focus(), 100);
-    }
-}
-
-	async function sendDetailedFeedback(logIndex, btn) {
-    const textarea = document.getElementById(`reason_${logIndex}`);
-    const motivo = textarea.value.trim();
-    
-    if (!motivo) {
-        alert("Por favor, descreva o problema antes de enviar.");
-        return;
+        const parent = btn.parentElement;
+        if (type === 'positivo') {
+            logSearch("FEEDBACK_POSITIVO", true); 
+            parent.innerHTML = "<span style='color:#166534; font-weight:bold;'>Obrigado! 👍</span>";
+        } else {
+            parent.innerHTML = `
+                <div class="reason-box" style="display:flex;">
+                    <textarea id="reason_${logIndex}" placeholder="Pode detalhar o que houve?" oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"></textarea>
+                    <button onclick="sendDetailedFeedback(${logIndex}, this)">Enviar Feedback</button>
+                </div>`;
+            setTimeout(() => document.getElementById(`reason_${logIndex}`).focus(), 100);
+        }
     }
 
-    logSearch(`FEEDBACK_NEGATIVO: ${motivo}`, false);
-    
-    const container = btn.parentElement.parentElement;
-    container.innerHTML = "<span style='color:#991b1b; font-weight:bold;'>Feedback detalhado enviado. Obrigado pela ajuda!</span>";
-}
+    async function sendDetailedFeedback(logIndex, btn) {
+        const textarea = document.getElementById(`reason_${logIndex}`);
+        const motivo = textarea.value.trim();
+        if (!motivo) return alert("Descreva o problema!");
+        logSearch(`FEEDBACK_NEGATIVO: ${motivo}`, false);
+        btn.parentElement.parentElement.innerHTML = "<span style='color:#991b1b; font-weight:bold;'>Obrigado! Feedback enviado.</span>";
+    }
 
-
-    // --- LÓGICA DE CHAT ---
+    // BUSCA E CHAT (Mantendo sua lógica original de pontuação e IA)
     function handleChat() {
         const input = document.getElementById('searchInput');
         const query = input.value.trim();
@@ -340,98 +361,41 @@
 
         const results = searchDatabaseLogic(query);
         currentResults = results; 
-        
-        // Registrar busca no analytics
         logSearch(query, results.length > 0);
-        const logIndex = searchLogs.length - 1;
 
-        const btnOffline = document.getElementById('btnOfflineResults');
-        btnOffline.style.display = results.length > 0 ? "block" : "none";
+        document.getElementById('btnOfflineResults').style.display = results.length > 0 ? "block" : "none";
 
         let contextForAI = results.length > 0 
             ? `DADOS DO MANUAL:\n${results.slice(0, 4).map(r => r.block).join("\n---\n")}`
             : `Busca geral de logística/TMS.`;
 
-        askAIWithRotation(query, contextForAI, logIndex);
+        askAIWithRotation(query, contextForAI, 0);
     }
 
-    // --- BUSCA OTIMIZADA COM SINÔNIMOS ---
-function searchDatabaseLogic(query) {
-    if (!fileContent) return [];
-    const qLower = query.toLowerCase();
-    
-    // Lista de stopWords para limpar a busca
-    const stopWords = ["como", "fazer", "o", "a", "de", "do", "da", "em", "para", "erro", "no", "na", "está", "com", "tem", "que"];
-    let searchTerms = qLower.split(' ').filter(word => !stopWords.includes(word) && word.length > 2);
-
-    // Adiciona sinônimos aos termos de busca
-    let expandedTerms = [...searchTerms];
-    searchTerms.forEach(term => {
-        for (let key in SINONIMOS) {
-            if (term.includes(key) || key.includes(term)) {
-                expandedTerms.push(...SINONIMOS[key]);
+    function searchDatabaseLogic(query) {
+        if (!fileContent) return [];
+        const qLower = query.toLowerCase();
+        const stopWords = ["como", "fazer", "o", "a", "de", "do", "da", "em", "para", "erro", "no", "na", "está", "com"];
+        let searchTerms = qLower.split(' ').filter(word => !stopWords.includes(word) && word.length > 2);
+        
+        let expandedTerms = [...searchTerms];
+        searchTerms.forEach(term => {
+            for (let key in SINONIMOS) {
+                if (term.includes(key) || key.includes(term)) expandedTerms.push(...SINONIMOS[key]);
             }
-        }
-    });
-
-    const blocks = fileContent.split('###');
-    let scoredResults = [];
-
-    blocks.forEach(block => {
-        if (!block.trim()) return;
-        let score = 0;
-        const blockLower = block.toLowerCase();
-
-        // Bonus por frase exata
-        if (blockLower.includes(qLower)) score += 200;
-
-        // Pontuação por termos expandidos
-        const uniqueTerms = [...new Set(expandedTerms)];
-        uniqueTerms.forEach(word => {
-            if (blockLower.includes(word)) score += 50;
         });
 
-        if (score > 10) scoredResults.push({ block, score });
-    });
-
-    return scoredResults.sort((a, b) => b.score - a.score);
-}
-
-    function openModal() {
-        const modal = document.getElementById('resultsModal');
-        const body = document.getElementById('modalBody');
-        const title = document.getElementById('modalTitle');
-        title.innerText = "🔍 Manual Técnico: Resultados Offline";
-        body.innerHTML = currentResults.map(r => `
-            <div class="result-item">
-                ${formatBlock(r.block)}
-                <div style="font-size:10px; color:#94a3b8; text-align:right; margin-top:8px; font-weight:bold;">Relevância: ${r.score}</div>
-            </div>
-        `).join('');
-        modal.style.display = "block";
-    }
-
-    function closeModal() { document.getElementById('resultsModal').style.display = "none"; }
-
-    window.onclick = (event) => {
-        if (event.target == document.getElementById('resultsModal')) closeModal();
-    }
-
-    function appendMessage(sender, text) {
-        const stream = document.getElementById('chatStream');
-        const div = document.createElement('div');
-        div.className = `message ${sender === 'user' ? 'user-msg' : 'ai-msg'}`;
-        div.innerHTML = text; 
-        stream.appendChild(div);
-        stream.scrollTop = stream.scrollHeight;
-        return div;
-    }
-
-    function formatBlock(b) {
-        return b.trim()
-            .replace(/erro:/gi, '<strong style="color:#b45309">❌ ERRO:</strong>')
-            .replace(/solução:/gi, '<br><strong style="color:#15803d">✅ SOLUÇÃO:</strong>')
-            .replace(/\n/g, ' ');
+        const blocks = fileContent.split('###');
+        let scoredResults = [];
+        blocks.forEach(block => {
+            if (!block.trim()) return;
+            let score = 0;
+            const blockLower = block.toLowerCase();
+            if (blockLower.includes(qLower)) score += 200;
+            [...new Set(expandedTerms)].forEach(word => { if (blockLower.includes(word)) score += 50; });
+            if (score > 10) scoredResults.push({ block, score });
+        });
+        return scoredResults.sort((a, b) => b.score - a.score);
     }
 
     async function askAIWithRotation(question, context, logIndex) {
@@ -456,7 +420,10 @@ function searchDatabaseLogic(query) {
                         contents: [{ parts: [{ text: `Você é suporte Bsoft TMS, somente responderá se baseando no que estiver no banco de dados que você tem 
 						disponível para consultar, caso não encontrar retornará a seguinte mensagem:
 						Não encontramos o que procura no manual, podes clicar no feedback como negativo e deixar sua sugestão caso encontrar a solução
-						do seu problema, assim você me ajuda a conhecer mais sobre o assunto. Contexto: ${context}\nPergunta: ${question}` }] }]
+						do seu problema, assim você me ajuda a conhecer mais sobre o assunto. Preciso que responda as perguntas de forma bem detalhada com passo a passo se disponível no manual, apresentando o caminho de onde executar a operação que perguntarem no sistema.
+						Se por exemplo perguntarem "Como emitir um ct-e?" Você irá responder o passo a passo de como emitir no sistema.
+						Contexto: ${context}\nPergunta: ${question}` }] }]
+						
                     })
                 });
                 const data = await response.json();
@@ -480,7 +447,22 @@ function searchDatabaseLogic(query) {
         executarCiclo(1);
     }
 
-    function checkPassword() { if (prompt("Senha:") === CORRECT_PASSWORD) window.open(GITHUB_PAGE_URL, '_blank'); }
+
+    function openModal() {
+        const body = document.getElementById('modalBody');
+        body.innerHTML = currentResults.map(r => `<div class="result-item">${r.block.replace(/erro:/gi, '<strong>ERRO:</strong>').replace(/solução:/gi, '<br><strong>SOLUÇÃO:</strong>')}</div>`).join('');
+        document.getElementById('resultsModal').style.display = "block";
+    }
+    function closeModal() { document.getElementById('resultsModal').style.display = "none"; }
+    function appendMessage(sender, text) {
+        const stream = document.getElementById('chatStream');
+        const div = document.createElement('div');
+        div.className = `message ${sender === 'user' ? 'user-msg' : 'ai-msg'}`;
+        div.innerHTML = text; 
+        stream.appendChild(div);
+        stream.scrollTop = stream.scrollHeight;
+        return div;
+    }
     function fillAndSend(txt) { document.getElementById('searchInput').value = txt; handleChat(); }
 </script>
 
