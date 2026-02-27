@@ -201,6 +201,8 @@
 </div>
 
 <script>
+
+	let lastQuery = "";
     // Configurações mantidas
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8CAmTxO2pEmtc9ZILYJEBh3NX4j_RdlIk3-4gNfTnG3Ki-8_qWtYTCdfLUfHpPNep/exec";
     const p1 = "AIzaSyChy-QK5U1";
@@ -291,11 +293,10 @@ async function showAnalytics() {
     const title = document.getElementById('modalTitle');
     
     title.innerText = "📊 Relatório Global de Operação";
-    body.innerHTML = "<em>Carregando dados da planilha...</em>";
+    body.innerHTML = "<em>Carregando dados...</em>";
     modal.style.display = "block";
 
     try {
-        // AQUI ESTÁ O SEGREDO: o ?tipo=logs avisa o script para ler a aba de Logs
         const response = await fetch(SCRIPT_URL + "?tipo=logs");
         const data = await response.json();
         
@@ -304,43 +305,61 @@ async function showAnalytics() {
                         <th style="padding:8px; border-bottom: 2px solid #e2e8f0;">Data</th>
                         <th style="padding:8px; border-bottom: 2px solid #e2e8f0;">Pergunta</th>
                         <th style="padding:8px; border-bottom: 2px solid #e2e8f0; text-align:center;">Manual?</th>
-                        <th style="padding:8px; border-bottom: 2px solid #e2e8f0;">Feedback</th>
+                        <th style="padding:8px; border-bottom: 2px solid #e2e8f0; text-align:center;">Feedback</th>
                     </tr>`;
         
-        // Pula o cabeçalho (index 0) e mostra os últimos 20
         data.slice(1).reverse().slice(0, 20).forEach(row => {
+            // Pular as linhas de feedback genérico para não duplicar no relatório
+            if (row[1] === "FEEDBACK_USUARIO") return;
+
             const dt = row[0] ? new Date(row[0]).toLocaleDateString('pt-BR') : '-';
             const manualIcon = row[2] === "Sim" ? "✅" : "❌";
+            
+            // Lógica dos Emojis
+            let feedbackIcon = "⏳"; 
+            if (row[3] === "Positivo") feedbackIcon = "👍";
+            if (row[3] === "Negativo" || row[3].includes("NEGATIVO")) feedbackIcon = "👎";
 
             html += `<tr style="border-bottom:1px solid #e2e8f0;">
-                <td style="padding:10px 8px;">${dt}</td>
-                <td style="padding:10px 8px;">${row[1]}</td>
+                <td style="padding:10px 8px; color: #64748b;">${dt}</td>
+                <td style="padding:10px 8px; font-weight: 500;">${row[1]}</td>
                 <td style="padding:10px 8px; text-align:center;">${manualIcon}</td>
-                <td style="padding:10px 8px;">${row[3] || 'Pendente'}</td>
+                <td style="padding:10px 8px; text-align:center; font-size: 16px;">${feedbackIcon}</td>
             </tr>`;
         });
+        
         html += "</table>";
         body.innerHTML = html;
     } catch (e) {
-        body.innerHTML = "❌ Erro ao carregar relatório.";
+        body.innerHTML = "❌ Erro ao carregar.";
     }
 }
-
     // FEEDBACK (Mantendo sua lógica detalhada)
     function saveFeedback(logIndex, type, btn) {
-        const parent = btn.parentElement;
-        if (type === 'positivo') {
-            logSearch("FEEDBACK_POSITIVO", true); 
-            parent.innerHTML = "<span style='color:#166534; font-weight:bold;'>Obrigado! 👍</span>";
-        } else {
-            parent.innerHTML = `
-                <div class="reason-box" style="display:flex;">
-                    <textarea id="reason_${logIndex}" placeholder="Pode detalhar o que houve?" oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"></textarea>
-                    <button onclick="sendDetailedFeedback(${logIndex}, this)">Enviar Feedback</button>
-                </div>`;
-            setTimeout(() => document.getElementById(`reason_${logIndex}`).focus(), 100);
-        }
+    const parent = btn.parentElement;
+    const statusFeedback = type === 'positivo' ? "Positivo" : "Negativo";
+    
+    // Envia o feedback atrelado à última pergunta feita
+    fetch(SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        body: JSON.stringify({
+            pergunta: lastQuery || "Pergunta não identificada", 
+            encontrou: "Sim",
+            feedback: statusFeedback
+        })
+    });
+
+    if (type === 'positivo') {
+        parent.innerHTML = "<span style='color:#166534; font-weight:bold;'>Obrigado! 👍</span>";
+    } else {
+        parent.innerHTML = `
+            <div class="reason-box" style="display:flex;">
+                <textarea id="reason_${logIndex}" placeholder="O que faltou na resposta?"></textarea>
+                <button onclick="sendDetailedFeedback(${logIndex}, this)">Enviar</button>
+            </div>`;
     }
+}
 
     async function sendDetailedFeedback(logIndex, btn) {
         const textarea = document.getElementById(`reason_${logIndex}`);
@@ -355,7 +374,7 @@ async function showAnalytics() {
         const input = document.getElementById('searchInput');
         const query = input.value.trim();
         if (!query) return;
-
+		lastQuery = query;
         appendMessage('user', query);
         input.value = "";
 
