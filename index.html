@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <title>Suporte Bsoft TMS - IA (V3.0 Sheets)</title>
+    <title>Suporte Bsoft TMS - IA (V3.0 Sheets + Inteligência V1)</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> 
     <style>
@@ -107,6 +107,22 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
 
+        /* Card Retrátil (Resultados do Manual V1) */
+        .db-result-card {
+            align-self: center; width: 95%; max-width: 600px;
+            background-color: #fffbeb; border: 1px solid #fcd34d;
+            border-radius: 8px; overflow: hidden; margin: 5px 0;
+            animation: fadeIn 0.4s ease;
+        }
+        .db-header-btn {
+            width: 100%; padding: 12px 15px; background: none; border: none;
+            text-align: left; font-weight: 600; color: #92400e; cursor: pointer;
+            display: flex; justify-content: space-between; align-items: center;
+            transition: background 0.2s;
+        }
+        .db-header-btn:hover { background-color: #fef3c7; }
+        .db-content { display: none; padding: 15px; border-top: 1px solid #fcd34d; background-color: #fff; max-height: 400px; overflow-y: auto; }
+
         .feedback-area {
             display: flex; gap: 10px; margin-top: 10px; padding-top: 8px;
             border-top: 1px dashed #e2e8f0; font-size: 12px; color: #64748b; align-items: center;
@@ -117,12 +133,19 @@
         }
 
         #btnOfflineResults {
-            display: none; position: absolute; right: 25px; bottom: 110px;
-            background-color: #facc15; color: #854d0e; border: none;
-            padding: 12px 20px; border-radius: 25px; font-weight: bold;
-            cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 100;
-            font-size: 14px; transition: 0.3s;
-        }
+    display: none; 
+    background-color: #fef3c7; 
+    color: #92400e; 
+    border: 1px solid #fcd34d;
+    padding: 4px 10px; 
+    border-radius: 12px; 
+    font-weight: bold;
+    cursor: pointer; 
+    font-size: 12px; 
+    transition: 0.3s;
+    margin-left: auto; /* Empurra para o canto direito da barra */
+}
+#btnOfflineResults:hover { background-color: #fcd34d; }
 
         .modal {
             display: none; position: fixed; z-index: 2000;
@@ -171,18 +194,19 @@
     <div id="chatStream">
         <div class="message ai-msg">
             Olá! Sou o assistente Bsoft. <br>
-            Base de dados sincronizada com sucesso!. <br>
+            Base de dados sincronizada via <b>Google Sheets</b>. <br>
             <b>Qual é a situação?</b>
         </div>
     </div>
 
-    <button id="btnOfflineResults" onclick="openModal()">📑 Exibir Resultados Offline</button>
+
 
     <div class="suggestions" id="topTermsBar">
         <span>Em alta:</span> 
         <a onclick="fillAndSend('CT-e sem averbação')">CT-e Averbação</a>
         <a onclick="fillAndSend('Erro de validação')">Erro Validação</a>
         <a onclick="fillAndSend('MDF-e Encerrado')">MDF-e</a>
+		<button id="btnOfflineResults" onclick="openModal()">📑 Resultados Offline</button>
     </div>
 
     <div class="input-area">
@@ -201,9 +225,8 @@
 </div>
 
 <script>
-
-	let lastQuery = "";
-    // Configurações mantidas
+    let lastQuery = "";
+    // Configurações Google Sheets e API IA
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8CAmTxO2pEmtc9ZILYJEBh3NX4j_RdlIk3-4gNfTnG3Ki-8_qWtYTCdfLUfHpPNep/exec";
     const p1 = "AIzaSyChy-QK5U1";
     const p2 = "-KJJUNYDrKa";
@@ -213,8 +236,8 @@
 
     let fileContent = "";
     let currentResults = []; 
-    let searchLogs = [];
 
+    // Sinônimos da V1
     const SINONIMOS = {
         "imprimir": ["gerar", "emitir", "visualizar", "danfe", "dacte", "damdf"],
         "gerar": ["emitir", "fazer", "imprimir", "criar"],
@@ -223,9 +246,6 @@
         "mdf-e": ["mdfe", "manifesto"],
         "cancelar": ["estornar", "anular", "inutilizar"],
         "pagamento": ["financeiro", "baixa", "receber", "contas"],
-        "configurar": ["configuro", "parametrizo", "parametrizar", "settings"],
-        "Tem como": ["Como faz", "é possível", "Possível", "Possibilidade", "Tutorial"],
-        "Passo a passo": ["Como faz", "Tutorial", "Tem como"],
         "cliente": ["remetente", "destinatário", "tomador"]
     };
 
@@ -236,184 +256,257 @@
         input.focus();
     };
 
-    // CARREGA DADOS DA PLANILHA (Substitui o GitHub)
+    // Lendo do Sheets mas criando a estrutura de blocos que a Busca Avançada precisa
     async function loadData() {
         try {
             const response = await fetch(SCRIPT_URL);
             const data = await response.json();
-            // Transforma o JSON da planilha no formato de blocos que o chat entende
             fileContent = data.map(item => `### ERRO: ${item.erro} SOLUÇÃO: ${item.solucao}`).join('\n\n');
         } catch (e) { appendMessage('ai', "⚠️ Erro ao carregar banco de dados da planilha."); }
     }
 
-    // ÁREA ADMINISTRATIVA
     function openAdmin() {
         if (prompt("Senha Administrativa:") === CORRECT_PASSWORD) {
             document.getElementById('adminPanel').style.display = 'flex';
         }
     }
-
-    function closeAdmin() {
-        document.getElementById('adminPanel').style.display = 'none';
-    }
+    function closeAdmin() { document.getElementById('adminPanel').style.display = 'none'; }
 
     async function saveToDatabase() {
         const erro = document.getElementById('newError').value.trim();
         const solucao = document.getElementById('newSolution').value.trim();
-
         if (!erro || !solucao) return alert("Preencha o erro e a solução!");
 
         try {
             await fetch(SCRIPT_URL, {
-                method: 'POST',
-                mode: 'no-cors',
+                method: 'POST', mode: 'no-cors',
                 body: JSON.stringify({ action: "addKnowledge", erro: erro, solucao: solucao })
             });
             alert("Sucesso! O conhecimento foi enviado para a planilha.");
             document.getElementById('newError').value = "";
             document.getElementById('newSolution').value = "";
             closeAdmin();
-            loadData(); // Recarrega o "cérebro" da IA com o novo dado
-        } catch (e) {
-            alert("Erro ao gravar na planilha.");
-        }
+            loadData();
+        } catch (e) { alert("Erro ao gravar na planilha."); }
     }
 
-    // ANALYTICS (Mantendo sua lógica de relatório)
     async function logSearch(query, foundOffline) {
         const payload = { pergunta: query, encontrou: foundOffline ? "Sim" : "Não", feedback: "Pendente" };
+        try { fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) }); } catch (e) { }
+    }
+
+    // Lógica do Relatório Sheets V3 (Intacta com Emojis)
+    async function showAnalytics() {
+        const modal = document.getElementById('resultsModal');
+        const body = document.getElementById('modalBody');
+        const title = document.getElementById('modalTitle');
+        
+        title.innerText = "📊 Relatório Global de Operação";
+        body.innerHTML = "<em>Carregando dados...</em>";
+        modal.style.display = "block";
+
         try {
-            fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
-        } catch (e) { console.error("Erro log", e); }
-    }
-
-async function showAnalytics() {
-    const modal = document.getElementById('resultsModal');
-    const body = document.getElementById('modalBody');
-    const title = document.getElementById('modalTitle');
-    
-    title.innerText = "📊 Relatório Global de Operação";
-    body.innerHTML = "<em>Carregando dados...</em>";
-    modal.style.display = "block";
-
-    try {
-        const response = await fetch(SCRIPT_URL + "?tipo=logs");
-        const data = await response.json();
-        
-        let html = `<table style="width:100%; font-size:12px; border-collapse: collapse;">
-                    <tr style="background:#f1f5f9; text-align:left;">
-                        <th style="padding:8px; border-bottom: 2px solid #e2e8f0;">Data</th>
-                        <th style="padding:8px; border-bottom: 2px solid #e2e8f0;">Pergunta</th>
-                        <th style="padding:8px; border-bottom: 2px solid #e2e8f0; text-align:center;">Manual?</th>
-                        <th style="padding:8px; border-bottom: 2px solid #e2e8f0; text-align:center;">Feedback</th>
-                    </tr>`;
-        
-        data.slice(1).reverse().slice(0, 20).forEach(row => {
-            // Pular as linhas de feedback genérico para não duplicar no relatório
-            if (row[1] === "FEEDBACK_USUARIO") return;
-
-            const dt = row[0] ? new Date(row[0]).toLocaleDateString('pt-BR') : '-';
-            const manualIcon = row[2] === "Sim" ? "✅" : "❌";
+            const response = await fetch(SCRIPT_URL + "?tipo=logs");
+            const data = await response.json();
             
-            // Lógica dos Emojis
-            let feedbackIcon = "⏳"; 
-            if (row[3] === "Positivo") feedbackIcon = "👍";
-            if (row[3] === "Negativo" || row[3].includes("NEGATIVO")) feedbackIcon = "👎";
+            let html = `<table style="width:100%; font-size:12px; border-collapse: collapse;">
+                        <tr style="background:#f1f5f9; text-align:left;">
+                            <th style="padding:8px; border-bottom: 2px solid #e2e8f0;">Data</th>
+                            <th style="padding:8px; border-bottom: 2px solid #e2e8f0;">Pergunta</th>
+                            <th style="padding:8px; border-bottom: 2px solid #e2e8f0; text-align:center;">Manual?</th>
+                            <th style="padding:8px; border-bottom: 2px solid #e2e8f0; text-align:center;">Feedback</th>
+                        </tr>`;
+            
+            data.slice(1).reverse().slice(0, 20).forEach(row => {
+                if (row[1] === "FEEDBACK_USUARIO" || !row[1]) return;
+                const dt = row[0] ? new Date(row[0]).toLocaleDateString('pt-BR') : '-';
+                const manualIcon = row[2] === "Sim" ? "✅" : "❌";
+                
+                let feedbackIcon = "⏳"; 
+                if (row[3] === "Positivo") feedbackIcon = "👍";
+                if (row[3] === "Negativo" || (row[3] && row[3].includes("NEGATIVO"))) feedbackIcon = "👎";
 
-            html += `<tr style="border-bottom:1px solid #e2e8f0;">
-                <td style="padding:10px 8px; color: #64748b;">${dt}</td>
-                <td style="padding:10px 8px; font-weight: 500;">${row[1]}</td>
-                <td style="padding:10px 8px; text-align:center;">${manualIcon}</td>
-                <td style="padding:10px 8px; text-align:center; font-size: 16px;">${feedbackIcon}</td>
-            </tr>`;
-        });
-        
-        html += "</table>";
-        body.innerHTML = html;
-    } catch (e) {
-        body.innerHTML = "❌ Erro ao carregar.";
+                html += `<tr style="border-bottom:1px solid #e2e8f0;">
+                    <td style="padding:10px 8px; color: #64748b;">${dt}</td>
+                    <td style="padding:10px 8px; font-weight: 500;">${row[1]}</td>
+                    <td style="padding:10px 8px; text-align:center;">${manualIcon}</td>
+                    <td style="padding:10px 8px; text-align:center; font-size: 16px;">${feedbackIcon}</td>
+                </tr>`;
+            });
+            html += "</table>";
+            body.innerHTML = html;
+        } catch (e) { body.innerHTML = "❌ Erro ao carregar."; }
     }
-}
-    // FEEDBACK (Mantendo sua lógica detalhada)
+
+    // Log de Feedback Sheets V3
     function saveFeedback(logIndex, type, btn) {
-    const parent = btn.parentElement;
-    const statusFeedback = type === 'positivo' ? "Positivo" : "Negativo";
-    
-    // Envia o feedback atrelado à última pergunta feita
-    fetch(SCRIPT_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        body: JSON.stringify({
-            pergunta: lastQuery || "Pergunta não identificada", 
-            encontrou: "Sim",
-            feedback: statusFeedback
-        })
-    });
+        const parent = btn.parentElement;
+        const statusFeedback = type === 'positivo' ? "Positivo" : "Negativo";
+        
+        fetch(SCRIPT_URL, {
+            method: 'POST', mode: 'no-cors',
+            body: JSON.stringify({
+                pergunta: lastQuery || "Pergunta não identificada", 
+                encontrou: "Sim", feedback: statusFeedback
+            })
+        });
 
-    if (type === 'positivo') {
-        parent.innerHTML = "<span style='color:#166534; font-weight:bold;'>Obrigado! 👍</span>";
-    } else {
-        parent.innerHTML = `
-            <div class="reason-box" style="display:flex;">
-                <textarea id="reason_${logIndex}" placeholder="O que faltou na resposta?"></textarea>
-                <button onclick="sendDetailedFeedback(${logIndex}, this)">Enviar</button>
-            </div>`;
+        if (type === 'positivo') {
+            parent.innerHTML = "<span style='color:#166534; font-weight:bold;'>Obrigado! 👍</span>";
+        } else {
+            parent.innerHTML = `
+                <div class="reason-box" style="display:flex;">
+                    <textarea id="reason_${logIndex}" placeholder="O que faltou na resposta?"></textarea>
+                    <button onclick="sendDetailedFeedback(${logIndex}, this)">Enviar</button>
+                </div>`;
+        }
     }
-}
 
     async function sendDetailedFeedback(logIndex, btn) {
         const textarea = document.getElementById(`reason_${logIndex}`);
         const motivo = textarea.value.trim();
         if (!motivo) return alert("Descreva o problema!");
-        logSearch(`FEEDBACK_NEGATIVO: ${motivo}`, false);
+        fetch(SCRIPT_URL, {
+            method: 'POST', mode: 'no-cors',
+            body: JSON.stringify({ pergunta: `FEEDBACK_NEGATIVO: ${motivo}`, encontrou: "Não", feedback: "Negativo" })
+        });
         btn.parentElement.parentElement.innerHTML = "<span style='color:#991b1b; font-weight:bold;'>Obrigado! Feedback enviado.</span>";
     }
 
-    // BUSCA E CHAT (Mantendo sua lógica original de pontuação e IA)
+    // --- LÓGICA DE INTELIGÊNCIA DA V1 RESTAURADA ---
     function handleChat() {
         const input = document.getElementById('searchInput');
         const query = input.value.trim();
         if (!query) return;
-		lastQuery = query;
+
         appendMessage('user', query);
         input.value = "";
 
         const results = searchDatabaseLogic(query);
+        let contextForAI = "";
+
+        // CENÁRIO 1: Encontrou no Manual
+        if (results.length > 0) {
+            createRetractableResultCard(results);
+            contextForAI = `
+            CONTEXTO: O usuário perguntou algo que CONSTÁ no manual técnico.
+            DADOS DO MANUAL:
+            ${results.slice(0, 4).map(r => r.block).join("\n---\n")}
+            INSTRUÇÃO: Use as informações acima para responder.`;
+        } 
+        // CENÁRIO 2: Não encontrou (Fallback Inteligente)
+        else {
+            contextForAI = `
+            CONTEXTO: O usuário fez uma pergunta que NÃO consta no manual técnico interno (banco de dados vazio para este termo).
+            
+            INSTRUÇÃO OBRIGATÓRIA:
+            1. Use seu conhecimento geral de IA, mas RESTRITO EXCLUSIVAMENTE ao contexto de TRANSPORTADORAS, LOGÍSTICA e SISTEMAS TMS.
+            2. Tente ajudar com conceitos gerais de emissão, Sefaz ou transporte.
+            3. Se a pergunta for sobre um botão específico, erro de código interno ou algo que você não tenha certeza absoluta:
+            
+            COMANDO FINAL: Responda informando que não encontrou no manual e sugira: "Por favor, contate o seu líder imediato ou supervisor."
+            `;
+            
+            // Pequeno feedback visual
+            setTimeout(() => {
+                const stream = document.getElementById('chatStream');
+                const info = document.createElement('div');
+                info.style.cssText = "font-size:11px; color:#64748b; text-align:center; margin-bottom:10px;";
+                info.innerText = "🔍 Não encontrado no manual. Buscando na base de conhecimento geral de Logística...";
+                stream.appendChild(info);
+            }, 500);
+        }
+
+        askAIWithRotation(query, contextForAI);
+    }    function handleChat() {
+        const input = document.getElementById('searchInput');
+        const query = input.value.trim();
+        if (!query) return;
+
+        appendMessage('user', query);
+        input.value = "";
+
+        const results = searchDatabaseLogic(query);
+        let contextForAI = "";
+		const btnOffline = document.getElementById('btnOfflineResults');
+    btnOffline.style.display = 'none';
+
+        // CENÁRIO 1: Encontrou no Manual
+        if (results.length > 0) {
+        // Em vez de criar o card no chat, guardamos nos resultados atuais e mostramos o botão
         currentResults = results; 
-        logSearch(query, results.length > 0);
+        btnOffline.innerText = `📑 Resultados Offline (${results.length})`;
+        btnOffline.style.display = 'block';
 
-        document.getElementById('btnOfflineResults').style.display = results.length > 0 ? "block" : "none";
+        contextForAI = `
+        CONTEXTO: O usuário perguntou algo que CONSTA no manual técnico.
+        DADOS DO MANUAL:
+        ${results.slice(0, 4).map(r => r.block).join("\n---\n")}
+        INSTRUÇÃO: Use as informações acima para responder.`;
+    }
+        // CENÁRIO 2: Não encontrou (Fallback Inteligente)
+        else {
+            contextForAI = `
+            CONTEXTO: O usuário fez uma pergunta que NÃO consta no manual técnico interno (banco de dados vazio para este termo).
+            
+            INSTRUÇÃO OBRIGATÓRIA:
+            1. Use seu conhecimento geral de IA, mas RESTRITO EXCLUSIVAMENTE ao contexto de TRANSPORTADORAS, LOGÍSTICA e SISTEMAS TMS.
+            2. Tente ajudar com conceitos gerais de emissão, Sefaz ou transporte.
+			3. Sempre apresente os caminhos do sistema de onde faz o que o cliente pedir e ter dúvida.
+			4. No banco de dados tem diversas informações de como emitir um ct-e, mdf-e, contrato de frete, etc. Também
+			de opções dentro de um talão, parE dentro desses passo a passo tem as opções disponíveis do que pode
+			colocar de opção. Se o cliente colocar uma palavra chave de alguma dessas opções, coloca como responsta o caminho.
+            5. Se a pergunta for sobre um botão específico, erro de código interno ou algo que você não tenha certeza absoluta:
+            
+            COMANDO FINAL: Responda informando que não encontrou no manual e sugira: "Por favor, contate o seu líder imediato ou supervisor."
+            `;
+            
+            // Pequeno feedback visual
+            setTimeout(() => {
+                const stream = document.getElementById('chatStream');
+                const info = document.createElement('div');
+                info.style.cssText = "font-size:11px; color:#64748b; text-align:center; margin-bottom:10px;";
+                info.innerText = "🔍 Não encontrado no manual. Buscando na base de conhecimento geral de Logística...";
+                stream.appendChild(info);
+            }, 500);
+        }
 
-        let contextForAI = results.length > 0 
-            ? `DADOS DO MANUAL:\n${results.slice(0, 4).map(r => r.block).join("\n---\n")}`
-            : `Busca geral de logística/TMS.`;
-
-        askAIWithRotation(query, contextForAI, 0);
+        askAIWithRotation(query, contextForAI);
     }
 
+    // BUSCA V1 (Com Stopwords específicas, expansão de chaves exatas e Pontuação Otimizada)
     function searchDatabaseLogic(query) {
         if (!fileContent) return [];
         const qLower = query.toLowerCase();
-        const stopWords = ["como", "fazer", "o", "a", "de", "do", "da", "em", "para", "erro", "no", "na", "está", "com"];
+        const stopWords = ["como", "fazer", "o", "a", "de", "do", "da", "em", "para", "erro", "no", "na", "está", "com", "queria", "saber"];
         let searchTerms = qLower.split(' ').filter(word => !stopWords.includes(word) && word.length > 2);
-        
+
         let expandedTerms = [...searchTerms];
         searchTerms.forEach(term => {
-            for (let key in SINONIMOS) {
-                if (term.includes(key) || key.includes(term)) expandedTerms.push(...SINONIMOS[key]);
+            for (let chave in SINONIMOS) {
+                if (term === chave || SINONIMOS[chave].includes(term)) {
+                    expandedTerms.push(chave, ...SINONIMOS[chave]);
+                }
             }
         });
+        expandedTerms = [...new Set(expandedTerms)];
 
         const blocks = fileContent.split('###');
         let scoredResults = [];
+
         blocks.forEach(block => {
             if (!block.trim()) return;
             let score = 0;
             const blockLower = block.toLowerCase();
-            if (blockLower.includes(qLower)) score += 200;
-            [...new Set(expandedTerms)].forEach(word => { if (blockLower.includes(word)) score += 50; });
-            if (score > 10) scoredResults.push({ block, score });
+            
+            if (blockLower.includes(qLower)) score += 150;
+            searchTerms.forEach(word => { if (blockLower.includes(word)) score += 40; });
+            expandedTerms.forEach(word => { if (blockLower.includes(word)) score += 15; });
+
+            // V1 usava > 0 para garantir que a IA leria fragmentos
+            if (score > 0) scoredResults.push({ block, score }); 
         });
+
         return scoredResults.sort((a, b) => b.score - a.score);
     }
 
@@ -424,25 +517,20 @@ async function showAnalytics() {
 
         async function executarCiclo(tentativa) {
             if (tentativa > maxTentativas) {
-                loadingDiv.innerHTML = "❌ Servidor sobrecarregado. Tente novamente.";
+                loadingDiv.innerHTML = "❌ O servidor está sob alta carga. Por favor, aguarde alguns segundos e tente novamente.";
                 return;
             }
             const tempoEspera = Math.pow(2, tentativa) * 1000;
-            loadingDiv.innerHTML = `<em>🧠 Buscando conhecimentos ${tentativa}/${maxTentativas}...</em>`;
+            loadingDiv.innerHTML = `<em>🧠 Buscando conhecimentos ${tentativa}/${maxTentativas}... (Aguarde sua resposta, digitando...)</em>`;
             await new Promise(r => setTimeout(r, tempoEspera));
 
             try {
+                // Prompt simplificado da V1 (as regras vêm do contextForAI)
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODELO_PRIMARY}:generateContent?key=${GEMINI_API_KEY}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: `Você é suporte Bsoft TMS, somente responderá se baseando no que estiver no banco de dados que você tem 
-						disponível para consultar, caso não encontrar retornará a seguinte mensagem:
-						Não encontramos o que procura no manual, podes clicar no feedback como negativo e deixar sua sugestão caso encontrar a solução
-						do seu problema, assim você me ajuda a conhecer mais sobre o assunto. Preciso que responda as perguntas de forma bem detalhada com passo a passo se disponível no manual, apresentando o caminho de onde executar a operação que perguntarem no sistema.
-						Se por exemplo perguntarem "Como emitir um ct-e?" Você irá responder o passo a passo de como emitir no sistema.
-						Contexto: ${context}\nPergunta: ${question}` }] }]
-						
+                        contents: [{ parts: [{ text: `Você é suporte Bsoft TMS. Contexto: ${context}\nPergunta: ${question}` }] }]
                     })
                 });
                 const data = await response.json();
@@ -451,7 +539,7 @@ async function showAnalytics() {
                 let aiText = data.candidates[0].content.parts[0].text;
                 loadingDiv.innerHTML = aiText.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
                 
-                // Adicionar UI de Feedback
+                // Feedback V3
                 const fbDiv = document.createElement('div');
                 fbDiv.className = 'feedback-area';
                 fbDiv.innerHTML = `
@@ -466,10 +554,45 @@ async function showAnalytics() {
         executarCiclo(1);
     }
 
+    // --- FUNÇÕES DA INTERFACE (MISTO V1 E V3) ---
+    function createRetractableResultCard(results) {
+        const stream = document.getElementById('chatStream');
+        const id = "res-" + Date.now();
+        const div = document.createElement('div');
+        div.className = "db-result-card";
+        div.innerHTML = `
+            <button class="db-header-btn" onclick="toggleResult('${id}')">
+                <span>🔍 Encontramos ${results.length} no manual técnico</span>
+                <span>▼</span>
+            </button>
+            <div id="${id}" class="db-content">
+                ${results.slice(0, 5).map(r => `
+                    <div class="result-item">
+                        ${formatBlock(r.block)}
+                        <div style="font-size:10px; color:#94a3b8; text-align:right; margin-top:5px;">Precisão: ${r.score}</div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        stream.appendChild(div);
+        stream.scrollTop = stream.scrollHeight;
+    }
+
+    function toggleResult(id) {
+        const el = document.getElementById(id);
+        el.style.display = (el.style.display === 'block') ? 'none' : 'block';
+    }
+
+    function formatBlock(b) {
+        return b.trim()
+            .replace(/erro:/gi, '<strong style="color:#b45309">❌ ERRO:</strong>')
+            .replace(/solução:/gi, '<br><strong style="color:#15803d">✅ SOLUÇÃO:</strong>')
+            .replace(/\n/g, ' ');
+    }
 
     function openModal() {
         const body = document.getElementById('modalBody');
-        body.innerHTML = currentResults.map(r => `<div class="result-item">${r.block.replace(/erro:/gi, '<strong>ERRO:</strong>').replace(/solução:/gi, '<br><strong>SOLUÇÃO:</strong>')}</div>`).join('');
+        body.innerHTML = currentResults.map(r => `<div class="result-item">${formatBlock(r.block)}</div>`).join('');
         document.getElementById('resultsModal').style.display = "block";
     }
     function closeModal() { document.getElementById('resultsModal').style.display = "none"; }
