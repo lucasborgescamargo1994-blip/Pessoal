@@ -255,15 +255,57 @@
         input.addEventListener("keypress", (e) => { if (e.key === "Enter") handleChat(); });
         input.focus();
     };
+	async function loadData() {
+    try {
+        // 1. Carrega o Banco de Erros/Manual
+        const response = await fetch(SCRIPT_URL);
+        const data = await response.json();
+        fileContent = data.map(item => `### ERRO: ${item.erro} SOLUÇÃO: ${item.solucao}`).join('\n\n');
 
-    // Lendo do Sheets mas criando a estrutura de blocos que a Busca Avançada precisa
-    async function loadData() {
-        try {
-            const response = await fetch(SCRIPT_URL);
-            const data = await response.json();
-            fileContent = data.map(item => `### ERRO: ${item.erro} SOLUÇÃO: ${item.solucao}`).join('\n\n');
-        } catch (e) { appendMessage('ai', "⚠️ Erro ao carregar banco de dados da planilha."); }
+        // 2. Carrega os Logs para o "Em Alta"
+        const logResponse = await fetch(SCRIPT_URL + "?tipo=logs");
+        const logs = await logResponse.json();
+        renderDynamicTopTerms(logs);
+
+    } catch (e) { 
+        console.error("Erro na sincronização:", e);
+        appendMessage('ai', "⚠️ Erro ao carregar banco de dados da planilha."); 
     }
+}
+    // Lendo do Sheets mas criando a estrutura de blocos que a Busca Avançada precisa
+    function renderDynamicTopTerms(logs) {
+    if (!logs || logs.length < 2) return;
+
+    const contagem = {};
+    // Pega a coluna de perguntas (índice 1) e ignora cabeçalho e feedbacks
+    logs.slice(1).forEach(row => {
+        let pergunta = row[1];
+        if (pergunta && !pergunta.startsWith("FEEDBACK_")) {
+            // Limpa a pergunta para agrupar melhor (remove interrogação e espaços)
+            const termo = pergunta.trim().toLowerCase().replace(/\?/g, '');
+            if (termo.length > 3) {
+                contagem[termo] = (contagem[termo] || 0) + 1;
+            }
+        }
+    });
+
+    // Ordena do mais buscado para o menos buscado
+    const ordenados = Object.keys(contagem).sort((a, b) => contagem[b] - contagem[a]);
+    
+    // Pega os 4 termos mais populares
+    const top4 = ordenados.slice(0, 4);
+    const bar = document.getElementById('topTermsBar');
+    
+    if (top4.length > 0) {
+        let html = `<span>Em alta:</span> `;
+        top4.forEach(termo => {
+            // Capitaliza a primeira letra para o botão
+            const label = termo.charAt(0).toUpperCase() + termo.slice(1);
+            html += `<a onclick="fillAndSend('${termo}')">${label}</a> `;
+        });
+        bar.innerHTML = html;
+    }
+}
 
     function openAdmin() {
         if (prompt("Senha Administrativa:") === CORRECT_PASSWORD) {
@@ -291,9 +333,20 @@
     }
 
     async function logSearch(query, foundOffline) {
-        const payload = { pergunta: query, encontrou: foundOffline ? "Sim" : "Não", feedback: "Pendente" };
-        try { fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) }); } catch (e) { }
-    }
+    // Usamos a query passada por parâmetro em vez da global para evitar erros
+    const payload = { 
+        pergunta: query, 
+        encontrou: foundOffline ? "Sim" : "Não", 
+        feedback: "Pendente" 
+    };
+    try { 
+        fetch(SCRIPT_URL, { 
+            method: 'POST', 
+            mode: 'no-cors', 
+            body: JSON.stringify(payload) 
+        }); 
+    } catch (e) { console.error("Erro ao logar:", e); }
+}
 
     // Lógica do Relatório Sheets V3 (Intacta com Emojis)
     async function showAnalytics() {
@@ -373,142 +426,154 @@
         btn.parentElement.parentElement.innerHTML = "<span style='color:#991b1b; font-weight:bold;'>Obrigado! Feedback enviado.</span>";
     }
 
-    // --- LÓGICA DE INTELIGÊNCIA DA V1 RESTAURADA ---
+    
     function handleChat() {
-        const input = document.getElementById('searchInput');
-        const query = input.value.trim();
-        if (!query) return;
+    const input = document.getElementById('searchInput');
+    const query = input.value.trim();
+    if (!query) return;
 
-        appendMessage('user', query);
-        input.value = "";
+    // 1. Grava a pergunta para os logs e feedback
+    lastQuery = query;
 
-        const results = searchDatabaseLogic(query);
-        let contextForAI = "";
+    // 2. Esconde a barra "Em alta" de forma segura
+    const topBar = document.getElementById('topTermsBar');
+    if (topBar) {
+        topBar.style.display = 'none';
+    }
 
-        // CENÁRIO 1: Encontrou no Manual
-        if (results.length > 0) {
-            createRetractableResultCard(results);
-            contextForAI = `
-            CONTEXTO: O usuário perguntou algo que CONSTÁ no manual técnico.
-            DADOS DO MANUAL:
-            ${results.slice(0, 4).map(r => r.block).join("\n---\n")}
-            INSTRUÇÃO: Use as informações acima para responder.`;
-        } 
-        // CENÁRIO 2: Não encontrou (Fallback Inteligente)
-        else {
-            contextForAI = `
-            CONTEXTO: O usuário fez uma pergunta que NÃO consta no manual técnico interno (banco de dados vazio para este termo).
-            
-            INSTRUÇÃO OBRIGATÓRIA:
-            1. Use seu conhecimento geral de IA, mas RESTRITO EXCLUSIVAMENTE ao contexto de TRANSPORTADORAS, LOGÍSTICA e SISTEMAS TMS.
-            2. Tente ajudar com conceitos gerais de emissão, Sefaz ou transporte.
-            3. Se a pergunta for sobre um botão específico, erro de código interno ou algo que você não tenha certeza absoluta:
-            
-            COMANDO FINAL: Responda informando que não encontrou no manual e sugira: "Por favor, contate o seu líder imediato ou supervisor."
-            `;
-            
-            // Pequeno feedback visual
-            setTimeout(() => {
-                const stream = document.getElementById('chatStream');
-                const info = document.createElement('div');
-                info.style.cssText = "font-size:11px; color:#64748b; text-align:center; margin-bottom:10px;";
-                info.innerText = "🔍 Não encontrado no manual. Buscando na base de conhecimento geral de Logística...";
-                stream.appendChild(info);
-            }, 500);
-        }
+    // 3. Exibe a mensagem do usuário e limpa o campo
+    appendMessage('user', query);
+    input.value = "";
 
-        askAIWithRotation(query, contextForAI);
-    }    function handleChat() {
-        const input = document.getElementById('searchInput');
-        const query = input.value.trim();
-        if (!query) return;
+    // 4. Lógica de busca e gerenciamento do botão Offline
+    const results = searchDatabaseLogic(query);
+    let contextForAI = "";
+    const btnOffline = document.getElementById('btnOfflineResults');
+    
+    if (btnOffline) btnOffline.style.display = 'none';
 
-        appendMessage('user', query);
-        input.value = "";
-
-        const results = searchDatabaseLogic(query);
-        let contextForAI = "";
-		const btnOffline = document.getElementById('btnOfflineResults');
-    btnOffline.style.display = 'none';
-
-        // CENÁRIO 1: Encontrou no Manual
-        if (results.length > 0) {
-        // Em vez de criar o card no chat, guardamos nos resultados atuais e mostramos o botão
+    if (results.length > 0) {
+        // Encontrou no manual
         currentResults = results; 
-        btnOffline.innerText = `📑 Resultados Offline (${results.length})`;
-        btnOffline.style.display = 'block';
+        if (btnOffline) {
+            btnOffline.innerText = `📑 Resultados Offline (${results.length})`;
+            btnOffline.style.display = 'block';
+        }
 
         contextForAI = `
         CONTEXTO: O usuário perguntou algo que CONSTA no manual técnico.
         DADOS DO MANUAL:
         ${results.slice(0, 4).map(r => r.block).join("\n---\n")}
-        INSTRUÇÃO: Use as informações acima para responder.`;
-    }
-        // CENÁRIO 2: Não encontrou (Fallback Inteligente)
-        else {
-            contextForAI = `
-            CONTEXTO: O usuário fez uma pergunta que NÃO consta no manual técnico interno (banco de dados vazio para este termo).
-            
-            INSTRUÇÃO OBRIGATÓRIA:
-            1. Use seu conhecimento geral de IA, mas RESTRITO EXCLUSIVAMENTE ao contexto de TRANSPORTADORAS, LOGÍSTICA e SISTEMAS TMS.
-            2. Tente ajudar com conceitos gerais de emissão, Sefaz ou transporte.
-			3. Sempre apresente os caminhos do sistema de onde faz o que o cliente pedir e ter dúvida.
-			4. No banco de dados tem diversas informações de como emitir um ct-e, mdf-e, contrato de frete, etc. Também
-			de opções dentro de um talão, parE dentro desses passo a passo tem as opções disponíveis do que pode
-			colocar de opção. Se o cliente colocar uma palavra chave de alguma dessas opções, coloca como responsta o caminho.
-            5. Se a pergunta for sobre um botão específico, erro de código interno ou algo que você não tenha certeza absoluta:
-            
-            COMANDO FINAL: Responda informando que não encontrou no manual e sugira: "Por favor, contate o seu líder imediato ou supervisor."
-            `;
-            
-            // Pequeno feedback visual
-            setTimeout(() => {
-                const stream = document.getElementById('chatStream');
-                const info = document.createElement('div');
-                info.style.cssText = "font-size:11px; color:#64748b; text-align:center; margin-bottom:10px;";
-                info.innerText = "🔍 Não encontrado no manual. Buscando na base de conhecimento geral de Logística...";
-                stream.appendChild(info);
-            }, 500);
-        }
+        INSTRUÇÃO: Use as informações acima para responder detalhadamente.`;
+        
+        logSearch(query, true); // Loga que encontrou
+    } else {
+        // Fallback para IA Geral
+        contextForAI = `
+        CONTEXTO: O usuário fez uma pergunta que NÃO consta no manual técnico interno (banco de dados vazio para este termo).
 
-        askAIWithRotation(query, contextForAI);
+            
+
+            INSTRUÇÃO OBRIGATÓRIA:
+
+            1. Use seu conhecimento geral de IA, mas RESTRITO EXCLUSIVAMENTE ao contexto de TRANSPORTADORAS, LOGÍSTICA e SISTEMAS TMS e buscando os termos da pergunta no manual que tenham a ver com o assunto do contexto da pergunta.
+
+            2. Tente ajudar com conceitos gerais de emissão, Sefaz ou transporte.
+
+			3. Sempre apresente os caminhos do sistema de onde faz o que o cliente pedir e ter dúvida.
+
+			4. No banco de dados tem diversas informações de como emitir um ct-e, mdf-e, contrato de frete, etc. Também
+
+			de opções dentro de um talão, parE dentro desses passo a passo tem as opções disponíveis do que pode
+
+			colocar de opção. Se o cliente colocar uma palavra chave de alguma dessas opções, coloca como responsta o caminho.
+
+            5. Se a pergunta for sobre um botão específico, erro de código interno ou algo que você não tenha certeza absoluta:
+
+            
+
+            COMANDO FINAL: Responda informando que não encontrou no manual e sugira: "Por favor, contate o seu líder imediato ou supervisor."`;
+        
+        logSearch(query, false); // Loga que não encontrou
+
+        setTimeout(() => {
+            const stream = document.getElementById('chatStream');
+            const info = document.createElement('div');
+            info.style.cssText = "font-size:11px; color:#64748b; text-align:center; margin-bottom:10px;";
+            info.innerText = "🔍 Não encontrado no manual. Consultando base geral...";
+            stream.appendChild(info);
+        }, 500);
     }
+
+    askAIWithRotation(query, contextForAI);
+}
 
     // BUSCA V1 (Com Stopwords específicas, expansão de chaves exatas e Pontuação Otimizada)
     function searchDatabaseLogic(query) {
-        if (!fileContent) return [];
-        const qLower = query.toLowerCase();
-        const stopWords = ["como", "fazer", "o", "a", "de", "do", "da", "em", "para", "erro", "no", "na", "está", "com", "queria", "saber"];
-        let searchTerms = qLower.split(' ').filter(word => !stopWords.includes(word) && word.length > 2);
+    if (!fileContent) return [];
+    
+    // 1. Limpeza e Normalização
+    let qClean = query.toLowerCase()
+        .replace(/[?.,!]/g, '')
+        .replace(/([a-z])es\b/g, '$1') // Trata plural
+        .replace(/([a-z])s\b/g, '$1');  // Trata plural
 
-        let expandedTerms = [...searchTerms];
-        searchTerms.forEach(term => {
-            for (let chave in SINONIMOS) {
-                if (term === chave || SINONIMOS[chave].includes(term)) {
-                    expandedTerms.push(chave, ...SINONIMOS[chave]);
-                }
+    // 2. Stopwords (palavras que a busca ignora para focar no que importa)
+    const stopWords = ["como", "fazer", "o", "a", "de", "do", "da", "em", "para", "erro", "no", "na", "está", "com", "queria", "saber", "tem", "um", "uma"];
+    let words = qClean.split(' ').filter(word => !stopWords.includes(word) && word.length > 2);
+
+    // 3. Lógica de Radicais (Stemming)
+    // Se a palavra for "averbar", ele também buscará por "averba" para pegar "averbação"
+    let searchTerms = words.map(word => {
+        if (word.length > 5) return word.substring(0, word.length - 2); // Pega o radical
+        return word;
+    });
+
+    // 4. Expansão por Sinônimos
+    let expandedTerms = [...words];
+    words.forEach(term => {
+        for (let chave in SINONIMOS) {
+            if (term === chave || SINONIMOS[chave].includes(term)) {
+                expandedTerms.push(chave, ...SINONIMOS[chave]);
             }
+        }
+    });
+    expandedTerms = [...new Set(expandedTerms)];
+
+    const blocks = fileContent.split('###');
+    let scoredResults = [];
+
+    blocks.forEach(block => {
+        if (!block.trim()) return;
+        let score = 0;
+        const blockLower = block.toLowerCase().replace(/[?.,!]/g, '');
+        
+        // BÔNUS 1: Frase exata (Peso máximo)
+        if (blockLower.includes(qClean)) score += 250;
+        
+        // BÔNUS 2: Termos exatos
+        words.forEach(word => { 
+            if (blockLower.includes(word)) score += 60; 
         });
-        expandedTerms = [...new Set(expandedTerms)];
 
-        const blocks = fileContent.split('###');
-        let scoredResults = [];
-
-        blocks.forEach(block => {
-            if (!block.trim()) return;
-            let score = 0;
-            const blockLower = block.toLowerCase();
-            
-            if (blockLower.includes(qLower)) score += 150;
-            searchTerms.forEach(word => { if (blockLower.includes(word)) score += 40; });
-            expandedTerms.forEach(word => { if (blockLower.includes(word)) score += 15; });
-
-            // V1 usava > 0 para garantir que a IA leria fragmentos
-            if (score > 0) scoredResults.push({ block, score }); 
+        // BÔNUS 3: Radicais (Aqui resolve o "averbar" vs "averbação")
+        searchTerms.forEach(stem => {
+            if (blockLower.includes(stem)) score += 40;
         });
 
-        return scoredResults.sort((a, b) => b.score - a.score);
-    }
+        // BÔNUS 4: Sinônimos
+        expandedTerms.forEach(word => { 
+            if (blockLower.includes(word)) score += 25; 
+        });
+
+        // Mínimo para ser considerado relevante
+        if (score > 50) {
+            scoredResults.push({ block, score }); 
+        }
+    });
+
+    return scoredResults.sort((a, b) => b.score - a.score);
+}
 
     async function askAIWithRotation(question, context, logIndex) {
         const loadingDiv = appendMessage('ai', '<em>🧠 Iniciando busca técnica...</em>');
@@ -530,7 +595,10 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: `Você é suporte Bsoft TMS. Contexto: ${context}\nPergunta: ${question}` }] }]
+                        contents: [{ parts: [{ text: `Você é suporte Bsoft TMS, somente responderá se baseando no que estiver no banco de dados que você tem 
+						disponível para consultar, caso não encontrar retornará a seguinte mensagem:
+						Não encontramos o que procura no manual, podes clicar no feedback como negativo e deixar sua sugestão caso encontrar a solução
+						do seu problema, assim você me ajuda a conhecer mais sobre o assunto. Contexto: ${context}\nPergunta: ${question}` }] }]
                     })
                 });
                 const data = await response.json();
