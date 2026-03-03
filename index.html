@@ -350,46 +350,62 @@
 
     // Lógica do Relatório Sheets V3 (Intacta com Emojis)
     async function showAnalytics() {
-        const modal = document.getElementById('resultsModal');
-        const body = document.getElementById('modalBody');
-        const title = document.getElementById('modalTitle');
+    const modal = document.getElementById('resultsModal');
+    const body = document.getElementById('modalBody');
+    const title = document.getElementById('modalTitle');
+    
+    title.innerText = "📊 Relatório Global de Operação";
+    body.innerHTML = "<em>Carregando dados...</em>";
+    modal.style.display = "block";
+
+    try {
+        const response = await fetch(SCRIPT_URL + "?tipo=logs");
+        const data = await response.json();
         
-        title.innerText = "📊 Relatório Global de Operação";
-        body.innerHTML = "<em>Carregando dados...</em>";
-        modal.style.display = "block";
-
-        try {
-            const response = await fetch(SCRIPT_URL + "?tipo=logs");
-            const data = await response.json();
+        // --- LÓGICA DE DESDUPLICAÇÃO ---
+        const logsProcessados = {};
+        
+        data.slice(1).forEach(row => {
+            if (row[1] === "FEEDBACK_USUARIO" || !row[1] || row[1].includes("FEEDBACK_NEGATIVO")) return;
             
-            let html = `<table style="width:100%; font-size:12px; border-collapse: collapse;">
-                        <tr style="background:#f1f5f9; text-align:left;">
-                            <th style="padding:8px; border-bottom: 2px solid #e2e8f0;">Data</th>
-                            <th style="padding:8px; border-bottom: 2px solid #e2e8f0;">Pergunta</th>
-                            <th style="padding:8px; border-bottom: 2px solid #e2e8f0; text-align:center;">Manual?</th>
-                            <th style="padding:8px; border-bottom: 2px solid #e2e8f0; text-align:center;">Feedback</th>
-                        </tr>`;
-            
-            data.slice(1).reverse().slice(0, 20).forEach(row => {
-                if (row[1] === "FEEDBACK_USUARIO" || !row[1]) return;
-                const dt = row[0] ? new Date(row[0]).toLocaleDateString('pt-BR') : '-';
-                const manualIcon = row[2] === "Sim" ? "✅" : "❌";
-                
-                let feedbackIcon = "⏳"; 
-                if (row[3] === "Positivo") feedbackIcon = "👍";
-                if (row[3] === "Negativo" || (row[3] && row[3].includes("NEGATIVO"))) feedbackIcon = "👎";
+            const pergunta = row[1].trim();
+            // Se já existe essa pergunta e a nova linha é "Pendente", ignoramos a nova.
+            // Se a nova linha tem feedback real, ela substitui a "Pendente" no relatório.
+            if (!logsProcessados[pergunta] || row[3] !== "Pendente") {
+                logsProcessados[pergunta] = row;
+            }
+        });
 
-                html += `<tr style="border-bottom:1px solid #e2e8f0;">
-                    <td style="padding:10px 8px; color: #64748b;">${dt}</td>
-                    <td style="padding:10px 8px; font-weight: 500;">${row[1]}</td>
-                    <td style="padding:10px 8px; text-align:center;">${manualIcon}</td>
-                    <td style="padding:10px 8px; text-align:center; font-size: 16px;">${feedbackIcon}</td>
-                </tr>`;
-            });
-            html += "</table>";
-            body.innerHTML = html;
-        } catch (e) { body.innerHTML = "❌ Erro ao carregar."; }
-    }
+        // Converte de volta para array e inverte para ver os mais recentes primeiro
+        const listaExibicao = Object.values(logsProcessados).reverse().slice(0, 30);
+
+        let html = `<table style="width:100%; font-size:12px; border-collapse: collapse;">
+                    <tr style="background:#f1f5f9; text-align:left;">
+                        <th style="padding:8px; border-bottom: 2px solid #e2e8f0;">Data</th>
+                        <th style="padding:8px; border-bottom: 2px solid #e2e8f0;">Pergunta</th>
+                        <th style="padding:8px; border-bottom: 2px solid #e2e8f0; text-align:center;">Manual?</th>
+                        <th style="padding:8px; border-bottom: 2px solid #e2e8f0; text-align:center;">Feedback</th>
+                    </tr>`;
+        
+        listaExibicao.forEach(row => {
+            const dt = row[0] ? new Date(row[0]).toLocaleDateString('pt-BR') : '-';
+            const manualIcon = row[2] === "Sim" ? "✅" : "❌";
+            
+            let feedbackIcon = "⏳"; 
+            if (row[3] === "Positivo") feedbackIcon = "👍";
+            if (row[3] === "Negativo") feedbackIcon = "👎";
+
+            html += `<tr style="border-bottom:1px solid #e2e8f0;">
+                <td style="padding:10px 8px; color: #64748b;">${dt}</td>
+                <td style="padding:10px 8px; font-weight: 500;">${row[1]}</td>
+                <td style="padding:10px 8px; text-align:center;">${manualIcon}</td>
+                <td style="padding:10px 8px; text-align:center; font-size: 16px;">${feedbackIcon}</td>
+            </tr>`;
+        });
+        html += "</table>";
+        body.innerHTML = html;
+    } catch (e) { body.innerHTML = "❌ Erro ao carregar."; }
+}
 
     // Log de Feedback Sheets V3
     function saveFeedback(logIndex, type, btn) {
