@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <title>Suporte Bsoft TMS - IA (V6 + chat conversa + análise de anexos)</title>
+    <title>Suporte Bsoft TMS - IA (V7 + chat conversa + análise de anexos + compartilhar tela)</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> 
     <style>
@@ -246,7 +246,7 @@
 
 <div class="input-area">
     <button class="attach-btn" onclick="document.getElementById('fileInput').click()" title="Anexar imagem ou PDF">📎</button>
-    
+    <button class="attach-btn" onclick="toggleScreenShare()" id="btnScreen" title="Compartilhar Tela">🖥️</button>
     <input type="file" id="fileInput" style="display:none" onchange="handleFileUpload(this.files[0])">
     
     <input type="text" id="searchInput" placeholder="Digite sua dúvida ou cole um print..." autofocus>
@@ -267,6 +267,30 @@ document.addEventListener('paste', (e) => {
     }
 });
 
+let screenStream = null;
+
+async function toggleScreenShare() {
+    const btn = document.getElementById('btnScreen');
+    if (screenStream) {
+        // Se já estiver ativo, desliga
+        screenStream.getTracks().forEach(track => track.stop());
+        screenStream = null;
+        btn.style.color = "#64748b";
+        appendMessage('system', '❌ Compartilhamento de tela encerrado.');
+        return;
+    }
+
+    try {
+        screenStream = await navigator.mediaDevices.getDisplayMedia({ 
+            video: { cursor: "always" },
+            audio: false 
+        });
+        btn.style.color = "#ef4444"; // Fica vermelho indicando que está "vendo"
+        appendMessage('system', '🖥️ <strong>Tela conectada!</strong> Agora, quando você perguntar, eu analisarei o que estiver na sua tela.');
+    } catch (err) {
+        console.error("Erro ao acessar tela:", err);
+    }
+}
 function handleFileUpload(file) {
     if (!file) return;
     const reader = new FileReader();
@@ -650,7 +674,23 @@ async function askAIWithRotation(question, context, logIndex) {
     const loadingDiv = appendMessage('ai', '<em>🧠 Iniciando busca técnica...</em>');
     // Dica técnica: O modelo flash é mais rápido para processar imagens
     const MODELO_PRIMARY = "gemma-3-27b-it"; 
+    // Dentro da sua lógica de envio (antes de chamar a IA):
+	if (screenStream) {
+    const videoTrack = screenStream.getVideoTracks()[0];
+    const capture = new ImageCapture(videoTrack);
+    const bitmap = await capture.grabFrame();
     
+    const canvas = document.createElement('canvas');
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    canvas.getContext('2d').drawImage(bitmap, 0, 0);
+    
+    // Define a imagem da tela como o anexo atual
+    attachedFileData = {
+        mime_type: "image/jpeg",
+        data: canvas.toDataURL('image/jpeg').split(',')[1]
+    };
+}
     // 1. Atualiza o histórico de perguntas (memória curta)
     userQuestionsHistory.push(question);
     if (userQuestionsHistory.length > 3) userQuestionsHistory.shift();
