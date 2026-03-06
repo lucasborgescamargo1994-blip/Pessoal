@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <title>Suporte Bsoft TMS - IA (V6 Sheets chat contínuo + Anexo arquivos)</title>
+    <title>Suporte Bsoft TMS - IA (V6 Sheets + chat conversa + Arquivos anexo)</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> 
     <style>
@@ -211,7 +211,21 @@
             <button onclick="saveToDatabase()" style="background:#d97706; color:white; border:none; padding:5px 15px; border-radius:5px; cursor:pointer; font-weight:bold;">Gravar na Planilha</button>
         </div>
     </div>
+<div id="resultsModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeModal()">&times;</span>
+        <h2 id="modalTitle" style="color: #1e293b; font-size: 18px; margin-top: 0;">🔍 Manual Técnico: Resultados Offline</h2>
+        
+        <div id="analyticsHeader" style="display:none; margin-bottom: 15px; font-size: 13px; color: #64748b; background: #f8fafc; padding: 10px; border-radius: 8px;">
+            Buscas: <span id="totalSearch" style="font-weight:bold">0</span> | 
+            👍: <span id="posCount" style="font-weight:bold; color: #15803d">0</span> | 
+            👎: <span id="negCount" style="font-weight:bold; color: #b91c1c">0</span>
+        </div>
 
+        <hr style="border: 0; border-top: 1px solid #e2e8f0; margin-bottom: 20px;">
+        <div id="modalBody"></div>
+    </div>
+</div>
     <div id="chatStream">
         <div class="message ai-msg">
             Olá! Sou o assistente IA Bsoft. <br>
