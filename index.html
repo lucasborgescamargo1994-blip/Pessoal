@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <title>Suporte Bsoft TMS - IA (V6 Sheets + chat conversa + Arquivos anexo)</title>
+    <title>Suporte Bsoft TMS - IA (V3.0 Sheets + Inteligência V1)</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> 
     <style>
@@ -561,7 +561,7 @@ function handleFileUpload(file) {
 
             5. Se a pergunta for sobre um botão específico, erro de código interno ou algo que você não tenha certeza absoluta:
 
-            
+            6. Se perguntarem sobre Rejeições da SEFAZ, pode utilizar ferramentas externas para consultar do que se trata a rejeição e orientar uma solução.
 
             COMANDO FINAL: Responda informando que não encontrou no manual, peça ou para reformular a pergunta e perguntar novamente e sugira: "Por favor, contate o seu líder imediato ou supervisor."`;
         
@@ -658,7 +658,7 @@ async function askAIWithRotation(question, context, logIndex) {
 
     // 2. Monta as PARTES da mensagem (Texto + Arquivo se houver)
     let messageParts = [{ 
-        text: `Você é suporte Bsoft TMS. 
+        text: `Você é suporte Bsoft TMS. Se perguntarem sobre Rejeições da SEFAZ, pode utilizar ferramentas externas para consultar do que se trata a rejeição e orientar uma solução.
                Histórico recente: ${historicoResumido}
                CONTEXTO DO MANUAL: ${context}
                PERGUNTA ATUAL: ${question}
