@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <title>Suporte Bsoft TMS - IA (V7 + chat conversa + análise de anexos + compartilhar tela)</title>
+    <title>Suporte Bsoft TMS - IA (V6 + chat conversa + análise de anexos)</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> 
     <style>
@@ -698,17 +698,11 @@ async function askAIWithRotation(question, context, logIndex) {
 
     // 2. Monta as PARTES da mensagem (Texto + Arquivo se houver)
     let messageParts = [{ 
-        text: `Você é suporte Bsoft TMS. 
+        text: `Você é suporte Bsoft TMS. Se perguntarem sobre Rejeições da SEFAZ, pode utilizar ferramentas externas para consultar do que se trata a rejeição e orientar uma solução.
                Histórico recente: ${historicoResumido}
                CONTEXTO DO MANUAL: ${context}
                PERGUNTA ATUAL: ${question}
-               Responda apenas com base no manual. Se houver imagem/arquivo, analise-o para ajudar na resposta.
-			   Se perguntarem sobre Rejeições da SEFAZ, 
-		pode utilizar o google para consultar do que se trata a rejeição e orientar uma solução.
-		Também pode utilizar o google para problemas técnicos de erros xml, javascript, tudo que esteja no escopo de desenvolvimento. Pois podem perguntar
-		sobre como configurar ou desenvolver alguma ferramenta dentro do sistema, e para isso pode utilizar a internet toda para auxiliar o usuário avançado.
-		Pode recomendar dicas de programação, expressões e tudo mais que esteja dentro do que o sistema aceita. Principalmente quando se tratar de relatórios personalizados
-		feitos dentro da opção Assistente de relatórios.` 
+               Responda apenas com base no manual. Se houver imagem/arquivo, analise-o para ajudar na resposta.` 
     }];
 
     // Se o usuário colou um print ou anexou algo, adicionamos à mensagem
