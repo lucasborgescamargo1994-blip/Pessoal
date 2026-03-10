@@ -584,19 +584,18 @@ function handleFileUpload(file) {
     };
 	async function loadData() {
     try {
-        // 1. Carrega o Banco de Erros/Manual
         const response = await fetch(SCRIPT_URL);
         const data = await response.json();
-        fileContent = data.map(item => `### ERRO: ${item.erro} SOLUÇÃO: ${item.solucao}`).join('\n\n');
+        
+        // Aqui o 'item.erro' já contém "PARAMETRO: Descrição"
+        fileContent = data.map(item => `### ${item.erro} SOLUÇÃO: ${item.solucao}`).join('\n\n');
 
-        // 2. Carrega os Logs para o "Em Alta"
         const logResponse = await fetch(SCRIPT_URL + "?tipo=logs");
         const logs = await logResponse.json();
         renderDynamicTopTerms(logs);
 
     } catch (e) { 
         console.error("Erro na sincronização:", e);
-        appendMessage('ai', "⚠️ Erro ao carregar banco de dados da planilha."); 
     }
 }
     // Lendo do Sheets mas criando a estrutura de blocos que a Busca Avançada precisa
