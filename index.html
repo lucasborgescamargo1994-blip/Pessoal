@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <title>Suporte Bsoft TMS - IA (V9 Adição todos parâmetros e funcionalidades)</title>
+    <title>Suporte Bsoft TMS - IA (V9 com parametros e funcionalidades + melhorias no chat)</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> 
     <style>
@@ -283,7 +283,7 @@
 </div>
 
 <script>
-
+	let chatHistoryText = "";
 	function toggleMinimizeCall() {
     const panel = document.getElementById('voiceCallPanel');
     const avatar = document.getElementById('callAvatar');
@@ -551,6 +551,7 @@ function handleFileUpload(file) {
     reader.readAsDataURL(file);
 }
 	let userQuestionsHistory = [];
+	let lastAIResponse = "";
     let lastQuery = "";
     // Configurações Google Sheets e API IA
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8CAmTxO2pEmtc9ZILYJEBh3NX4j_RdlIk3-4gNfTnG3Ki-8_qWtYTCdfLUfHpPNep/exec";
@@ -921,57 +922,55 @@ function handleFileUpload(file) {
 
 async function askAIWithRotation(question, context, logIndex) {
     const loadingDiv = appendMessage('ai', '<em>🧠 Iniciando busca técnica...</em>');
-    // Dica técnica: O modelo flash é mais rápido para processar imagens
     const MODELO_PRIMARY = "gemma-3-27b-it"; 
-    // Dentro da sua lógica de envio (antes de chamar a IA):
-	if (screenStream) {
-    const videoTrack = screenStream.getVideoTracks()[0];
-    const capture = new ImageCapture(videoTrack);
-    const bitmap = await capture.grabFrame();
-    
-    const canvas = document.createElement('canvas');
-    canvas.width = bitmap.width;
-    canvas.height = bitmap.height;
-    canvas.getContext('2d').drawImage(bitmap, 0, 0);
-    
-    // Define a imagem da tela como o anexo atual
-    attachedFileData = {
-        mime_type: "image/jpeg",
-        data: canvas.toDataURL('image/jpeg').split(',')[1]
-    };
-}
-    // 1. Atualiza o histórico de perguntas (memória curta)
+
+    if (screenStream) {
+        const videoTrack = screenStream.getVideoTracks()[0];
+        const capture = new ImageCapture(videoTrack);
+        const bitmap = await capture.grabFrame();
+        const canvas = document.createElement('canvas');
+        canvas.width = bitmap.width;
+        canvas.height = bitmap.height;
+        canvas.getContext('2d').drawImage(bitmap, 0, 0);
+        attachedFileData = {
+            mime_type: "image/jpeg",
+            data: canvas.toDataURL('image/jpeg').split(',')[1]
+        };
+    }
+
+    // Gerencia o histórico simples para o Gemma não se perder
     userQuestionsHistory.push(question);
     if (userQuestionsHistory.length > 3) userQuestionsHistory.shift();
-    const historicoResumido = userQuestionsHistory.join(" -> ");
 
-    // 2. Monta as PARTES da mensagem (Texto + Arquivo se houver)
-    let messageParts = [{ 
-    text: `Você é o Suporte Bsoft. 
+    // MONTAGEM DO PROMPT ÚNICO (Estilo que o Gemma aceita melhor)
+    let fullPrompt = `Você é o Suporte Bsoft. 
     Responda SEMPRE baseando-se no CONTEXTO DO MANUAL fornecido. 
-    Seja breve e técnico. Não misture assuntos do Gestão com fiscal.
-	Caso o usuário digitar um nome de documento que não conste exatamente como está no manual, não tente adivinhar, diga que não entendeu e peça para reformular a pergunta.
-    
-    CONTEXTO DO MANUAL: ${context}
-    PERGUNTA: ${question}
-	
-	"Sempre termine suas respostas com a frase curta: 'Gostaria de perguntar mais algo?'"` 
-}];
+    Seja técnico. Não misture assuntos do Gestão com fiscal.
+	Caso o usuário digitar algo que não conste no manual, não tente adivinhar, 
+	diga que não entendeu e peça para reformular a pergunta. Apresente a resposta sempre de forma bem estruturada e fácil entendimento.
+CONHECIMENTO DISPONÍVEL: ${context}
 
-    // Se o usuário colou um print ou anexou algo, adicionamos à mensagem
+HISTÓRICO DA CONVERSA:
+${chatHistoryText}
+
+USUÁRIO: ${question}
+ASSISTENTE:
+"Sempre termine suas respostas com a frase curta: 'Gostaria de perguntar mais algo?', exceto quando o usuário dizer obrigado, deu certo e se despedir, nesses casos
+	se despeça também e diga que 'Qualquer dúvida futura que tiver, fico a disposição'"`;
+
+    let messageParts = [{ text: fullPrompt }];
     if (attachedFileData) {
-        messageParts.push({
-            inline_data: attachedFileData 
-        });
+        messageParts.push({ inline_data: attachedFileData });
     }
 
     async function executarCiclo(tentativa) {
         if (tentativa > 5) {
-            loadingDiv.innerHTML = "❌ Erro de conexão. Tente novamente.";
+            loadingDiv.innerHTML = "❌ Limite de requisições atingido (Gemma 429). Aguarde um momento e tente novamente.";
             return;
         }
 
-        const tempoEspera = Math.pow(2, tentativa) * 1000;
+        // Aumentamos o tempo de espera para mitigar o erro 429
+        const tempoEspera = Math.pow(3, tentativa) * 1000; 
         loadingDiv.innerHTML = `<em>🧠 Analisando dados ${tentativa}/5...</em>`;
         await new Promise(r => setTimeout(r, tentativa === 1 ? 0 : tempoEspera));
 
@@ -980,25 +979,28 @@ async function askAIWithRotation(question, context, logIndex) {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    contents: [{ 
-                        parts: messageParts // Aqui enviamos o Array com Texto e Imagem
-                    }]
+                    contents: [{ parts: messageParts }] // Formato simples de turno único
                 })
             });
 
             const data = await response.json();
-            if (!response.ok || data.error) return executarCiclo(tentativa + 1);
-            
+
+            // Se for erro 429 ou 400, tenta o próximo ciclo com mais tempo
+            if (!response.ok) return executarCiclo(tentativa + 1);
+
             let aiText = data.candidates[0].content.parts[0].text;
-            speak(aiText); 
 
-			loadingDiv.innerHTML = aiText.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
-            // Limpa o arquivo anexado após o envio bem-sucedido
-            attachedFileData = null; 
+            // Atualiza o histórico textual para a próxima pergunta
+            chatHistoryText += `\nUsuário: ${question}\nAssistente: ${aiText}\n`;
+            
+            // Limita o tamanho da string de histórico para não dar erro 400 por excesso de texto
+            if (chatHistoryText.length > 2000) chatHistoryText = chatHistoryText.slice(-2000);
 
+            if (typeof speak === 'function') speak(aiText); 
             loadingDiv.innerHTML = aiText.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
             
-            // --- Área de Feedback ---
+            attachedFileData = null; 
+
             const fbDiv = document.createElement('div');
             fbDiv.className = 'feedback-area';
             fbDiv.innerHTML = `
@@ -1013,6 +1015,7 @@ async function askAIWithRotation(question, context, logIndex) {
             return executarCiclo(tentativa + 1); 
         }
     }
+
     executarCiclo(1);
 }
 
