@@ -278,7 +278,7 @@
 </button>
     
     <input type="file" id="fileInput" style="display:none" onchange="handleFileUpload(this.files[0])">
-    <input type="text" id="searchInput" placeholder="Digite sua dúvida..." autofocus>
+    <input type="text" id="searchInput" placeholder="Digite sua dúvida ou cole um print do seu erro aqui..." autofocus>
     <button class="send-btn" onclick="handleChat()">➤</button>
 </div>
 
@@ -945,7 +945,7 @@ async function askAIWithRotation(question, context, logIndex) {
     // MONTAGEM DO PROMPT ÚNICO (Estilo que o Gemma aceita melhor)
     let fullPrompt = `Você é o Suporte Bsoft. 
     Responda SEMPRE baseando-se no CONTEXTO DO MANUAL fornecido. 
-    Seja breve e técnico. Não misture assuntos do Gestão com fiscal.
+    Seja técnico. Não misture assuntos do Gestão com fiscal.
 	Caso o usuário digitar algo que não conste no manual, não tente adivinhar, 
 	diga que não entendeu e peça para reformular a pergunta. Apresente a resposta sempre de forma bem estruturada e fácil entendimento.
 CONHECIMENTO DISPONÍVEL: ${context}
