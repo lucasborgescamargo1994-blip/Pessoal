@@ -953,6 +953,7 @@ async function gerarRespostaEstruturada(pergunta, dadosBanco, logIndex) {
         : "\nNENHUMA INFORMAÇÃO ESPECÍFICA NO MANUAL. Use conhecimento geral sobre ERPs e sistemas de transporte de carga.";
 
     const prompt = `Você é o Especialista de Suporte do Bsoft TMS, um sistema ERP para empresas de transporte de cargas. Seja preciso, técnico e direto.
+	Somente use o conhecimento que consta no MANUAL, se não encontrar nada, peça para o usuário reformular a pergunta.
 O sistema Bsoft TMS funciona com a seguinte estrutura:
 	Quando aberto o sistema, tem um menu lateral que no topo tem uma opção de pesquisar as funções digitando e abaixo os seguintes menu principais: Opções do Sistema
 Ambiente
@@ -977,7 +978,7 @@ Dentro dos talões tem diversas configurações e parâmetros que podem automati
 Um exemplo para você entender, para gerar ocorrência automática para o ct-e, basta ir no talão do ct-e, editar ele e habilitar a opção ocorrência automática,
 quero que de esse tipo de instrução caso esteja dentro do contexto da pergunta.
 Depois de criados os talões, os caminhos das rotinas mais comuns para emissão dos documentos são:
-Ct-e: vai em Transporte/Documentos/Ct-e
+Ct-e: vai em Transporte/Documentos/Ct-e ou Transporte/Conhecimentos 
 Mdf-e: vai em Transporte/Manifesto de Carga
 Nf-e, NFs-e ou Notas fiscais: Financeiro/Notas Fiscais/Notas Fiscais
 Ordem de Carregamento (OC): Transporte/Ordem de Carregamento Simplificada
@@ -996,6 +997,12 @@ Parâmetros do sistema: Ambiente/Administração/Parâmetros
 Funcionalidades do sistema: Ambiente/Controle de Acesso/Funcionalidades 
 Parâmetros para EDI Importação Exportação de documentos: Transporte/EDI/Parâmetros 
 Importação/Exportação de documentos: Transporte/EDI/"Importação/Exportação"
+Gerar CIOT: Transporte/Documentos/Ct-e, seleciona o Ct-e e clica na opção Contrato de frete Eletrônico ou Transporte/Contrato de frete seleciona o Contrato de frete e clica na opção Contrato de frete Eletrônico
+VPO ou Vale pedágio: Transporte/Documentos/Ct-e, seleciona o Ct-e e clica na opção Vale-Pedágio Avulso ou Transporte/Contrato de frete seleciona o Contrato de frete e clica na opção Vale-Pedágio Avulso
+
+Caminhos assuntos gestão:
+Abastecimentos: Manutenção/Abastecimentos ou Manutenção/Abastecimentos Prórios
+Relatório de abastecimento: Manutenção/Relatórios/Relação de Abastecimentos 
 
 
 PERGUNTA DO USUÁRIO: "${pergunta}"
