@@ -521,7 +521,7 @@
     <div id="chatStream">
         <div class="message ai-msg" id="welcomeMsg">
             👋 Olá! Sou o assistente IA <strong>Bsoft TMS</strong>.<br>
-            Carregando a base de conhecimento... ⏳
+            Aguarde, carregando a base de conhecimento... ⏳
         </div>
     </div>
 
@@ -655,7 +655,7 @@ function scrollToBottom(force = false) {
 async function loadData() {
     const badge = document.getElementById('statusBadge');
     try {
-        badge.innerText = "Buscando dados...";
+        badge.innerText = "Aguarde, Buscando dados...";
 
         const [resBanco, resParam, resFunc] = await Promise.allSettled([
             fetch(SCRIPT_URL).then(r => r.json()),
@@ -982,6 +982,8 @@ Ct-e: vai em Transporte/Documentos/Ct-e ou Transporte/Conhecimentos
 Mdf-e: vai em Transporte/Manifesto de Carga
 Nf-e, NFs-e ou Notas fiscais: Financeiro/Notas Fiscais/Notas Fiscais
 Ordem de Carregamento (OC): Transporte/Ordem de Carregamento Simplificada
+Cancelamento na SEFAZ: Para cancelar um Ct-e na SEFAZ, vai em Transporte/Documentos/Ct-e ou Transporte/Conhecimentos, seleciona o documento desejado, depois basta clicar no ícone da SEFAZ (CT-e) e executar a opção Cancelar na SEFAZ.
+Cancelamento na SEFAZ: Para cancelar um MDF-e na SEFAZ, vai em Transporte/Documentos/Ct-e ou Transporte/Manifesto de Carga, seleciona o documento desejado, depois basta clicar no ícone da SEFAZ (MDF-e) e executar a opção Cancelar na SEFAZ.
 
 Caminhos das rotinas mais comuns para cadastros:
 
@@ -999,10 +1001,23 @@ Parâmetros para EDI Importação Exportação de documentos: Transporte/EDI/Par
 Importação/Exportação de documentos: Transporte/EDI/"Importação/Exportação"
 Gerar CIOT: Transporte/Documentos/Ct-e, seleciona o Ct-e e clica na opção Contrato de frete Eletrônico ou Transporte/Contrato de frete seleciona o Contrato de frete e clica na opção Contrato de frete Eletrônico
 VPO ou Vale pedágio: Transporte/Documentos/Ct-e, seleciona o Ct-e e clica na opção Vale-Pedágio Avulso ou Transporte/Contrato de frete seleciona o Contrato de frete e clica na opção Vale-Pedágio Avulso
+Tipos Valores Outros para ct-e: Transporte/Configurações/Tipos Valores Outros
+Tabela de preços Valores Outros: Transporte/Configurações/Tabela de Preços/Tabela de Preços Valores Outros 
+
+
 
 Caminhos assuntos gestão:
-Abastecimentos: Manutenção/Abastecimentos ou Manutenção/Abastecimentos Prórios
+Abastecimentos: Manutenção/Abastecimentos ou Manutenção/Abastecimentos ou Manutenção/Abastecimentos ou Manutenção/Abastecimentos Próprios
 Relatório de abastecimento: Manutenção/Relatórios/Relação de Abastecimentos 
+Recapagens: Manutenção / Pneus / Recapagens 
+Tipos de Recapagens: Manutenção / Configurações / Tipos de Recapagens 
+Grupos de Demonstrativo Financeiro: Manutenção / Configurações / Grupos de Demonstrativo Financeiro
+Grupos de Equipamentos: Manutenção / Configurações / Grupos de Equipamentos
+Títulos a Pagar (Lançamentos): Financeiro / Títulos a Pagar / Títulos a Pagar
+Títulos a Pagar (Gestão): Financeiro / Títulos a Pagar / "Lotes/Duplicatas a Pagar"
+Títulos a Receber: Financeiro (Lançamentos) / Títulos a Receber / Títulos a Receber
+Títulos a Receber (Gestão): Financeiro / Títulos a Receber / "Lotes/Duplicatas a Receber"
+
 
 
 PERGUNTA DO USUÁRIO: "${pergunta}"
