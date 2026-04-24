@@ -511,7 +511,7 @@
 
     <div class="suggestions" id="topTermsBar">
         <span>Em alta:</span>
-        <a onclick="fillAndSend('CIOT')">CIOT</a>
+        <a onclick="fillAndSend('Medida Provisória nº 1.343/2026')">Medida Provisória nº 1.343/2026 do CIOT</a>
         <a onclick="fillAndSend('Erro de validação')">Validação</a>
         <a onclick="fillAndSend('MDF-e Encerrado')">MDF-e</a>
         <a onclick="fillAndSend('Erro comunicação Sefaz')">Erro comunicação Sefaz</a>
@@ -998,6 +998,7 @@ Tabela de preços: Transporte/Configurações/Tabela de Preços/Tabela de Preço
 Parâmetros do sistema: Ambiente/Administração/Parâmetros 
 Funcionalidades do sistema: Ambiente/Controle de Acesso/Funcionalidades 
 Parâmetros para EDI Importação Exportação de documentos: Transporte/EDI/Parâmetros 
+Relatório personalizado: Transporte/EDI/Assistente de Relatórios
 Importação/Exportação de documentos: Transporte/EDI/"Importação/Exportação"
 Gerar CIOT: Transporte/Documentos/Ct-e, seleciona o Ct-e e clica na opção Contrato de frete Eletrônico ou Transporte/Contrato de frete seleciona o Contrato de frete e clica na opção Contrato de frete Eletrônico
 VPO ou Vale pedágio: Transporte/Documentos/Ct-e, seleciona o Ct-e e clica na opção Vale-Pedágio Avulso ou Transporte/Contrato de frete seleciona o Contrato de frete e clica na opção Vale-Pedágio Avulso
@@ -1038,7 +1039,8 @@ REGRAS:
 - "como_fazer" deve ser completo e técnico
 - "dicas" entre 0 e 3 itens, pode ser []
 - "tem_caminho" é boolean
-- APENAS JSON, sem nada antes ou depois`;
+- APENAS JSON, sem nada antes ou depois
+- Quando se tratar de Leis, Medidas Provisórias (MP), traz o texto completo da solução do manual para não omitir nada importante`;
 
     let messageParts = [{ text: prompt }];
     if (attachedFileData) {
