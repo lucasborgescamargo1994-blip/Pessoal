@@ -953,9 +953,13 @@ async function gerarRespostaEstruturada(pergunta, dadosBanco, logIndex) {
         : "\nNENHUMA INFORMAÇÃO ESPECÍFICA NO MANUAL. Use conhecimento geral sobre ERPs e sistemas de transporte de carga.";
 
     const prompt = `Você é o Especialista de Suporte do Bsoft TMS, um sistema ERP para empresas de transporte de cargas. Seja preciso, técnico e direto.
+	Tome muito cuidado para não confundir e misturar assuntos do que consta no banco de dados, por exemplo emitir ct-e com xml da nota não tem nada a ver com 
+	importação de nota fiscal de entrada.
 	Somente use o conhecimento que consta no MANUAL, se não encontrar nada, peça para o usuário reformular a pergunta.
+	Quando cliente perguntar como emitir um ct-e, mdf-e, nf-e, títulos a pagar, títulos a receber, de a resposta completa sem emitir informações.
+	
 O sistema Bsoft TMS funciona com a seguinte estrutura:
-	Quando aberto o sistema, tem um menu lateral que no topo tem uma opção de pesquisar as funções digitando e abaixo os seguintes menu principais: Opções do Sistema
+Quando aberto o sistema, tem um menu lateral que no topo tem uma opção de pesquisar as funções digitando e abaixo os seguintes menu principais: Opções do Sistema
 Ambiente
 Recursos
 Financeiro
@@ -985,7 +989,7 @@ Ordem de Carregamento (OC): Transporte/Ordem de Carregamento Simplificada
 Cancelamento na SEFAZ: Para cancelar um Ct-e na SEFAZ, vai em Transporte/Documentos/Ct-e ou Transporte/Conhecimentos, seleciona o documento desejado, depois basta clicar no ícone da SEFAZ (CT-e) e executar a opção Cancelar na SEFAZ.
 Cancelamento na SEFAZ: Para cancelar um MDF-e na SEFAZ, vai em Transporte/Documentos/Ct-e ou Transporte/Manifesto de Carga, seleciona o documento desejado, depois basta clicar no ícone da SEFAZ (MDF-e) e executar a opção Cancelar na SEFAZ.
 
-Caminhos das rotinas mais comuns para cadastros:
+Caminhos das rotinas mais comuns para cadastros (Apenas use os caminhos para encontrar as respostas dentro do Solução):
 
 Veículos: Transporte/Veículos
 Motoristas, clientes, fornecedores, seguradora, proprietários Veículos, Transportadora: Pessoas/Pessoas
@@ -1004,10 +1008,20 @@ Gerar CIOT: Transporte/Documentos/Ct-e, seleciona o Ct-e e clica na opção Cont
 VPO ou Vale pedágio: Transporte/Documentos/Ct-e, seleciona o Ct-e e clica na opção Vale-Pedágio Avulso ou Transporte/Contrato de frete seleciona o Contrato de frete e clica na opção Vale-Pedágio Avulso
 Tipos Valores Outros para ct-e: Transporte/Configurações/Tipos Valores Outros
 Tabela de preços Valores Outros: Transporte/Configurações/Tabela de Preços/Tabela de Preços Valores Outros 
+Regras de Importação de Notas: Financeiro/Configurações/Fiscal/Regras de Importação de Notas
+Classificação Fiscal: Financeiro/Configurações/Fiscal/Classificação Fiscal
+Suporte: Opções do Sistema/Suporte 
+Configurações de Ordem de Carregamento: Transporte/Configurações/Documentos PDF/Configurações de Ordem de Carregamento 
+Modelos de notas: Financeiro/Configurações/Fiscal/Modelos de notas
+Contratos com Operadoras de Crédito: Transporte/Configurações/Contratos com Operadoras de Crédito
+Listagens: Ambiente/Listagens
+Usuários do Sistema: Ambiente/Controle de Acesso/Usuários do Sistema
+Remetente de e-mails: Ambiente/Administração/Remetente e-mails
 
 
 
-Caminhos assuntos gestão:
+
+Caminhos assuntos gestão e Relatórios:
 Abastecimentos: Manutenção/Abastecimentos ou Manutenção/Abastecimentos ou Manutenção/Abastecimentos ou Manutenção/Abastecimentos Próprios
 Relatório de abastecimento: Manutenção/Relatórios/Relação de Abastecimentos 
 Recapagens: Manutenção / Pneus / Recapagens 
@@ -1018,8 +1032,43 @@ Títulos a Pagar (Lançamentos): Financeiro / Títulos a Pagar / Títulos a Paga
 Títulos a Pagar (Gestão): Financeiro / Títulos a Pagar / "Lotes/Duplicatas a Pagar"
 Títulos a Receber: Financeiro (Lançamentos) / Títulos a Receber / Títulos a Receber
 Títulos a Receber (Gestão): Financeiro / Títulos a Receber / "Lotes/Duplicatas a Receber"
-
-
+Títulos já pagos ou recebidos: Financeiro/Caixas e Bancos/Consulta Lançamentos
+Espécies: Transporte/Configurações/Espécies
+Unidades: Configurações/Cadastros Básicos/Unidades
+Produtos: Financeiro/Configurações/Produtos e Serviços/Produtos
+Serviços: Financeiro/Configurações/Produtos e Serviços/Serviços
+Família Produtos Serviços: Financeiro/Configurações/Produtos e Serviços/Família Produtos Serviços
+informações de cobrança padrão: Transporte/Configurações/informações de cobrança padrão 
+Centros de Custo (Apropriações): Financeiro/Configurações/Centros de Custo
+Contas Financeiras: Financeiro/Configurações/Contas Financeiras
+Grupos Contas Financeiras: Financeiro/Configurações/Grupos Contas Financeiras
+Tipos de Sinalizadores: Financeiro/Cadastros Básicos/Tipos de Sinalizadores
+Movimentação Estoque: Estoque/Movimentação Estoque
+Relatório do estoque: Estoque/Relatórios/Relatórios do Estoque
+Tipos de Pneus: Manutenção/Configurações/Tipos de Pneus
+Domínios: Manutenção/Configurações/Domínios
+Plano de Contas Gerencial: Financeiro/Configurações/Plano de Contas Gerencial
+Tipos de Documentos: Financeiro/Cadastros Básicos/Tipos de Documentos
+Adiantamento a fornecedores: Financeiro/Caixa e Bancos/Adiantamento a fornecedores
+Arquivos Remessa: Financeiro/Caixa e Bancos/Convênios/Arquivos Remessa
+Arquivos Retorno: Financeiro/Caixa e Bancos/Convênios/Arquivos Retorno
+Pagamento: Financeiro/Caixa e Bancos/Pagamento
+Recebimento: Financeiro/Caixa e Bancos/Recebimento
+Transferências: Financeiro/Caixas e Bancos/Transferências
+Geração de Faturas (Títulos a pagar em lote): Financeiro/Títulos a Pagar/Geração de Faturas
+Lotes a Pagar: Financeiro/Títulos a Pagar/Lotes a Pagar
+Lotes a Receber: Financeiro/Títulos a Pagar/Lotes a Receber
+Relatório de Faturamento de Conhecimentos: Transporte/Relatórios/Relatório de Faturamento de Conhecimentos
+Orçamento: Financeiro/Orçamento/Orçamento
+Relatório de Orçamento: Financeiro/Relatórios/Relatório de Orçamento
+Regras para conciliação bancária: Financeiro/Caixa e Bancos/Regras para conciliação bancária
+Arquivos Importados via Conciliação Bancária: Financeiro/Caixa e Bancos/Regras/Arquivos Importados via Conciliação Bancária
+Conciliação Bancária (histórico de conciliações feitas): Financeiro/Caixa e Bancos/Conciliação Bancária
+Relatório 12 Meses Gerencial Competência: Financeiro/Relatórios/Gerenciais/12 Meses Gerencial Competência
+Relatório 12 Meses Gerencial Demonstrativo: Financeiro/Relatórios/Gerenciais/12 Meses Gerencial Demonstrativo
+Relatório Movimentação Detalhado: Financeiro/Relatórios/Movimentação Financeira/Movimentação Detalhado
+Transporte/Relatórios/Comissões dos motoristas
+Transporte/Relatórios/Relatório de Contratos de Frete
 
 PERGUNTA DO USUÁRIO: "${pergunta}"
 ${contextoBanco}
