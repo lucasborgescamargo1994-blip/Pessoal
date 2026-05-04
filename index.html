@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <title>Suporte Bsoft TMS - IA v12</title>
+    <title>Suporte Bsoft TMS - IA v13</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -839,6 +839,97 @@ function salvarVetorNaPlanilha(numLinha, numColuna, vetorStr) {
 }
 
 // ═══════════════════════════════════════════════════════════
+//  MOTOR DE BUSCA INTELIGENTE v13
+// ═══════════════════════════════════════════════════════════
+
+// Dicionário de sinônimos semânticos — normaliza intenção do usuário
+const SINONIMOS = {
+    // Verbos de ação equivalentes
+    criar:    ["criar","emitir","gerar","lançar","fazer","abrir","registrar","incluir","cadastrar","inserir","montar","produzir","processar","emissão","geração","criação","lançamento","abertura"],
+    cancelar: ["cancelar","estornar","desfazer","anular","reverter","excluir","deletar","remover","apagar","cancelamento","estorno"],
+    consultar:["consultar","buscar","localizar","pesquisar","encontrar","ver","visualizar","verificar","checar","acessar","abrir","listar","mostrar","exibir","onde fica","como ver","como achar","como encontrar"],
+    editar:   ["editar","alterar","modificar","mudar","corrigir","ajustar","atualizar","revisar","trocar"],
+    configurar:["configurar","parametrizar","ativar","habilitar","ativar","definir","setar","ajustar","configuração"],
+    imprimir: ["imprimir","emitir pdf","gerar pdf","baixar","exportar","salvar pdf","relatório"],
+    erro:     ["erro","falha","problema","não funciona","não deixa","não consegue","não aparece","bloqueado","travado","recusado","rejeitado","inválido","inválida"],
+};
+
+// Normaliza a query expandindo sinônimos para melhorar busca vetorial
+function normalizarQuery(query) {
+    const q = query.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const expansoes = new Set([q]);
+
+    for (const [base, lista] of Object.entries(SINONIMOS)) {
+        const achou = lista.some(s => q.includes(s.normalize("NFD").replace(/[\u0300-\u036f]/g, "")));
+        if (achou) {
+            lista.forEach(s => expansoes.add(q.replace(new RegExp(lista.join('|'), 'gi'), s)));
+            expansoes.add(q + " " + base);
+        }
+    }
+    return Array.from(expansoes).slice(0, 4); // Máx 4 variantes
+}
+
+// Extrai palavras-chave relevantes (ignora stopwords)
+function extrairTermos(texto) {
+    const stopwords = new Set(["como","que","qual","quais","para","com","sem","não","mas","por","mais","uma","isso","este","esta","esse","essa","num","numa","meu","minha","meus","minhas","tem","tem","ter","ser","foi","vai","vou","tenho","posso","pode","quero","preciso","saber","sobre","nao","onde","quando","porque","pois","também","ainda","mesmo","tipo"]);
+    return texto.toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+        .replace(/[^a-z0-9 ]/g," ")
+        .split(/\s+/)
+        .filter(t => t.length > 2 && !stopwords.has(t));
+}
+
+// Score híbrido: vetor semântico + correspondência de termos + boost de categoria
+function calcularScoreHibrid(vetorQuery, termosQuery, item) {
+    // 1. Similaridade vetorial (principal)
+    const simVetor = calcularSimilaridade(vetorQuery, item.vetor);
+
+    // 2. Correspondência de termos (TF simples)
+    const textoItem = (item.erro + " " + item.solucao + " " + (item.categoria || ""))
+        .toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+    const totalTermos = termosQuery.length || 1;
+    const acertos = termosQuery.filter(t => textoItem.includes(t)).length;
+    const simTermos = acertos / totalTermos;
+
+    // 3. Boost se categoria relevante
+    const catBoost = item.categoria && termosQuery.some(t => item.categoria.toLowerCase().includes(t)) ? 0.05 : 0;
+
+    // 4. Score final ponderado
+    return (simVetor * 0.70) + (simTermos * 0.25) + catBoost;
+}
+
+// Memória de respostas absolutas (feedback positivo confirma)
+const CHAVE_RESPOSTAS_FIXAS = "bsoft_respostas_absolutas_v1";
+
+function carregarRespostasFixas() {
+    try { return JSON.parse(localStorage.getItem(CHAVE_RESPOSTAS_FIXAS) || "{}"); }
+    catch(e) { return {}; }
+}
+
+function salvarRespostaFixa(pergunta, resposta) {
+    const fixas = carregarRespostasFixas();
+    const chave = pergunta.toLowerCase().trim().substring(0, 120);
+    fixas[chave] = { resposta, ts: Date.now(), confirmacoes: (fixas[chave]?.confirmacoes || 0) + 1 };
+    try { localStorage.setItem(CHAVE_RESPOSTAS_FIXAS, JSON.stringify(fixas)); } catch(e) {}
+}
+
+function buscarRespostaFixa(pergunta) {
+    const fixas = carregarRespostasFixas();
+    const chave = pergunta.toLowerCase().trim().substring(0, 120);
+    // Busca exata
+    if (fixas[chave]) return fixas[chave].resposta;
+    // Busca aproximada (70% dos termos batem)
+    const termosQ = extrairTermos(pergunta);
+    for (const [k, v] of Object.entries(fixas)) {
+        const termosK = extrairTermos(k);
+        const intersecao = termosQ.filter(t => termosK.includes(t)).length;
+        const minLen = Math.min(termosQ.length, termosK.length) || 1;
+        if (intersecao / minLen >= 0.75) return v.resposta;
+    }
+    return null;
+}
+
+// ═══════════════════════════════════════════════════════════
 //  LÓGICA DE CHAT
 // ═══════════════════════════════════════════════════════════
 async function handleChat() {
@@ -848,7 +939,7 @@ async function handleChat() {
     const query = input.value.trim();
     if (!query) return;
 
-    const frasesNegativas = ["não deu", "não funcionou", "continuo com erro", "ainda não", "não deu certo", "proximo", "próximo", "outra opção", "mais alguma"];
+    const frasesNegativas = ["não deu", "não funcionou", "continuo com erro", "ainda não", "não deu certo", "proximo", "próximo", "outra opção", "mais alguma", "próxima solução"];
     const usuarioQuerProximo = frasesNegativas.some(f => query.toLowerCase().includes(f));
 
     if (usuarioQuerProximo && filaSolucoes.length > 0) {
@@ -863,8 +954,29 @@ async function handleChat() {
     appendMessage('user', query);
     input.value = "";
 
-    const loadingDiv = appendLoadingCard();
-    const vetorPergunta = await gerarEmbedding(query);
+    // 🔒 Verifica se há resposta fixa confirmada por feedback positivo
+    const respostaFixa = buscarRespostaFixa(query);
+    if (respostaFixa) {
+        appendMessage('system', '⭐ <strong>Resposta Confirmada</strong> — Baseada em feedback positivo anterior.');
+        renderAnswerCard(
+            respostaFixa.caminho || null,
+            respostaFixa.como_fazer || respostaFixa.texto || '',
+            respostaFixa.dicas || [],
+            Date.now(),
+            true // é resposta fixa
+        );
+        return;
+    }
+
+    const loadingDiv = appendLoadingCard("🔍 Analisando sua pergunta...");
+
+    // Normaliza query com expansão semântica de sinônimos
+    const variantes = normalizarQuery(query);
+    const termosQuery = extrairTermos(query);
+
+    // Gera embedding da query principal + variante expandida
+    const textoParaVetorizar = variantes.slice(0, 2).join(" | ");
+    const vetorPergunta = await gerarEmbedding(textoParaVetorizar);
 
     if (!vetorPergunta) {
         loadingDiv.remove();
@@ -872,13 +984,16 @@ async function handleChat() {
         return;
     }
 
+    // Score híbrido em todo o banco
     let resultados = manualVetorizado.map(item => ({
         ...item,
-        similaridade: calcularSimilaridade(vetorPergunta, item.vetor)
+        similaridade: calcularScoreHibrid(vetorPergunta, termosQuery, item)
     })).sort((a, b) => b.similaridade - a.similaridade);
 
-    filaSolucoes = resultados.filter(r => r.similaridade >= 0.50).slice(0, 4);
-    currentResults = filaSolucoes;
+    // Limiar adaptativo: começa em 0.45, aceita até 0.35 se banco pequeno
+    const limiar = manualVetorizado.length > 20 ? 0.45 : 0.35;
+    filaSolucoes = resultados.filter(r => r.similaridade >= limiar).slice(0, 5);
+    currentResults = resultados.slice(0, 6);
 
     loadingDiv.remove();
     logSearch(query, filaSolucoes.length > 0);
@@ -886,7 +1001,9 @@ async function handleChat() {
     if (filaSolucoes.length > 0) {
         processarProximaSolucao(query);
     } else {
-        await gerarRespostaEstruturada(query, null, Date.now());
+        // Engenharia reversa: passa os top resultados mesmo abaixo do limiar para o modelo raciocinar
+        const candidatosParaReversa = resultados.slice(0, 3);
+        await gerarRespostaEstruturada(query, null, Date.now(), candidatosParaReversa);
     }
 }
 
@@ -896,17 +1013,15 @@ async function processarProximaSolucao(perguntaOriginal) {
         return;
     }
     const solucaoAtual = filaSolucoes.shift();
-    const loadingDiv = appendLoadingCard("⚙️ Analisando solução...");
-    await gerarRespostaEstruturada(perguntaOriginal, solucaoAtual, Date.now());
+    const loadingDiv = appendLoadingCard("⚙️ Elaborando solução...");
+    await gerarRespostaEstruturada(perguntaOriginal, solucaoAtual, Date.now(), []);
     loadingDiv.remove();
-
-    
 }
 
 // ═══════════════════════════════════════════════════════════
 //  RESPOSTA ESTRUTURADA
 // ═══════════════════════════════════════════════════════════
-async function gerarRespostaEstruturada(pergunta, dadosBanco, logIndex) {
+async function gerarRespostaEstruturada(pergunta, dadosBanco, logIndex, candidatosReversa = []) {
     userQuestionsHistory.push(pergunta);
     if (userQuestionsHistory.length > 3) userQuestionsHistory.shift();
 
@@ -948,15 +1063,39 @@ async function gerarRespostaEstruturada(pergunta, dadosBanco, logIndex) {
         }
     }
 
-    const contextoBanco = dadosBanco
-        ? `\nCONTEXTO DO MANUAL TÉCNICO:\nDÚVIDA CORRESPONDENTE: ${dadosBanco.erro}\nSOLUÇÃO: ${dadosBanco.solucao}`
-        : "\nNENHUMA INFORMAÇÃO ESPECÍFICA NO MANUAL. Use conhecimento geral sobre ERPs e sistemas de transporte de carga.";
+    let contextoBanco;
+    if (dadosBanco) {
+        contextoBanco = `\nCONTEXTO DO MANUAL TÉCNICO:\nDÚVIDA CORRESPONDENTE: ${dadosBanco.erro}\nSOLUÇÃO: ${dadosBanco.solucao}\nSIMILARIDADE: ${(dadosBanco.similaridade*100).toFixed(0)}%`;
+    } else if (candidatosReversa && candidatosReversa.length > 0) {
+        // Engenharia reversa: passa candidatos parcialmente relacionados para o modelo raciocinar
+        const candidatosTexto = candidatosReversa.map((c, i) =>
+            `[CANDIDATO ${i+1} - ${(c.similaridade*100).toFixed(0)}% similar]\nDúvida: ${c.erro}\nSolução: ${c.solucao}`
+        ).join('\n\n');
+        contextoBanco = `\nNÃO ENCONTREI CORRESPONDÊNCIA DIRETA NO MANUAL.
+Modo de Engenharia Reversa ativado — analise os candidatos abaixo e raciocine a partir deles para deduzir a resposta mais provável, como um especialista experiente faria:
+
+${candidatosTexto}
+
+Use raciocínio lógico: se a pergunta envolve um processo similar, aplique a lógica invertida ou o mesmo padrão de solução adaptado ao contexto da pergunta.`;
+    } else {
+        contextoBanco = "\nNENHUMA INFORMAÇÃO ESPECÍFICA NO MANUAL. Use conhecimento geral sobre ERPs e sistemas de transporte de carga.";
+    }
 
     const prompt = `Você é o Especialista de Suporte do Bsoft TMS, um sistema ERP para empresas de transporte de cargas. Seja preciso, técnico e direto.
 	Tome muito cuidado para não confundir e misturar assuntos do que consta no banco de dados, por exemplo emitir ct-e com xml da nota não tem nada a ver com 
 	importação de nota fiscal de entrada.
 	Somente use o conhecimento que consta no MANUAL, se não encontrar nada, peça para o usuário reformular a pergunta.
 	Quando cliente perguntar como emitir um ct-e, mdf-e, nf-e, títulos a pagar, títulos a receber, de a resposta completa sem emitir informações.
+	
+	IMPORTANTE — INTERPRETAÇÃO SEMÂNTICA: Trate como equivalentes os verbos de intenção similar. 
+	"criar", "emitir", "gerar", "lançar", "fazer", "abrir" = mesma intenção (criação de documento/registro).
+	"cancelar", "estornar", "anular", "desfazer" = mesma intenção (cancelamento).
+	"consultar", "buscar", "ver", "visualizar", "localizar" = mesma intenção (consulta).
+	"configurar", "parametrizar", "ativar", "habilitar" = mesma intenção (configuração).
+
+	MODO ENGENHARIA REVERSA: Quando o contexto trouxer candidatos parciais, aja como um especialista experiente:
+	raciocine sobre o padrão de solução, deduza a causa provável do problema e aplique lógica inversa para chegar na resposta.
+	Por exemplo: se o usuário tem erro X e no manual há solução para erro Y similar, adapte o raciocínio.
 	
 O sistema Bsoft TMS funciona com a seguinte estrutura:
 Quando aberto o sistema, tem um menu lateral que no topo tem uma opção de pesquisar as funções digitando e abaixo os seguintes menu principais: Opções do Sistema
@@ -1150,10 +1289,12 @@ REGRAS:
 // ═══════════════════════════════════════════════════════════
 //  RENDER DO CARD
 // ═══════════════════════════════════════════════════════════
-function renderAnswerCard(caminho, comoFazer, dicas, logIndex) {
+function renderAnswerCard(caminho, comoFazer, dicas, logIndex, ehFixa = false) {
     const stream = document.getElementById('chatStream');
     const card = document.createElement('div');
     card.className = 'answer-card';
+    // Armazena dados da resposta no card para captura no feedback
+    card._dadosResposta = { caminho, como_fazer: comoFazer, dicas };
 
     let html = '';
 
@@ -1189,11 +1330,14 @@ function renderAnswerCard(caminho, comoFazer, dicas, logIndex) {
         </div>`;
     }
 
+    const fixaBadge = ehFixa ? `<span style="font-size:11px;color:#166534;font-weight:700;background:#dcfce7;padding:2px 8px;border-radius:10px;">⭐ Resposta Confirmada</span>` : '';
+
     html += `<div class="feedback-area">
-        <span>Ajudou?</span>
+        ${fixaBadge}
+        <span>${ehFixa ? 'Continua útil?' : 'Ajudou?'}</span>
         <button class="feedback-btn" onclick="saveFeedback(${logIndex},'positivo',this)">👍</button>
         <button class="feedback-btn" onclick="saveFeedback(${logIndex},'negativo',this)">👎</button>
-        ${filaSolucoes.length > 0 ? `<button class="feedback-btn next" onclick="fillAndSend('Próximo')">➡️ Ver outra solução</button>` : ''}
+        ${filaSolucoes.length > 0 && !ehFixa ? `<button class="feedback-btn next" onclick="fillAndSend('Próximo')">➡️ Ver outra solução</button>` : ''}
     </div>`;
 
     card.innerHTML = html;
@@ -1265,14 +1409,23 @@ function logSearch(query, found) {
 }
 
 function saveFeedback(logIndex, type, btn) {
-    const parent = btn.parentElement;
+    const feedbackArea = btn.parentElement;
+    const card = feedbackArea.closest('.answer-card');
+
     fetch(SCRIPT_URL, { method:'POST', mode:'no-cors',
         body: JSON.stringify({ pergunta: lastQuery||"?", encontrou:"Sim", feedback: type==='positivo'?"Positivo":"Negativo" }) });
+
     if (type === 'positivo') {
-        parent.innerHTML = "<span style='color:#166534;font-weight:700;'>Obrigado! 👍</span>";
+        // 🔒 Fixa a resposta como absoluta para perguntas similares no futuro
+        if (card && card._dadosResposta && lastQuery) {
+            salvarRespostaFixa(lastQuery, card._dadosResposta);
+            feedbackArea.innerHTML = "<span style='color:#166534;font-weight:700;'>✅ Obrigado! Resposta fixada como referência futura.</span>";
+        } else {
+            feedbackArea.innerHTML = "<span style='color:#166534;font-weight:700;'>Obrigado! 👍</span>";
+        }
     } else {
-        parent.innerHTML = `<div class="reason-box" style="display:flex;">
-            <textarea id="reason_${logIndex}" placeholder="O que faltou na resposta?"></textarea>
+        feedbackArea.innerHTML = `<div class="reason-box" style="display:flex;">
+            <textarea id="reason_${logIndex}" placeholder="O que faltou na resposta? Descreva o problema para melhorarmos."></textarea>
             <button onclick="sendDetailedFeedback(${logIndex},this)">Enviar Feedback</button>
         </div>`;
     }
