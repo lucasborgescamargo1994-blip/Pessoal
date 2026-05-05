@@ -1334,7 +1334,7 @@ function renderAnswerCard(caminho, comoFazer, dicas, logIndex, ehFixa = false) {
 
     html += `<div class="feedback-area">
         ${fixaBadge}
-        <span>${ehFixa ? 'Continua útil?' : 'Ajudou?'}</span>
+        <span>${ehFixa ? 'Continua útil?' : 'IMPORTANTE! Se minha resposta ajudou ou não deixa seu feedback clicando no positivo ou negativo =>'}</span>
         <button class="feedback-btn" onclick="saveFeedback(${logIndex},'positivo',this)">👍</button>
         <button class="feedback-btn" onclick="saveFeedback(${logIndex},'negativo',this)">👎</button>
         ${filaSolucoes.length > 0 && !ehFixa ? `<button class="feedback-btn next" onclick="fillAndSend('Próximo')">➡️ Ver outra solução</button>` : ''}
