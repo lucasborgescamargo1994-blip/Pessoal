@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <title>Suporte Bsoft TMS - IA v13</title>
+    <title>Suporte Bsoft TMS - IA v14 - Gemma 4</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -306,6 +306,27 @@
         }
         .tip-item:last-child { margin-bottom: 0; }
 
+        /* Dica com link clicável */
+        .tip-link {
+            display: inline-flex; align-items: center; gap: 4px;
+            color: var(--primary-dark); text-decoration: none; cursor: pointer;
+            font-weight: 600; font-size: 11px; margin-left: 6px;
+            background: var(--primary-light); border: 1px solid var(--primary-border);
+            padding: 1px 8px; border-radius: 10px; transition: all 0.18s;
+            white-space: nowrap;
+        }
+        .tip-link:hover { background: var(--primary); color: white; border-color: var(--primary); }
+
+        /* Botão de tentar novamente no erro */
+        .retry-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            margin-top: 10px; background: var(--primary); color: white;
+            border: none; padding: 9px 18px; border-radius: 9px;
+            cursor: pointer; font-family: inherit; font-weight: 700; font-size: 13px;
+            transition: all 0.2s;
+        }
+        .retry-btn:hover { background: var(--primary-dark); transform: scale(1.03); }
+
         /* ── FEEDBACK ── */
         .feedback-area {
             display: flex; gap: 7px; padding: 8px 15px;
@@ -575,7 +596,7 @@ const p2 = "jyyxIL3xlSD";
 const p3 = "iEVvCu92JTgmD3vNQ";
 const GEMINI_API_KEY = p1 + p2 + p3;
 const CORRECT_PASSWORD = "camargo02";
-const MODELO_PRIMARY = "gemma-3-27b-it";
+const MODELO_PRIMARY = "gemma-4-26b-a4b-it";
 
 // ═══════════════════════════════════════════════════════════
 //  RECONHECIMENTO DE VOZ
@@ -657,10 +678,11 @@ async function loadData() {
     try {
         badge.innerText = "Aguarde, Buscando dados...";
 
-        const [resBanco, resParam, resFunc] = await Promise.allSettled([
+        const [resBanco, resParam, resFunc, resLogs] = await Promise.allSettled([
             fetch(SCRIPT_URL).then(r => r.json()),
             fetch(SCRIPT_URL + "?aba=Parametros").then(r => r.json()),
-            fetch(SCRIPT_URL + "?aba=Funcionalidades").then(r => r.json())
+            fetch(SCRIPT_URL + "?aba=Funcionalidades").then(r => r.json()),
+            fetch(SCRIPT_URL + "?tipo=logs").then(r => r.json())
         ]);
 
         if (resParam.status === 'fulfilled') {
@@ -670,6 +692,11 @@ async function loadData() {
         if (resFunc.status === 'fulfilled') {
             dadosFuncionalidades = Array.isArray(resFunc.value) ? resFunc.value :
                                    (typeof resFunc.value === 'string' ? JSON.parse(resFunc.value) : []);
+        }
+
+        // Popula barra "Em alta" com perguntas mais recentes/repetidas dos logs
+        if (resLogs.status === 'fulfilled') {
+            popularBarraEmAlta(resLogs.value);
         }
 
         if (resBanco.status !== 'fulfilled') throw new Error("Falha ao buscar BancoDados");
@@ -700,6 +727,65 @@ async function loadData() {
         console.error("Erro ao carregar dados:", error);
         document.getElementById('statusBadge').innerText = "Erro de Conexão";
         liberarChat("erro");
+        const wMsg = document.getElementById('welcomeMsg');
+        if (wMsg && !wMsg.querySelector('.retry-btn')) {
+            const btn = document.createElement('button');
+            btn.className = 'retry-btn';
+            btn.innerHTML = '🔄 Tentar Novamente';
+            btn.onclick = () => location.reload();
+            wMsg.appendChild(btn);
+        }
+    }
+}
+
+// Popula a barra "Em alta" com as perguntas mais recentes e repetidas dos logs
+function popularBarraEmAlta(logsData) {
+    try {
+        const rows = Array.isArray(logsData) ? logsData.slice(1) : [];
+        if (!rows.length) return;
+
+        // Conta frequência e pega as mais recentes (últimas 7 dias)
+        const contagem = {};
+        const agora = Date.now();
+        const seteDias = 7 * 24 * 60 * 60 * 1000;
+
+        rows.forEach(row => {
+            const pergunta = (row[1] || "").trim();
+            if (!pergunta || pergunta.startsWith("FEEDBACK") || pergunta.length < 5) return;
+            const ts = row[0] ? new Date(row[0]).getTime() : 0;
+            const isRecente = (agora - ts) < seteDias;
+            if (!contagem[pergunta]) contagem[pergunta] = { freq: 0, recente: false };
+            contagem[pergunta].freq++;
+            if (isRecente) contagem[pergunta].recente = true;
+        });
+
+        // Ordena: recentes e frequentes primeiro
+        const ordenados = Object.entries(contagem)
+            .sort((a, b) => {
+                const scoreA = (a[1].recente ? 10 : 0) + a[1].freq;
+                const scoreB = (b[1].recente ? 10 : 0) + b[1].freq;
+                return scoreB - scoreA;
+            })
+            .slice(0, 8) // Máximo 8 termos
+            .map(([k]) => k);
+
+        if (!ordenados.length) return;
+
+        const bar = document.getElementById('topTermsBar');
+        // Preserva o botão "Offline" e o label
+        const btnOffline = document.getElementById('btnOfflineResults');
+        bar.innerHTML = '<span>Em alta:</span>';
+        ordenados.forEach(termo => {
+            const a = document.createElement('a');
+            // Trunca o texto para caber na barra
+            a.textContent = termo.length > 35 ? termo.substring(0, 33) + '…' : termo;
+            a.title = termo;
+            a.onclick = () => fillAndSend(termo);
+            bar.appendChild(a);
+        });
+        if (btnOffline) bar.appendChild(btnOffline);
+    } catch(e) {
+        console.warn("Erro ao popular barra em alta:", e);
     }
 }
 
@@ -711,6 +797,11 @@ function carregarVetoresExistentes(dados) {
     const chaveErro     = chaves.find(k => k.toLowerCase().trim() === 'erro');
     const chaveSolucao  = chaves.find(k => k.toLowerCase().trim() === 'solucao' || k.toLowerCase().trim() === 'solução');
     const chaveCategoria= chaves.find(k => k.toLowerCase().trim() === 'categoria');
+    // Coluna específica de emissão — priorizada quando a pergunta é sobre "como emitir"
+    const chaveEmitir   = chaves.find(k => {
+        const kn = k.toLowerCase().trim();
+        return kn === 'como emitir' || kn === 'como_emitir' || kn === 'emissao' || kn === 'emissão' || kn === 'emitir';
+    });
 
     if (!chaveVetor) {
         console.error("Coluna 'vetor' não encontrada:", chaves);
@@ -724,10 +815,12 @@ function carregarVetoresExistentes(dados) {
         const textoErro     = linha[chaveErro] || "";
         const textoSolucao  = linha[chaveSolucao] || "";
         const textoCategoria= chaveCategoria ? (linha[chaveCategoria] || "") : "";
+        const textoEmitir   = chaveEmitir ? (linha[chaveEmitir] || "") : "";
 
         if (!textoErro && !textoSolucao) return;
 
-        const textoCompleto = `DÚVIDA: ${textoErro} | PROCEDIMENTO: ${textoSolucao}${textoCategoria ? ' | CATEGORIA: ' + textoCategoria : ''}`;
+        // Inclui coluna "como emitir" no texto completo para vetorização mais rica
+        const textoCompleto = `DÚVIDA: ${textoErro} | PROCEDIMENTO: ${textoSolucao}${textoEmitir ? ' | COMO EMITIR: ' + textoEmitir : ''}${textoCategoria ? ' | CATEGORIA: ' + textoCategoria : ''}`;
         const vetorExistente = linha[chaveVetor];
 
         if (vetorExistente && vetorExistente.toString().trim().startsWith('[')) {
@@ -736,15 +829,16 @@ function carregarVetoresExistentes(dados) {
                     texto: textoCompleto,
                     erro: textoErro,
                     solucao: textoSolucao,
+                    emitir: textoEmitir,
                     categoria: textoCategoria,
                     vetor: JSON.parse(vetorExistente)
                 });
                 linhasComVetor++;
             } catch(e) {
-                linhasSemVetor.push({ linha, textoCompleto, textoErro, textoSolucao, textoCategoria, indexPlanilha: i + 2, chaveVetor, chaves });
+                linhasSemVetor.push({ linha, textoCompleto, textoErro, textoSolucao, textoEmitir, textoCategoria, indexPlanilha: i + 2, chaveVetor, chaves });
             }
         } else {
-            linhasSemVetor.push({ linha, textoCompleto, textoErro, textoSolucao, textoCategoria, indexPlanilha: i + 2, chaveVetor, chaves });
+            linhasSemVetor.push({ linha, textoCompleto, textoErro, textoSolucao, textoEmitir, textoCategoria, indexPlanilha: i + 2, chaveVetor, chaves });
         }
     });
 
@@ -774,6 +868,7 @@ async function vetorizarEmBackground(linhasSemVetor, chaves) {
                 texto: item.textoCompleto,
                 erro: item.textoErro,
                 solucao: item.textoSolucao,
+                emitir: item.textoEmitir || "",
                 categoria: item.textoCategoria,
                 vetor: novoVetor
             });
@@ -826,7 +921,8 @@ function liberarChat(modo = "completo") {
         badge.className = "badge-loading";
         document.getElementById('welcomeMsg').innerHTML = `
             ⚠️ Não consegui conectar ao banco de dados.<br>
-            Posso tentar ajudar com conhecimento geral. Digite sua dúvida.
+            Posso tentar ajudar com conhecimento geral. Digite sua dúvida.<br>
+            <button class="retry-btn" onclick="location.reload()">🔄 Tentar Novamente</button>
         `;
     }
 }
@@ -879,13 +975,26 @@ function extrairTermos(texto) {
         .filter(t => t.length > 2 && !stopwords.has(t));
 }
 
-// Score híbrido: vetor semântico + correspondência de termos + boost de categoria
-function calcularScoreHibrid(vetorQuery, termosQuery, item) {
+// Detecta se a pergunta é sobre emissão de documento
+function ehPerguntaDeEmissao(query) {
+    const qNorm = query.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+    const verbosEmissao = ["como emitir","como gerar","como criar","como fazer","como lancar","como abrir","emitir","gerar ct","gerar mdf","gerar nf","emissao","emissão","criar ct","criar mdf"];
+    return verbosEmissao.some(v => qNorm.includes(v.normalize("NFD").replace(/[\u0300-\u036f]/g,"")));
+}
+
+// Detecta se a pergunta menciona erro SEFAZ
+function ehErroSefaz(query) {
+    const qNorm = query.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+    return qNorm.includes("sefaz") && (qNorm.includes("erro") || qNorm.includes("rejeicao") || qNorm.includes("rejeição") || qNorm.includes("codigo") || qNorm.includes("codigo ") || /\b[0-9]{3}\b/.test(query));
+}
+
+// Score híbrido: vetor semântico + correspondência de termos + boost de categoria + boost coluna emitir
+function calcularScoreHibrid(vetorQuery, termosQuery, item, isEmissao = false) {
     // 1. Similaridade vetorial (principal)
     const simVetor = calcularSimilaridade(vetorQuery, item.vetor);
 
     // 2. Correspondência de termos (TF simples)
-    const textoItem = (item.erro + " " + item.solucao + " " + (item.categoria || ""))
+    const textoItem = (item.erro + " " + item.solucao + " " + (item.categoria || "") + " " + (item.emitir || ""))
         .toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
     const totalTermos = termosQuery.length || 1;
     const acertos = termosQuery.filter(t => textoItem.includes(t)).length;
@@ -894,31 +1003,77 @@ function calcularScoreHibrid(vetorQuery, termosQuery, item) {
     // 3. Boost se categoria relevante
     const catBoost = item.categoria && termosQuery.some(t => item.categoria.toLowerCase().includes(t)) ? 0.05 : 0;
 
-    // 4. Score final ponderado
-    return (simVetor * 0.70) + (simTermos * 0.25) + catBoost;
+    // 4. Boost especial: se é pergunta de emissão E o item tem coluna "como emitir" preenchida
+    const emitirBoost = (isEmissao && item.emitir && item.emitir.length > 10) ? 0.12 : 0;
+
+    // 5. Score final ponderado
+    return (simVetor * 0.65) + (simTermos * 0.23) + catBoost + emitirBoost;
 }
 
-// Memória de respostas absolutas (feedback positivo confirma)
-const CHAVE_RESPOSTAS_FIXAS = "bsoft_respostas_absolutas_v1";
+// ═══════════════════════════════════════════════════════════
+//  APRENDIZADO ONLINE COMPARTILHADO (substitui localStorage)
+//  Respostas fixadas por feedback positivo ficam na planilha
+//  e são compartilhadas entre todos os usuários em tempo real
+// ═══════════════════════════════════════════════════════════
+let cachRespostasFixas = null; // Cache em memória para não recarregar toda hora
+let tsBancamentoFixas = 0;
 
-function carregarRespostasFixas() {
-    try { return JSON.parse(localStorage.getItem(CHAVE_RESPOSTAS_FIXAS) || "{}"); }
-    catch(e) { return {}; }
+async function carregarRespostasFixas() {
+    // Cache de 5 minutos
+    if (cachRespostasFixas && (Date.now() - tsBancamentoFixas) < 5 * 60 * 1000) {
+        return cachRespostasFixas;
+    }
+    try {
+        const res = await fetch(SCRIPT_URL + "?aba=RespostasFixas");
+        if (!res.ok) throw new Error("sem acesso");
+        const data = await res.json();
+        // Transforma array de rows em mapa { chave: { resposta, confirmacoes } }
+        const mapa = {};
+        (Array.isArray(data) ? data : []).forEach(row => {
+            if (row.chave && row.resposta) {
+                try {
+                    mapa[row.chave] = { resposta: JSON.parse(row.resposta), confirmacoes: parseInt(row.confirmacoes)||1 };
+                } catch(e) {}
+            }
+        });
+        cachRespostasFixas = mapa;
+        tsBancamentoFixas = Date.now();
+        return mapa;
+    } catch(e) {
+        // Fallback: usa localStorage como cache offline
+        try { return JSON.parse(localStorage.getItem('bsoft_fixas_cache') || '{}'); }
+        catch(e2) { return {}; }
+    }
 }
 
-function salvarRespostaFixa(pergunta, resposta) {
-    const fixas = carregarRespostasFixas();
+async function salvarRespostaFixa(pergunta, resposta) {
     const chave = pergunta.toLowerCase().trim().substring(0, 120);
-    fixas[chave] = { resposta, ts: Date.now(), confirmacoes: (fixas[chave]?.confirmacoes || 0) + 1 };
-    try { localStorage.setItem(CHAVE_RESPOSTAS_FIXAS, JSON.stringify(fixas)); } catch(e) {}
+    const payload = {
+        action: "fixarResposta",
+        chave,
+        pergunta,
+        resposta: JSON.stringify(resposta),
+        ts: new Date().toISOString()
+    };
+    // Invalida cache local imediatamente
+    cachRespostasFixas = null;
+    // Salva no servidor (planilha Google Sheets aba RespostasFixas)
+    fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', body: JSON.stringify(payload) })
+        .catch(e => console.warn("Erro ao salvar resposta fixa online:", e));
+    // Também salva no localStorage como backup offline
+    try {
+        const local = JSON.parse(localStorage.getItem('bsoft_fixas_cache') || '{}');
+        local[chave] = { resposta, confirmacoes: (local[chave]?.confirmacoes || 0) + 1 };
+        localStorage.setItem('bsoft_fixas_cache', JSON.stringify(local));
+    } catch(e) {}
 }
 
-function buscarRespostaFixa(pergunta) {
-    const fixas = carregarRespostasFixas();
+async function buscarRespostaFixa(pergunta) {
+    const fixas = await carregarRespostasFixas();
     const chave = pergunta.toLowerCase().trim().substring(0, 120);
     // Busca exata
     if (fixas[chave]) return fixas[chave].resposta;
-    // Busca aproximada (70% dos termos batem)
+    // Busca aproximada (75% dos termos batem)
     const termosQ = extrairTermos(pergunta);
     for (const [k, v] of Object.entries(fixas)) {
         const termosK = extrairTermos(k);
@@ -954,21 +1109,33 @@ async function handleChat() {
     appendMessage('user', query);
     input.value = "";
 
-    // 🔒 Verifica se há resposta fixa confirmada por feedback positivo
-    const respostaFixa = buscarRespostaFixa(query);
+    // 🌐 Detecta se é erro SEFAZ → busca na internet antes de tudo
+    if (ehErroSefaz(query)) {
+        await gerarRespostaSefaz(query);
+        return;
+    }
+
+    // 🔒 Verifica se há resposta fixa confirmada por feedback positivo (online)
+    const loadingFixa = appendLoadingCard("⭐ Verificando base de conhecimento confirmada...");
+    const respostaFixa = await buscarRespostaFixa(query);
+    loadingFixa.remove();
+
     if (respostaFixa) {
-        appendMessage('system', '⭐ <strong>Resposta Confirmada</strong> — Baseada em feedback positivo anterior.');
+        appendMessage('system', '⭐ <strong>Resposta Confirmada</strong> — Baseada em feedback positivo de usuários anteriores.');
         renderAnswerCard(
             respostaFixa.caminho || null,
             respostaFixa.como_fazer || respostaFixa.texto || '',
             respostaFixa.dicas || [],
             Date.now(),
-            true // é resposta fixa
+            true
         );
         return;
     }
 
     const loadingDiv = appendLoadingCard("🔍 Analisando sua pergunta...");
+
+    // Detecta intenção de emissão para boostar coluna "como emitir"
+    const isEmissao = ehPerguntaDeEmissao(query);
 
     // Normaliza query com expansão semântica de sinônimos
     const variantes = normalizarQuery(query);
@@ -984,13 +1151,23 @@ async function handleChat() {
         return;
     }
 
-    // Score híbrido em todo o banco
+    // Score híbrido em todo o banco (com flag isEmissao para boost da coluna "como emitir")
     let resultados = manualVetorizado.map(item => ({
         ...item,
-        similaridade: calcularScoreHibrid(vetorPergunta, termosQuery, item)
+        similaridade: calcularScoreHibrid(vetorPergunta, termosQuery, item, isEmissao)
     })).sort((a, b) => b.similaridade - a.similaridade);
 
-    // Limiar adaptativo: começa em 0.45, aceita até 0.35 se banco pequeno
+    // Se é pergunta de emissão, garante que itens com coluna "emitir" preenchida apareçam primeiro
+    if (isEmissao) {
+        resultados.sort((a, b) => {
+            const aTemEmitir = a.emitir && a.emitir.length > 10 ? 1 : 0;
+            const bTemEmitir = b.emitir && b.emitir.length > 10 ? 1 : 0;
+            if (bTemEmitir !== aTemEmitir) return bTemEmitir - aTemEmitir;
+            return b.similaridade - a.similaridade;
+        });
+    }
+
+    // Limiar adaptativo
     const limiar = manualVetorizado.length > 20 ? 0.45 : 0.35;
     filaSolucoes = resultados.filter(r => r.similaridade >= limiar).slice(0, 5);
     currentResults = resultados.slice(0, 6);
@@ -999,29 +1176,101 @@ async function handleChat() {
     logSearch(query, filaSolucoes.length > 0);
 
     if (filaSolucoes.length > 0) {
-        processarProximaSolucao(query);
+        processarProximaSolucao(query, isEmissao);
     } else {
-        // Engenharia reversa: passa os top resultados mesmo abaixo do limiar para o modelo raciocinar
         const candidatosParaReversa = resultados.slice(0, 3);
-        await gerarRespostaEstruturada(query, null, Date.now(), candidatosParaReversa);
+        await gerarRespostaEstruturada(query, null, Date.now(), candidatosParaReversa, isEmissao);
     }
 }
 
-async function processarProximaSolucao(perguntaOriginal) {
+async function processarProximaSolucao(perguntaOriginal, isEmissao = false) {
     if (filaSolucoes.length === 0) {
         appendMessage('ai', '😕 Esgotei todas as opções do meu manual técnico para este caso. Gostaria de falar com um atendente?');
         return;
     }
     const solucaoAtual = filaSolucoes.shift();
     const loadingDiv = appendLoadingCard("⚙️ Elaborando solução...");
-    await gerarRespostaEstruturada(perguntaOriginal, solucaoAtual, Date.now(), []);
+    await gerarRespostaEstruturada(perguntaOriginal, solucaoAtual, Date.now(), [], isEmissao);
     loadingDiv.remove();
 }
 
 // ═══════════════════════════════════════════════════════════
-//  RESPOSTA ESTRUTURADA
+//  RESPOSTA SEFAZ — Busca na internet via Gemini Search Grounding
 // ═══════════════════════════════════════════════════════════
-async function gerarRespostaEstruturada(pergunta, dadosBanco, logIndex, candidatosReversa = []) {
+async function gerarRespostaSefaz(pergunta) {
+    appendMessage('system', '🌐 <strong>Erro SEFAZ detectado</strong> — Consultando base de dados nacional + internet...');
+    const loadingDiv = appendLoadingCard("🌐 Pesquisando causa e solução do erro SEFAZ...");
+    const logIndex = Date.now();
+
+    const promptSefaz = `Você é um especialista em documentos fiscais eletrônicos brasileiros (CT-e, MDF-e, NF-e) e integração com a SEFAZ.
+O usuário do sistema Bsoft TMS está com o seguinte problema: "${pergunta}"
+
+Analise o erro SEFAZ mencionado e responda com:
+1. O que significa esse código/erro na SEFAZ
+2. As causas mais comuns
+3. Como resolver no sistema (passos técnicos)
+4. Dicas para evitar a recorrência
+
+Responda APENAS com JSON válido:
+{
+  "caminho": "Caminho no sistema se aplicável, ex: Transporte > Documentos > CT-e. Null se não aplicável.",
+  "como_fazer": "Explicação técnica completa com causas e solução passo a passo. Use **negrito** para termos importantes.",
+  "dicas": ["Dica preventiva 1", "Dica 2"],
+  "tem_caminho": false
+}`;
+
+    try {
+        // Gemini com Google Search Grounding para buscar informações atualizadas da SEFAZ
+        const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: promptSefaz }] }],
+                    tools: [{ google_search: {} }],
+                    generationConfig: { temperature: 0.2 }
+                })
+            }
+        );
+        const data = await response.json();
+        loadingDiv.remove();
+
+        if (!response.ok || data.error) throw new Error(data.error?.message || "Erro API SEFAZ");
+
+        const textoRaw = (data.candidates?.[0]?.content?.parts || [])
+            .filter(p => p.text).map(p => p.text).join('');
+
+        // Reutiliza o extrairJSON definido em gerarRespostaEstruturada
+        // mas aqui definimos inline pois está fora do escopo
+        let parsed = null;
+        const semMd = textoRaw.replace(/```json\s*/gi,'').replace(/```/g,'').trim();
+        try { parsed = JSON.parse(semMd); } catch(e) {
+            let d=0, s=-1;
+            for(let i=0;i<textoRaw.length;i++){
+                if(textoRaw[i]==='{'){if(d===0)s=i;d++;}
+                else if(textoRaw[i]==='}'){d--;if(d===0&&s!==-1){try{parsed=JSON.parse(textoRaw.substring(s,i+1));break;}catch(e2){d=0;s=-1;}}}
+            }
+        }
+
+        if (!parsed) {
+            renderAnswerCard(null, textoRaw.replace(/\*\*(.*?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>'), [], logIndex);
+            return;
+        }
+
+        renderAnswerCard(
+            parsed.tem_caminho ? parsed.caminho : null,
+            (parsed.como_fazer || '').replace(/\*\*(.*?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>'),
+            parsed.dicas || [],
+            logIndex
+        );
+    } catch(e) {
+        loadingDiv.remove();
+        console.error("Erro SEFAZ web:", e);
+        await gerarRespostaEstruturada(pergunta, null, logIndex, [], false);
+    }
+}
+async function gerarRespostaEstruturada(pergunta, dadosBanco, logIndex, candidatosReversa = [], isEmissao = false) {
     userQuestionsHistory.push(pergunta);
     if (userQuestionsHistory.length > 3) userQuestionsHistory.shift();
 
@@ -1065,7 +1314,11 @@ async function gerarRespostaEstruturada(pergunta, dadosBanco, logIndex, candidat
 
     let contextoBanco;
     if (dadosBanco) {
-        contextoBanco = `\nCONTEXTO DO MANUAL TÉCNICO:\nDÚVIDA CORRESPONDENTE: ${dadosBanco.erro}\nSOLUÇÃO: ${dadosBanco.solucao}\nSIMILARIDADE: ${(dadosBanco.similaridade*100).toFixed(0)}%`;
+        // Se é pergunta de emissão e o item tem a coluna "como emitir", prioriza ela
+        const conteudoEmitir = (isEmissao && dadosBanco.emitir && dadosBanco.emitir.length > 10)
+            ? `\nCOMO EMITIR (coluna prioritária): ${dadosBanco.emitir}`
+            : "";
+        contextoBanco = `\nCONTEXTO DO MANUAL TÉCNICO:\nDÚVIDA CORRESPONDENTE: ${dadosBanco.erro}\nSOLUÇÃO: ${dadosBanco.solucao}${conteudoEmitir}\nSIMILARIDADE: ${(dadosBanco.similaridade*100).toFixed(0)}%`;
     } else if (candidatosReversa && candidatosReversa.length > 0) {
         // Engenharia reversa: passa candidatos parcialmente relacionados para o modelo raciocinar
         const candidatosTexto = candidatosReversa.map((c, i) =>
@@ -1096,6 +1349,10 @@ Use raciocínio lógico: se a pergunta envolve um processo similar, aplique a l�
 	MODO ENGENHARIA REVERSA: Quando o contexto trouxer candidatos parciais, aja como um especialista experiente:
 	raciocine sobre o padrão de solução, deduza a causa provável do problema e aplique lógica inversa para chegar na resposta.
 	Por exemplo: se o usuário tem erro X e no manual há solução para erro Y similar, adapte o raciocínio.
+
+	PRIORIDADE DE EMISSÃO: Quando a pergunta for sobre como emitir, criar ou gerar um documento (CT-e, MDF-e, NF-e, etc.),
+	e o contexto trouxer o campo "COMO EMITIR (coluna prioritária)", use ESSE CAMPO como fonte principal da resposta,
+	complementando com a solução geral apenas se necessário. Nunca omita os passos de emissão.
 	
 O sistema Bsoft TMS funciona com a seguinte estrutura:
 Quando aberto o sistema, tem um menu lateral que no topo tem uma opção de pesquisar as funções digitando e abaixo os seguintes menu principais: Opções do Sistema
@@ -1240,6 +1497,32 @@ REGRAS:
         attachedFileData = null;
     }
 
+    // Extrai o primeiro bloco JSON válido de qualquer texto (resolve comportamento do Gemma 4
+    // que inclui raciocínio/pensamento antes do JSON ou ignora a instrução de "apenas JSON")
+    function extrairJSON(texto) {
+        // Tenta parse direto primeiro
+        try { return JSON.parse(texto.trim()); } catch(e) {}
+
+        // Remove blocos de markdown ```json ... ```
+        const semMarkdown = texto.replace(/```json\s*/gi, '').replace(/```/g, '').trim();
+        try { return JSON.parse(semMarkdown); } catch(e) {}
+
+        // Extrai o primeiro { ... } balanceado que aparece no texto
+        let depth = 0, start = -1;
+        for (let i = 0; i < texto.length; i++) {
+            if (texto[i] === '{') {
+                if (depth === 0) start = i;
+                depth++;
+            } else if (texto[i] === '}') {
+                depth--;
+                if (depth === 0 && start !== -1) {
+                    try { return JSON.parse(texto.substring(start, i + 1)); } catch(e) { depth = 0; start = -1; }
+                }
+            }
+        }
+        return null;
+    }
+
     async function tentarChamada(tentativa) {
         if (tentativa > 4) {
             appendMessage('ai', '❌ Erro de conexão após várias tentativas. Tente novamente.');
@@ -1251,20 +1534,34 @@ REGRAS:
                 {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: messageParts }] })
+                    body: JSON.stringify({
+                        contents: [{ parts: messageParts }],
+                        generationConfig: {
+                            temperature: 0.2,        // Mais determinístico para respeitar o formato
+                            responseMimeType: "application/json"  // Força saída JSON no Gemma 4
+                        }
+                    })
                 }
             );
             const data = await response.json();
             if (!response.ok || data.error) throw new Error(data.error?.message || "Erro na API");
 
-            let textoRaw = data.candidates[0].content.parts[0].text;
-            textoRaw = textoRaw.replace(/```json/gi, '').replace(/```/g, '').trim();
+            // Coleta todo texto retornado (Gemma 4 às vezes retorna em múltiplos parts)
+            const textoRaw = (data.candidates?.[0]?.content?.parts || [])
+                .filter(p => p.text)
+                .map(p => p.text)
+                .join('');
 
-            let parsed;
-            try {
-                parsed = JSON.parse(textoRaw);
-            } catch(e) {
-                renderAnswerCard(null, textoRaw.replace(/\*\*(.*?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>'), [], logIndex);
+            const parsed = extrairJSON(textoRaw);
+
+            if (!parsed) {
+                // Fallback: renderiza o texto puro formatado se não conseguir parsear JSON
+                const textoFormatado = textoRaw
+                    .replace(/```json|```/gi, '')
+                    .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+                    .replace(/\n/g, '<br>')
+                    .trim();
+                renderAnswerCard(null, textoFormatado || 'Não foi possível gerar uma resposta estruturada.', [], logIndex);
                 speak(textoRaw);
                 return;
             }
@@ -1320,9 +1617,17 @@ function renderAnswerCard(caminho, comoFazer, dicas, logIndex, ehFixa = false) {
     }
 
     if (dicas && dicas.length > 0) {
-        const dicasHtml = dicas.map(d =>
-            `<div class="tip-item"><span>💡</span><span>${d.replace(/\*\*(.*?)\*\*/g,'<b>$1</b>')}</span></div>`
-        ).join('');
+        // Detecta se a dica menciona um caminho ou ação navegável no sistema
+        const dicasHtml = dicas.map(d => {
+            const textoFormatado = d.replace(/\*\*(.*?)\*\*/g,'<b>$1</b>');
+            // Extrai referência de caminho/ação entre [] ou após "Vá em" / "Acesse"
+            const matchAcao = d.match(/\[([^\]]+)\]/) || d.match(/(?:Vá em|Acesse|Clique em|Menu)\s*[:\-]?\s*([^.]+)/i);
+            const linkTermo = matchAcao ? matchAcao[1].trim() : null;
+            const linkHtml = linkTermo && linkTermo.length > 3 && linkTermo.length < 80
+                ? `<a class="tip-link" onclick="fillAndSend('${linkTermo.replace(/'/g,"\\'")}')">🔗 Ir para solução</a>`
+                : '';
+            return `<div class="tip-item"><span>💡</span><span>${textoFormatado}${linkHtml}</span></div>`;
+        }).join('');
 
         html += `<div class="answer-section">
             <div class="section-label tip"><div class="section-icon tip">💡</div>Dicas Adicionais</div>
@@ -1334,7 +1639,7 @@ function renderAnswerCard(caminho, comoFazer, dicas, logIndex, ehFixa = false) {
 
     html += `<div class="feedback-area">
         ${fixaBadge}
-        <span>${ehFixa ? 'Continua útil?' : 'IMPORTANTE! Se minha resposta ajudou ou não deixa seu feedback clicando no positivo ou negativo =>'}</span>
+        <span>${ehFixa ? 'Continua útil?' : 'Ajudou?'}</span>
         <button class="feedback-btn" onclick="saveFeedback(${logIndex},'positivo',this)">👍</button>
         <button class="feedback-btn" onclick="saveFeedback(${logIndex},'negativo',this)">👎</button>
         ${filaSolucoes.length > 0 && !ehFixa ? `<button class="feedback-btn next" onclick="fillAndSend('Próximo')">➡️ Ver outra solução</button>` : ''}
@@ -1408,7 +1713,7 @@ function logSearch(query, found) {
     catch(e) { console.error(e); }
 }
 
-function saveFeedback(logIndex, type, btn) {
+async function saveFeedback(logIndex, type, btn) {
     const feedbackArea = btn.parentElement;
     const card = feedbackArea.closest('.answer-card');
 
@@ -1416,10 +1721,10 @@ function saveFeedback(logIndex, type, btn) {
         body: JSON.stringify({ pergunta: lastQuery||"?", encontrou:"Sim", feedback: type==='positivo'?"Positivo":"Negativo" }) });
 
     if (type === 'positivo') {
-        // 🔒 Fixa a resposta como absoluta para perguntas similares no futuro
+        // 🔒 Fixa a resposta como absoluta online para todos os usuários
         if (card && card._dadosResposta && lastQuery) {
-            salvarRespostaFixa(lastQuery, card._dadosResposta);
-            feedbackArea.innerHTML = "<span style='color:#166534;font-weight:700;'>✅ Obrigado! Resposta fixada como referência futura.</span>";
+            await salvarRespostaFixa(lastQuery, card._dadosResposta);
+            feedbackArea.innerHTML = "<span style='color:#166534;font-weight:700;'>✅ Obrigado! Resposta fixada para todos os usuários.</span>";
         } else {
             feedbackArea.innerHTML = "<span style='color:#166534;font-weight:700;'>Obrigado! 👍</span>";
         }
