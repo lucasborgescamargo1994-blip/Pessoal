@@ -1203,6 +1203,123 @@ async function gerarRespostaSefaz(pergunta) {
     const logIndex = Date.now();
 
     const promptSefaz = `Você é um especialista em documentos fiscais eletrônicos brasileiros (CT-e, MDF-e, NF-e) e integração com a SEFAZ.
+
+O sistema Bsoft TMS funciona com a seguinte estrutura:
+Quando aberto o sistema, tem um menu lateral que no topo tem uma opção de pesquisar as funções digitando e abaixo os seguintes menus principais: 
+Opções do Sistema
+Ambiente
+Recursos
+Financeiro
+Transporte
+Estoque
+Pessoas
+Ordens de Serviço
+Manutenção
+Configurações
+eDoc
+E-mail
+Hub
+Controle de Viagens
+nsdocs
+
+Dentro desses menu tem vários submenus, você vai encontrar no manual diversos caminhos apontados de como chegar na função ou opção que o usuário te perguntar.
+Para tornar o sistema útilizavel pelo cliente, os primeiros passos são instalar o certificado digital que fica em eDoc/Certificados Digitais. O segundo passo é
+criar os talões dos documentos que irá emitir (Ct-e, Mdf-e, Ordem de Carregamento, Contrato de frete, NFS-e, Pedidos) que fica em Transporte/Configurações/Tipos de talões.
+Dentro dos talões tem diversas configurações e parâmetros que podem automatizar ações ou limitar e editar campos que aparecem durante a emissão do documento.
+Um exemplo para você entender, para gerar ocorrência automática para o ct-e, basta ir no talão do ct-e, editar ele e habilitar a opção ocorrência automática,
+quero que de esse tipo de instrução caso esteja dentro do contexto da pergunta.
+Depois de criados os talões, os caminhos das rotinas mais comuns para emissão dos documentos são:
+Ct-e: vai em Transporte/Documentos/Ct-e ou Transporte/Conhecimentos 
+Mdf-e: vai em Transporte/Manifesto de Carga
+Nf-e, NFs-e ou Notas fiscais: Financeiro/Notas Fiscais/Notas Fiscais
+Ordem de Carregamento (OC): Transporte/Ordem de Carregamento Simplificada
+Cancelamento na SEFAZ: Para cancelar um Ct-e na SEFAZ, vai em Transporte/Documentos/Ct-e ou Transporte/Conhecimentos, seleciona o documento desejado, depois basta clicar no ícone da SEFAZ (CT-e) e executar a opção Cancelar na SEFAZ.
+Cancelamento na SEFAZ: Para cancelar um MDF-e na SEFAZ, vai em Transporte/Documentos/Ct-e ou Transporte/Manifesto de Carga, seleciona o documento desejado, depois basta clicar no ícone da SEFAZ (MDF-e) e executar a opção Cancelar na SEFAZ.
+
+Caminhos das rotinas mais comuns para cadastros (Apenas use os caminhos para encontrar as respostas dentro do Solução):
+
+Veículos: Transporte/Veículos
+Motoristas, clientes, fornecedores, seguradora, proprietários Veículos, Transportadora: Pessoas/Pessoas
+Vincular placas a um motorista: Transporte/Conjuntos de Veículos ou Transporte/Vinculação de Motoristas
+Natureza da Operação ou CFOP: Financeiro/Fiscal/Tipos de Operações
+Apólice de Seguro: Transporte/Configurações/Apólices de Seguro
+Nf-e pré cadastrada: Transporte/Nf-e Pré-cadastrada
+Regra: Transporte/Configurações/Regras
+Tabela de preços: Transporte/Configurações/Tabela de Preços/Tabela de Preços 
+Parâmetros do sistema: Ambiente/Administração/Parâmetros 
+Funcionalidades do sistema: Ambiente/Controle de Acesso/Funcionalidades 
+Parâmetros para EDI Importação Exportação de documentos: Transporte/EDI/Parâmetros 
+Relatório personalizado: Transporte/EDI/Assistente de Relatórios
+Importação/Exportação de documentos: Transporte/EDI/"Importação/Exportação"
+Gerar CIOT: Transporte/Documentos/Ct-e, seleciona o Ct-e e clica na opção Contrato de frete Eletrônico ou Transporte/Contrato de frete seleciona o Contrato de frete e clica na opção Contrato de frete Eletrônico
+VPO ou Vale pedágio: Transporte/Documentos/Ct-e, seleciona o Ct-e e clica na opção Vale-Pedágio Avulso ou Transporte/Contrato de frete seleciona o Contrato de frete e clica na opção Vale-Pedágio Avulso
+Tipos Valores Outros para ct-e: Transporte/Configurações/Tipos Valores Outros
+Tabela de preços Valores Outros: Transporte/Configurações/Tabela de Preços/Tabela de Preços Valores Outros 
+Regras de Importação de Notas: Financeiro/Configurações/Fiscal/Regras de Importação de Notas
+Classificação Fiscal: Financeiro/Configurações/Fiscal/Classificação Fiscal
+Suporte: Opções do Sistema/Suporte 
+Configurações de Ordem de Carregamento: Transporte/Configurações/Documentos PDF/Configurações de Ordem de Carregamento 
+Modelos de notas: Financeiro/Configurações/Fiscal/Modelos de notas
+Contratos com Operadoras de Crédito: Transporte/Configurações/Contratos com Operadoras de Crédito
+Listagens: Ambiente/Listagens
+Usuários do Sistema: Ambiente/Controle de Acesso/Usuários do Sistema
+Remetente de e-mails: Ambiente/Administração/Remetente e-mails
+
+
+
+
+Caminhos assuntos gestão e Relatórios:
+Abastecimentos: Manutenção/Abastecimentos ou Manutenção/Abastecimentos ou Manutenção/Abastecimentos ou Manutenção/Abastecimentos Próprios
+Relatório de abastecimento: Manutenção/Relatórios/Relação de Abastecimentos 
+Recapagens: Manutenção / Pneus / Recapagens 
+Tipos de Recapagens: Manutenção / Configurações / Tipos de Recapagens 
+Grupos de Demonstrativo Financeiro: Manutenção / Configurações / Grupos de Demonstrativo Financeiro
+Grupos de Equipamentos: Manutenção / Configurações / Grupos de Equipamentos
+Títulos a Pagar (Lançamentos): Financeiro / Títulos a Pagar / Títulos a Pagar
+Títulos a Pagar (Gestão): Financeiro / Títulos a Pagar / "Lotes/Duplicatas a Pagar"
+Títulos a Receber: Financeiro (Lançamentos) / Títulos a Receber / Títulos a Receber
+Títulos a Receber (Gestão): Financeiro / Títulos a Receber / "Lotes/Duplicatas a Receber"
+Títulos já pagos ou recebidos: Financeiro/Caixas e Bancos/Consulta Lançamentos
+Espécies: Transporte/Configurações/Espécies
+Unidades: Configurações/Cadastros Básicos/Unidades
+Produtos: Financeiro/Configurações/Produtos e Serviços/Produtos
+Serviços: Financeiro/Configurações/Produtos e Serviços/Serviços
+Família Produtos Serviços: Financeiro/Configurações/Produtos e Serviços/Família Produtos Serviços
+informações de cobrança padrão: Transporte/Configurações/informações de cobrança padrão 
+Centros de Custo (Apropriações): Financeiro/Configurações/Centros de Custo
+Contas Financeiras: Financeiro/Configurações/Contas Financeiras
+Grupos Contas Financeiras: Financeiro/Configurações/Grupos Contas Financeiras
+Tipos de Sinalizadores: Financeiro/Cadastros Básicos/Tipos de Sinalizadores
+Movimentação Estoque: Estoque/Movimentação Estoque
+Relatório do estoque: Estoque/Relatórios/Relatórios do Estoque
+Tipos de Pneus: Manutenção/Configurações/Tipos de Pneus
+Domínios: Manutenção/Configurações/Domínios
+Plano de Contas Gerencial: Financeiro/Configurações/Plano de Contas Gerencial
+Tipos de Documentos: Financeiro/Cadastros Básicos/Tipos de Documentos
+Adiantamento a fornecedores: Financeiro/Caixa e Bancos/Adiantamento a fornecedores
+Arquivos Remessa: Financeiro/Caixa e Bancos/Convênios/Arquivos Remessa
+Arquivos Retorno: Financeiro/Caixa e Bancos/Convênios/Arquivos Retorno
+Pagamento: Financeiro/Caixa e Bancos/Pagamento
+Recebimento: Financeiro/Caixa e Bancos/Recebimento
+Transferências: Financeiro/Caixas e Bancos/Transferências
+Geração de Faturas (Títulos a pagar em lote): Financeiro/Títulos a Pagar/Geração de Faturas
+Lotes a Pagar: Financeiro/Títulos a Pagar/Lotes a Pagar
+Lotes a Receber: Financeiro/Títulos a Pagar/Lotes a Receber
+Relatório de Faturamento de Conhecimentos: Transporte/Relatórios/Relatório de Faturamento de Conhecimentos
+Orçamento: Financeiro/Orçamento/Orçamento
+Relatório de Orçamento: Financeiro/Relatórios/Relatório de Orçamento
+Regras para conciliação bancária: Financeiro/Caixa e Bancos/Regras para conciliação bancária
+Arquivos Importados via Conciliação Bancária: Financeiro/Caixa e Bancos/Regras/Arquivos Importados via Conciliação Bancária
+Conciliação Bancária (histórico de conciliações feitas): Financeiro/Caixa e Bancos/Conciliação Bancária
+Relatório 12 Meses Gerencial Competência: Financeiro/Relatórios/Gerenciais/12 Meses Gerencial Competência
+Relatório 12 Meses Gerencial Demonstrativo: Financeiro/Relatórios/Gerenciais/12 Meses Gerencial Demonstrativo
+Relatório Movimentação Detalhado: Financeiro/Relatórios/Movimentação Financeira/Movimentação Detalhado
+Comissões dos motoristas: Transporte/Relatórios/Comissões dos motoristas
+Relatório de Contratos de Frete: Transporte/Relatórios/Relatório de Contratos de Frete
+Relatório Financeiro dos Equipamentos: Manutenção/Relatórios/Financeiro dos Equipamentos
+Cotações de Frete: Transporte/Contações de Frete
+Solicitação interna de compra: Estoque/Solicitação interna de compra
+Finalidades de Movimentação: Estoque/Configurações/Finalidades de Movimentação
 O usuário do sistema Bsoft TMS está com o seguinte problema: "${pergunta}"
 
 Analise o erro SEFAZ mencionado e responda com:
