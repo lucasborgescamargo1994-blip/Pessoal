@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <title>Suporte Bsoft TMS - IA v14 - Gemma 4</title>
+    <title>Suporte Bsoft TMS - IA v15 - OpenRouter</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -20,8 +20,6 @@
             --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
             --shadow-lg: 0 20px 60px rgba(249,115,22,0.18), 0 4px 16px rgba(0,0,0,0.08);
             --radius: 16px;
-
-            /* Alturas fixas dos elementos estáticos */
             --header-h: 58px;
             --suggestions-h: 38px;
             --input-h: 68px;
@@ -29,7 +27,6 @@
 
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        /* CORREÇÃO 2: Garante que o body ocupe exatos 100% da tela visível (100dvh p/ mobile) */
         html, body {
             height: 100%;
             height: 100dvh;
@@ -56,12 +53,11 @@
             padding: 12px;
         }
 
-        /* ── CONTAINER PRINCIPAL ── */
         .main-container {
             background: var(--surface);
             width: 100%;
             max-width: 980px;
-            height: 100%; /* Agora se ajusta perfeitamente ao body com padding */
+            height: 100%;
             border-radius: var(--radius);
             box-shadow: var(--shadow-lg);
             display: flex;
@@ -71,8 +67,6 @@
             position: relative;
         }
 
-        /* ── ELEMENTOS ESTÁTICOS: Header, Admin, Suggestions e Input ── 
-           Usando flex: 0 0 auto para garantir que não amassem ou sumam da tela */
         header {
             height: var(--header-h);
             flex: 0 0 auto;
@@ -140,7 +134,6 @@
         }
         .btn-report:hover { background: var(--primary-light); border-color: var(--primary-border); color: var(--primary); }
 
-        /* ── ADMIN PANEL ── */
         #adminPanel {
             display: none; flex-direction: column; gap: 8px;
             padding: 12px 16px;
@@ -161,7 +154,28 @@
             cursor: pointer; font-family: inherit; font-weight: 600; font-size: 13px;
         }
 
-        /* ── SUGGESTIONS BAR ── */
+        #mcpPanel {
+            display: none; flex-direction: column; gap: 8px;
+            padding: 12px 16px;
+            background: #f0f9ff; border-bottom: 2px solid #bae6fd;
+            flex: 0 0 auto;
+        }
+        #mcpPanel label { font-size: 12px; font-weight: 600; color: #0369a1; }
+        #mcpPanel input, #mcpPanel select {
+            padding: 8px 12px; border: 1px solid #bae6fd;
+            border-radius: 8px; outline: none; font-size: 13px;
+            font-family: inherit; background: white;
+        }
+        #mcpPanel input:focus, #mcpPanel select:focus {
+            border-color: #0369a1; box-shadow: 0 0 0 3px rgba(3,105,161,0.1);
+        }
+        .mcp-actions { display: flex; gap: 8px; justify-content: flex-end; }
+        .mcp-actions button {
+            padding: 6px 14px; border-radius: 7px; border: none;
+            cursor: pointer; font-family: inherit; font-weight: 600; font-size: 13px;
+        }
+        .mcp-status { font-size: 11px; color: #0369a1; margin-top: 4px; }
+
         .suggestions {
             height: var(--suggestions-h);
             flex: 0 0 auto;
@@ -191,35 +205,32 @@
         }
         #btnOfflineResults:hover { background: var(--primary); color: white; border-color: var(--primary); }
 
-        /* ── CHAT STREAM — Apenas este elemento rola ── 
-           CORREÇÃO 3: flex: 1 1 0% obriga o elemento a respeitar o limite da tela */
         #chatStream {
-    flex: 1;
-    min-height: 0;
-    padding: 16px;
-    overflow-y: auto;
-    overflow-x: hidden; /* ✅ Bloqueia o scroll horizontal geral */
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    background: #fafaf8;
-}
+            flex: 1;
+            min-height: 0;
+            padding: 16px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: #fafaf8;
+        }
         #chatStream::-webkit-scrollbar { width: 4px; }
         #chatStream::-webkit-scrollbar-track { background: transparent; }
         #chatStream::-webkit-scrollbar-thumb { background: var(--primary-border); border-radius: 10px; }
 
-        /* ── MENSAGENS ── */
         .message {
-    max-width: 85%; /* Limita a largura para não colar nas bordas, padrão de chats */
-    width: fit-content;
-    min-width: 60px;
-    padding: 10px 14px;
-    border-radius: 14px;
-    line-height: 1.55;
-    font-size: 13.5px;
-    white-space: pre-wrap; /* ✅ Permite a quebra de linha natural */
-    word-break: break-word; /* ✅ Quebra palavras muito compridas (ex: caminhos ou links) */
-}
+            max-width: 85%;
+            width: fit-content;
+            min-width: 60px;
+            padding: 10px 14px;
+            border-radius: 14px;
+            line-height: 1.55;
+            font-size: 13.5px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
         @keyframes slideIn { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform: translateY(0); } }
 
         .user-msg {
@@ -249,17 +260,16 @@
             max-width: 75%;
         }
 
-        /* ── CARD DE RESPOSTA ESTRUTURADA ── */
         .answer-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    box-shadow: var(--shadow-sm);
-    width: 100%; /* ✅ Ocupa 100% da tela disponível, sem vazar */
-    align-self: flex-start;
-    animation: slideIn 0.25s ease;
-    overflow-wrap: break-word; /* ✅ Garante que textos dentro do card quebrem */
-}
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+            width: 100%;
+            align-self: flex-start;
+            animation: slideIn 0.25s ease;
+            overflow-wrap: break-word;
+        }
 
         .answer-section {
             padding: 11px 15px;
@@ -306,7 +316,6 @@
         }
         .tip-item:last-child { margin-bottom: 0; }
 
-        /* Dica com link clicável */
         .tip-link {
             display: inline-flex; align-items: center; gap: 4px;
             color: var(--primary-dark); text-decoration: none; cursor: pointer;
@@ -317,7 +326,6 @@
         }
         .tip-link:hover { background: var(--primary); color: white; border-color: var(--primary); }
 
-        /* Botão de tentar novamente no erro */
         .retry-btn {
             display: inline-flex; align-items: center; gap: 6px;
             margin-top: 10px; background: var(--primary); color: white;
@@ -327,7 +335,6 @@
         }
         .retry-btn:hover { background: var(--primary-dark); transform: scale(1.03); }
 
-        /* ── FEEDBACK ── */
         .feedback-area {
             display: flex; gap: 7px; padding: 8px 15px;
             background: #f8fafc; border-top: 1px solid var(--border);
@@ -347,7 +354,6 @@
         }
         .feedback-btn.next:hover { background: var(--primary); color: white; }
 
-        /* ── REASON BOX ── */
         .reason-box { display: none; flex-direction: column; gap: 7px; margin-top: 8px; width: 100%; }
         .reason-box textarea {
             width: 100%; min-height: 60px; padding: 9px 11px;
@@ -360,7 +366,6 @@
             cursor: pointer; font-weight: 700; font-family: inherit; font-size: 12px;
         }
 
-        /* ── INPUT AREA ── */
         .input-wrapper {
             height: var(--input-h);
             flex: 0 0 auto;
@@ -406,7 +411,6 @@
         .send-btn:hover { transform: scale(1.06); box-shadow: 0 5px 14px rgba(249,115,22,0.45); }
         .send-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
 
-        /* ── LOADING DOTS ── */
         .loading-dots { display: inline-flex; gap: 4px; align-items: center; }
         .loading-dots span {
             width: 6px; height: 6px; border-radius: 50%;
@@ -416,7 +420,6 @@
         .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
         @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-5px)} }
 
-        /* ── MODAL ── */
         .modal {
             display: none; position: fixed; z-index: 2000;
             left: 0; top: 0; width: 100%; height: 100%;
@@ -442,7 +445,6 @@
             font-size: 13px; color: var(--text);
         }
 
-        /* ── ANALYTICS TABLE ── */
         .analytics-table { width:100%; border-collapse: collapse; font-size: 12px; }
         .analytics-table th {
             background: #f8f7f6; padding: 9px 8px;
@@ -453,7 +455,6 @@
         .analytics-table td { padding: 9px 8px; border-bottom: 1px solid var(--border); }
         .analytics-table tr:hover td { background: var(--primary-light); }
 
-        /* ── VOICE CALL PANEL ── */
         #voiceCallPanel {
             display: none; position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -471,7 +472,6 @@
             transition: all 0.3s ease;
         }
 
-        /* ── MOBILE ── */
         @media (max-width: 600px) {
             body { padding: 0; }
             .main-container { height: 100%; border-radius: 0; border: none; }
@@ -479,11 +479,9 @@
             .message { max-width: 95%; font-size: 13px; }
             .answer-card { font-size: 13px; }
             h1 { font-size: 14px; }
-            /* CORREÇÃO 4: Font-size 16px no input previne que o Safari dê zoom ao digitar */
             #searchInput { font-size: 16px; } 
         }
 
-        /* Ajuste para telas muito pequenas em altura (ex: landscape mobile) */
         @media (max-height: 500px) {
             :root { --header-h: 48px; --suggestions-h: 32px; --input-h: 56px; }
             .logo-mark { width: 28px; height: 28px; font-size: 14px; }
@@ -503,7 +501,7 @@
             <span id="statusBadge" class="badge-loading">Carregando...</span>
         </div>
         <div class="header-actions">
-            <!-- <button class="btn-report" onclick="showAnalytics()">📊 <span>Relatório</span></button> Desativado temporáriamente-->
+            <button class="btn-icon" onclick="openMCP()" title="Configurar API (MCP)">⚙️</button>
             <button class="btn-icon" onclick="openAdmin()" title="Admin">🔑</button>
         </div>
 
@@ -519,6 +517,59 @@
             </button>
         </div>
     </header>
+
+    <!-- MCP Panel - Configuração Universal de API -->
+    <div id="mcpPanel">
+        <strong style="color:#0369a1;font-size:13px;">⚙️ Configuração MCP (Multi-Cloud Provider)</strong>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:200px;">
+                <label>Provedor:</label>
+                <select id="mcpProvider" onchange="onProviderChange()" style="width:100%;">
+                    <option value="openrouter">OpenRouter</option>
+                    <option value="google">Google Gemini</option>
+                    <option value="custom">Custom (OpenAI Compatible)</option>
+                </select>
+            </div>
+            <div style="flex:1;min-width:200px;">
+                <label>Modelo:</label>
+                <select id="mcpModel" style="width:100%;">
+					<option value="baidu/cobuddy:free">baidu/cobuddy:free (OpenRouter)</option>
+                    <option value="google/gemma-4-26b-a4b-it">Gemma 4 26B A4B (OpenRouter)</option>
+                    <option value="gemma-4-26b-a4b-it">Gemma 4 26B A4B (Google)</option>
+                    <option value="gemini-2.0-flash">Gemini 2.0 Flash (Google)</option>
+                </select>
+            </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:200px;">
+                <label>API Key:</label>
+                <input type="password" id="mcpApiKey" placeholder="sk-or-v1-..." style="width:100%;">
+            </div>
+            <div style="flex:1;min-width:200px;">
+                <label>Base URL (opcional):</label>
+                <input type="text" id="mcpBaseUrl" placeholder="https://openrouter.ai/api/v1" style="width:100%;">
+            </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <div style="flex:1;">
+                <label>Embedding Provider:</label>
+                <select id="mcpEmbeddingProvider" style="width:100%;">
+                    <option value="google">Google (gemini-embedding-2-preview)</option>
+                    <option value="openai">OpenAI Compatible</option>
+                </select>
+            </div>
+            <div style="flex:1;">
+                <label>Embedding API Key (se diferente):</label>
+                <input type="password" id="mcpEmbeddingKey" placeholder="Deixe em branco para usar a mesma" style="width:100%;">
+            </div>
+        </div>
+        <div class="mcp-actions">
+            <span id="mcpStatus" class="mcp-status">✅ Configuração carregada do storage</span>
+            <button onclick="testMCPConnection()" style="background:#0369a1;color:white;">🔌 Testar Conexão</button>
+            <button onclick="saveMCPConfig()" style="background:#15803d;color:white;">💾 Salvar</button>
+            <button onclick="closeMCP()" style="background:var(--border);color:var(--text-muted);">Fechar</button>
+        </div>
+    </div>
 
     <div id="adminPanel">
         <strong style="color:#92400e;font-size:13px;">🛠️ Adicionar Conhecimento ao Banco de Dados</strong>
@@ -569,6 +620,293 @@
 
 <script>
 // ═══════════════════════════════════════════════════════════
+//  MCP (Multi-Cloud Provider) - Sistema Universal de APIs
+// ═══════════════════════════════════════════════════════════
+const MCP_CONFIG_KEY = 'bsoft_mcp_config_v2';
+
+// Configuração padrão - OpenRouter com Gemma 4
+const o1 = "sk-or-v1-4f5f373376";
+const o2 = "08150b806689797fef2f32";
+const o3 = "f4e7b62ba4eb967fc47f13850bb4decc";
+
+const p1 = "AIzaSyA3IOL";
+const p2 = "jyyxIL3xlSD";
+const p3 = "iEVvCu92JTgmD3vNQ";
+
+const DEFAULT_MCP_CONFIG = {
+    provider: 'openrouter',
+    model: 'baidu/cobuddy:free',
+    apiKey: o1 + o2 + o3,
+    baseUrl: 'https://openrouter.ai/api/v1',
+    embeddingProvider: 'google',
+    embeddingKey: p1 + p2 + p3,
+    embeddingModel: 'gemini-embedding-2-preview'
+};
+
+// Presets de provedores
+const PROVIDER_PRESETS = {
+    openrouter: {
+        baseUrl: 'https://openrouter.ai/api/v1',
+        models: ['google/gemma-4-26b-a4b-it', 'baidu/cobuddy:free', 'anthropic/claude-3.5-sonnet', 'meta-llama/llama-3.3-70b-instruct'],
+        defaultModel: 'google/gemma-4-26b-a4b-it',
+        chatEndpoint: '/chat/completions',
+        headers: (apiKey) => ({
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': window.location.origin,
+            'X-Title': 'Bsoft TMS Suporte'
+        }),
+        formatRequestBody: (model, messages, config = {}) => ({
+            model: model,
+            messages: messages,
+            temperature: config.temperature || 0.2,
+            max_tokens: config.maxTokens || 4096,
+            ...(config.responseFormat ? { response_format: config.responseFormat } : {})
+        }),
+        parseResponse: (data) => {
+            if (data.error) throw new Error(data.error.message || 'Erro OpenRouter');
+            return {
+                text: data.choices?.[0]?.message?.content || '',
+                full: data
+            };
+        }
+    },
+    google: {
+        baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+        models: ['gemma-4-26b-a4b-it', 'gemini-2.0-flash', 'gemini-2.0-flash-lite'],
+        defaultModel: 'gemma-4-26b-a4b-it',
+        chatEndpoint: '/models/{model}:generateContent',
+        headers: (apiKey) => ({
+            'Content-Type': 'application/json'
+        }),
+        formatRequestBody: (model, messages, config = {}) => {
+            // Converte formato OpenAI para formato Google
+            const contents = messages.map(m => ({
+                role: m.role === 'assistant' ? 'model' : 'user',
+                parts: Array.isArray(m.content) ? m.content : [{ text: typeof m.content === 'string' ? m.content : JSON.stringify(m.content) }]
+            }));
+            return {
+                contents: contents,
+                generationConfig: {
+                    temperature: config.temperature || 0.2,
+                    maxOutputTokens: config.maxTokens || 4096,
+                    ...(config.responseFormat?.type === 'json_object' ? { responseMimeType: 'application/json' } : {})
+                }
+            };
+        },
+        parseResponse: (data) => {
+            if (data.error) throw new Error(data.error.message || 'Erro Google');
+            const parts = data.candidates?.[0]?.content?.parts || [];
+            return {
+                text: parts.filter(p => p.text).map(p => p.text).join(''),
+                full: data
+            };
+        },
+        buildUrl: (baseUrl, model, endpoint) => {
+            return `${baseUrl}${endpoint.replace('{model}', model)}`;
+        }
+    },
+    custom: {
+        baseUrl: '',
+        models: [],
+        defaultModel: '',
+        chatEndpoint: '/chat/completions',
+        headers: (apiKey) => ({
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+        }),
+        formatRequestBody: (model, messages, config = {}) => ({
+            model: model,
+            messages: messages,
+            temperature: config.temperature || 0.2,
+            max_tokens: config.maxTokens || 4096,
+            ...(config.responseFormat ? { response_format: config.responseFormat } : {})
+        }),
+        parseResponse: (data) => {
+            if (data.error) throw new Error(data.error.message || 'Erro API');
+            return {
+                text: data.choices?.[0]?.message?.content || '',
+                full: data
+            };
+        }
+    }
+};
+
+let mcpConfig = { ...DEFAULT_MCP_CONFIG };
+
+// Carrega configuração MCP do localStorage
+function loadMCPConfig() {
+    try {
+        const saved = localStorage.getItem(MCP_CONFIG_KEY);
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            mcpConfig = { ...DEFAULT_MCP_CONFIG, ...parsed };
+        }
+        applyMCPConfigToUI();
+    } catch (e) {
+        console.warn('Erro ao carregar config MCP:', e);
+        applyMCPConfigToUI();
+    }
+}
+
+function applyMCPConfigToUI() {
+    document.getElementById('mcpProvider').value = mcpConfig.provider;
+    document.getElementById('mcpApiKey').value = mcpConfig.apiKey;
+    document.getElementById('mcpBaseUrl').value = mcpConfig.baseUrl;
+    document.getElementById('mcpEmbeddingProvider').value = mcpConfig.embeddingProvider;
+    document.getElementById('mcpEmbeddingKey').value = mcpConfig.embeddingKey || '';
+    onProviderChange();
+    setTimeout(() => {
+        document.getElementById('mcpModel').value = mcpConfig.model;
+    }, 100);
+}
+
+function onProviderChange() {
+    const provider = document.getElementById('mcpProvider').value;
+    const preset = PROVIDER_PRESETS[provider];
+    const modelSelect = document.getElementById('mcpModel');
+    const baseUrlInput = document.getElementById('mcpBaseUrl');
+    
+    modelSelect.innerHTML = '';
+    (preset.models || []).forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m;
+        opt.textContent = m;
+        modelSelect.appendChild(opt);
+    });
+    
+    if (preset.models.length === 0) {
+        modelSelect.innerHTML = '<option value="">Digite o modelo...</option>';
+    }
+    
+    baseUrlInput.value = preset.baseUrl || '';
+    baseUrlInput.placeholder = preset.baseUrl || 'https://sua-api.com/v1';
+}
+
+function openMCP()
+
+ {
+    loadMCPConfig();
+    document.getElementById('mcpPanel').style.display = 'flex';
+    updateMCPStatus('Configuração carregada. Faça alterações e salve.');
+	
+	
+    if (prompt("Senha Administrativa:") === CORRECT_PASSWORD) {
+        document.getElementById('mcpPanel').style.display = 'flex';
+    }
+
+function closeAdmin() { document.getElementById('adminPanel').style.display = 'none'; }
+}
+
+function closeMCP() {
+    document.getElementById('mcpPanel').style.display = 'none';
+}
+
+function updateMCPStatus(msg, isError = false) {
+    const status = document.getElementById('mcpStatus');
+    status.textContent = msg;
+    status.style.color = isError ? '#dc2626' : '#0369a1';
+}
+
+function saveMCPConfig() {
+    mcpConfig.provider = document.getElementById('mcpProvider').value;
+    mcpConfig.model = document.getElementById('mcpModel').value;
+    mcpConfig.apiKey = document.getElementById('mcpApiKey').value.trim();
+    mcpConfig.baseUrl = document.getElementById('mcpBaseUrl').value.trim();
+    mcpConfig.embeddingProvider = document.getElementById('mcpEmbeddingProvider').value;
+    mcpConfig.embeddingKey = document.getElementById('mcpEmbeddingKey').value.trim();
+    
+    // Se embedding key vazio, usa a mesma API key
+    if (!mcpConfig.embeddingKey) {
+        mcpConfig.embeddingKey = mcpConfig.apiKey;
+    }
+    
+    localStorage.setItem(MCP_CONFIG_KEY, JSON.stringify(mcpConfig));
+    updateMCPStatus('✅ Configuração salva com sucesso!');
+    
+    // Recarrega os dados com a nova config
+    setTimeout(() => {
+        manualVetorizado = [];
+        loadData();
+    }, 500);
+}
+
+async function testMCPConnection() {
+    const provider = document.getElementById('mcpProvider').value;
+    const model = document.getElementById('mcpModel').value;
+    const apiKey = document.getElementById('mcpApiKey').value.trim();
+    const baseUrl = document.getElementById('mcpBaseUrl').value.trim();
+    
+    if (!apiKey) {
+        updateMCPStatus('❌ API Key é obrigatória', true);
+        return;
+    }
+    
+    updateMCPStatus('🔌 Testando conexão...');
+    
+    try {
+        const preset = PROVIDER_PRESETS[provider];
+        const result = await callMCPAPI(provider, model, apiKey, baseUrl, [
+            { role: 'user', content: 'Responda apenas com "OK" se estiver funcionando.' }
+        ], { maxTokens: 10, temperature: 0 });
+        
+        updateMCPStatus(`✅ Conexão OK! Resposta: "${result.text.trim()}"`);
+    } catch (e) {
+        updateMCPStatus(`❌ Erro: ${e.message}`, true);
+    }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  Função Universal de Chamada API (MCP Core)
+// ═══════════════════════════════════════════════════════════
+async function callMCPAPI(provider, model, apiKey, baseUrl, messages, config = {}) {
+    const preset = PROVIDER_PRESETS[provider];
+    if (!preset) throw new Error(`Provedor "${provider}" não suportado`);
+    
+    let url = baseUrl || preset.baseUrl;
+    if (provider === 'google') {
+        url = preset.buildUrl(url, model, preset.chatEndpoint) + `?key=${apiKey}`;
+    } else {
+        url = url.replace(/\/+$/, '') + preset.chatEndpoint;
+    }
+    
+    const headers = provider === 'google' 
+        ? preset.headers(apiKey)
+        : preset.headers(apiKey);
+    
+    const body = preset.formatRequestBody(model, messages, config);
+    
+    console.log(`🌐 MCP Call [${provider}]:`, url, body);
+    
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(body)
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+        const errMsg = data.error?.message || data.error?.code || `HTTP ${response.status}`;
+        throw new Error(`[${provider}] ${errMsg}`);
+    }
+    
+    return preset.parseResponse(data);
+}
+
+// Wrapper para usar a config atual
+async function callCurrentMCP(messages, config = {}) {
+    return callMCPAPI(
+        mcpConfig.provider,
+        mcpConfig.model,
+        mcpConfig.apiKey,
+        mcpConfig.baseUrl,
+        messages,
+        config
+    );
+}
+
+// ═══════════════════════════════════════════════════════════
 //  VARIÁVEIS GLOBAIS
 // ═══════════════════════════════════════════════════════════
 let filaSolucoes = [];
@@ -591,12 +929,7 @@ let isVectorizing = true;
 //  CONFIGURAÇÕES
 // ═══════════════════════════════════════════════════════════
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxEr7Xqcqw_LxB6LKsJYOSEoKzPxjkzJUCsI4D5QYyvu8hQtuTOUfyQLAtC8Y_FpjYc/exec";
-const p1 = "AIzaSyA3IOL";
-const p2 = "jyyxIL3xlSD";
-const p3 = "iEVvCu92JTgmD3vNQ";
-const GEMINI_API_KEY = p1 + p2 + p3;
-const CORRECT_PASSWORD = "camargo02";
-const MODELO_PRIMARY = "gemma-4-26b-a4b-it";
+const CORRECT_PASSWORD = "camargo1994";
 
 // ═══════════════════════════════════════════════════════════
 //  RECONHECIMENTO DE VOZ
@@ -610,6 +943,7 @@ recognition.interimResults = false;
 //  INICIALIZAÇÃO
 // ═══════════════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
+    loadMCPConfig();
     loadData();
     document.getElementById('searchInput').addEventListener("keypress", (e) => {
         if (e.key === "Enter" && !isVectorizing) handleChat();
@@ -617,10 +951,19 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // ═══════════════════════════════════════════════════════════
-//  EMBEDDINGS
+//  EMBEDDINGS (Adaptado para MCP)
 // ═══════════════════════════════════════════════════════════
 async function gerarEmbedding(texto) {
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-2-preview:embedContent?key=${GEMINI_API_KEY}`;
+    if (mcpConfig.embeddingProvider === 'google') {
+        return gerarEmbeddingGoogle(texto);
+    } else {
+        return gerarEmbeddingOpenAI(texto);
+    }
+}
+
+async function gerarEmbeddingGoogle(texto) {
+    const apiKey = mcpConfig.embeddingKey || mcpConfig.apiKey;
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-2-preview:embedContent?key=${apiKey}`;
     try {
         const response = await fetch(endpoint, {
             method: 'POST',
@@ -635,11 +978,49 @@ async function gerarEmbedding(texto) {
         if (response.status === 429) {
             console.warn("⏳ Rate limit. Aguardando 30s...");
             await new Promise(r => setTimeout(r, 30000));
-            return gerarEmbedding(texto);
+            return gerarEmbeddingGoogle(texto);
         }
         console.error("❌ Embedding error:", data.error?.message);
         return null;
     } catch (e) { console.error("❌ Rede:", e); return null; }
+}
+
+async function gerarEmbeddingOpenAI(texto) {
+    const apiKey = mcpConfig.embeddingKey || mcpConfig.apiKey;
+    // Usa baseUrl do MCP ou fallback para OpenAI
+    let baseUrl = mcpConfig.baseUrl || 'https://api.openai.com/v1';
+    baseUrl = baseUrl.replace(/\/+$/, '');
+    
+    try {
+        const response = await fetch(`${baseUrl}/embeddings`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: mcpConfig.embeddingModel || 'text-embedding-3-small',
+                input: texto
+            })
+        });
+        const data = await response.json();
+        if (response.ok && data.data?.[0]?.embedding) return data.data[0].embedding;
+        if (response.status === 429) {
+            console.warn("⏳ Rate limit. Aguardando 30s...");
+            await new Promise(r => setTimeout(r, 30000));
+            return gerarEmbeddingOpenAI(texto);
+        }
+        console.error("❌ OpenAI Embedding error:", data.error?.message);
+        return null;
+    } catch (e) { 
+        console.error("❌ Rede OpenAI:", e); 
+        // Fallback para Google se disponível
+        if (mcpConfig.apiKey) {
+            console.log("🔄 Tentando fallback para Google Embedding...");
+            return gerarEmbeddingGoogle(texto);
+        }
+        return null; 
+    }
 }
 
 function calcularSimilaridade(vetorA, vetorB) {
@@ -660,14 +1041,11 @@ function calcularSimilaridade(vetorA, vetorB) {
 
 function scrollToBottom(force = false) {
     const stream = document.getElementById('chatStream');
-
     if (force) {
         stream.scrollTop = stream.scrollHeight;
         return;
     }
-
     const isNearBottom = stream.scrollHeight - stream.scrollTop - stream.clientHeight < 120;
-
     if (isNearBottom) {
         stream.scrollTop = stream.scrollHeight;
     }
@@ -676,7 +1054,7 @@ function scrollToBottom(force = false) {
 async function loadData() {
     const badge = document.getElementById('statusBadge');
     try {
-        badge.innerText = "Aguarde, Buscando dados...";
+        badge.innerText = `Conectando via ${mcpConfig.provider}...`;
 
         const [resBanco, resParam, resFunc, resLogs] = await Promise.allSettled([
             fetch(SCRIPT_URL).then(r => r.json()),
@@ -694,7 +1072,6 @@ async function loadData() {
                                    (typeof resFunc.value === 'string' ? JSON.parse(resFunc.value) : []);
         }
 
-        // Popula barra "Em alta" com perguntas mais recentes/repetidas dos logs
         if (resLogs.status === 'fulfilled') {
             popularBarraEmAlta(resLogs.value);
         }
@@ -706,6 +1083,7 @@ async function loadData() {
         if (!Array.isArray(dados)) throw new Error("Formato inválido");
 
         console.log(`BancoDados: ${dados.length} linhas | Parametros: ${dadosParametros.length} | Funcionalidades: ${dadosFuncionalidades.length}`);
+        console.log(`🤖 Provedor IA: ${mcpConfig.provider} | Modelo: ${mcpConfig.model}`);
 
         badge.innerText = "Carregando vetores...";
         const { linhasComVetor, linhasSemVetor, chaves } = carregarVetoresExistentes(dados);
@@ -738,13 +1116,11 @@ async function loadData() {
     }
 }
 
-// Popula a barra "Em alta" com as perguntas mais recentes e repetidas dos logs
 function popularBarraEmAlta(logsData) {
     try {
         const rows = Array.isArray(logsData) ? logsData.slice(1) : [];
         if (!rows.length) return;
 
-        // Conta frequência e pega as mais recentes (últimas 7 dias)
         const contagem = {};
         const agora = Date.now();
         const seteDias = 7 * 24 * 60 * 60 * 1000;
@@ -759,25 +1135,22 @@ function popularBarraEmAlta(logsData) {
             if (isRecente) contagem[pergunta].recente = true;
         });
 
-        // Ordena: recentes e frequentes primeiro
         const ordenados = Object.entries(contagem)
             .sort((a, b) => {
                 const scoreA = (a[1].recente ? 10 : 0) + a[1].freq;
                 const scoreB = (b[1].recente ? 10 : 0) + b[1].freq;
                 return scoreB - scoreA;
             })
-            .slice(0, 8) // Máximo 8 termos
+            .slice(0, 8)
             .map(([k]) => k);
 
         if (!ordenados.length) return;
 
         const bar = document.getElementById('topTermsBar');
-        // Preserva o botão "Offline" e o label
         const btnOffline = document.getElementById('btnOfflineResults');
         bar.innerHTML = '<span>Em alta:</span>';
         ordenados.forEach(termo => {
             const a = document.createElement('a');
-            // Trunca o texto para caber na barra
             a.textContent = termo.length > 35 ? termo.substring(0, 33) + '…' : termo;
             a.title = termo;
             a.onclick = () => fillAndSend(termo);
@@ -797,7 +1170,6 @@ function carregarVetoresExistentes(dados) {
     const chaveErro     = chaves.find(k => k.toLowerCase().trim() === 'erro');
     const chaveSolucao  = chaves.find(k => k.toLowerCase().trim() === 'solucao' || k.toLowerCase().trim() === 'solução');
     const chaveCategoria= chaves.find(k => k.toLowerCase().trim() === 'categoria');
-    // Coluna específica de emissão — priorizada quando a pergunta é sobre "como emitir"
     const chaveEmitir   = chaves.find(k => {
         const kn = k.toLowerCase().trim();
         return kn === 'como emitir' || kn === 'como_emitir' || kn === 'emissao' || kn === 'emissão' || kn === 'emitir';
@@ -819,7 +1191,6 @@ function carregarVetoresExistentes(dados) {
 
         if (!textoErro && !textoSolucao) return;
 
-        // Inclui coluna "como emitir" no texto completo para vetorização mais rica
         const textoCompleto = `DÚVIDA: ${textoErro} | PROCEDIMENTO: ${textoSolucao}${textoEmitir ? ' | COMO EMITIR: ' + textoEmitir : ''}${textoCategoria ? ' | CATEGORIA: ' + textoCategoria : ''}`;
         const vetorExistente = linha[chaveVetor];
 
@@ -853,7 +1224,7 @@ async function vetorizarEmBackground(linhasSemVetor, chaves) {
     for (let i = 0; i < linhasSemVetor.length; i++) {
         if (errosSeguidos > 5) {
             console.warn("Interrompendo vetorização por excesso de erros.");
-            badge.innerText = "IA Pronta ⚠️";
+            badge.innerText = `IA Pronta ⚠️ (${mcpConfig.provider})`;
             break;
         }
 
@@ -881,7 +1252,7 @@ async function vetorizarEmBackground(linhasSemVetor, chaves) {
     }
 
     const badge2 = document.getElementById('statusBadge');
-    badge2.innerText = `IA Pronta (${manualVetorizado.length})`;
+    badge2.innerText = `IA Pronta (${manualVetorizado.length}) [${mcpConfig.provider}]`;
     badge2.className = "badge";
     console.log(`Vetorização background concluída. Total: ${manualVetorizado.length}`);
 }
@@ -893,28 +1264,30 @@ function liberarChat(modo = "completo") {
     document.getElementById('searchInput').placeholder = "Como posso ajudar?";
     document.getElementById('sendBtn').disabled = false;
 
+    const providerInfo = ` [${mcpConfig.provider}/${mcpConfig.model.split('/').pop()}]`;
+
     if (modo === "completo") {
-        badge.innerText = `IA Pronta (${manualVetorizado.length})`;
+        badge.innerText = `IA Pronta (${manualVetorizado.length})${providerInfo}`;
         badge.className = "badge";
         document.getElementById('welcomeMsg').innerHTML = `
             👋 Olá! Sou o assistente IA <strong>Bsoft TMS</strong>.<br>
             Pronto! Base com <strong>${manualVetorizado.length} artigos</strong> carregada.<br>
-            <small style="color:var(--text-muted);">Digite sua dúvida ou use os atalhos acima.</small>
+            <small style="color:var(--text-muted);">IA: ${mcpConfig.model} via ${mcpConfig.provider}</small>
         `;
     } else if (modo === "parcial") {
-        badge.innerText = `IA Pronta (${manualVetorizado.length} +)`;
+        badge.innerText = `IA Pronta (${manualVetorizado.length} +)${providerInfo}`;
         badge.className = "badge";
         document.getElementById('welcomeMsg').innerHTML = `
             👋 Olá! Sou o assistente IA <strong>Bsoft TMS</strong>.<br>
             Já posso ajudar! <strong>${manualVetorizado.length} artigos</strong> disponíveis.<br>
-            <small style="color:#b45309;">⏳ Novos artigos sendo vetorizados em segundo plano...</small>
+            <small style="color:#b45309;">⏳ Novos artigos sendo vetorizados... | IA: ${mcpConfig.provider}</small>
         `;
     } else if (modo === "vazio") {
         badge.innerText = "Banco vazio";
         badge.className = "badge-loading";
         document.getElementById('welcomeMsg').innerHTML = `
             👋 Olá! Nenhum dado encontrado no banco, mas posso tentar ajudar com conhecimento geral.<br>
-            <small style="color:var(--text-muted);">Digite sua dúvida.</small>
+            <small style="color:var(--text-muted);">IA: ${mcpConfig.model} via ${mcpConfig.provider}</small>
         `;
     } else {
         badge.innerText = "Modo Offline";
@@ -935,12 +1308,10 @@ function salvarVetorNaPlanilha(numLinha, numColuna, vetorStr) {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  MOTOR DE BUSCA INTELIGENTE v13
+//  MOTOR DE BUSCA INTELIGENTE
 // ═══════════════════════════════════════════════════════════
 
-// Dicionário de sinônimos semânticos — normaliza intenção do usuário
 const SINONIMOS = {
-    // Verbos de ação equivalentes
     criar:    ["criar","emitir","gerar","lançar","fazer","abrir","registrar","incluir","cadastrar","inserir","montar","produzir","processar","emissão","geração","criação","lançamento","abertura"],
     cancelar: ["cancelar","estornar","desfazer","anular","reverter","excluir","deletar","remover","apagar","cancelamento","estorno"],
     consultar:["consultar","buscar","localizar","pesquisar","encontrar","ver","visualizar","verificar","checar","acessar","abrir","listar","mostrar","exibir","onde fica","como ver","como achar","como encontrar"],
@@ -950,11 +1321,9 @@ const SINONIMOS = {
     erro:     ["erro","falha","problema","não funciona","não deixa","não consegue","não aparece","bloqueado","travado","recusado","rejeitado","inválido","inválida"],
 };
 
-// Normaliza a query expandindo sinônimos para melhorar busca vetorial
 function normalizarQuery(query) {
     const q = query.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     const expansoes = new Set([q]);
-
     for (const [base, lista] of Object.entries(SINONIMOS)) {
         const achou = lista.some(s => q.includes(s.normalize("NFD").replace(/[\u0300-\u036f]/g, "")));
         if (achou) {
@@ -962,10 +1331,9 @@ function normalizarQuery(query) {
             expansoes.add(q + " " + base);
         }
     }
-    return Array.from(expansoes).slice(0, 4); // Máx 4 variantes
+    return Array.from(expansoes).slice(0, 4);
 }
 
-// Extrai palavras-chave relevantes (ignora stopwords)
 function extrairTermos(texto) {
     const stopwords = new Set(["como","que","qual","quais","para","com","sem","não","mas","por","mais","uma","isso","este","esta","esse","essa","num","numa","meu","minha","meus","minhas","tem","tem","ter","ser","foi","vai","vou","tenho","posso","pode","quero","preciso","saber","sobre","nao","onde","quando","porque","pois","também","ainda","mesmo","tipo"]);
     return texto.toLowerCase()
@@ -975,51 +1343,36 @@ function extrairTermos(texto) {
         .filter(t => t.length > 2 && !stopwords.has(t));
 }
 
-// Detecta se a pergunta é sobre emissão de documento
 function ehPerguntaDeEmissao(query) {
     const qNorm = query.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
     const verbosEmissao = ["como emitir","como gerar","como criar","como fazer","como lancar","como abrir","emitir","gerar ct","gerar mdf","gerar nf","emissao","emissão","criar ct","criar mdf"];
     return verbosEmissao.some(v => qNorm.includes(v.normalize("NFD").replace(/[\u0300-\u036f]/g,"")));
 }
 
-// Detecta se a pergunta menciona erro SEFAZ
 function ehErroSefaz(query) {
     const qNorm = query.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
     return qNorm.includes("sefaz") && (qNorm.includes("erro") || qNorm.includes("rejeicao") || qNorm.includes("rejeição") || qNorm.includes("codigo") || qNorm.includes("codigo ") || /\b[0-9]{3}\b/.test(query));
 }
 
-// Score híbrido: vetor semântico + correspondência de termos + boost de categoria + boost coluna emitir
 function calcularScoreHibrid(vetorQuery, termosQuery, item, isEmissao = false) {
-    // 1. Similaridade vetorial (principal)
     const simVetor = calcularSimilaridade(vetorQuery, item.vetor);
-
-    // 2. Correspondência de termos (TF simples)
     const textoItem = (item.erro + " " + item.solucao + " " + (item.categoria || "") + " " + (item.emitir || ""))
         .toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
     const totalTermos = termosQuery.length || 1;
     const acertos = termosQuery.filter(t => textoItem.includes(t)).length;
     const simTermos = acertos / totalTermos;
-
-    // 3. Boost se categoria relevante
     const catBoost = item.categoria && termosQuery.some(t => item.categoria.toLowerCase().includes(t)) ? 0.05 : 0;
-
-    // 4. Boost especial: se é pergunta de emissão E o item tem coluna "como emitir" preenchida
     const emitirBoost = (isEmissao && item.emitir && item.emitir.length > 10) ? 0.12 : 0;
-
-    // 5. Score final ponderado
     return (simVetor * 0.65) + (simTermos * 0.23) + catBoost + emitirBoost;
 }
 
 // ═══════════════════════════════════════════════════════════
-//  APRENDIZADO ONLINE COMPARTILHADO (substitui localStorage)
-//  Respostas fixadas por feedback positivo ficam na planilha
-//  e são compartilhadas entre todos os usuários em tempo real
+//  APRENDIZADO ONLINE COMPARTILHADO
 // ═══════════════════════════════════════════════════════════
-let cachRespostasFixas = null; // Cache em memória para não recarregar toda hora
+let cachRespostasFixas = null;
 let tsBancamentoFixas = 0;
 
 async function carregarRespostasFixas() {
-    // Cache de 5 minutos
     if (cachRespostasFixas && (Date.now() - tsBancamentoFixas) < 5 * 60 * 1000) {
         return cachRespostasFixas;
     }
@@ -1027,7 +1380,6 @@ async function carregarRespostasFixas() {
         const res = await fetch(SCRIPT_URL + "?aba=RespostasFixas");
         if (!res.ok) throw new Error("sem acesso");
         const data = await res.json();
-        // Transforma array de rows em mapa { chave: { resposta, confirmacoes } }
         const mapa = {};
         (Array.isArray(data) ? data : []).forEach(row => {
             if (row.chave && row.resposta) {
@@ -1040,7 +1392,6 @@ async function carregarRespostasFixas() {
         tsBancamentoFixas = Date.now();
         return mapa;
     } catch(e) {
-        // Fallback: usa localStorage como cache offline
         try { return JSON.parse(localStorage.getItem('bsoft_fixas_cache') || '{}'); }
         catch(e2) { return {}; }
     }
@@ -1055,12 +1406,9 @@ async function salvarRespostaFixa(pergunta, resposta) {
         resposta: JSON.stringify(resposta),
         ts: new Date().toISOString()
     };
-    // Invalida cache local imediatamente
     cachRespostasFixas = null;
-    // Salva no servidor (planilha Google Sheets aba RespostasFixas)
     fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', body: JSON.stringify(payload) })
         .catch(e => console.warn("Erro ao salvar resposta fixa online:", e));
-    // Também salva no localStorage como backup offline
     try {
         const local = JSON.parse(localStorage.getItem('bsoft_fixas_cache') || '{}');
         local[chave] = { resposta, confirmacoes: (local[chave]?.confirmacoes || 0) + 1 };
@@ -1071,9 +1419,7 @@ async function salvarRespostaFixa(pergunta, resposta) {
 async function buscarRespostaFixa(pergunta) {
     const fixas = await carregarRespostasFixas();
     const chave = pergunta.toLowerCase().trim().substring(0, 120);
-    // Busca exata
     if (fixas[chave]) return fixas[chave].resposta;
-    // Busca aproximada (75% dos termos batem)
     const termosQ = extrairTermos(pergunta);
     for (const [k, v] of Object.entries(fixas)) {
         const termosK = extrairTermos(k);
@@ -1085,7 +1431,7 @@ async function buscarRespostaFixa(pergunta) {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  LÓGICA DE CHAT
+//  LÓGICA DE CHAT (Adaptada para MCP)
 // ═══════════════════════════════════════════════════════════
 async function handleChat() {
     if (isVectorizing) return;
@@ -1109,13 +1455,11 @@ async function handleChat() {
     appendMessage('user', query);
     input.value = "";
 
-    // 🌐 Detecta se é erro SEFAZ → busca na internet antes de tudo
     if (ehErroSefaz(query)) {
         await gerarRespostaSefaz(query);
         return;
     }
 
-    // 🔒 Verifica se há resposta fixa confirmada por feedback positivo (online)
     const loadingFixa = appendLoadingCard("⭐ Verificando base de conhecimento confirmada...");
     const respostaFixa = await buscarRespostaFixa(query);
     loadingFixa.remove();
@@ -1133,15 +1477,9 @@ async function handleChat() {
     }
 
     const loadingDiv = appendLoadingCard("🔍 Analisando sua pergunta...");
-
-    // Detecta intenção de emissão para boostar coluna "como emitir"
     const isEmissao = ehPerguntaDeEmissao(query);
-
-    // Normaliza query com expansão semântica de sinônimos
     const variantes = normalizarQuery(query);
     const termosQuery = extrairTermos(query);
-
-    // Gera embedding da query principal + variante expandida
     const textoParaVetorizar = variantes.slice(0, 2).join(" | ");
     const vetorPergunta = await gerarEmbedding(textoParaVetorizar);
 
@@ -1151,13 +1489,11 @@ async function handleChat() {
         return;
     }
 
-    // Score híbrido em todo o banco (com flag isEmissao para boost da coluna "como emitir")
     let resultados = manualVetorizado.map(item => ({
         ...item,
         similaridade: calcularScoreHibrid(vetorPergunta, termosQuery, item, isEmissao)
     })).sort((a, b) => b.similaridade - a.similaridade);
 
-    // Se é pergunta de emissão, garante que itens com coluna "emitir" preenchida apareçam primeiro
     if (isEmissao) {
         resultados.sort((a, b) => {
             const aTemEmitir = a.emitir && a.emitir.length > 10 ? 1 : 0;
@@ -1167,7 +1503,6 @@ async function handleChat() {
         });
     }
 
-    // Limiar adaptativo
     const limiar = manualVetorizado.length > 20 ? 0.45 : 0.35;
     filaSolucoes = resultados.filter(r => r.similaridade >= limiar).slice(0, 5);
     currentResults = resultados.slice(0, 6);
@@ -1195,7 +1530,7 @@ async function processarProximaSolucao(perguntaOriginal, isEmissao = false) {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  RESPOSTA SEFAZ — Busca na internet via Gemini Search Grounding
+//  RESPOSTA SEFAZ (Adaptada para MCP)
 // ═══════════════════════════════════════════════════════════
 async function gerarRespostaSefaz(pergunta) {
     appendMessage('system', '🌐 <strong>Erro SEFAZ detectado</strong> — Consultando base de dados nacional + internet...');
@@ -1203,7 +1538,6 @@ async function gerarRespostaSefaz(pergunta) {
     const logIndex = Date.now();
 
     const promptSefaz = `Você é um especialista em documentos fiscais eletrônicos brasileiros (CT-e, MDF-e, NF-e) e integração com a SEFAZ.
-
 O sistema Bsoft TMS funciona com a seguinte estrutura:
 Quando aberto o sistema, tem um menu lateral que no topo tem uma opção de pesquisar as funções digitando e abaixo os seguintes menus principais: 
 Opções do Sistema
@@ -1330,43 +1664,31 @@ Analise o erro SEFAZ mencionado e responda com:
 
 Responda APENAS com JSON válido:
 {
-  "caminho": "Caminho no sistema se aplicável, ex: Transporte > Documentos > CT-e. Null se não aplicável.",
-  "como_fazer": "Explicação técnica completa com causas e solução passo a passo. Use **negrito** para termos importantes.",
+  "caminho": "Caminho no sistema se aplicável. Null se não aplicável.",
+  "como_fazer": "Explicação técnica completa com causas e solução passo a passo.",
   "dicas": ["Dica preventiva 1", "Dica 2"],
   "tem_caminho": false
 }`;
 
     try {
-        // Gemini com Google Search Grounding para buscar informações atualizadas da SEFAZ
-        const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
-            {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: promptSefaz }] }],
-                    tools: [{ google_search: {} }],
-                    generationConfig: { temperature: 0.2 }
-                })
-            }
-        );
-        const data = await response.json();
+        const result = await callCurrentMCP([
+            { role: 'user', content: promptSefaz }
+        ], { temperature: 0.2, maxTokens: 4096, responseFormat: { type: 'json_object' } });
+
         loadingDiv.remove();
-
-        if (!response.ok || data.error) throw new Error(data.error?.message || "Erro API SEFAZ");
-
-        const textoRaw = (data.candidates?.[0]?.content?.parts || [])
-            .filter(p => p.text).map(p => p.text).join('');
-
-        // Reutiliza o extrairJSON definido em gerarRespostaEstruturada
-        // mas aqui definimos inline pois está fora do escopo
+        
         let parsed = null;
-        const semMd = textoRaw.replace(/```json\s*/gi,'').replace(/```/g,'').trim();
-        try { parsed = JSON.parse(semMd); } catch(e) {
-            let d=0, s=-1;
-            for(let i=0;i<textoRaw.length;i++){
-                if(textoRaw[i]==='{'){if(d===0)s=i;d++;}
-                else if(textoRaw[i]==='}'){d--;if(d===0&&s!==-1){try{parsed=JSON.parse(textoRaw.substring(s,i+1));break;}catch(e2){d=0;s=-1;}}}
+        const textoRaw = result.text;
+        
+        // Tenta parse JSON
+        try { parsed = JSON.parse(textoRaw); } catch(e) {
+            const semMd = textoRaw.replace(/```json\s*/gi,'').replace(/```/g,'').trim();
+            try { parsed = JSON.parse(semMd); } catch(e2) {
+                let d=0, s=-1;
+                for(let i=0;i<textoRaw.length;i++){
+                    if(textoRaw[i]==='{'){if(d===0)s=i;d++;}
+                    else if(textoRaw[i]==='}'){d--;if(d===0&&s!==-1){try{parsed=JSON.parse(textoRaw.substring(s,i+1));break;}catch(e3){d=0;s=-1;}}}
+                }
             }
         }
 
@@ -1387,6 +1709,10 @@ Responda APENAS com JSON válido:
         await gerarRespostaEstruturada(pergunta, null, logIndex, [], false);
     }
 }
+
+// ═══════════════════════════════════════════════════════════
+//  RESPOSTA ESTRUTURADA (Adaptada para MCP)
+// ═══════════════════════════════════════════════════════════
 async function gerarRespostaEstruturada(pergunta, dadosBanco, logIndex, candidatosReversa = [], isEmissao = false) {
     userQuestionsHistory.push(pergunta);
     if (userQuestionsHistory.length > 3) userQuestionsHistory.shift();
@@ -1431,18 +1757,16 @@ async function gerarRespostaEstruturada(pergunta, dadosBanco, logIndex, candidat
 
     let contextoBanco;
     if (dadosBanco) {
-        // Se é pergunta de emissão e o item tem a coluna "como emitir", prioriza ela
         const conteudoEmitir = (isEmissao && dadosBanco.emitir && dadosBanco.emitir.length > 10)
             ? `\nCOMO EMITIR (coluna prioritária): ${dadosBanco.emitir}`
             : "";
         contextoBanco = `\nCONTEXTO DO MANUAL TÉCNICO:\nDÚVIDA CORRESPONDENTE: ${dadosBanco.erro}\nSOLUÇÃO: ${dadosBanco.solucao}${conteudoEmitir}\nSIMILARIDADE: ${(dadosBanco.similaridade*100).toFixed(0)}%`;
     } else if (candidatosReversa && candidatosReversa.length > 0) {
-        // Engenharia reversa: passa candidatos parcialmente relacionados para o modelo raciocinar
         const candidatosTexto = candidatosReversa.map((c, i) =>
             `[CANDIDATO ${i+1} - ${(c.similaridade*100).toFixed(0)}% similar]\nDúvida: ${c.erro}\nSolução: ${c.solucao}`
         ).join('\n\n');
         contextoBanco = `\nNÃO ENCONTREI CORRESPONDÊNCIA DIRETA NO MANUAL.
-Modo de Engenharia Reversa ativado — analise os candidatos abaixo e raciocine a partir deles para deduzir a resposta mais provável, como um especialista experiente faria:
+Modo de Engenharia Reversa ativado — analise os candidatos abaixo:
 
 ${candidatosTexto}
 
@@ -1452,252 +1776,78 @@ Use raciocínio lógico: se a pergunta envolve um processo similar, aplique a l�
     }
 
     const prompt = `Você é o Especialista de Suporte do Bsoft TMS, um sistema ERP para empresas de transporte de cargas. Seja preciso, técnico e direto.
-	Tome muito cuidado para não confundir e misturar assuntos do que consta no banco de dados, por exemplo emitir ct-e com xml da nota não tem nada a ver com 
-	importação de nota fiscal de entrada.
-	Somente use o conhecimento que consta no MANUAL, se não encontrar nada, peça para o usuário reformular a pergunta.
-	Quando cliente perguntar como emitir um ct-e, mdf-e, nf-e, títulos a pagar, títulos a receber, de a resposta completa sem emitir informações.
-	
-	IMPORTANTE — INTERPRETAÇÃO SEMÂNTICA: Trate como equivalentes os verbos de intenção similar. 
-	"criar", "emitir", "gerar", "lançar", "fazer", "abrir" = mesma intenção (criação de documento/registro).
-	"cancelar", "estornar", "anular", "desfazer" = mesma intenção (cancelamento).
-	"consultar", "buscar", "ver", "visualizar", "localizar" = mesma intenção (consulta).
-	"configurar", "parametrizar", "ativar", "habilitar" = mesma intenção (configuração).
 
-	MODO ENGENHARIA REVERSA: Quando o contexto trouxer candidatos parciais, aja como um especialista experiente:
-	raciocine sobre o padrão de solução, deduza a causa provável do problema e aplique lógica inversa para chegar na resposta.
-	Por exemplo: se o usuário tem erro X e no manual há solução para erro Y similar, adapte o raciocínio.
+IMPORTANTE — INTERPRETAÇÃO SEMÂNTICA: Trate como equivalentes os verbos de intenção similar. 
+"criar", "emitir", "gerar", "lançar", "fazer", "abrir" = mesma intenção.
+"cancelar", "estornar", "anular", "desfazer" = mesma intenção.
+"consultar", "buscar", "ver", "visualizar", "localizar" = mesma intenção.
+"configurar", "parametrizar", "ativar", "habilitar" = mesma intenção.
 
-	PRIORIDADE DE EMISSÃO: Quando a pergunta for sobre como emitir, criar ou gerar um documento (CT-e, MDF-e, NF-e, etc.),
-	e o contexto trouxer o campo "COMO EMITIR (coluna prioritária)", use ESSE CAMPO como fonte principal da resposta,
-	complementando com a solução geral apenas se necessário. Nunca omita os passos de emissão.
-	
-O sistema Bsoft TMS funciona com a seguinte estrutura:
-Quando aberto o sistema, tem um menu lateral que no topo tem uma opção de pesquisar as funções digitando e abaixo os seguintes menu principais: Opções do Sistema
-Ambiente
-Recursos
-Financeiro
-Transporte
-Estoque
-Pessoas
-Ordens de Serviço
-Manutenção
-Configurações
-eDoc
-E-mail
-Hub
-Controle de Viagens
-nsdocs
+Sistema Bsoft TMS - Estrutura de menus principais:
+Opções do Sistema | Ambiente | Recursos | Financeiro | Transporte | Estoque | Pessoas | Ordens de Serviço | Manutenção | Configurações | eDoc | E-mail | Hub | Controle de Viagens | nsdocs
 
-Dentro desses menu tem vários submenus, você vai encontrar no manual diversos caminhos apontados de como chegar na função ou opção que o usuário te perguntar.
-Para tornar o sistema útilizavel pelo cliente, os primeiros passos são instalar o certificado digital que fica em eDoc/Certificados Digitais. O segundo passo é
-criar os talões dos documentos que irá emitir (Ct-e, Mdf-e, Ordem de Carregamento, Contrato de frete, NFS-e, Pedidos) que fica em Transporte/Configurações/Tipos de talões.
-Dentro dos talões tem diversas configurações e parâmetros que podem automatizar ações ou limitar e editar campos que aparecem durante a emissão do documento.
-Um exemplo para você entender, para gerar ocorrência automática para o ct-e, basta ir no talão do ct-e, editar ele e habilitar a opção ocorrência automática,
-quero que de esse tipo de instrução caso esteja dentro do contexto da pergunta.
-Depois de criados os talões, os caminhos das rotinas mais comuns para emissão dos documentos são:
-Ct-e: vai em Transporte/Documentos/Ct-e ou Transporte/Conhecimentos 
-Mdf-e: vai em Transporte/Manifesto de Carga
-Nf-e, NFs-e ou Notas fiscais: Financeiro/Notas Fiscais/Notas Fiscais
-Ordem de Carregamento (OC): Transporte/Ordem de Carregamento Simplificada
-Cancelamento na SEFAZ: Para cancelar um Ct-e na SEFAZ, vai em Transporte/Documentos/Ct-e ou Transporte/Conhecimentos, seleciona o documento desejado, depois basta clicar no ícone da SEFAZ (CT-e) e executar a opção Cancelar na SEFAZ.
-Cancelamento na SEFAZ: Para cancelar um MDF-e na SEFAZ, vai em Transporte/Documentos/Ct-e ou Transporte/Manifesto de Carga, seleciona o documento desejado, depois basta clicar no ícone da SEFAZ (MDF-e) e executar a opção Cancelar na SEFAZ.
-
-Caminhos das rotinas mais comuns para cadastros (Apenas use os caminhos para encontrar as respostas dentro do Solução):
-
-Veículos: Transporte/Veículos
-Motoristas, clientes, fornecedores, seguradora, proprietários Veículos, Transportadora: Pessoas/Pessoas
-Vincular placas a um motorista: Transporte/Conjuntos de Veículos ou Transporte/Vinculação de Motoristas
-Natureza da Operação ou CFOP: Financeiro/Fiscal/Tipos de Operações
-Apólice de Seguro: Transporte/Configurações/Apólices de Seguro
-Nf-e pré cadastrada: Transporte/Nf-e Pré-cadastrada
-Regra: Transporte/Configurações/Regras
-Tabela de preços: Transporte/Configurações/Tabela de Preços/Tabela de Preços 
-Parâmetros do sistema: Ambiente/Administração/Parâmetros 
-Funcionalidades do sistema: Ambiente/Controle de Acesso/Funcionalidades 
-Parâmetros para EDI Importação Exportação de documentos: Transporte/EDI/Parâmetros 
-Relatório personalizado: Transporte/EDI/Assistente de Relatórios
-Importação/Exportação de documentos: Transporte/EDI/"Importação/Exportação"
-Gerar CIOT: Transporte/Documentos/Ct-e, seleciona o Ct-e e clica na opção Contrato de frete Eletrônico ou Transporte/Contrato de frete seleciona o Contrato de frete e clica na opção Contrato de frete Eletrônico
-VPO ou Vale pedágio: Transporte/Documentos/Ct-e, seleciona o Ct-e e clica na opção Vale-Pedágio Avulso ou Transporte/Contrato de frete seleciona o Contrato de frete e clica na opção Vale-Pedágio Avulso
-Tipos Valores Outros para ct-e: Transporte/Configurações/Tipos Valores Outros
-Tabela de preços Valores Outros: Transporte/Configurações/Tabela de Preços/Tabela de Preços Valores Outros 
-Regras de Importação de Notas: Financeiro/Configurações/Fiscal/Regras de Importação de Notas
-Classificação Fiscal: Financeiro/Configurações/Fiscal/Classificação Fiscal
-Suporte: Opções do Sistema/Suporte 
-Configurações de Ordem de Carregamento: Transporte/Configurações/Documentos PDF/Configurações de Ordem de Carregamento 
-Modelos de notas: Financeiro/Configurações/Fiscal/Modelos de notas
-Contratos com Operadoras de Crédito: Transporte/Configurações/Contratos com Operadoras de Crédito
-Listagens: Ambiente/Listagens
-Usuários do Sistema: Ambiente/Controle de Acesso/Usuários do Sistema
-Remetente de e-mails: Ambiente/Administração/Remetente e-mails
-
-
-
-
-Caminhos assuntos gestão e Relatórios:
-Abastecimentos: Manutenção/Abastecimentos ou Manutenção/Abastecimentos ou Manutenção/Abastecimentos ou Manutenção/Abastecimentos Próprios
-Relatório de abastecimento: Manutenção/Relatórios/Relação de Abastecimentos 
-Recapagens: Manutenção / Pneus / Recapagens 
-Tipos de Recapagens: Manutenção / Configurações / Tipos de Recapagens 
-Grupos de Demonstrativo Financeiro: Manutenção / Configurações / Grupos de Demonstrativo Financeiro
-Grupos de Equipamentos: Manutenção / Configurações / Grupos de Equipamentos
-Títulos a Pagar (Lançamentos): Financeiro / Títulos a Pagar / Títulos a Pagar
-Títulos a Pagar (Gestão): Financeiro / Títulos a Pagar / "Lotes/Duplicatas a Pagar"
-Títulos a Receber: Financeiro (Lançamentos) / Títulos a Receber / Títulos a Receber
-Títulos a Receber (Gestão): Financeiro / Títulos a Receber / "Lotes/Duplicatas a Receber"
-Títulos já pagos ou recebidos: Financeiro/Caixas e Bancos/Consulta Lançamentos
-Espécies: Transporte/Configurações/Espécies
-Unidades: Configurações/Cadastros Básicos/Unidades
-Produtos: Financeiro/Configurações/Produtos e Serviços/Produtos
-Serviços: Financeiro/Configurações/Produtos e Serviços/Serviços
-Família Produtos Serviços: Financeiro/Configurações/Produtos e Serviços/Família Produtos Serviços
-informações de cobrança padrão: Transporte/Configurações/informações de cobrança padrão 
-Centros de Custo (Apropriações): Financeiro/Configurações/Centros de Custo
-Contas Financeiras: Financeiro/Configurações/Contas Financeiras
-Grupos Contas Financeiras: Financeiro/Configurações/Grupos Contas Financeiras
-Tipos de Sinalizadores: Financeiro/Cadastros Básicos/Tipos de Sinalizadores
-Movimentação Estoque: Estoque/Movimentação Estoque
-Relatório do estoque: Estoque/Relatórios/Relatórios do Estoque
-Tipos de Pneus: Manutenção/Configurações/Tipos de Pneus
-Domínios: Manutenção/Configurações/Domínios
-Plano de Contas Gerencial: Financeiro/Configurações/Plano de Contas Gerencial
-Tipos de Documentos: Financeiro/Cadastros Básicos/Tipos de Documentos
-Adiantamento a fornecedores: Financeiro/Caixa e Bancos/Adiantamento a fornecedores
-Arquivos Remessa: Financeiro/Caixa e Bancos/Convênios/Arquivos Remessa
-Arquivos Retorno: Financeiro/Caixa e Bancos/Convênios/Arquivos Retorno
-Pagamento: Financeiro/Caixa e Bancos/Pagamento
-Recebimento: Financeiro/Caixa e Bancos/Recebimento
-Transferências: Financeiro/Caixas e Bancos/Transferências
-Geração de Faturas (Títulos a pagar em lote): Financeiro/Títulos a Pagar/Geração de Faturas
-Lotes a Pagar: Financeiro/Títulos a Pagar/Lotes a Pagar
-Lotes a Receber: Financeiro/Títulos a Pagar/Lotes a Receber
-Relatório de Faturamento de Conhecimentos: Transporte/Relatórios/Relatório de Faturamento de Conhecimentos
-Orçamento: Financeiro/Orçamento/Orçamento
-Relatório de Orçamento: Financeiro/Relatórios/Relatório de Orçamento
-Regras para conciliação bancária: Financeiro/Caixa e Bancos/Regras para conciliação bancária
-Arquivos Importados via Conciliação Bancária: Financeiro/Caixa e Bancos/Regras/Arquivos Importados via Conciliação Bancária
-Conciliação Bancária (histórico de conciliações feitas): Financeiro/Caixa e Bancos/Conciliação Bancária
-Relatório 12 Meses Gerencial Competência: Financeiro/Relatórios/Gerenciais/12 Meses Gerencial Competência
-Relatório 12 Meses Gerencial Demonstrativo: Financeiro/Relatórios/Gerenciais/12 Meses Gerencial Demonstrativo
-Relatório Movimentação Detalhado: Financeiro/Relatórios/Movimentação Financeira/Movimentação Detalhado
-Comissões dos motoristas: Transporte/Relatórios/Comissões dos motoristas
-Relatório de Contratos de Frete: Transporte/Relatórios/Relatório de Contratos de Frete
-Cotações de Frete: Transporte/Contações de Frete
-Solicitação interna de compra: Estoque/Solicitação interna de compra
-Finalidades de Movimentação: Estoque/Configurações/Finalidades de Movimentação
-
+Rotinas comuns:
+- Ct-e: Transporte/Documentos/Ct-e ou Transporte/Conhecimentos
+- Mdf-e: Transporte/Manifesto de Carga
+- Nf-e: Financeiro/Notas Fiscais/Notas Fiscais
+- Cancelamento SEFAZ Ct-e: Transporte/Documentos/Ct-e > ícone SEFAZ > Cancelar na SEFAZ
+- Cancelamento SEFAZ MDF-e: Transporte/Manifesto de Carga > ícone SEFAZ > Cancelar na SEFAZ
 
 PERGUNTA DO USUÁRIO: "${pergunta}"
 ${contextoBanco}
 ${contextoParametros}
 ${contextoFuncionalidades}
 
-Responda APENAS com JSON válido (sem markdown, sem blocos de código, sem texto fora do JSON):
+Responda APENAS com JSON válido:
 {
-  "caminho": "Caminho de navegação no sistema (ex: Menu Principal > Operacional > CT-e > Emissão). Null se não for uma navegação.",
-  "como_fazer": "Explicação detalhada e técnica. Use passos numerados quando houver sequência. Use **negrito** para campos, botões e menus.",
+  "caminho": "Caminho de navegação no sistema. Null se não aplicável.",
+  "como_fazer": "Explicação detalhada e técnica. Use **negrito** para campos, botões e menus.",
   "dicas": ["Dica 1", "Dica 2"],
   "tem_caminho": true
-}
+}`;
 
-REGRAS:
-- "caminho" só preencha quando for necessário navegar pelo sistema
-- "como_fazer" deve ser completo e técnico
-- "dicas" entre 0 e 3 itens, pode ser []
-- "tem_caminho" é boolean
-- APENAS JSON, sem nada antes ou depois
-- Quando se tratar de Leis, Medidas Provisórias (MP), traz o texto completo da solução do manual para não omitir nada importante`;
+    try {
+        const result = await callCurrentMCP([
+            { role: 'user', content: prompt }
+        ], { temperature: 0.2, maxTokens: 4096, responseFormat: { type: 'json_object' } });
 
-    let messageParts = [{ text: prompt }];
-    if (attachedFileData) {
-        messageParts.push({ inline_data: attachedFileData });
-        attachedFileData = null;
-    }
-
-    // Extrai o primeiro bloco JSON válido de qualquer texto (resolve comportamento do Gemma 4
-    // que inclui raciocínio/pensamento antes do JSON ou ignora a instrução de "apenas JSON")
-    function extrairJSON(texto) {
-        // Tenta parse direto primeiro
-        try { return JSON.parse(texto.trim()); } catch(e) {}
-
-        // Remove blocos de markdown ```json ... ```
-        const semMarkdown = texto.replace(/```json\s*/gi, '').replace(/```/g, '').trim();
-        try { return JSON.parse(semMarkdown); } catch(e) {}
-
-        // Extrai o primeiro { ... } balanceado que aparece no texto
-        let depth = 0, start = -1;
-        for (let i = 0; i < texto.length; i++) {
-            if (texto[i] === '{') {
-                if (depth === 0) start = i;
-                depth++;
-            } else if (texto[i] === '}') {
-                depth--;
-                if (depth === 0 && start !== -1) {
-                    try { return JSON.parse(texto.substring(start, i + 1)); } catch(e) { depth = 0; start = -1; }
+        const textoRaw = result.text;
+        
+        // Extrai JSON da resposta
+        let parsed = null;
+        try { parsed = JSON.parse(textoRaw); } catch(e) {
+            const semMd = textoRaw.replace(/```json\s*/gi,'').replace(/```/g,'').trim();
+            try { parsed = JSON.parse(semMd); } catch(e2) {
+                let d=0, s=-1;
+                for(let i=0;i<textoRaw.length;i++){
+                    if(textoRaw[i]==='{'){if(d===0)s=i;d++;}
+                    else if(textoRaw[i]==='}'){d--;if(d===0&&s!==-1){try{parsed=JSON.parse(textoRaw.substring(s,i+1));break;}catch(e3){d=0;s=-1;}}}
                 }
             }
         }
-        return null;
-    }
 
-    async function tentarChamada(tentativa) {
-        if (tentativa > 4) {
-            appendMessage('ai', '❌ Erro de conexão após várias tentativas. Tente novamente.');
+        if (!parsed) {
+            const textoFormatado = textoRaw
+                .replace(/```json|```/gi, '')
+                .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+                .replace(/\n/g, '<br>')
+                .trim();
+            renderAnswerCard(null, textoFormatado || 'Não foi possível gerar uma resposta estruturada.', [], logIndex);
+            speak(textoRaw);
             return;
         }
-        try {
-            const response = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/models/${MODELO_PRIMARY}:generateContent?key=${GEMINI_API_KEY}`,
-                {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: messageParts }],
-                        generationConfig: {
-                            temperature: 0.2,        // Mais determinístico para respeitar o formato
-                            responseMimeType: "application/json"  // Força saída JSON no Gemma 4
-                        }
-                    })
-                }
-            );
-            const data = await response.json();
-            if (!response.ok || data.error) throw new Error(data.error?.message || "Erro na API");
 
-            // Coleta todo texto retornado (Gemma 4 às vezes retorna em múltiplos parts)
-            const textoRaw = (data.candidates?.[0]?.content?.parts || [])
-                .filter(p => p.text)
-                .map(p => p.text)
-                .join('');
-
-            const parsed = extrairJSON(textoRaw);
-
-            if (!parsed) {
-                // Fallback: renderiza o texto puro formatado se não conseguir parsear JSON
-                const textoFormatado = textoRaw
-                    .replace(/```json|```/gi, '')
-                    .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
-                    .replace(/\n/g, '<br>')
-                    .trim();
-                renderAnswerCard(null, textoFormatado || 'Não foi possível gerar uma resposta estruturada.', [], logIndex);
-                speak(textoRaw);
-                return;
-            }
-
-            speak((parsed.como_fazer || '').replace(/\*\*(.*?)\*\*/g, '$1'));
-            renderAnswerCard(
-                parsed.tem_caminho ? parsed.caminho : null,
-                (parsed.como_fazer || '').replace(/\*\*(.*?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>'),
-                parsed.dicas || [],
-                logIndex
-            );
-        } catch(e) {
-            console.error("Tentativa", tentativa, e);
-            await new Promise(r => setTimeout(r, Math.pow(2, tentativa) * 1200));
-            return tentarChamada(tentativa + 1);
-        }
+        speak((parsed.como_fazer || '').replace(/\*\*(.*?)\*\*/g, '$1'));
+        renderAnswerCard(
+            parsed.tem_caminho ? parsed.caminho : null,
+            (parsed.como_fazer || '').replace(/\*\*(.*?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>'),
+            parsed.dicas || [],
+            logIndex
+        );
+    } catch(e) {
+        console.error("Erro na chamada MCP:", e);
+        appendMessage('ai', `❌ Erro na comunicação com a IA (${mcpConfig.provider}). Tente novamente.`);
     }
-
-    await tentarChamada(1);
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1707,7 +1857,6 @@ function renderAnswerCard(caminho, comoFazer, dicas, logIndex, ehFixa = false) {
     const stream = document.getElementById('chatStream');
     const card = document.createElement('div');
     card.className = 'answer-card';
-    // Armazena dados da resposta no card para captura no feedback
     card._dadosResposta = { caminho, como_fazer: comoFazer, dicas };
 
     let html = '';
@@ -1734,10 +1883,8 @@ function renderAnswerCard(caminho, comoFazer, dicas, logIndex, ehFixa = false) {
     }
 
     if (dicas && dicas.length > 0) {
-        // Detecta se a dica menciona um caminho ou ação navegável no sistema
         const dicasHtml = dicas.map(d => {
             const textoFormatado = d.replace(/\*\*(.*?)\*\*/g,'<b>$1</b>');
-            // Extrai referência de caminho/ação entre [] ou após "Vá em" / "Acesse"
             const matchAcao = d.match(/\[([^\]]+)\]/) || d.match(/(?:Vá em|Acesse|Clique em|Menu)\s*[:\-]?\s*([^.]+)/i);
             const linkTermo = matchAcao ? matchAcao[1].trim() : null;
             const linkHtml = linkTermo && linkTermo.length > 3 && linkTermo.length < 80
@@ -1765,7 +1912,6 @@ function renderAnswerCard(caminho, comoFazer, dicas, logIndex, ehFixa = false) {
     card.innerHTML = html;
     stream.appendChild(card);
 
-    // 🔥 GARANTIA TOTAL DE SCROLL
     scrollToBottom(true);
     setTimeout(() => scrollToBottom(true), 50);
     setTimeout(() => scrollToBottom(true), 200);
@@ -1779,34 +1925,26 @@ function renderAnswerCard(caminho, comoFazer, dicas, logIndex, ehFixa = false) {
 function appendLoadingCard(texto = "🔍 Buscando a melhor solução...") {
     const stream = document.getElementById('chatStream');
     const div = document.createElement('div');
-
     div.className = 'message ai-msg';
     div.style.cssText = 'display:flex;align-items:center;gap:10px;';
     div.innerHTML = `<span>${texto}</span>
     <span class="loading-dots"><span></span><span></span><span></span></span>`;
-
     stream.appendChild(div);
-
     scrollToBottom(true);
     setTimeout(() => scrollToBottom(true), 50);
-
     return div;
 }
 
 function appendMessage(sender, text) {
     const stream = document.getElementById('chatStream');
     const div = document.createElement('div');
-
     div.className = sender === 'system'
         ? 'message system-msg'
         : `message ${sender === 'user' ? 'user-msg' : 'ai-msg'}`;
-
     div.innerHTML = text;
     stream.appendChild(div);
-
     scrollToBottom(true);
     setTimeout(() => scrollToBottom(true), 50);
-
     return div;
 }
 
@@ -1838,7 +1976,6 @@ async function saveFeedback(logIndex, type, btn) {
         body: JSON.stringify({ pergunta: lastQuery||"?", encontrou:"Sim", feedback: type==='positivo'?"Positivo":"Negativo" }) });
 
     if (type === 'positivo') {
-        // 🔒 Fixa a resposta como absoluta online para todos os usuários
         if (card && card._dadosResposta && lastQuery) {
             await salvarRespostaFixa(lastQuery, card._dadosResposta);
             feedbackArea.innerHTML = "<span style='color:#166534;font-weight:700;'>✅ Obrigado! Resposta fixada para todos os usuários.</span>";
@@ -1912,21 +2049,16 @@ async function showAnalytics() {
         const response = await fetch(SCRIPT_URL + "?tipo=logs");
         const data = await response.json();
         
-        // --- LÓGICA DE DESDUPLICAÇÃO ---
         const logsProcessados = {};
         
         data.slice(1).forEach(row => {
             if (row[1] === "FEEDBACK_USUARIO" || !row[1] || row[1].includes("FEEDBACK_NEGATIVO")) return;
-            
             const pergunta = row[1].trim();
-            // Se já existe essa pergunta e a nova linha é "Pendente", ignoramos a nova.
-            // Se a nova linha tem feedback real, ela substitui a "Pendente" no relatório.
             if (!logsProcessados[pergunta] || row[3] !== "Pendente") {
                 logsProcessados[pergunta] = row;
             }
         });
 
-        // Converte de volta para array e inverte para ver os mais recentes primeiro
         const listaExibicao = Object.values(logsProcessados).reverse().slice(0, 30);
 
         let html = `<table style="width:100%; font-size:12px; border-collapse: collapse;">
@@ -1940,7 +2072,6 @@ async function showAnalytics() {
         listaExibicao.forEach(row => {
             const dt = row[0] ? new Date(row[0]).toLocaleDateString('pt-BR') : '-';
             const manualIcon = row[2] === "Sim" ? "✅" : "❌";
-            
             let feedbackIcon = "⏳"; 
             if (row[3] === "Positivo") feedbackIcon = "👍";
             if (row[3] === "Negativo") feedbackIcon = "👎";
