@@ -1711,15 +1711,453 @@ async function processarProximaSolucao(perguntaOriginal, isEmissao = false) {
 // ═══════════════════════════════════════════════════════════
 //  RESPOSTA SEFAZ (Adaptada para MCP)
 // ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+//  RESPOSTA SEFAZ - Gemma 4 (primário) + Llama 3.3 (fallback)
+// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+//  RESPOSTA SEFAZ - Gemma 4 (primário) + Llama 3.3 (fallback)
+// ═══════════════════════════════════════════════════════════
 async function gerarRespostaSefaz(pergunta) {
-    appendMessage('system', '🌐 <strong>Erro SEFAZ detectado</strong> — Consultando base de dados nacional + internet...');
-    const loadingDiv = appendLoadingCard("🌐 Pesquisando causa e solução do erro SEFAZ...");
+    appendMessage('system', '🌐 <strong>Erro SEFAZ detectado</strong> — Pesquisando informações atualizadas...');
+    const loadingDiv = appendLoadingCard("🌐 Buscando solução para erro SEFAZ...");
     const logIndex = Date.now();
 
-    const promptSefaz = `Você é um especialista em documentos fiscais eletrônicos brasileiros (CT-e, MDF-e, NF-e) e integração com a SEFAZ.
-O sistema Bsoft TMS funciona com a seguinte estrutura:
-Quando aberto o sistema, tem um menu lateral que no topo tem uma opção de pesquisar as funções digitando e abaixo os seguintes menus principais: 
-Opções do Sistema
+    // Extrai o código de rejeição
+    const codigoMatch = pergunta.match(/\b(\d{3,4})\b/);
+    const codigoRejeicao = codigoMatch ? codigoMatch[1] : '';
+
+    // Prompt otimizado para SEFAZ (sem manual do sistema)
+    const promptSefaz = `Você é um especialista em documentos fiscais eletrônicos brasileiros (CT-e, MDF-e, NF-e, NFC-e) e SEFAZ.
+
+IMPORTANTE: Esta é uma consulta sobre ERROS/REJEIÇÕES DA SEFAZ. Use seu conhecimento sobre a legislação fiscal brasileira e documentos eletrônicos.
+
+ERRO REPORTADO PELO USUÁRIO: "${pergunta}"
+
+Analise este erro/rejeição da SEFAZ e responda APENAS com JSON válido (sem markdown, sem texto fora do JSON):
+{
+  "codigo": "${codigoRejeicao}",
+  "significado": "O que significa este código/erro segundo a legislação SEFAZ",
+  "causas": "Causas mais comuns para esta rejeição",
+  "solucao": "Passo a passo para resolver o problema",
+  "dicas": ["Dica preventiva 1", "Dica 2", "Dica 3"]
+}`;
+
+    // Função de retry
+    async function tentarComRetry(fn, maxTentativas = 3) {
+        for (let tentativa = 1; tentativa <= maxTentativas; tentativa++) {
+            try {
+                return await fn();
+            } catch (e) {
+                const msg = (e.message || '').toLowerCase();
+                const isRateLimit = msg.includes('429') || msg.includes('quota') || msg.includes('rate limit') || msg.includes('resource_exhausted');
+                
+                if (isRateLimit && tentativa < maxTentativas) {
+                    const espera = Math.pow(2, tentativa) * 2000; // 2s, 4s, 8s
+                    loadingDiv.querySelector('span').textContent = `⏳ Aguardando ${espera/1000}s... (${tentativa}/${maxTentativas})`;
+                    await new Promise(r => setTimeout(r, espera));
+                    continue;
+                }
+                throw e;
+            }
+        }
+    }
+
+    // ═══════════════════════════════════════════════════
+    // TENTATIVA 1: Gemma 4 26B (OpenRouter)
+    // ═══════════════════════════════════════════════════
+    try {
+        loadingDiv.querySelector('span').textContent = "🔍 Consultando Gemma 4...";
+        
+        const resultado = await tentarComRetry(async () => {
+            return await callMCPAPI(
+                'openrouter',
+                'google/gemma-4-26b-a4b-it',
+                mcpConfig.apiKey,
+                mcpConfig.baseUrl,
+                [{ role: 'user', content: promptSefaz }],
+                { temperature: 0.9, maxTokens: 2048 }
+            );
+        });
+
+        loadingDiv.remove();
+        processarRespostaSefaz(resultado.text, logIndex, 'gemma4');
+        return;
+        
+    } catch (e1) {
+        console.warn("⚠️ Gemma 4 falhou:", e1.message);
+        
+        // ═══════════════════════════════════════════════════
+        // TENTATIVA 2: Llama 3.3 70B (OpenRouter)
+        // ═══════════════════════════════════════════════════
+        try {
+            loadingDiv.querySelector('span').textContent = "🔄 Gemma indisponível, tentando Llama 3.3...";
+            
+            const resultado = await tentarComRetry(async () => {
+                return await callMCPAPI(
+                    'openrouter',
+                    'meta-llama/llama-3.3-70b-instruct',
+                    mcpConfig.apiKey,
+                    mcpConfig.baseUrl,
+                    [{ role: 'user', content: promptSefaz }],
+                    { temperature: 0.9, maxTokens: 2048 }
+                );
+            });
+
+            loadingDiv.remove();
+            processarRespostaSefaz(resultado.text, logIndex, 'llama');
+            return;
+            
+        } catch (e2) {
+            console.warn("⚠️ Llama também falhou:", e2.message);
+            
+            // ═══════════════════════════════════════════════════
+            // TENTATIVA 3: Baidu Cobuddy (último recurso)
+            // ═══════════════════════════════════════════════════
+            try {
+                loadingDiv.querySelector('span').textContent = "🔄 Última tentativa...";
+                
+                const resultado = await tentarComRetry(async () => {
+                    return await callMCPAPI(
+                        'openrouter',
+                        'baidu/cobuddy:free',
+                        mcpConfig.apiKey,
+                        mcpConfig.baseUrl,
+                        [{ role: 'user', content: promptSefaz }],
+                        { temperature: 0.9, maxTokens: 1024 }
+                    );
+                });
+
+                loadingDiv.remove();
+                processarRespostaSefaz(resultado.text, logIndex, 'baidu');
+                return;
+                
+            } catch (e3) {
+                loadingDiv.remove();
+                console.error("❌ Todos os modelos falharam:", e3);
+                appendMessage('ai', `❌ Não foi possível consultar no momento. Sugiro pesquisar diretamente no Google:\n\n🔗 https://www.google.com/search?q=SEFAZ+rejeição+${encodeURIComponent(codigoRejeicao || pergunta)}`);
+            }
+        }
+    }
+}
+
+// Função para processar e renderizar a resposta SEFAZ
+function processarRespostaSefaz(textoRaw, logIndex, modelo) {
+    console.log(`📡 Resposta SEFAZ [${modelo}]:`, textoRaw.substring(0, 200));
+    
+    // Tenta extrair JSON da resposta
+    let parsed = null;
+    
+    // Método 1: Parse direto
+    try { 
+        parsed = JSON.parse(textoRaw); 
+    } catch(e) {}
+    
+    // Método 2: Remove markdown
+    if (!parsed) {
+        try {
+            const limpo = textoRaw.replace(/```json\s*/gi, '').replace(/```/g, '').trim();
+            parsed = JSON.parse(limpo);
+        } catch(e) {}
+    }
+    
+    // Método 3: Extrai primeiro { ... } balanceado
+    if (!parsed) {
+        let depth = 0, start = -1;
+        for (let i = 0; i < textoRaw.length; i++) {
+            if (textoRaw[i] === '{') {
+                if (depth === 0) start = i;
+                depth++;
+            } else if (textoRaw[i] === '}') {
+                depth--;
+                if (depth === 0 && start !== -1) {
+                    try {
+                        parsed = JSON.parse(textoRaw.substring(start, i + 1));
+                        break;
+                    } catch(e) {
+                        depth = 0;
+                        start = -1;
+                    }
+                }
+            }
+        }
+    }
+    
+    // Renderiza o card
+    const stream = document.getElementById('chatStream');
+    const card = document.createElement('div');
+    card.className = 'answer-card';
+    card._dadosResposta = { 
+        caminho: null, 
+        como_fazer: parsed ? 
+            (parsed.significado || '') + '\n\n**Causas:**\n' + (parsed.causas || '') + '\n\n**Solução:**\n' + (parsed.solucao || '') : 
+            textoRaw,
+        dicas: parsed?.dicas || [] 
+    };
+
+    const modeloLabel = modelo === 'gemma4' ? '🤖 Gemma 4' : modelo === 'llama' ? '🦙 Llama 3.3' : '🤖 Baidu';
+    
+    let html = `<div style="background:#f0fdf4;padding:8px 15px;border-bottom:1px solid #bbf7d0;font-size:11px;color:#166534;">
+        🌐 <strong>Pesquisa SEFAZ</strong> • ${modeloLabel}
+    </div>`;
+
+    if (parsed) {
+        if (parsed.codigo) {
+            html += `<div class="answer-section">
+                <div class="section-label path">🔢 Código da Rejeição</div>
+                <div style="font-size:28px;font-weight:800;color:#dc2626;padding:8px 0;">${parsed.codigo}</div>
+            </div>`;
+        }
+        
+        if (parsed.significado) {
+            html += `<div class="answer-section">
+                <div class="section-label how">📋 Significado</div>
+                <div class="section-content">${formatarTexto(parsed.significado)}</div>
+            </div>`;
+        }
+        
+        if (parsed.causas) {
+            html += `<div class="answer-section">
+                <div class="section-label path">🔍 Causas Comuns</div>
+                <div class="section-content">${formatarTexto(parsed.causas)}</div>
+            </div>`;
+        }
+        
+        if (parsed.solucao) {
+            html += `<div class="answer-section">
+                <div class="section-label how">✅ Como Resolver</div>
+                <div class="section-content">${formatarTexto(parsed.solucao)}</div>
+            </div>`;
+        }
+        
+        if (parsed.dicas && parsed.dicas.length > 0) {
+            const dicasHtml = parsed.dicas.map(d => 
+                `<div class="tip-item"><span>💡</span><span>${d.replace(/\*\*(.*?)\*\*/g,'<b>$1</b>')}</span></div>`
+            ).join('');
+            
+            html += `<div class="answer-section">
+                <div class="section-label tip">💡 Dicas</div>
+                ${dicasHtml}
+            </div>`;
+        }
+    } else {
+        html += `<div class="answer-section">
+            <div class="section-content">${formatarTexto(textoRaw)}</div>
+        </div>`;
+    }
+    
+    html += `<div class="feedback-area">
+        <span>Esta informação foi útil?</span>
+        <button class="feedback-btn" onclick="saveFeedback(${logIndex},'positivo',this)">👍</button>
+        <button class="feedback-btn" onclick="saveFeedback(${logIndex},'negativo',this)">👎</button>
+    </div>`;
+
+    card.innerHTML = html;
+    stream.appendChild(card);
+    scrollToBottom(true);
+}
+
+// Helper para formatar texto
+function formatarTexto(texto) {
+    return texto
+        .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+        .replace(/\*(.*?)\*/g, '<i>$1</i>')
+        .replace(/\n/g, '<br>')
+        .replace(/`(.*?)`/g, '<code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;">$1</code>');
+}
+
+// Função para processar e renderizar a resposta SEFAZ
+function processarRespostaSefaz(textoRaw, logIndex, modelo) {
+    console.log(`📡 Resposta SEFAZ [${modelo}]:`, textoRaw.substring(0, 200));
+    
+    // Tenta extrair JSON da resposta
+    let parsed = null;
+    
+    // Método 1: Parse direto
+    try { 
+        parsed = JSON.parse(textoRaw); 
+    } catch(e) {}
+    
+    // Método 2: Remove markdown
+    if (!parsed) {
+        try {
+            const limpo = textoRaw.replace(/```json\s*/gi, '').replace(/```/g, '').trim();
+            parsed = JSON.parse(limpo);
+        } catch(e) {}
+    }
+    
+    // Método 3: Extrai primeiro { ... } balanceado
+    if (!parsed) {
+        let depth = 0, start = -1;
+        for (let i = 0; i < textoRaw.length; i++) {
+            if (textoRaw[i] === '{') {
+                if (depth === 0) start = i;
+                depth++;
+            } else if (textoRaw[i] === '}') {
+                depth--;
+                if (depth === 0 && start !== -1) {
+                    try {
+                        parsed = JSON.parse(textoRaw.substring(start, i + 1));
+                        break;
+                    } catch(e) {
+                        depth = 0;
+                        start = -1;
+                    }
+                }
+            }
+        }
+    }
+    
+    // Renderiza o card
+    const stream = document.getElementById('chatStream');
+    const card = document.createElement('div');
+    card.className = 'answer-card';
+    card._dadosResposta = { 
+        caminho: null, 
+        como_fazer: parsed ? 
+            (parsed.significado || '') + '\n\n**Causas:**\n' + (parsed.causas || '') + '\n\n**Solução:**\n' + (parsed.solucao || '') : 
+            textoRaw,
+        dicas: parsed?.dicas || [] 
+    };
+
+    const modeloLabel = modelo === 'gemma4' ? '🤖 Gemma 4' : modelo === 'llama' ? '🦙 Llama 3.3' : '🤖 Baidu';
+    
+    let html = `<div style="background:#f0fdf4;padding:8px 15px;border-bottom:1px solid #bbf7d0;font-size:11px;color:#166534;">
+        🌐 <strong>Pesquisa SEFAZ</strong> • ${modeloLabel}
+    </div>`;
+
+    if (parsed) {
+        if (parsed.codigo) {
+            html += `<div class="answer-section">
+                <div class="section-label path">🔢 Código da Rejeição</div>
+                <div style="font-size:28px;font-weight:800;color:#dc2626;padding:8px 0;">${parsed.codigo}</div>
+            </div>`;
+        }
+        
+        if (parsed.significado) {
+            html += `<div class="answer-section">
+                <div class="section-label how">📋 Significado</div>
+                <div class="section-content">${formatarTexto(parsed.significado)}</div>
+            </div>`;
+        }
+        
+        if (parsed.causas) {
+            html += `<div class="answer-section">
+                <div class="section-label path">🔍 Causas Comuns</div>
+                <div class="section-content">${formatarTexto(parsed.causas)}</div>
+            </div>`;
+        }
+        
+        if (parsed.solucao) {
+            html += `<div class="answer-section">
+                <div class="section-label how">✅ Como Resolver</div>
+                <div class="section-content">${formatarTexto(parsed.solucao)}</div>
+            </div>`;
+        }
+        
+        if (parsed.dicas && parsed.dicas.length > 0) {
+            const dicasHtml = parsed.dicas.map(d => 
+                `<div class="tip-item"><span>💡</span><span>${d.replace(/\*\*(.*?)\*\*/g,'<b>$1</b>')}</span></div>`
+            ).join('');
+            
+            html += `<div class="answer-section">
+                <div class="section-label tip">💡 Dicas</div>
+                ${dicasHtml}
+            </div>`;
+        }
+    } else {
+        html += `<div class="answer-section">
+            <div class="section-content">${formatarTexto(textoRaw)}</div>
+        </div>`;
+    }
+    
+    html += `<div class="feedback-area">
+        <span>Esta informação foi útil?</span>
+        <button class="feedback-btn" onclick="saveFeedback(${logIndex},'positivo',this)">👍</button>
+        <button class="feedback-btn" onclick="saveFeedback(${logIndex},'negativo',this)">👎</button>
+    </div>`;
+
+    card.innerHTML = html;
+    stream.appendChild(card);
+    scrollToBottom(true);
+}
+
+// Helper para formatar texto
+function formatarTexto(texto) {
+    return texto
+        .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+        .replace(/\*(.*?)\*/g, '<i>$1</i>')
+        .replace(/\n/g, '<br>')
+        .replace(/`(.*?)`/g, '<code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;">$1</code>');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  RESPOSTA ESTRUTURADA (Adaptada para MCP)
+// ═══════════════════════════════════════════════════════════
+async function gerarRespostaEstruturada(pergunta, dadosBanco, logIndex, candidatosReversa = [], isEmissao = false) {
+    userQuestionsHistory.push(pergunta);
+    if (userQuestionsHistory.length > 3) userQuestionsHistory.shift();
+
+    if (screenStream) {
+        try {
+            const videoTrack = screenStream.getVideoTracks()[0];
+            const capture = new ImageCapture(videoTrack);
+            const bitmap = await capture.grabFrame();
+            const canvas = document.createElement('canvas');
+            canvas.width = bitmap.width; canvas.height = bitmap.height;
+            canvas.getContext('2d').drawImage(bitmap, 0, 0);
+            attachedFileData = { mime_type: "image/jpeg", data: canvas.toDataURL('image/jpeg').split(',')[1] };
+        } catch(e) { console.warn("Erro ao capturar tela:", e); }
+    }
+
+    let contextoParametros = "";
+    if (dadosParametros.length > 0) {
+        const termos = pergunta.toLowerCase().split(' ').filter(t => t.length > 3);
+        const rel = dadosParametros.filter(p => {
+            const desc = (p['Descrição'] || p['Descricao'] || p['Nome'] || '').toLowerCase();
+            return termos.some(t => desc.includes(t));
+        }).slice(0, 5);
+        if (rel.length > 0) {
+            contextoParametros = "\n\nPARÂMETROS RELACIONADOS DO SISTEMA:\n" +
+                rel.map(p => `- ${p['Descrição']||p['Descricao']||''}: ${p['Valor']||''} (${p['Nome Interno']||p['NomeInterno']||''})`).join('\n');
+        }
+    }
+
+    let contextoFuncionalidades = "";
+    if (dadosFuncionalidades.length > 0) {
+        const termos = pergunta.toLowerCase().split(' ').filter(t => t.length > 3);
+        const rel = dadosFuncionalidades.filter(f => {
+            const desc = (f['Descrição'] || f['Descricao'] || '').toLowerCase();
+            return termos.some(t => desc.includes(t));
+        }).slice(0, 5);
+        if (rel.length > 0) {
+            contextoFuncionalidades = "\n\nFUNCIONALIDADES RELACIONADAS:\n" +
+                rel.map(f => `- ${f['Descrição']||f['Descricao']||''}`).join('\n');
+        }
+    }
+
+    let contextoBanco;
+    if (dadosBanco) {
+        const conteudoEmitir = (isEmissao && dadosBanco.emitir && dadosBanco.emitir.length > 10)
+            ? `\nCOMO EMITIR (coluna prioritária): ${dadosBanco.emitir}`
+            : "";
+        contextoBanco = `\nCONTEXTO DO MANUAL TÉCNICO:\nDÚVIDA CORRESPONDENTE: ${dadosBanco.erro}\nSOLUÇÃO: ${dadosBanco.solucao}${conteudoEmitir}\nSIMILARIDADE: ${(dadosBanco.similaridade*100).toFixed(0)}%`;
+    } else if (candidatosReversa && candidatosReversa.length > 0) {
+        const candidatosTexto = candidatosReversa.map((c, i) =>
+            `[CANDIDATO ${i+1} - ${(c.similaridade*100).toFixed(0)}% similar]\nDúvida: ${c.erro}\nSolução: ${c.solucao}`
+        ).join('\n\n');
+        contextoBanco = `\nNÃO ENCONTREI CORRESPONDÊNCIA DIRETA NO MANUAL.
+Modo de Engenharia Reversa ativado — analise os candidatos abaixo:
+
+${candidatosTexto}
+
+Use raciocínio lógico: se a pergunta envolve um processo similar, aplique a lógica invertida ou o mesmo padrão de solução adaptado ao contexto da pergunta.`;
+    } else {
+        contextoBanco = "\nNENHUMA INFORMAÇÃO ESPECÍFICA NO MANUAL. Use conhecimento geral sobre ERPs e sistemas de transporte de carga.";
+    }
+
+    const prompt = `Você é o Especialista de Suporte do Bsoft TMS, um sistema ERP para empresas de transporte de cargas. Seja preciso, técnico e direto.
+	O sistema Bsoft TMS funciona com a seguinte estrutura:
+Quando aberto o sistema, tem um menu lateral que no topo tem uma opção de pesquisar as funções digitando e abaixo os seguintes menu principais: Opções do Sistema
 Ambiente
 Recursos
 Financeiro
@@ -1833,128 +2271,7 @@ Relatório Financeiro dos Equipamentos: Manutenção/Relatórios/Financeiro dos 
 Cotações de Frete: Transporte/Contações de Frete
 Solicitação interna de compra: Estoque/Solicitação interna de compra
 Finalidades de Movimentação: Estoque/Configurações/Finalidades de Movimentação
-O usuário do sistema Bsoft TMS está com o seguinte problema: "${pergunta}"
-
-Analise o erro SEFAZ mencionado e responda com:
-1. O que significa esse código/erro na SEFAZ
-2. As causas mais comuns
-3. Como resolver no sistema (passos técnicos)
-4. Dicas para evitar a recorrência
-
-Responda APENAS com JSON válido:
-{
-  "caminho": "Caminho no sistema se aplicável. Null se não aplicável.",
-  "como_fazer": "Explicação técnica completa com causas e solução passo a passo.",
-  "dicas": ["Dica preventiva 1", "Dica 2"],
-  "tem_caminho": false
-}`;
-
-    try {
-        const result = await callCurrentMCP([
-            { role: 'user', content: promptSefaz }
-        ], { temperature: 0.2, maxTokens: 4096, responseFormat: { type: 'json_object' } });
-
-        loadingDiv.remove();
-        
-        let parsed = null;
-        const textoRaw = result.text;
-        
-        // Tenta parse JSON
-        try { parsed = JSON.parse(textoRaw); } catch(e) {
-            const semMd = textoRaw.replace(/```json\s*/gi,'').replace(/```/g,'').trim();
-            try { parsed = JSON.parse(semMd); } catch(e2) {
-                let d=0, s=-1;
-                for(let i=0;i<textoRaw.length;i++){
-                    if(textoRaw[i]==='{'){if(d===0)s=i;d++;}
-                    else if(textoRaw[i]==='}'){d--;if(d===0&&s!==-1){try{parsed=JSON.parse(textoRaw.substring(s,i+1));break;}catch(e3){d=0;s=-1;}}}
-                }
-            }
-        }
-
-        if (!parsed) {
-            renderAnswerCard(null, textoRaw.replace(/\*\*(.*?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>'), [], logIndex);
-            return;
-        }
-
-        renderAnswerCard(
-            parsed.tem_caminho ? parsed.caminho : null,
-            (parsed.como_fazer || '').replace(/\*\*(.*?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>'),
-            parsed.dicas || [],
-            logIndex
-        );
-    } catch(e) {
-        loadingDiv.remove();
-        console.error("Erro SEFAZ web:", e);
-        await gerarRespostaEstruturada(pergunta, null, logIndex, [], false);
-    }
-}
-
-// ═══════════════════════════════════════════════════════════
-//  RESPOSTA ESTRUTURADA (Adaptada para MCP)
-// ═══════════════════════════════════════════════════════════
-async function gerarRespostaEstruturada(pergunta, dadosBanco, logIndex, candidatosReversa = [], isEmissao = false) {
-    userQuestionsHistory.push(pergunta);
-    if (userQuestionsHistory.length > 3) userQuestionsHistory.shift();
-
-    if (screenStream) {
-        try {
-            const videoTrack = screenStream.getVideoTracks()[0];
-            const capture = new ImageCapture(videoTrack);
-            const bitmap = await capture.grabFrame();
-            const canvas = document.createElement('canvas');
-            canvas.width = bitmap.width; canvas.height = bitmap.height;
-            canvas.getContext('2d').drawImage(bitmap, 0, 0);
-            attachedFileData = { mime_type: "image/jpeg", data: canvas.toDataURL('image/jpeg').split(',')[1] };
-        } catch(e) { console.warn("Erro ao capturar tela:", e); }
-    }
-
-    let contextoParametros = "";
-    if (dadosParametros.length > 0) {
-        const termos = pergunta.toLowerCase().split(' ').filter(t => t.length > 3);
-        const rel = dadosParametros.filter(p => {
-            const desc = (p['Descrição'] || p['Descricao'] || p['Nome'] || '').toLowerCase();
-            return termos.some(t => desc.includes(t));
-        }).slice(0, 5);
-        if (rel.length > 0) {
-            contextoParametros = "\n\nPARÂMETROS RELACIONADOS DO SISTEMA:\n" +
-                rel.map(p => `- ${p['Descrição']||p['Descricao']||''}: ${p['Valor']||''} (${p['Nome Interno']||p['NomeInterno']||''})`).join('\n');
-        }
-    }
-
-    let contextoFuncionalidades = "";
-    if (dadosFuncionalidades.length > 0) {
-        const termos = pergunta.toLowerCase().split(' ').filter(t => t.length > 3);
-        const rel = dadosFuncionalidades.filter(f => {
-            const desc = (f['Descrição'] || f['Descricao'] || '').toLowerCase();
-            return termos.some(t => desc.includes(t));
-        }).slice(0, 5);
-        if (rel.length > 0) {
-            contextoFuncionalidades = "\n\nFUNCIONALIDADES RELACIONADAS:\n" +
-                rel.map(f => `- ${f['Descrição']||f['Descricao']||''}`).join('\n');
-        }
-    }
-
-    let contextoBanco;
-    if (dadosBanco) {
-        const conteudoEmitir = (isEmissao && dadosBanco.emitir && dadosBanco.emitir.length > 10)
-            ? `\nCOMO EMITIR (coluna prioritária): ${dadosBanco.emitir}`
-            : "";
-        contextoBanco = `\nCONTEXTO DO MANUAL TÉCNICO:\nDÚVIDA CORRESPONDENTE: ${dadosBanco.erro}\nSOLUÇÃO: ${dadosBanco.solucao}${conteudoEmitir}\nSIMILARIDADE: ${(dadosBanco.similaridade*100).toFixed(0)}%`;
-    } else if (candidatosReversa && candidatosReversa.length > 0) {
-        const candidatosTexto = candidatosReversa.map((c, i) =>
-            `[CANDIDATO ${i+1} - ${(c.similaridade*100).toFixed(0)}% similar]\nDúvida: ${c.erro}\nSolução: ${c.solucao}`
-        ).join('\n\n');
-        contextoBanco = `\nNÃO ENCONTREI CORRESPONDÊNCIA DIRETA NO MANUAL.
-Modo de Engenharia Reversa ativado — analise os candidatos abaixo:
-
-${candidatosTexto}
-
-Use raciocínio lógico: se a pergunta envolve um processo similar, aplique a lógica invertida ou o mesmo padrão de solução adaptado ao contexto da pergunta.`;
-    } else {
-        contextoBanco = "\nNENHUMA INFORMAÇÃO ESPECÍFICA NO MANUAL. Use conhecimento geral sobre ERPs e sistemas de transporte de carga.";
-    }
-
-    const prompt = `Você é o Especialista de Suporte do Bsoft TMS, um sistema ERP para empresas de transporte de cargas. Seja preciso, técnico e direto.
+IMPORTANTE: Esta é uma consulta sobre ERROS/REJEIÇÕES DA SEFAZ. Use seu conhecimento sobre a legislação fiscal brasileira e documentos eletrônicos.
 
 IMPORTANTE — INTERPRETAÇÃO SEMÂNTICA: Trate como equivalentes os verbos de intenção similar. 
 "criar", "emitir", "gerar", "lançar", "fazer", "abrir" = mesma intenção.
