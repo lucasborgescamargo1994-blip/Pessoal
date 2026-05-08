@@ -933,7 +933,7 @@ let isVectorizing = true;
 // ═══════════════════════════════════════════════════════════
 //  CONFIGURAÇÕES
 // ═══════════════════════════════════════════════════════════
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxEr7Xqcqw_LxB6LKsJYOSEoKzPxjkzJUCsI4D5QYyvu8hQtuTOUfyQLAtC8Y_FpjYc/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz41slCG06vRDMeMYAeDcTTOjpI22l0fETzbEq-JJ3AopzLA6zxAbNE3cTbucCoGkc7/exec";
 const CORRECT_PASSWORD = "camargo1994";
 
 // ═══════════════════════════════════════════════════════════
@@ -1078,8 +1078,12 @@ async function loadData() {
         }
 
         if (resLogs.status === 'fulfilled') {
-            popularBarraEmAlta(resLogs.value);
-        }
+    console.log("📞 Chamando popularBarraEmAlta com dados dos logs...");
+    console.log("Dados recebidos:", resLogs.value);
+    popularBarraEmAlta(resLogs.value);
+} else {
+    console.warn("⚠️ Falha ao carregar logs:", resLogs.status);
+}
 
         if (resBanco.status !== 'fulfilled') throw new Error("Falha ao buscar BancoDados");
 
@@ -1123,48 +1127,218 @@ async function loadData() {
 
 function popularBarraEmAlta(logsData) {
     try {
-        const rows = Array.isArray(logsData) ? logsData.slice(1) : [];
-        if (!rows.length) return;
+        console.log("🔄 Iniciando popularBarraEmAlta...");
+        
+        // Verifica se os dados são array (formato antigo) ou array de objetos (formato novo)
+        const isObjeto = Array.isArray(logsData) && logsData.length > 0 && typeof logsData[0] === 'object' && !Array.isArray(logsData[0]);
+        
+        console.log(`📋 Formato detectado: ${isObjeto ? 'OBJETOS (com chaves)' : 'ARRAYS (índices numéricos)'}`);
+        
+        const rows = Array.isArray(logsData) ? logsData : [];
+        
+        if (!rows.length) {
+            console.warn("⚠️ Nenhum log encontrado");
+            return;
+        }
+
+        console.log(`📝 Processando ${rows.length} linhas de log...`);
+        
+        // DIAGNÓSTICO: Mostra a estrutura da primeira linha
+        if (rows.length > 0) {
+            console.log("🔍 Estrutura da primeira linha:", JSON.stringify(rows[0]).substring(0, 200));
+        }
 
         const contagem = {};
+        const perguntasOrdenadas = [];
         const agora = Date.now();
         const seteDias = 7 * 24 * 60 * 60 * 1000;
+        const umDia = 24 * 60 * 60 * 1000;
+        let totalPerguntasValidas = 0;
+        let totalIgnoradas = 0;
 
-        rows.forEach(row => {
-            const pergunta = (row[1] || "").trim();
-            if (!pergunta || pergunta.startsWith("FEEDBACK") || pergunta.length < 5) return;
-            const ts = row[0] ? new Date(row[0]).getTime() : 0;
-            const isRecente = (agora - ts) < seteDias;
-            if (!contagem[pergunta]) contagem[pergunta] = { freq: 0, recente: false };
+        rows.forEach((row, index) => {
+            let pergunta = "";
+            let ts = 0;
+            let feedback = "";
+            
+            if (isObjeto) {
+                // FORMATO OBJETO: { data, pergunta, encontroumanual, feedback, timestampid? }
+                pergunta = (row.pergunta || row.Pergunta || row['pergunta'] || row['Pergunta'] || "").toString().trim();
+                feedback = (row.feedback || row.Feedback || "").toString().trim();
+                
+                // Tenta extrair data
+                if (row.data || row.Data || row.timestamp || row.Timestamp) {
+                    const d = new Date(row.data || row.Data || row.timestamp || row.Timestamp);
+                    if (!isNaN(d.getTime())) ts = d.getTime();
+                }
+                if (!ts && row.timestampid) {
+                    const tid = parseInt(row.timestampid);
+                    if (!isNaN(tid)) ts = tid;
+                }
+            } else {
+                // FORMATO ARRAY: [Data, Pergunta, Encontrou?, Feedback, TimestampID]
+                pergunta = (row[1] || "").toString().trim();
+                feedback = (row[3] || "").toString().trim();
+                
+                if (row[0]) {
+                    const d = new Date(row[0]);
+                    if (!isNaN(d.getTime())) ts = d.getTime();
+                }
+                if (!ts && row[4] && !isNaN(parseInt(row[4]))) {
+                    ts = parseInt(row[4]);
+                }
+            }
+            
+            // Debug das primeiras 5 linhas
+            if (index < 5) {
+                console.log(`  Linha ${index}: pergunta="${pergunta.substring(0, 80)}" | feedback="${feedback}" | ts=${ts}`);
+            }
+            
+            // Verifica se a pergunta é válida
+            const isFeedback = pergunta.toUpperCase().startsWith("FEEDBACK");
+            const isPendenteStr = pergunta === "Pendente";
+            const isVazia = !pergunta || pergunta.length < 3;
+            
+            // Verifica se é uma data ISO (ex: 2026-05-04T15:39:48.000Z)
+            let isData = false;
+            if (pergunta.length > 10) {
+                const d = new Date(pergunta);
+                isData = !isNaN(d.getTime()) && pergunta.includes('T');
+            }
+            
+            if (isVazia || isFeedback || isPendenteStr || isData) {
+                totalIgnoradas++;
+                if (index < 5) {
+                    console.log(`    → Ignorada: vazia=${isVazia}, feedback=${isFeedback}, pendente=${isPendenteStr}, data=${isData}`);
+                }
+                return;
+            }
+            
+            totalPerguntasValidas++;
+            
+            const isRecente = (agora - ts) < seteDias && ts > 0;
+            const isMuitoRecente = (agora - ts) < umDia && ts > 0;
+            
+            // Contagem de frequência
+            if (!contagem[pergunta]) {
+                contagem[pergunta] = { 
+                    freq: 0, 
+                    recente: false, 
+                    muitoRecente: false,
+                    ultimaVez: ts,
+                    primeiraVez: ts 
+                };
+                perguntasOrdenadas.push(pergunta);
+            }
+            
             contagem[pergunta].freq++;
             if (isRecente) contagem[pergunta].recente = true;
+            if (isMuitoRecente) contagem[pergunta].muitoRecente = true;
+            if (ts > contagem[pergunta].ultimaVez) {
+                contagem[pergunta].ultimaVez = ts;
+            }
+            if ((ts < contagem[pergunta].primeiraVez || contagem[pergunta].primeiraVez === 0) && ts > 0) {
+                contagem[pergunta].primeiraVez = ts;
+            }
         });
 
-        const ordenados = Object.entries(contagem)
-            .sort((a, b) => {
-                const scoreA = (a[1].recente ? 10 : 0) + a[1].freq;
-                const scoreB = (b[1].recente ? 10 : 0) + b[1].freq;
-                return scoreB - scoreA;
-            })
-            .slice(0, 8)
+        console.log(`✅ Perguntas válidas: ${totalPerguntasValidas} | Ignoradas: ${totalIgnoradas}`);
+        console.log(`📊 Perguntas únicas: ${Object.keys(contagem).length}`);
+
+        if (Object.keys(contagem).length === 0) {
+            console.warn("⚠️ Nenhuma pergunta válida encontrada");
+            return;
+        }
+
+        // ═══════════════════════════════════════════════════
+        // LÓGICA DE ORDENAÇÃO:
+        // 1. PRIMEIRO: 4 últimas perguntas (mais recentes)
+        // 2. DEPOIS: recorrentes (freq >= 2) substituem as menos relevantes
+        // ═══════════════════════════════════════════════════
+        
+        // Pega as 4 últimas perguntas por ordem de data
+        const ultimas4 = [...perguntasOrdenadas]
+            .filter(p => contagem[p].ultimaVez > 0)
+            .sort((a, b) => (contagem[b].ultimaVez || 0) - (contagem[a].ultimaVez || 0))
+            .slice(0, 4);
+        
+        // Se não tem data em nenhuma, pega as últimas adicionadas
+        if (ultimas4.length === 0) {
+            ultimas4.push(...perguntasOrdenadas.slice(-4));
+        }
+        
+        console.log("🕐 4 últimas perguntas:", ultimas4.map(p => `"${p.substring(0, 40)}" (${contagem[p]?.freq || 0}x)`));
+        
+        // Pega as mais frequentes (que não estão nas últimas 4)
+        const setUltimas4 = new Set(ultimas4);
+        const recorrentes = Object.entries(contagem)
+            .filter(([k]) => !setUltimas4.has(k) && contagem[k].freq >= 2)
+            .sort((a, b) => b[1].freq - a[1].freq)
             .map(([k]) => k);
+        
+        console.log("🔄 Perguntas recorrentes:", recorrentes.map(p => `"${p.substring(0, 40)}" (${contagem[p].freq}x)`));
+        
+        // Monta a lista final
+        let listaFinal = [...ultimas4];
+        
+        if (recorrentes.length > 0) {
+            const novasUltimas = ultimas4.slice(0, 2); // Mantém as 2 mais recentes
+            const espacoParaRecorrentes = 6;
+            const recorrentesTop = recorrentes.slice(0, espacoParaRecorrentes);
+            const outrasRecentes = ultimas4.slice(2);
+            
+            listaFinal = [...novasUltimas, ...recorrentesTop, ...outrasRecentes]
+                .filter((v, i, a) => a.indexOf(v) === i) // Remove duplicatas
+                .slice(0, 8);
+        }
+        
+        console.log("🏆 Lista final para barra Em Alta:");
+        listaFinal.forEach((p, i) => {
+            console.log(`  ${i+1}. "${p.substring(0, 50)}" (freq: ${contagem[p]?.freq || 0})`);
+        });
 
-        if (!ordenados.length) return;
+        if (!listaFinal.length) {
+            console.warn("⚠️ Lista final vazia");
+            return;
+        }
 
+        // Atualiza a barra
         const bar = document.getElementById('topTermsBar');
+        if (!bar) {
+            console.error("❌ Elemento #topTermsBar não encontrado!");
+            return;
+        }
+        
         const btnOffline = document.getElementById('btnOfflineResults');
+        
+        // Recria a barra
         bar.innerHTML = '<span>Em alta:</span>';
-        ordenados.forEach(termo => {
+        
+        listaFinal.forEach(termo => {
             const a = document.createElement('a');
             a.textContent = termo.length > 35 ? termo.substring(0, 33) + '…' : termo;
-            a.title = termo;
+            const freqInfo = contagem[termo]?.freq > 1 ? ` (${contagem[termo].freq}x)` : '';
+            a.title = termo + freqInfo;
             a.onclick = () => fillAndSend(termo);
+            a.style.cursor = 'pointer';
             bar.appendChild(a);
         });
-        if (btnOffline) bar.appendChild(btnOffline);
+        
+        if (btnOffline) {
+            bar.appendChild(btnOffline);
+        }
+        
+        console.log("✅ Barra Em Alta atualizada com sucesso!");
+        
     } catch(e) {
-        console.warn("Erro ao popular barra em alta:", e);
+        console.error("❌ ERRO em popularBarraEmAlta:", e);
     }
+}
+
+// Função auxiliar para manter os itens padrão em caso de erro
+function manterBarraEstatica() {
+    console.log("📌 Mantendo itens padrão na barra Em Alta");
+    // Não faz nada - mantém o HTML original
 }
 
 function carregarVetoresExistentes(dados) {
@@ -1968,8 +2142,25 @@ function formatBlock(b) {
 // ═══════════════════════════════════════════════════════════
 //  FEEDBACK
 // ═══════════════════════════════════════════════════════════
+let currentLogTimestamp = null;
+
 function logSearch(query, found) {
-    try { fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', body: JSON.stringify({ pergunta: query, encontrou: found?"Sim":"Não", feedback:"Pendente" }) }); }
+    // Gera um timestamp único para identificar este log
+    currentLogTimestamp = Date.now();
+    
+    try { 
+        fetch(SCRIPT_URL, { 
+            method:'POST', 
+            mode:'no-cors', 
+            body: JSON.stringify({ 
+                action: "addLog",
+                pergunta: query, 
+                encontrou: found ? "Sim" : "Não", 
+                feedback: "Pendente",
+                timestamp: currentLogTimestamp  // Identificador único
+            }) 
+        }); 
+    }
     catch(e) { console.error(e); }
 }
 
@@ -1977,8 +2168,19 @@ async function saveFeedback(logIndex, type, btn) {
     const feedbackArea = btn.parentElement;
     const card = feedbackArea.closest('.answer-card');
 
-    fetch(SCRIPT_URL, { method:'POST', mode:'no-cors',
-        body: JSON.stringify({ pergunta: lastQuery||"?", encontrou:"Sim", feedback: type==='positivo'?"Positivo":"Negativo" }) });
+    // ATUALIZA o log existente em vez de criar um novo
+    try {
+        fetch(SCRIPT_URL, { 
+            method:'POST', 
+            mode:'no-cors',
+            body: JSON.stringify({ 
+                action: "updateFeedback",  // NOVA AÇÃO para atualizar
+                pergunta: lastQuery || "?",
+                feedback: type === 'positivo' ? "Positivo" : "Negativo",
+                timestamp: currentLogTimestamp  // Usa o mesmo timestamp para encontrar o registro
+            }) 
+        });
+    } catch(e) { console.error(e); }
 
     if (type === 'positivo') {
         if (card && card._dadosResposta && lastQuery) {
@@ -1994,6 +2196,27 @@ async function saveFeedback(logIndex, type, btn) {
         </div>`;
     }
 }
+
+async function sendDetailedFeedback(logIndex, btn) {
+    const ta = document.getElementById(`reason_${logIndex}`);
+    const motivo = ta.value.trim();
+    if (!motivo) return alert("Descreva o problema!");
+    
+    // Atualiza o feedback com o motivo detalhado
+    fetch(SCRIPT_URL, { 
+        method:'POST', 
+        mode:'no-cors',
+        body: JSON.stringify({ 
+            action: "updateFeedback",
+            pergunta: `FEEDBACK_NEGATIVO: ${motivo}`, 
+            feedback: "Negativo",
+            timestamp: currentLogTimestamp
+        }) 
+    });
+    
+    btn.parentElement.parentElement.innerHTML = "<span style='color:#991b1b;font-weight:700;'>Feedback enviado! ✅</span>";
+}
+
 
 async function sendDetailedFeedback(logIndex, btn) {
     const ta = document.getElementById(`reason_${logIndex}`);
