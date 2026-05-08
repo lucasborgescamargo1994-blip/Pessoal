@@ -783,17 +783,21 @@ function onProviderChange() {
     baseUrlInput.placeholder = preset.baseUrl || 'https://sua-api.com/v1';
 }
 
-function openMCP()
-
- {
-    loadMCPConfig();
-    document.getElementById('mcpPanel').style.display = 'flex';
-    updateMCPStatus('Configuração carregada. Faça alterações e salve.');
-	
-	
-    if (prompt("Senha Administrativa:") === CORRECT_PASSWORD) {
+function openMCP() {
+    // 1. Primeiro solicita a senha
+    const senhaInformada = prompt("Senha Administrativa:");
+    
+    // 2. Verifica se a senha está correta ANTES de abrir o painel
+    if (senhaInformada === CORRECT_PASSWORD) {
+        loadMCPConfig(); // Carrega as configurações
         document.getElementById('mcpPanel').style.display = 'flex';
+        updateMCPStatus('Configuração carregada. Faça alterações e salve.');
+    } else if (senhaInformada !== null) {
+        // Se o usuário digitou algo errado (e não apenas cancelou)
+        alert("Senha incorreta!");
     }
+    // Se for null (cancelar), a função simplesmente não faz nada
+
 
 function closeAdmin() { document.getElementById('adminPanel').style.display = 'none'; }
 }
@@ -801,6 +805,7 @@ function closeAdmin() { document.getElementById('adminPanel').style.display = 'n
 function closeMCP() {
     document.getElementById('mcpPanel').style.display = 'none';
 }
+
 
 function updateMCPStatus(msg, isError = false) {
     const status = document.getElementById('mcpStatus');
