@@ -933,7 +933,7 @@ let isVectorizing = true;
 // ═══════════════════════════════════════════════════════════
 //  CONFIGURAÇÕES
 // ═══════════════════════════════════════════════════════════
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz41slCG06vRDMeMYAeDcTTOjpI22l0fETzbEq-JJ3AopzLA6zxAbNE3cTbucCoGkc7/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz_akl15rwKPBaHUfeyfOxSOZqQukCnVfvw2Ivipsd7P4OR8mlfGrLSwpMYKYlljz6P/exec";
 const CORRECT_PASSWORD = "camargo1994";
 
 // ═══════════════════════════════════════════════════════════
@@ -1529,8 +1529,27 @@ function ehPerguntaDeEmissao(query) {
 }
 
 function ehErroSefaz(query) {
-    const qNorm = query.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
-    return qNorm.includes("sefaz") && (qNorm.includes("erro") || qNorm.includes("rejeicao") || qNorm.includes("rejeição") || qNorm.includes("codigo") || qNorm.includes("codigo ") || /\b[0-9]{3}\b/.test(query));
+    const qNorm = query.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    
+    // Detecta se a pergunta é sobre rejeição SEFAZ
+    const palavrasRejeicao = [
+        "rejeicao", "rejeição", "rejeitado", "rejeitada",
+        "rejeicao sefaz", "rejeição sefaz",
+        "erro sefaz", "erro de rejeicao", "erro de rejeição",
+        "codigo de rejeicao", "codigo de rejeição", "código de rejeição",
+        "motivo de rejeicao", "motivo de rejeição"
+    ];
+    
+    const temPalavraRejeicao = palavrasRejeicao.some(p => qNorm.includes(p));
+    
+    // Detecta padrão "rejeição + número" ou "rejeicao + número"
+    const temRejeicaoComNumero = /rejei[cç][aã]o\s+\d{3,4}/.test(qNorm);
+    
+    // Detecta padrão "código/codigo + número" relacionado a documento fiscal
+    const temCodigoDocumento = /\b(cte|ct-e|mdfe|mdf-e|nfe|nf-e|nfce|nfc-e)\b.*\b\d{3}\b/.test(qNorm) ||
+                               /\b\d{3}\b.*\b(cte|ct-e|mdfe|mdf-e|nfe|nf-e|nfce|nfc-e)\b/.test(qNorm);
+    
+    return temPalavraRejeicao || temRejeicaoComNumero || temCodigoDocumento;
 }
 
 function calcularScoreHibrid(vetorQuery, termosQuery, item, isEmissao = false) {
@@ -1717,127 +1736,292 @@ async function processarProximaSolucao(perguntaOriginal, isEmissao = false) {
 // ═══════════════════════════════════════════════════════════
 //  RESPOSTA SEFAZ - Gemma 4 (primário) + Llama 3.3 (fallback)
 // ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+//  BANCO LOCAL DE REJEIÇÕES SEFAZ (cache em memória)
+// ═══════════════════════════════════════════════════════════
+let bancoRejeicoes = [];
+let bancoRejeicoesCarregado = false;
+
+async function carregarBancoRejeicoes() {
+    if (bancoRejeicoesCarregado && bancoRejeicoes.length > 0) {
+        return bancoRejeicoes;
+    }
+    
+    try {
+        const response = await fetch(SCRIPT_URL + "?aba=RejeicoesSEFAZ");
+        if (!response.ok) throw new Error("Erro ao carregar");
+        const data = await response.json();
+        
+        if (Array.isArray(data)) {
+            bancoRejeicoes = data;
+            bancoRejeicoesCarregado = true;
+            console.log(`📚 Banco de rejeições carregado: ${data.length} registros`);
+        }
+    } catch (e) {
+        console.warn("⚠️ Não foi possível carregar banco de rejeições:", e);
+        bancoRejeicoes = [];
+    }
+    
+    return bancoRejeicoes;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  RESPOSTA SEFAZ - Primeiro busca local, depois IA
+// ═══════════════════════════════════════════════════════════
 async function gerarRespostaSefaz(pergunta) {
-    appendMessage('system', '🌐 <strong>Erro SEFAZ detectado</strong> — Pesquisando informações atualizadas...');
-    const loadingDiv = appendLoadingCard("🌐 Buscando solução para erro SEFAZ...");
+    appendMessage('system', '🌐 <strong>Erro SEFAZ detectado</strong> — Consultando base de rejeições...');
+    const loadingDiv = appendLoadingCard("🔍 Buscando no banco de rejeições SEFAZ...");
     const logIndex = Date.now();
 
     // Extrai o código de rejeição
     const codigoMatch = pergunta.match(/\b(\d{3,4})\b/);
     const codigoRejeicao = codigoMatch ? codigoMatch[1] : '';
-
-    // Prompt otimizado para SEFAZ (sem manual do sistema)
-    const promptSefaz = `Você é um especialista em documentos fiscais eletrônicos brasileiros (CT-e, MDF-e, NF-e, NFC-e) e SEFAZ.
-
-IMPORTANTE: Esta é uma consulta sobre ERROS/REJEIÇÕES DA SEFAZ. Use seu conhecimento sobre a legislação fiscal brasileira e documentos eletrônicos.
-
-ERRO REPORTADO PELO USUÁRIO: "${pergunta}"
-
-Analise este erro/rejeição da SEFAZ e responda APENAS com JSON válido (sem markdown, sem texto fora do JSON):
-{
-  "codigo": "${codigoRejeicao}",
-  "significado": "O que significa este código/erro segundo a legislação SEFAZ",
-  "causas": "Causas mais comuns para esta rejeição",
-  "solucao": "Passo a passo para resolver o problema",
-  "dicas": ["Dica preventiva 1", "Dica 2", "Dica 3"]
-}`;
-
-    // Função de retry
-    async function tentarComRetry(fn, maxTentativas = 3) {
-        for (let tentativa = 1; tentativa <= maxTentativas; tentativa++) {
-            try {
-                return await fn();
-            } catch (e) {
-                const msg = (e.message || '').toLowerCase();
-                const isRateLimit = msg.includes('429') || msg.includes('quota') || msg.includes('rate limit') || msg.includes('resource_exhausted');
-                
-                if (isRateLimit && tentativa < maxTentativas) {
-                    const espera = Math.pow(2, tentativa) * 2000; // 2s, 4s, 8s
-                    loadingDiv.querySelector('span').textContent = `⏳ Aguardando ${espera/1000}s... (${tentativa}/${maxTentativas})`;
-                    await new Promise(r => setTimeout(r, espera));
-                    continue;
-                }
-                throw e;
-            }
-        }
+    
+    // Detecta o tipo de documento mencionado
+    const perguntaLower = pergunta.toLowerCase();
+    let tipoDoc = '';
+    if (perguntaLower.includes('ct-e') || perguntaLower.includes('cte') || perguntaLower.includes('conhecimento')) {
+        tipoDoc = 'CT-e';
+    } else if (perguntaLower.includes('mdf-e') || perguntaLower.includes('mdfe') || perguntaLower.includes('manifesto')) {
+        tipoDoc = 'MDF-e';
+    } else if (perguntaLower.includes('nfc-e') || perguntaLower.includes('nfce')) {
+        tipoDoc = 'NFC-e';
+    } else if (perguntaLower.includes('nf-e') || perguntaLower.includes('nfe') || perguntaLower.includes('nota fiscal eletrônica')) {
+        tipoDoc = 'NF-e';
+    } else if (perguntaLower.includes('nfs-e') || perguntaLower.includes('nfse') || perguntaLower.includes('nota fiscal de serviço')) {
+        tipoDoc = 'NFS-e';
     }
 
     // ═══════════════════════════════════════════════════
-    // TENTATIVA 1: Gemma 4 26B (OpenRouter)
+    // PASSO 1: Buscar no banco local de rejeições
     // ═══════════════════════════════════════════════════
-    try {
-        loadingDiv.querySelector('span').textContent = "🔍 Consultando Gemma 4...";
+    await carregarBancoRejeicoes();
+    
+    let rejeicaoEncontrada = null;
+    
+    if (codigoRejeicao && bancoRejeicoes.length > 0) {
+        // Busca exata por código + tipo
+        if (tipoDoc) {
+            rejeicaoEncontrada = bancoRejeicoes.find(r => 
+                r.codigo === codigoRejeicao && 
+                r.tipo_doc && r.tipo_doc.toLowerCase().includes(tipoDoc.toLowerCase())
+            );
+        }
         
-        const resultado = await tentarComRetry(async () => {
-            return await callMCPAPI(
+        // Busca apenas por código (fallback)
+        if (!rejeicaoEncontrada) {
+            rejeicaoEncontrada = bancoRejeicoes.find(r => r.codigo === codigoRejeicao);
+        }
+        
+        // Busca por parte do significado
+        if (!rejeicaoEncontrada) {
+            const termosPergunta = perguntaLower.split(/\s+/).filter(t => t.length > 3);
+            rejeicaoEncontrada = bancoRejeicoes.find(r => {
+                const textoCompleto = `${r.significado} ${r.causa} ${r.solucao}`.toLowerCase();
+                return termosPergunta.some(t => textoCompleto.includes(t));
+            });
+        }
+    }
+    
+    // ═══════════════════════════════════════════════════
+    // PASSO 2: Se encontrou no banco local, exibe
+    // ═══════════════════════════════════════════════════
+    if (rejeicaoEncontrada) {
+        loadingDiv.remove();
+        console.log("✅ Rejeição encontrada no banco local:", rejeicaoEncontrada);
+        
+        const dicasArray = rejeicaoEncontrada.dicas ? 
+            rejeicaoEncontrada.dicas.split('|').map(d => d.trim()).filter(Boolean) : 
+            [];
+        
+        renderizarCardRejeicaoLocal(rejeicaoEncontrada, dicasArray, logIndex);
+        return;
+    }
+    
+    // ═══════════════════════════════════════════════════
+    // PASSO 3: Não encontrou no banco, consulta IA
+    // ═══════════════════════════════════════════════════
+    loadingDiv.querySelector('span').textContent = "🔍 Não encontrada no banco local, consultando IA...";
+    
+    const promptSefaz = `Você é um especialista em SEFAZ e documentos fiscais eletrônicos brasileiros (CT-e, MDF-e, NF-e, NFC-e, NFS-e).
+
+ERRO REPORTADO: "${pergunta}"
+CÓDIGO EXTRAÍDO: ${codigoRejeicao || 'Não identificado'}
+TIPO DE DOCUMENTO: ${tipoDoc || 'Não identificado'}
+
+Responda APENAS com JSON:
+{
+  "codigo": "${codigoRejeicao}",
+  "significado": "Descrição oficial da rejeição",
+  "causa": "Causa mais comum",
+  "solucao": "Passos para resolver",
+  "dicas": ["Dica 1", "Dica 2"]
+}`;
+
+    try {
+        // Tenta Gemma 4 primeiro
+        let resultado;
+        try {
+            resultado = await callMCPAPI(
                 'openrouter',
                 'google/gemma-4-26b-a4b-it',
                 mcpConfig.apiKey,
                 mcpConfig.baseUrl,
                 [{ role: 'user', content: promptSefaz }],
-                { temperature: 0.9, maxTokens: 2048 }
+                { temperature: 0.1, maxTokens: 2048 }
             );
-        });
-
-        loadingDiv.remove();
-        processarRespostaSefaz(resultado.text, logIndex, 'gemma4');
-        return;
-        
-    } catch (e1) {
-        console.warn("⚠️ Gemma 4 falhou:", e1.message);
-        
-        // ═══════════════════════════════════════════════════
-        // TENTATIVA 2: Llama 3.3 70B (OpenRouter)
-        // ═══════════════════════════════════════════════════
-        try {
-            loadingDiv.querySelector('span').textContent = "🔄 Gemma indisponível, tentando Llama 3.3...";
-            
-            const resultado = await tentarComRetry(async () => {
-                return await callMCPAPI(
-                    'openrouter',
-                    'meta-llama/llama-3.3-70b-instruct',
-                    mcpConfig.apiKey,
-                    mcpConfig.baseUrl,
-                    [{ role: 'user', content: promptSefaz }],
-                    { temperature: 0.9, maxTokens: 2048 }
-                );
-            });
-
-            loadingDiv.remove();
-            processarRespostaSefaz(resultado.text, logIndex, 'llama');
-            return;
-            
-        } catch (e2) {
-            console.warn("⚠️ Llama também falhou:", e2.message);
-            
-            // ═══════════════════════════════════════════════════
-            // TENTATIVA 3: Baidu Cobuddy (último recurso)
-            // ═══════════════════════════════════════════════════
-            try {
-                loadingDiv.querySelector('span').textContent = "🔄 Última tentativa...";
-                
-                const resultado = await tentarComRetry(async () => {
-                    return await callMCPAPI(
-                        'openrouter',
-                        'baidu/cobuddy:free',
-                        mcpConfig.apiKey,
-                        mcpConfig.baseUrl,
-                        [{ role: 'user', content: promptSefaz }],
-                        { temperature: 0.9, maxTokens: 1024 }
-                    );
-                });
-
-                loadingDiv.remove();
-                processarRespostaSefaz(resultado.text, logIndex, 'baidu');
-                return;
-                
-            } catch (e3) {
-                loadingDiv.remove();
-                console.error("❌ Todos os modelos falharam:", e3);
-                appendMessage('ai', `❌ Não foi possível consultar no momento. Sugiro pesquisar diretamente no Google:\n\n🔗 https://www.google.com/search?q=SEFAZ+rejeição+${encodeURIComponent(codigoRejeicao || pergunta)}`);
-            }
+        } catch(e) {
+            // Fallback Llama
+            resultado = await callMCPAPI(
+                'openrouter',
+                'meta-llama/llama-3.3-70b-instruct',
+                mcpConfig.apiKey,
+                mcpConfig.baseUrl,
+                [{ role: 'user', content: promptSefaz }],
+                { temperature: 0.1, maxTokens: 2048 }
+            );
         }
+        
+        loadingDiv.remove();
+        
+        // Parse JSON
+        let parsed = null;
+        const textoRaw = resultado.text;
+        try { parsed = JSON.parse(textoRaw); } catch(e) {
+            const limpo = textoRaw.replace(/```json|```/g, '').trim();
+            try { parsed = JSON.parse(limpo); } catch(e2) {}
+        }
+        
+        // Renderiza card de IA
+        renderizarCardRejeicaoIA(parsed, textoRaw, logIndex);
+        
+        // Pergunta se quer salvar no banco local
+        if (parsed && parsed.codigo) {
+            appendMessage('system', `💡 Esta rejeição (${parsed.codigo}) não estava no banco local. Um administrador pode adicioná-la para consultas futuras mais rápidas.`);
+        }
+        
+    } catch (e) {
+        loadingDiv.remove();
+        console.error("Erro ao consultar IA:", e);
+        appendMessage('ai', `❌ Não foi possível encontrar informações sobre esta rejeição.\n\nSugestões:\n• Pesquise no Google: "SEFAZ rejeição ${codigoRejeicao} ${tipoDoc}"\n• Consulte: https://atendimento.tecnospeed.com.br\n• Verifique o manual da SEFAZ do seu estado`);
     }
+}
+
+// Renderiza card quando encontrou no banco local
+function renderizarCardRejeicaoLocal(rejeicao, dicas, logIndex) {
+    const stream = document.getElementById('chatStream');
+    const card = document.createElement('div');
+    card.className = 'answer-card';
+    card._dadosResposta = { 
+        caminho: null, 
+        como_fazer: `**Significado:** ${rejeicao.significado}\n\n**Causa:** ${rejeicao.causa}\n\n**Solução:** ${rejeicao.solucao}`,
+        dicas: dicas 
+    };
+
+    let html = `
+    <div style="background:#f0fdf4;padding:8px 15px;border-bottom:1px solid #bbf7d0;font-size:11px;color:#166534;">
+        📚 <strong>Banco Local de Rejeições SEFAZ</strong> • Fonte: ${rejeicao.fonte || 'Tecnospeed'}
+    </div>
+    <div class="answer-section">
+        <div class="section-label path">🔢 Código da Rejeição</div>
+        <div style="font-size:28px;font-weight:800;color:#dc2626;padding:8px 0;">${rejeicao.codigo}</div>
+    </div>`;
+
+    if (rejeicao.tipo_doc) {
+        html += `<div class="answer-section">
+            <div class="section-label path">📄 Tipo de Documento</div>
+            <div class="section-content"><b>${rejeicao.tipo_doc}</b></div>
+        </div>`;
+    }
+
+    if (rejeicao.significado) {
+        html += `<div class="answer-section">
+            <div class="section-label how">📋 Significado</div>
+            <div class="section-content">${formatarTexto(rejeicao.significado)}</div>
+        </div>`;
+    }
+
+    if (rejeicao.causa) {
+        html += `<div class="answer-section">
+            <div class="section-label path">🔍 Causa</div>
+            <div class="section-content">${formatarTexto(rejeicao.causa)}</div>
+        </div>`;
+    }
+
+    if (rejeicao.solucao) {
+        html += `<div class="answer-section">
+            <div class="section-label how">✅ Solução</div>
+            <div class="section-content">${formatarTexto(rejeicao.solucao)}</div>
+        </div>`;
+    }
+
+    if (dicas.length > 0) {
+        const dicasHtml = dicas.map(d => 
+            `<div class="tip-item"><span>💡</span><span>${d.replace(/\*\*(.*?)\*\*/g,'<b>$1</b>')}</span></div>`
+        ).join('');
+        html += `<div class="answer-section">
+            <div class="section-label tip">💡 Dicas</div>
+            ${dicasHtml}
+        </div>`;
+    }
+
+    html += `<div class="feedback-area">
+        <span>Esta informação foi útil?</span>
+        <button class="feedback-btn" onclick="saveFeedback(${logIndex},'positivo',this)">👍</button>
+        <button class="feedback-btn" onclick="saveFeedback(${logIndex},'negativo',this)">👎</button>
+    </div>`;
+
+    card.innerHTML = html;
+    stream.appendChild(card);
+    scrollToBottom(true);
+}
+
+// Renderiza card quando veio da IA
+function renderizarCardRejeicaoIA(parsed, textoRaw, logIndex) {
+    const stream = document.getElementById('chatStream');
+    const card = document.createElement('div');
+    card.className = 'answer-card';
+    card._dadosResposta = { 
+        caminho: null, 
+        como_fazer: parsed ? 
+            (parsed.significado || '') + '\n\n' + (parsed.causa || '') + '\n\n' + (parsed.solucao || '') : 
+            textoRaw,
+        dicas: parsed?.dicas || [] 
+    };
+
+    let html = `<div style="background:#fef3c7;padding:8px 15px;border-bottom:1px solid #fde68a;font-size:11px;color:#92400e;">
+        🤖 <strong>Resposta da IA</strong> • Esta rejeição não está no banco local
+    </div>`;
+
+    if (parsed) {
+        if (parsed.codigo) {
+            html += `<div class="answer-section">
+                <div class="section-label path">🔢 Código</div>
+                <div style="font-size:28px;font-weight:800;color:#dc2626;">${parsed.codigo}</div>
+            </div>`;
+        }
+        if (parsed.significado) {
+            html += `<div class="answer-section"><div class="section-label how">📋 Significado</div><div class="section-content">${formatarTexto(parsed.significado)}</div></div>`;
+        }
+        if (parsed.causa) {
+            html += `<div class="answer-section"><div class="section-label path">🔍 Causa</div><div class="section-content">${formatarTexto(parsed.causa)}</div></div>`;
+        }
+        if (parsed.solucao) {
+            html += `<div class="answer-section"><div class="section-label how">✅ Solução</div><div class="section-content">${formatarTexto(parsed.solucao)}</div></div>`;
+        }
+    } else {
+        html += `<div class="answer-section"><div class="section-content">${formatarTexto(textoRaw)}</div></div>`;
+    }
+
+    html += `<div class="feedback-area">
+        <span>Ajudou?</span>
+        <button class="feedback-btn" onclick="saveFeedback(${logIndex},'positivo',this)">👍</button>
+        <button class="feedback-btn" onclick="saveFeedback(${logIndex},'negativo',this)">👎</button>
+    </div>`;
+
+    card.innerHTML = html;
+    stream.appendChild(card);
+    scrollToBottom(true);
 }
 
 // Função para processar e renderizar a resposta SEFAZ
@@ -2187,7 +2371,7 @@ Ordem de Carregamento (OC): Transporte/Ordem de Carregamento Simplificada
 Cancelamento na SEFAZ: Para cancelar um Ct-e na SEFAZ, vai em Transporte/Documentos/Ct-e ou Transporte/Conhecimentos, seleciona o documento desejado, depois basta clicar no ícone da SEFAZ (CT-e) e executar a opção Cancelar na SEFAZ.
 Cancelamento na SEFAZ: Para cancelar um MDF-e na SEFAZ, vai em Transporte/Documentos/Ct-e ou Transporte/Manifesto de Carga, seleciona o documento desejado, depois basta clicar no ícone da SEFAZ (MDF-e) e executar a opção Cancelar na SEFAZ.
 
-Caminhos das rotinas mais comuns para cadastros (Apenas use os caminhos para encontrar as respostas dentro do Solução):
+Use os Caminhos das rotinas mais comuns abaixo para encontrar no manual com mais facilidade a resposta correta (Apenas use os caminhos para encontrar as respostas dentro do Solução):
 
 Veículos: Transporte/Veículos
 Motoristas, clientes, fornecedores, seguradora, proprietários Veículos, Transportadora: Pessoas/Pessoas
