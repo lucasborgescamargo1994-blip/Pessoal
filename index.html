@@ -882,7 +882,7 @@ function limparChatStream() {
     welcomeMsg.id = 'welcomeMsg';
     welcomeMsg.innerHTML = `
         👋 Olá! Sou o assistente IA <strong>Bsoft TMS</strong>.<br>
-        Aguarde, carregando a base de conhecimento... ⏳
+        Como posso ajudar?
     `;
     stream.appendChild(welcomeMsg);
 }
@@ -1239,7 +1239,7 @@ function scrollToBottom(force = false) {
 async function loadData() {
     const badge = document.getElementById('statusBadge');
     try {
-        badge.innerText = `Conectando via ${mcpConfig.provider}...`;
+        badge.innerText = `Aguarde, Conectando via ${mcpConfig.provider}...`;
         const [resBanco, resParam, resFunc, resLogs] = await Promise.allSettled([
             fetch(SCRIPT_URL).then(r => r.json()),
             fetch(SCRIPT_URL + "?aba=Parametros").then(r => r.json()),
