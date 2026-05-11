@@ -875,6 +875,16 @@ function adicionarMensagemNaConversa(sender, text) {
 function limparChatStream() {
     const stream = document.getElementById('chatStream');
     stream.innerHTML = '';
+    
+    // Recria a mensagem de boas-vindas
+    const welcomeMsg = document.createElement('div');
+    welcomeMsg.className = 'message ai-msg';
+    welcomeMsg.id = 'welcomeMsg';
+    welcomeMsg.innerHTML = `
+        👋 Olá! Sou o assistente IA <strong>Bsoft TMS</strong>.<br>
+        Aguarde, carregando a base de conhecimento... ⏳
+    `;
+    stream.appendChild(welcomeMsg);
 }
 
 function restaurarConversa(id) {
@@ -883,6 +893,28 @@ function restaurarConversa(id) {
     
     const stream = document.getElementById('chatStream');
     stream.innerHTML = '';
+    
+    // Se a conversa não tem mensagens, mostra a mensagem de boas-vindas
+    if (conversa.mensagens.length === 0) {
+        const welcomeMsg = document.createElement('div');
+        welcomeMsg.className = 'message ai-msg';
+        welcomeMsg.id = 'welcomeMsg';
+        // Verifica se já carregou o banco para mostrar a mensagem correta
+        if (!isVectorizing && manualVetorizado.length > 0) {
+            welcomeMsg.innerHTML = `
+                👋 Olá! Sou o assistente IA <strong>Bsoft TMS</strong>.<br>
+                Pronto! Base com <strong>${manualVetorizado.length} artigos</strong> carregada.<br>
+                <small style="color:var(--text-muted);">IA: ${mcpConfig.model} via ${mcpConfig.provider}</small>
+            `;
+        } else {
+            welcomeMsg.innerHTML = `
+                👋 Olá! Sou o assistente IA <strong>Bsoft TMS</strong>.<br>
+                Aguarde, carregando a base de conhecimento... ⏳
+            `;
+        }
+        stream.appendChild(welcomeMsg);
+        return;
+    }
     
     // Recria as mensagens no chat
     conversa.mensagens.forEach(msg => {
