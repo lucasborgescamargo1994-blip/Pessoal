@@ -1461,6 +1461,83 @@ async function carregarBancoRejeicoes() {
 }
 
 // ═══════════════════════════════════════════════════════════
+//  APRENDIZADO ONLINE COMPARTILHADO (Respostas Fixas)
+// ═══════════════════════════════════════════════════════════
+let cachRespostasFixas = null;
+let tsBancamentoFixas = 0;
+
+async function carregarRespostasFixas() {
+    if (cachRespostasFixas && (Date.now() - tsBancamentoFixas) < 5 * 60 * 1000) {
+        return cachRespostasFixas;
+    }
+    try {
+        const res = await fetch(SCRIPT_URL + "?aba=RespostasFixas");
+        if (!res.ok) throw new Error("sem acesso");
+        const data = await res.json();
+        const mapa = {};
+        (Array.isArray(data) ? data : []).forEach(row => {
+            if (row.chave && row.resposta) {
+                try {
+                    mapa[row.chave] = { resposta: JSON.parse(row.resposta), confirmacoes: parseInt(row.confirmacoes) || 1 };
+                } catch(e) {}
+            }
+        });
+        cachRespostasFixas = mapa;
+        tsBancamentoFixas = Date.now();
+        console.log("📚 Respostas fixas carregadas:", Object.keys(mapa).length);
+        return mapa;
+    } catch(e) {
+        console.warn("Erro ao carregar respostas fixas:", e);
+        try { return JSON.parse(localStorage.getItem('bsoft_fixas_cache') || '{}'); }
+        catch(e2) { return {}; }
+    }
+}
+
+async function salvarRespostaFixa(pergunta, resposta) {
+    const chave = pergunta.toLowerCase().trim().substring(0, 120);
+    const payload = {
+        action: "fixarResposta",
+        chave,
+        pergunta,
+        resposta: JSON.stringify(resposta),
+        ts: new Date().toISOString()
+    };
+    cachRespostasFixas = null;
+    fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', body: JSON.stringify(payload) })
+        .catch(e => console.warn("Erro ao salvar resposta fixa online:", e));
+    try {
+        const local = JSON.parse(localStorage.getItem('bsoft_fixas_cache') || '{}');
+        local[chave] = { resposta, confirmacoes: (local[chave]?.confirmacoes || 0) + 1 };
+        localStorage.setItem('bsoft_fixas_cache', JSON.stringify(local));
+    } catch(e) {}
+}
+
+async function buscarRespostaFixa(pergunta) {
+    const fixas = await carregarRespostasFixas();
+    const chave = pergunta.toLowerCase().trim().substring(0, 120);
+    
+    // Busca exata
+    if (fixas[chave]) {
+        console.log("⭐ Resposta fixa encontrada (exata):", chave);
+        return fixas[chave].resposta;
+    }
+    
+    // Busca aproximada (75% dos termos batem)
+    const termosQ = extrairTermos(pergunta);
+    for (const [k, v] of Object.entries(fixas)) {
+        const termosK = extrairTermos(k);
+        const intersecao = termosQ.filter(t => termosK.includes(t)).length;
+        const minLen = Math.min(termosQ.length, termosK.length) || 1;
+        if (intersecao / minLen >= 0.75) {
+            console.log("⭐ Resposta fixa encontrada (aproximada):", k);
+            return v.resposta;
+        }
+    }
+    
+    return null;
+}
+
+// ═══════════════════════════════════════════════════════════
 //  LÓGICA DE CHAT COM CONTEXTO
 // ═══════════════════════════════════════════════════════════
 async function handleChat() {
@@ -1487,10 +1564,32 @@ async function handleChat() {
     input.value = "";
 
     // Verifica rejeições SEFAZ
+        // Verifica rejeições SEFAZ
     if (ehErroSefaz(query)) {
         await gerarRespostaSefaz(query);
         return;
     }
+
+    // Verifica respostas fixas (feedback positivo de usuários)
+    const loadingFixa = appendLoadingCard("⭐ Verificando base de conhecimento confirmada...");
+    const respostaFixa = await buscarRespostaFixa(query);
+    loadingFixa.remove();
+
+    if (respostaFixa) {
+        appendMessage('system', '⭐ <strong>Resposta Confirmada</strong> — Baseada em feedback positivo de usuários anteriores.');
+        renderAnswerCard(
+            respostaFixa.caminho || null,
+            respostaFixa.como_fazer || respostaFixa.texto || '',
+            respostaFixa.dicas || [],
+            Date.now(),
+            true
+        );
+        const textoConfirmado = (respostaFixa.como_fazer || respostaFixa.texto || '').replace(/\*\*(.*?)\*\*/g, '$1');
+        adicionarMensagemNaConversa('ai', textoConfirmado);
+        return;
+    }
+
+    
 
     const loadingDiv = appendLoadingCard("🔍 Analisando sua pergunta...");
     const isEmissao = ehPerguntaDeEmissao(query);
