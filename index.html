@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <title>Suporte Bsoft TMS - IA v16 - OpenRouter</title>
+    <title>Suporte Bsoft TMS - IA v18 - Brain System  e um beta do machine learning</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -24,6 +24,9 @@
             --suggestions-h: 38px;
             --input-h: 68px;
             --sidebar-w: 280px;
+            --ml-color: #7c3aed;
+            --ml-light: #f5f3ff;
+            --ml-border: #ddd6fe;
         }
 
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -43,6 +46,7 @@
             background-image:
                 radial-gradient(ellipse at 20% 50%, rgba(249,115,22,0.15) 0%, transparent 60%),
                 radial-gradient(ellipse at 80% 20%, rgba(234,88,12,0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(124,58,237,0.08) 0%, transparent 50%),
                 linear-gradient(135deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.6) 100%),
                 url("https://bsoft.com.br/blog/wp-content/uploads/2025/03/bsoft-960x500.webp");
             background-repeat: no-repeat;
@@ -54,7 +58,6 @@
             padding: 12px;
         }
 
-        /* ── LAYOUT PRINCIPAL ── */
         .app-layout {
             display: flex;
             width: 100%;
@@ -63,7 +66,6 @@
             gap: 12px;
         }
 
-        /* ── SIDEBAR ── */
         .sidebar {
             width: var(--sidebar-w);
             flex-shrink: 0;
@@ -192,7 +194,6 @@
             text-align: center;
         }
 
-        /* ── MAIN CONTAINER ── */
         .main-container {
             background: var(--surface);
             flex: 1;
@@ -375,6 +376,18 @@
             text-align: center;
             max-width: 75%;
         }
+        
+        .ml-msg {
+            align-self: center;
+            background: var(--ml-light);
+            color: var(--ml-color);
+            border: 1px solid var(--ml-border);
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 500;
+            text-align: center;
+            max-width: 80%;
+        }
 
         .answer-card {
             background: var(--surface);
@@ -385,6 +398,11 @@
             align-self: flex-start;
             animation: slideIn 0.25s ease;
             overflow-wrap: break-word;
+        }
+        
+        .answer-card.ml-card {
+            border: 2px solid var(--ml-border);
+            box-shadow: 0 4px 15px rgba(124,58,237,0.12);
         }
 
         .answer-section {
@@ -402,6 +420,7 @@
         .section-label.path { color: #0369a1; }
         .section-label.how  { color: #166534; }
         .section-label.tip  { color: #b45309; }
+        .section-label.ml   { color: var(--ml-color); }
 
         .section-icon {
             width: 20px; height: 20px; border-radius: 5px;
@@ -411,6 +430,7 @@
         .section-icon.path { background: #e0f2fe; }
         .section-icon.how  { background: #dcfce7; }
         .section-icon.tip  { background: #fef3c7; }
+        .section-icon.ml   { background: var(--ml-light); }
 
         .section-content { font-size: 13.5px; line-height: 1.6; color: var(--text); }
         .section-content b { color: var(--primary-dark); }
@@ -480,6 +500,30 @@
             align-self: flex-end; background: var(--primary); color: white;
             border: none; padding: 6px 16px; border-radius: 6px;
             cursor: pointer; font-weight: 700; font-family: inherit; font-size: 12px;
+        }
+
+        .ml-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            background: var(--ml-light);
+            color: var(--ml-color);
+            padding: 3px 8px;
+            border-radius: 20px;
+            border: 1px solid var(--ml-border);
+            white-space: nowrap;
+        }
+        
+        .ml-source-tag {
+            font-size: 10px;
+            color: var(--ml-color);
+            background: var(--ml-light);
+            padding: 2px 8px;
+            border-radius: 10px;
+            display: inline-block;
+            margin-top: 4px;
         }
 
         .input-wrapper {
@@ -577,7 +621,6 @@
             box-shadow: 0 0 40px rgba(249,115,22,0.5);
         }
 
-        /* ── MOBILE ── */
         @media (max-width: 768px) {
             .sidebar {
                 position: fixed;
@@ -601,7 +644,6 @@
 <body>
 
 <div class="app-layout">
-    <!-- ── SIDEBAR ── -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <h3>💬 Conversas</h3>
@@ -609,15 +651,10 @@
                 ➕ Nova Conversa
             </button>
         </div>
-        <div class="sidebar-conversas" id="listaConversas">
-            <!-- Conversas serão renderizadas aqui -->
-        </div>
-        <div class="sidebar-footer">
-            Bsoft TMS Suporte IA v16
-        </div>
+        <div class="sidebar-conversas" id="listaConversas"></div>
+        <div class="sidebar-footer">Bsoft TMS Suporte IA v17</div>
     </div>
 
-    <!-- ── MAIN ── -->
     <div class="main-container">
         <header>
             <div class="header-left">
@@ -625,6 +662,7 @@
                 <div class="logo-mark">🤖</div>
                 <h1>Suporte <span>Bsoft</span> TMS</h1>
                 <span id="statusBadge" class="badge-loading">Carregando...</span>
+                <span id="horarioBadge" style="font-size:10px;color:var(--text-muted);margin-left:8px;"></span>
             </div>
             <div class="header-actions">
                 <button class="btn-icon" onclick="openMCP()" title="Configurar API (MCP)">⚙️</button>
@@ -684,11 +722,24 @@
         </div>
 
         <div id="adminPanel">
-            <strong style="color:#92400e;font-size:13px;">🛠️ Adicionar Conhecimento ao Banco de Dados</strong>
+            <strong style="color:#92400e;font-size:13px;">🛠️ Painel Administrativo</strong>
+            <div style="display:flex;align-items:center;gap:12px;padding:10px;background:#fef3c7;border-radius:8px;border:1px solid #fde68a;">
+                <div style="flex:1;">
+                    <strong style="font-size:12px;color:#92400e;">🔧 Modo Depuração</strong>
+                    <p style="font-size:10px;color:#78716c;margin:2px 0 0;">Quando ATIVO, não gera logs na planilha (para testes)</p>
+                </div>
+                <button id="btnModoDepuracao" onclick="toggleModoDepuracao()" 
+                        style="padding:8px 16px;border-radius:7px;border:2px solid #f59e0b;cursor:pointer;font-family:inherit;font-weight:700;font-size:12px;transition:all 0.2s;background:#fef3c7;color:#92400e;">
+                    🟢 ON
+                </button>
+            </div>
+            <div style="border-top:1px solid var(--primary-border);padding-top:8px;margin-top:4px;">
+                <strong style="color:#92400e;font-size:13px;">📝 Adicionar Conhecimento ao Banco de Dados</strong>
+            </div>
             <input type="text" id="newError" placeholder="Título do Erro / Dúvida">
             <textarea id="newSolution" placeholder="Solução detalhada..." style="min-height:70px;resize:vertical;"></textarea>
             <div class="admin-actions">
-                <button onclick="closeAdmin()" style="background:var(--border);color:var(--text-muted);">Cancelar</button>
+                <button onclick="closeAdmin()" style="background:var(--border);color:var(--text-muted);">Fechar</button>
                 <button onclick="saveToDatabase()" style="background:var(--primary);color:white;">Gravar na Planilha</button>
             </div>
         </div>
@@ -732,28 +783,302 @@
 
 <script>
 // ═══════════════════════════════════════════════════════════
+//  CONSTANTE: ESTRUTURA COMPLETA DO SISTEMA BSOFT TMS
+// ═══════════════════════════════════════════════════════════
+const SISTEMA_BSOFT_TMS = {
+    descricao: "Bsoft TMS é um sistema ERP completo para gestão de transportadoras, logística e emissão de documentos fiscais eletrônicos.",
+    
+    estrutura_menus: {
+        "Opções do Sistema": ["Suporte", "Sobre", "Atualizações"],
+        "Ambiente": ["Administração", "Controle de Acesso", "Listagens"],
+        "Recursos": ["Gráficos", "Dashboards"],
+        "Financeiro": ["Títulos a Pagar", "Títulos a Receber", "Caixas e Bancos", "Notas Fiscais", "Configurações", "Relatórios", "Orçamento", "Cadastros Básicos"],
+        "Transporte": ["Documentos", "Conhecimentos", "Manifesto de Carga", "Ordem de Carregamento", "Contrato de Frete", "Veículos", "Configurações", "Relatórios", "EDI", "Cotação de Frete", "Vinculação de Motoristas", "Conjuntos de Veículos"],
+        "Estoque": ["Movimentação Estoque", "Relatórios", "Configurações", "Solicitação interna de compra"],
+        "Pessoas": ["Pessoas"],
+        "Ordens de Serviço": [],
+        "Manutenção": ["Abastecimentos", "Pneus", "Relatórios", "Configurações"],
+        "Configurações": ["Cadastros Básicos"],
+        "eDoc": ["Certificados Digitais"],
+        "E-mail": [],
+        "Hub": [],
+        "Controle de Viagens": [],
+        "nsdocs": []
+    },
+
+    primeiros_passos: [
+        "1. Instalar certificado digital: eDoc > Certificados Digitais",
+        "2. Criar talões de documentos: Transporte > Configurações > Tipos de talões"
+    ],
+
+    documentos_principais: {
+        "CT-e": {
+            nome_completo: "Conhecimento de Transporte Eletrônico",
+            emissao: "Transporte > Documentos > Ct-e OU Transporte > Conhecimentos",
+            cancelamento_sefaz: "Selecionar o CT-e > Ícone SEFAZ (CT-e) > Cancelar na SEFAZ",
+            funcionalidades_relacionadas: ["CIOT", "Vale-Pedágio Avulso", "Ocorrência automática"]
+        },
+                "MDF-e": {
+            nome_completo: "Manifesto de Carga Fiscal Eletrônico",
+            emissao: "Transporte > Manifesto de Carga",
+            cancelamento_sefaz: "Selecionar o MDF-e > Ícone SEFAZ (MDF-e) > Cancelar na SEFAZ"
+        },
+        "NF-e": {
+            nome_completo: "Nota Fiscal Eletrônica",
+            emissao: "Financeiro > Notas Fiscais > Notas Fiscais"
+        },
+        "NFS-e": {
+            nome_completo: "Nota Fiscal de Serviço Eletrônica",
+            emissao: "Financeiro > Notas Fiscais > Notas Fiscais"
+        },
+        "OC": {
+            nome_completo: "Ordem de Carregamento",
+            emissao: "Transporte > Ordem de Carregamento Simplificada"
+        },
+        "Minuta": {
+            nome_completo: "Conhecimento não fiscal",
+            emissao: "Transporte > Documentos"
+        }
+    },
+
+    caminhos_rapidos: {
+        "Veículos": "Transporte > Veículos",
+        "Motoristas": "Pessoas > Pessoas",
+        "Clientes": "Pessoas > Pessoas",
+        "Fornecedores": "Pessoas > Pessoas",
+        "Seguradora": "Pessoas > Pessoas",
+        "Transportadora": "Pessoas > Pessoas",
+        "Proprietários Veículos": "Pessoas > Pessoas",
+        "Natureza da Operação/CFOP": "Financeiro > Fiscal > Tipos de Operações",
+        "Apólice de Seguro": "Transporte > Configurações > Apólices de Seguro",
+        "NF-e Pré-cadastrada": "Transporte > NF-e Pré-cadastrada",
+        "Regra": "Transporte > Configurações > Regras",
+        "Tabela de preços": "Transporte > Configurações > Tabela de Preços > Tabela de Preços",
+        "Parâmetros do sistema": "Ambiente > Administração > Parâmetros",
+        "Funcionalidades do sistema": "Ambiente > Controle de Acesso > Funcionalidades",
+        "Parâmetros EDI": "Transporte > EDI > Parâmetros",
+        "Relatório personalizado": "Transporte > EDI > Assistente de Relatórios",
+        "Importação/Exportação documentos": "Transporte > EDI > Importação/Exportação",
+        "CIOT": "Transporte > Documentos > Ct-e > selecionar > Contrato de frete Eletrônico",
+        "VPO/Vale pedágio": "Transporte > Documentos > Ct-e > selecionar > Vale-Pedágio Avulso",
+        "Tipos Valores Outros (CT-e)": "Transporte > Configurações > Tipos Valores Outros",
+        "Tabela de preços Valores Outros": "Transporte > Configurações > Tabela de Preços > Tabela de Preços Valores Outros",
+        "Regras Importação Notas": "Financeiro > Configurações > Fiscal > Regras de Importação de Notas",
+        "Classificação Fiscal": "Financeiro > Configurações > Fiscal > Classificação Fiscal",
+        "Configurações OC": "Transporte > Configurações > Documentos PDF > Configurações de Ordem de Carregamento",
+        "Modelos de notas": "Financeiro > Configurações > Fiscal > Modelos de notas",
+        "Contratos Operadoras Crédito": "Transporte > Configurações > Contratos com Operadoras de Crédito",
+        "Usuários do Sistema": "Ambiente > Controle de Acesso > Usuários do Sistema",
+        "Remetente e-mails": "Ambiente > Administração > Remetente e-mails",
+        "Abastecimentos": "Manutenção > Abastecimentos",
+        "Relatório abastecimento": "Manutenção > Relatórios > Relação de Abastecimentos",
+        "Recapagens": "Manutenção > Pneus > Recapagens",
+        "Títulos a Pagar": "Financeiro > Títulos a Pagar > Títulos a Pagar",
+        "Títulos a Receber": "Financeiro > Títulos a Receber > Títulos a Receber",
+        "Consulta Lançamentos": "Financeiro > Caixas e Bancos > Consulta Lançamentos",
+        "Espécies": "Transporte > Configurações > Espécies",
+        "Unidades": "Configurações > Cadastros Básicos > Unidades",
+        "Produtos": "Financeiro > Configurações > Produtos e Serviços > Produtos",
+        "Serviços": "Financeiro > Configurações > Produtos e Serviços > Serviços",
+        "Centros de Custo": "Financeiro > Configurações > Centros de Custo",
+        "Contas Financeiras": "Financeiro > Configurações > Contas Financeiras",
+        "Plano de Contas Gerencial": "Financeiro > Configurações > Plano de Contas Gerencial",
+        "Pagamento": "Financeiro > Caixa e Bancos > Pagamento",
+        "Recebimento": "Financeiro > Caixa e Bancos > Recebimento",
+        "Transferências": "Financeiro > Caixas e Bancos > Transferências",
+        "Orçamento": "Financeiro > Orçamento > Orçamento",
+        "Comissões motoristas": "Transporte > Relatórios > Comissões dos motoristas",
+        "Contratos de Frete (relatório)": "Transporte > Relatórios > Relatório de Contratos de Frete",
+        "Conciliação Bancária": "Financeiro > Caixa e Bancos > Conciliação Bancária",
+        "Movimentação Estoque": "Estoque > Movimentação Estoque",
+        "Solicitação interna compra": "Estoque > Solicitação interna de compra"
+    },
+
+    taloes_configuracoes: [
+        "Os talões ficam em: Transporte > Configurações > Tipos de talões",
+        "Cada tipo de documento (CT-e, MDF-e, OC, Contrato de Frete, NFS-e, Pedidos) tem seu próprio talão",
+        "Dentro do talão é possível configurar: numeração, série, ambiente (homologação/produção), ocorrência automática, campos obrigatórios, etc.",
+        "Para gerar ocorrência automática no CT-e: editar o talão do CT-e e habilitar a opção 'ocorrência automática'"
+    ],
+
+    regras_gerais: [
+        "SEMPRE verifique se o certificado digital está instalado e válido (eDoc > Certificados Digitais)",
+        "SEMPRE verifique se os talões estão configurados corretamente antes de emitir documentos",
+        "Para problemas de SEFAZ, verifique a conexão com a internet e o status da SEFAZ",
+        "Para erros de validação, revise todos os campos obrigatórios do documento",
+        "O sistema possui busca rápida no menu lateral (campo de pesquisa no topo)"
+    ]
+};
+
+// ═══════════════════════════════════════════════════════════
 //  SISTEMA DE CONVERSAS LOCAL
 // ═══════════════════════════════════════════════════════════
-const CONVERSAS_KEY = 'bsoft_conversas_v1';
-const CONVERSA_ATIVA_KEY = 'bsoft_conversa_ativa_v1';
+const CONVERSAS_KEY = 'bsoft_conversas_v2';
+const CONVERSA_ATIVA_KEY = 'bsoft_conversa_ativa_v2';
+const ML_KNOWLEDGE_KEY = 'bsoft_ml_knowledge_v1';
 
 let conversas = [];
 let conversaAtivaId = null;
+let mlKnowledge = []; // Conhecimentos adquiridos via Machine Learning
+
+function carregarMLKnowledge() {
+    try {
+        const saved = localStorage.getItem(ML_KNOWLEDGE_KEY);
+        mlKnowledge = saved ? JSON.parse(saved) : [];
+    } catch(e) {
+        mlKnowledge = [];
+    }
+}
+
+function salvarMLKnowledge() {
+    try {
+        localStorage.setItem(ML_KNOWLEDGE_KEY, JSON.stringify(mlKnowledge));
+    } catch(e) {
+        console.error('Erro ao salvar ML Knowledge:', e);
+    }
+}
+
+function adicionarMLKnowledge(erro, solucao, fonte, similaridade) {
+    const novoConhecimento = {
+        id: 'ml_' + Date.now(),
+        erro: erro,
+        solucao: solucao,
+        fonte: fonte,
+        similaridade: similaridade,
+        dataCriacao: new Date().toISOString(),
+        confirmado: false,
+        feedbackNegativo: false
+    };
+    mlKnowledge.unshift(novoConhecimento);
+    salvarMLKnowledge();
+    return novoConhecimento;
+}
+
+function removerMLKnowledge(id) {
+    mlKnowledge = mlKnowledge.filter(k => k.id !== id);
+    salvarMLKnowledge();
+}
+
+function confirmarMLKnowledge(id) {
+    const conhecimento = mlKnowledge.find(k => k.id === id);
+    if (conhecimento) {
+        conhecimento.confirmado = true;
+        conhecimento.feedbackNegativo = false;
+        salvarMLKnowledge();
+    }
+}
+
+function marcarMLKnowledgeNegativo(id) {
+    const conhecimento = mlKnowledge.find(k => k.id === id);
+    if (conhecimento) {
+        conhecimento.feedbackNegativo = true;
+        conhecimento.confirmado = false;
+        salvarMLKnowledge();
+        
+        // Remove do banco de dados da planilha
+        removerDoBancoPlanilha(conhecimento.erro);
+    }
+}
+
+async function removerDoBancoPlanilha(erro) {
+    try {
+        await fetch(SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            body: JSON.stringify({
+                action: "removeMLKnowledge",
+                aba: "machinelearning",
+                erro: erro
+            })
+        });
+        console.log("🗑️ Conhecimento ML removido do banco:", erro);
+    } catch(e) {
+        console.error("Erro ao remover do banco:", e);
+    }
+}
+
+function atualizarBadgeHorario() {
+    const badge = document.getElementById('horarioBadge');
+    if (badge) {
+        const info = obterSaudacao();
+        badge.textContent = `${info.emoji} Brasília • ${info.dataCompleta}`;
+    }
+}
+
+// Chamar na inicialização e atualizar a cada minuto:
+atualizarBadgeHorario();
+setInterval(atualizarBadgeHorario, 60000);
+
+// ═══════════════════════════════════════════════════════════
+//  SAUDAÇÃO POR HORÁRIO DE BRASÍLIA (GMT-3)
+// ═══════════════════════════════════════════════════════════
+function obterHoraBrasilia() {
+    const agora = new Date();
+    const offsetBrasilia = -3;
+    const utc = agora.getTime() + (agora.getTimezoneOffset() * 60000);
+    return new Date(utc + (3600000 * offsetBrasilia));
+}
+
+function obterSaudacao() {
+    const hora = obterHoraBrasilia().getHours();
+    const diaSemana = obterHoraBrasilia().getDay();
+    const diasSemana = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+    
+    let saudacao = '';
+    let emoji = '';
+    
+    if (hora >= 5 && hora < 12) {
+        saudacao = 'Bom dia';
+        emoji = '☀️';
+    } else if (hora >= 12 && hora < 18) {
+        saudacao = 'Boa tarde';
+        emoji = '🌤️';
+    } else if (hora >= 18 && hora < 23) {
+        saudacao = 'Boa noite';
+        emoji = '🌙';
+    } else {
+        saudacao = 'Boa madrugada';
+        emoji = '🌜';
+    }
+    
+    if (diaSemana === 0 || diaSemana === 6) {
+        emoji = '🌟';
+        if (hora >= 8 && hora < 12) saudacao = 'Bom dia, ótimo fim de semana';
+        else if (hora >= 12 && hora < 18) saudacao = 'Boa tarde, aproveite o fim de semana';
+    }
+    
+    return {
+        saudacao: saudacao,
+        emoji: emoji,
+        hora: hora,
+        diaSemana: diasSemana[diaSemana],
+        dataCompleta: obterHoraBrasilia().toLocaleDateString('pt-BR', { 
+            weekday: 'long', 
+            day: '2-digit', 
+            month: 'long',
+            hour: '2-digit',
+            minute: '2-digit',
+            timeZone: 'America/Sao_Paulo'
+        })
+    };
+}
+
+function obterContextoHorario() {
+    const info = obterSaudacao();
+    return `📅 Hoje é ${info.diaSemana}, ${info.dataCompleta} (Horário de Brasília). ${info.emoji} ${info.saudacao}!`;
+}
 
 function carregarConversas() {
     try {
         const saved = localStorage.getItem(CONVERSAS_KEY);
         conversas = saved ? JSON.parse(saved) : [];
         
-        // Verifica se a última conversa está vazia (sem mensagens)
         const ultimaConversa = conversas.length > 0 ? conversas[0] : null;
         
         if (ultimaConversa && ultimaConversa.mensagens.length === 0) {
-            // Reabre a última conversa vazia (não cria uma nova)
             conversaAtivaId = ultimaConversa.id;
             console.log("📂 Reabriu conversa vazia existente:", ultimaConversa.id);
         } else {
-            // Cria uma nova conversa
             criarNovaConversa();
             console.log("🆕 Criou nova conversa");
         }
@@ -786,7 +1111,10 @@ function criarNovaConversa(titulo = 'Nova Conversa') {
         mensagens: [],
         contexto: [],
         primeiraPergunta: "",
-        logTimestamp: null // NOVO: timestamp do log criado para esta conversa
+        logTimestamp: null,
+        topicoAtual: null,
+        documentoContexto: null,
+        mlKnowledgeId: null // NOVO: rastreia se a conversa usou ML
     };
     
     conversas.unshift(novaConversa);
@@ -845,25 +1173,21 @@ function adicionarMensagemNaConversa(sender, text) {
         timestamp: Date.now()
     });
     
-    // Atualiza título da conversa APENAS com a primeira pergunta do usuário
     if (sender === 'user' && conversa.titulo === 'Nova Conversa' && conversa.mensagens.filter(m => m.sender === 'user').length === 1) {
         conversa.titulo = text.length > 40 ? text.substring(0, 37) + '...' : text;
-        conversa.primeiraPergunta = text; // Guarda a pergunta principal para feedback
+        conversa.primeiraPergunta = text;
     }
     
-    // Mantém contexto (últimas 10 mensagens)
     if (sender === 'user') {
         conversa.contexto.push({ role: 'user', content: text });
     } else if (sender === 'ai' || sender === 'system') {
         conversa.contexto.push({ role: 'assistant', content: text.replace(/<[^>]*>/g, '') });
     }
     
-    // Limita contexto a 10 interações
-    if (conversa.contexto.length > 20) {
-        conversa.contexto = conversa.contexto.slice(-20);
+    if (conversa.contexto.length > 40) {
+        conversa.contexto = conversa.contexto.slice(-40);
     }
     
-    // Limita total de mensagens armazenadas
     if (conversa.mensagens.length > 500) {
         conversa.mensagens = conversa.mensagens.slice(-500);
     }
@@ -876,7 +1200,6 @@ function limparChatStream() {
     const stream = document.getElementById('chatStream');
     stream.innerHTML = '';
     
-    // Recria a mensagem de boas-vindas
     const welcomeMsg = document.createElement('div');
     welcomeMsg.className = 'message ai-msg';
     welcomeMsg.id = 'welcomeMsg';
@@ -894,12 +1217,10 @@ function restaurarConversa(id) {
     const stream = document.getElementById('chatStream');
     stream.innerHTML = '';
     
-    // Se a conversa não tem mensagens, mostra a mensagem de boas-vindas
     if (conversa.mensagens.length === 0) {
         const welcomeMsg = document.createElement('div');
         welcomeMsg.className = 'message ai-msg';
         welcomeMsg.id = 'welcomeMsg';
-        // Verifica se já carregou o banco para mostrar a mensagem correta
         if (!isVectorizing && manualVetorizado.length > 0) {
             welcomeMsg.innerHTML = `
                 👋 Olá! Sou o assistente IA <strong>Bsoft TMS</strong>.<br>
@@ -916,11 +1237,13 @@ function restaurarConversa(id) {
         return;
     }
     
-    // Recria as mensagens no chat
     conversa.mensagens.forEach(msg => {
         const div = document.createElement('div');
         if (msg.sender === 'system') {
             div.className = 'message system-msg';
+            div.innerHTML = msg.text;
+        } else if (msg.sender === 'ml') {
+            div.className = 'message ml-msg';
             div.innerHTML = msg.text;
         } else {
             div.className = `message ${msg.sender === 'user' ? 'user-msg' : 'ai-msg'}`;
@@ -944,10 +1267,11 @@ function renderizarListaConversas() {
         const data = new Date(c.data);
         const dataStr = data.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
         const isActive = c.id === conversaAtivaId;
+        const mlIndicator = c.mlKnowledgeId ? ' 🧠' : '';
         
         return `
             <div class="conversa-item${isActive ? ' active' : ''}" onclick="selecionarConversa('${c.id}')">
-                <div class="conversa-titulo">${escapeHtml(c.titulo)}</div>
+                <div class="conversa-titulo">${escapeHtml(c.titulo)}${mlIndicator}</div>
                 <div class="conversa-data">${dataStr} • ${c.mensagens.length} msgs</div>
                 <button class="btn-excluir-conversa" onclick="excluirConversa('${c.id}', event)" title="Excluir">🗑️</button>
             </div>
@@ -965,7 +1289,6 @@ function toggleSidebar() {
     document.getElementById('sidebar').classList.toggle('open');
 }
 
-// Fechar sidebar ao clicar fora (mobile)
 document.addEventListener('click', function(e) {
     const sidebar = document.getElementById('sidebar');
     const toggleBtn = document.querySelector('.btn-toggle-sidebar');
@@ -1015,7 +1338,7 @@ const PROVIDER_PRESETS = {
         formatRequestBody: (model, messages, config = {}) => ({
             model: model,
             messages: messages,
-            temperature: config.temperature || 0.2,
+            temperature: config.temperature || 0.3,
             max_tokens: config.maxTokens || 4096,
             ...(config.responseFormat ? { response_format: config.responseFormat } : {})
         }),
@@ -1038,7 +1361,7 @@ const PROVIDER_PRESETS = {
             return {
                 contents: contents,
                 generationConfig: {
-                    temperature: config.temperature || 0.2,
+                    temperature: config.temperature || 0.3,
                     maxOutputTokens: config.maxTokens || 4096,
                     ...(config.responseFormat?.type === 'json_object' ? { responseMimeType: 'application/json' } : {})
                 }
@@ -1056,7 +1379,7 @@ const PROVIDER_PRESETS = {
         headers: (apiKey) => ({ 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }),
         formatRequestBody: (model, messages, config = {}) => ({
             model, messages,
-            temperature: config.temperature || 0.2,
+            temperature: config.temperature || 0.3,
             max_tokens: config.maxTokens || 4096,
             ...(config.responseFormat ? { response_format: config.responseFormat } : {})
         }),
@@ -1179,6 +1502,7 @@ let manualVetorizado = [];
 let dadosParametros = [];
 let dadosFuncionalidades = [];
 let isVectorizing = true;
+let bancoCompletoRaw = [];
 
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz_akl15rwKPBaHUfeyfOxSOZqQukCnVfvw2Ivipsd7P4OR8mlfGrLSwpMYKYlljz6P/exec";
 const CORRECT_PASSWORD = "camargo1994";
@@ -1189,10 +1513,57 @@ recognition.continuous = true;
 recognition.interimResults = false;
 
 // ═══════════════════════════════════════════════════════════
+//  MODO DEPURAÇÃO
+// ═══════════════════════════════════════════════════════════
+let modoDepuracao = false;
+
+function carregarModoDepuracao() {
+    try {
+        modoDepuracao = localStorage.getItem('bsoft_modo_depuracao') === 'true';
+    } catch(e) {
+        modoDepuracao = false;
+    }
+    atualizarBotaoDepuracao();
+}
+
+function toggleModoDepuracao() {
+    modoDepuracao = !modoDepuracao;
+    localStorage.setItem('bsoft_modo_depuracao', modoDepuracao.toString());
+    atualizarBotaoDepuracao();
+    
+    if (modoDepuracao) {
+        console.log("🔧 Modo Depuração ATIVADO - Logs NÃO serão enviados para a planilha");
+    } else {
+        console.log("📝 Modo Depuração DESATIVADO - Logs serão enviados normalmente");
+    }
+}
+
+function atualizarBotaoDepuracao() {
+    const btn = document.getElementById('btnModoDepuracao');
+    if (!btn) return;
+    
+    if (modoDepuracao) {
+        btn.innerHTML = '🔴 OFF';
+        btn.style.background = '#fef2f2';
+        btn.style.color = '#991b1b';
+        btn.style.borderColor = '#ef4444';
+        btn.title = 'Clique para DESATIVAR modo depuração';
+    } else {
+        btn.innerHTML = '🟢 ON';
+        btn.style.background = '#f0fdf4';
+        btn.style.color = '#166534';
+        btn.style.borderColor = '#22c55e';
+        btn.title = 'Clique para ATIVAR modo depuração';
+    }
+}
+
+// ═══════════════════════════════════════════════════════════
 //  INICIALIZAÇÃO
 // ═══════════════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
     carregarConversas();
+    carregarModoDepuracao();
+    carregarMLKnowledge();
     loadMCPConfig();
     loadData();
     document.getElementById('searchInput').addEventListener("keypress", (e) => {
@@ -1240,19 +1611,45 @@ async function loadData() {
     const badge = document.getElementById('statusBadge');
     try {
         badge.innerText = `Aguarde, Conectando via ${mcpConfig.provider}...`;
-        const [resBanco, resParam, resFunc, resLogs] = await Promise.allSettled([
+        const [resBanco, resParam, resFunc, resLogs, resML] = await Promise.allSettled([
             fetch(SCRIPT_URL).then(r => r.json()),
             fetch(SCRIPT_URL + "?aba=Parametros").then(r => r.json()),
             fetch(SCRIPT_URL + "?aba=Funcionalidades").then(r => r.json()),
-            fetch(SCRIPT_URL + "?tipo=logs").then(r => r.json())
+            fetch(SCRIPT_URL + "?tipo=logs").then(r => r.json()),
+            fetch(SCRIPT_URL + "?aba=machinelearning").then(r => r.json())
         ]);
         if (resParam.status === 'fulfilled') dadosParametros = Array.isArray(resParam.value) ? resParam.value : (typeof resParam.value === 'string' ? JSON.parse(resParam.value) : []);
         if (resFunc.status === 'fulfilled') dadosFuncionalidades = Array.isArray(resFunc.value) ? resFunc.value : (typeof resFunc.value === 'string' ? JSON.parse(resFunc.value) : []);
         if (resLogs.status === 'fulfilled') popularBarraEmAlta(resLogs.value);
+        
+        // Carrega conhecimentos de ML do banco remoto
+        if (resML.status === 'fulfilled' && Array.isArray(resML.value)) {
+            // Sincroniza ML knowledge local com o remoto
+            resML.value.forEach(item => {
+                const existeLocal = mlKnowledge.find(k => k.erro === item.erro);
+                if (!existeLocal && item.erro && item.solucao) {
+                    mlKnowledge.push({
+                        id: 'ml_remote_' + Date.now() + Math.random(),
+                        erro: item.erro,
+                        solucao: item.solucao,
+                        fonte: item.fonte || 'Internet',
+                        similaridade: 0,
+                        dataCriacao: item.data || new Date().toISOString(),
+                        confirmado: true,
+                        feedbackNegativo: false
+                    });
+                }
+            });
+            salvarMLKnowledge();
+        }
+        
         if (resBanco.status !== 'fulfilled') throw new Error("Falha ao buscar BancoDados");
         let dados = resBanco.value;
         if (typeof dados === 'string') dados = JSON.parse(dados);
         if (!Array.isArray(dados)) throw new Error("Formato inválido");
+        
+        bancoCompletoRaw = dados;
+        
         badge.innerText = "Carregando vetores...";
         const { linhasComVetor, linhasSemVetor, chaves } = carregarVetoresExistentes(dados);
         if (manualVetorizado.length > 0) liberarChat(linhasSemVetor.length > 0 ? "parcial" : "completo");
@@ -1274,7 +1671,6 @@ function popularBarraEmAlta(logsData) {
         const agora = Date.now();
         const seteDias = 7 * 24 * 60 * 60 * 1000;
         const umDia = 24 * 60 * 60 * 1000;
-        let totalPerguntasValidas = 0;
 
         rows.forEach((row) => {
             let pergunta = "", ts = 0;
@@ -1288,13 +1684,8 @@ function popularBarraEmAlta(logsData) {
                 if (!ts && row[4] && !isNaN(parseInt(row[4]))) ts = parseInt(row[4]);
             }
             const isFeedback = pergunta.toUpperCase().startsWith("FEEDBACK");
-            const isPendenteStr = pergunta === "Pendente";
-            const isVazia = !pergunta || pergunta.length < 3;
-            let isData = false;
-            if (pergunta.length > 10) { const d = new Date(pergunta); isData = !isNaN(d.getTime()) && pergunta.includes('T'); }
-            if (isVazia || isFeedback || isPendenteStr || isData) return;
-            totalPerguntasValidas++;
-            if (!contagem[pergunta]) { contagem[pergunta] = { freq: 0, recente: false, muitoRecente: false, ultimaVez: ts, primeiraVez: ts }; perguntasOrdenadas.push(pergunta); }
+            if (!pergunta || pergunta.length < 3 || isFeedback || pergunta === "Pendente") return;
+            if (!contagem[pergunta]) { contagem[pergunta] = { freq: 0 }; perguntasOrdenadas.push(pergunta); }
             contagem[pergunta].freq++;
             if ((agora - ts) < seteDias && ts > 0) contagem[pergunta].recente = true;
             if ((agora - ts) < umDia && ts > 0) contagem[pergunta].muitoRecente = true;
@@ -1302,17 +1693,12 @@ function popularBarraEmAlta(logsData) {
 
         if (Object.keys(contagem).length === 0) return;
         const ultimas4 = [...perguntasOrdenadas].filter(p => contagem[p].ultimaVez > 0).sort((a, b) => (contagem[b].ultimaVez || 0) - (contagem[a].ultimaVez || 0)).slice(0, 4);
-        if (ultimas4.length === 0) ultimas4.push(...perguntasOrdenadas.slice(-4));
         const setUltimas4 = new Set(ultimas4);
         const recorrentes = Object.entries(contagem).filter(([k]) => !setUltimas4.has(k) && contagem[k].freq >= 2).sort((a, b) => b[1].freq - a[1].freq).map(([k]) => k);
-        let listaFinal = [...ultimas4];
-        if (recorrentes.length > 0) {
-            const novasUltimas = ultimas4.slice(0, 2);
-            listaFinal = [...novasUltimas, ...recorrentes.slice(0, 6), ...ultimas4.slice(2)].filter((v, i, a) => a.indexOf(v) === i).slice(0, 8);
-        }
-        if (!listaFinal.length) return;
+        let listaFinal = [...ultimas4, ...recorrentes].filter((v, i, a) => a.indexOf(v) === i).slice(0, 8);
+        
         const bar = document.getElementById('topTermsBar');
-        if (!bar) return;
+        if (!bar || !listaFinal.length) return;
         bar.innerHTML = '<span>Em alta:</span>';
         listaFinal.forEach(termo => {
             const a = document.createElement('a');
@@ -1372,6 +1758,7 @@ async function vetorizarEmBackground(linhasSemVetor, chaves) {
 function liberarChat(modo = "completo") {
     const badge = document.getElementById('statusBadge');
     const welcomeMsg = document.getElementById('welcomeMsg');
+    const saudacaoInfo = obterSaudacao();
     
     isVectorizing = false;
     document.getElementById('searchInput').disabled = false;
@@ -1385,9 +1772,9 @@ function liberarChat(modo = "completo") {
         badge.className = "badge";
         if (welcomeMsg) {
             welcomeMsg.innerHTML = `
-                👋 Olá! Sou o assistente IA <strong>Bsoft TMS</strong>.<br>
+                ${saudacaoInfo.emoji} <strong>${saudacaoInfo.saudacao}!</strong> Sou o assistente IA <strong>Bsoft TMS</strong>.<br>
                 Pronto! Base com <strong>${manualVetorizado.length} artigos</strong> carregada.<br>
-                <small style="color:var(--text-muted);">IA: ${mcpConfig.model} via ${mcpConfig.provider}</small>
+                <small style="color:var(--text-muted);">${saudacaoInfo.diaSemana}, ${saudacaoInfo.dataCompleta} | IA: ${mcpConfig.model} via ${mcpConfig.provider}</small>
             `;
         }
     } else if (modo === "parcial") {
@@ -1395,7 +1782,7 @@ function liberarChat(modo = "completo") {
         badge.className = "badge";
         if (welcomeMsg) {
             welcomeMsg.innerHTML = `
-                👋 Olá! Sou o assistente IA <strong>Bsoft TMS</strong>.<br>
+                ${saudacaoInfo.emoji} <strong>${saudacaoInfo.saudacao}!</strong> Sou o assistente IA <strong>Bsoft TMS</strong>.<br>
                 Já posso ajudar! <strong>${manualVetorizado.length} artigos</strong> disponíveis.<br>
                 <small style="color:#b45309;">⏳ Novos artigos sendo vetorizados... | IA: ${mcpConfig.provider}</small>
             `;
@@ -1405,7 +1792,7 @@ function liberarChat(modo = "completo") {
         badge.className = "badge-loading";
         if (welcomeMsg) {
             welcomeMsg.innerHTML = `
-                👋 Olá! Nenhum dado encontrado no banco, mas posso tentar ajudar com conhecimento geral.<br>
+                ${saudacaoInfo.emoji} <strong>${saudacaoInfo.saudacao}!</strong> Nenhum dado encontrado no banco, mas posso tentar ajudar com conhecimento geral.<br>
                 <small style="color:var(--text-muted);">IA: ${mcpConfig.model} via ${mcpConfig.provider}</small>
             `;
         }
@@ -1427,56 +1814,145 @@ function salvarVetorNaPlanilha(numLinha, numColuna, vetorStr) {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  MOTOR DE BUSCA
+//  NOVO SISTEMA "CÉREBRO" - Análise completa do manual
 // ═══════════════════════════════════════════════════════════
-const SINONIMOS = {
-    criar: ["criar","emitir","gerar","lançar","fazer","abrir","registrar","incluir","cadastrar","inserir","montar","produzir","processar","emissão","geração","criação","lançamento","abertura"],
-    cancelar: ["cancelar","estornar","desfazer","anular","reverter","excluir","deletar","remover","apagar","cancelamento","estorno"],
-    consultar: ["consultar","buscar","localizar","pesquisar","encontrar","ver","visualizar","verificar","checar","acessar","abrir","listar","mostrar","exibir","onde fica","como ver","como achar","como encontrar"],
-};
-
-function normalizarQuery(query) {
-    const q = query.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    const expansoes = new Set([q]);
-    for (const [base, lista] of Object.entries(SINONIMOS)) {
-        if (lista.some(s => q.includes(s.normalize("NFD").replace(/[\u0300-\u036f]/g, "")))) {
-            lista.forEach(s => expansoes.add(q.replace(new RegExp(lista.join('|'), 'gi'), s)));
-            expansoes.add(q + " " + base);
+function prepararContextoManualCompleto() {
+    let contextoManual = "=== MANUAL COMPLETO BSOFT TMS ===\n\n";
+    
+    contextoManual += "--- BASE DE CONHECIMENTO (BancoDados) ---\n";
+    bancoCompletoRaw.forEach((item, index) => {
+        const chaves = Object.keys(item);
+        const erroKey = chaves.find(k => k.toLowerCase().trim() === 'erro');
+        const solucaoKey = chaves.find(k => k.toLowerCase().trim() === 'solucao' || k.toLowerCase().trim() === 'solução');
+        const categoriaKey = chaves.find(k => k.toLowerCase().trim() === 'categoria');
+        const emitirKey = chaves.find(k => { const kn = k.toLowerCase().trim(); return kn === 'como emitir' || kn === 'como_emitir' || kn === 'emissao' || kn === 'emissão' || kn === 'emitir'; });
+        
+        if (erroKey && solucaoKey) {
+            contextoManual += `[ARTIGO ${index + 1}] ${item[erroKey] || 'Sem título'}\n`;
+            contextoManual += `Solução: ${item[solucaoKey] || ''}\n`;
+            if (categoriaKey && item[categoriaKey]) contextoManual += `Categoria: ${item[categoriaKey]}\n`;
+            if (emitirKey && item[emitirKey]) contextoManual += `Como emitir: ${item[emitirKey]}\n`;
+            contextoManual += "---\n";
         }
+    });
+    
+    // Adiciona conhecimentos ML confirmados
+    const mlConfirmados = mlKnowledge.filter(k => k.confirmado && !k.feedbackNegativo);
+    if (mlConfirmados.length > 0) {
+        contextoManual += "\n--- CONHECIMENTOS ADQUIRIDOS VIA ML (Confirmados) ---\n";
+        mlConfirmados.forEach((k, i) => {
+            contextoManual += `[ML ${i + 1}] ${k.erro}\nSolução: ${k.solucao}\nFonte: ${k.fonte}\n---\n`;
+        });
     }
-    return Array.from(expansoes).slice(0, 4);
+    
+    contextoManual += "\n--- PARÂMETROS DO SISTEMA ---\n";
+    dadosParametros.forEach((param, index) => {
+        contextoManual += `[PARÂMETRO ${index + 1}] ${JSON.stringify(param).substring(0, 500)}\n`;
+        if (index > 20) { contextoManual += "... (mais parâmetros disponíveis)\n"; return; }
+    });
+    
+    contextoManual += "\n--- FUNCIONALIDADES DO SISTEMA ---\n";
+    dadosFuncionalidades.forEach((func, index) => {
+        contextoManual += `[FUNCIONALIDADE ${index + 1}] ${JSON.stringify(func).substring(0, 500)}\n`;
+        if (index > 20) { contextoManual += "... (mais funcionalidades disponíveis)\n"; return; }
+    });
+    
+    return contextoManual;
 }
 
 function extrairTermos(texto) {
-    const stopwords = new Set(["como","que","qual","quais","para","com","sem","não","mas","por","mais","uma","isso","este","esta","esse","essa","num","numa","meu","minha","meus","minhas","tem","ter","ser","foi","vai","vou","tenho","posso","pode","quero","preciso","saber","sobre","nao","onde","quando","porque","pois","também","ainda","mesmo","tipo"]);
+    const stopwords = new Set(["como","que","qual","quais","para","com","sem","não","mas","por","mais","uma","isso","este","esta","esse","essa","num","numa","meu","minha","meus","minhas","tem","ter","ser","foi","vai","vou","tenho","posso","pode","quero","preciso","saber","sobre","nao","onde","quando","porque","pois","também","ainda","mesmo","tipo","ah","e","o","a","os","as","um","uns","umas","no","na","nos","nas","do","da","dos","das","de","em"]);
     return texto.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9 ]/g," ").split(/\s+/).filter(t => t.length > 2 && !stopwords.has(t));
 }
 
-function ehPerguntaDeEmissao(query) {
-    const qNorm = query.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
-    const verbosEmissao = ["como emitir","como gerar","como criar","como fazer","como lancar","como abrir","emitir","gerar ct","gerar mdf","gerar nf","emissao","emissão","criar ct","criar mdf"];
-    return verbosEmissao.some(v => qNorm.includes(v.normalize("NFD").replace(/[\u0300-\u036f]/g,"")));
-}
-
-function ehErroSefaz(query) {
-    const qNorm = query.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    const palavrasRejeicao = ["rejeicao", "rejeição", "rejeitado", "rejeitada", "rejeicao sefaz", "rejeição sefaz", "erro sefaz", "erro de rejeicao", "erro de rejeição", "codigo de rejeicao", "codigo de rejeição", "código de rejeição", "motivo de rejeicao", "motivo de rejeição"];
-    const temPalavraRejeicao = palavrasRejeicao.some(p => qNorm.includes(p));
-    const temRejeicaoComNumero = /rejei[cç][aã]o\s+\d{3,4}/.test(qNorm);
-    const temCodigoDocumento = /\b(cte|ct-e|mdfe|mdf-e|nfe|nf-e|nfce|nfc-e)\b.*\b\d{3}\b/.test(qNorm) || /\b\d{3}\b.*\b(cte|ct-e|mdfe|mdf-e|nfe|nf-e|nfce|nfc-e)\b/.test(qNorm);
-    return temPalavraRejeicao || temRejeicaoComNumero || temCodigoDocumento;
-}
-
-function calcularScoreHibrid(vetorQuery, termosQuery, item, isEmissao = false) {
-    const simVetor = calcularSimilaridade(vetorQuery, item.vetor);
-    const textoItem = (item.erro + " " + item.solucao + " " + (item.categoria || "") + " " + (item.emitir || "")).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
-    const totalTermos = termosQuery.length || 1;
-    const acertos = termosQuery.filter(t => textoItem.includes(t)).length;
-    return (simVetor * 0.65) + ((acertos / totalTermos) * 0.23) + (item.categoria && termosQuery.some(t => item.categoria.toLowerCase().includes(t)) ? 0.05 : 0) + (isEmissao && item.emitir && item.emitir.length > 10 ? 0.12 : 0);
+function detectarDocumento(texto) {
+    const mapaDocumentos = {
+        'cte': ['ct-e', 'cte', 'conhecimento de transporte', 'conhecimento eletrônico', 'conhecimento'],
+        'nfse': ['nfs-e', 'nfse', 'nota fiscal de serviço', 'nota de serviço', 'notas de serviço'],
+        'nfe': ['nf-e', 'nfe', 'nota fiscal eletrônica', 'nota fiscal', 'notas fiscais'],
+        'mdfe': ['mdf-e', 'mdfe', 'manifesto de carga', 'manifesto eletrônico', 'manifesto'],
+        'minuta': ['minuta', 'conhecimento não fiscal'],
+        'oc': ['ordem de carregamento', 'oc'],
+        'contrato': ['contrato de frete', 'contrato'],
+        'ciot': ['ciot', 'contrato de frete eletrônico'],
+        'vpo': ['vpo', 'vale pedágio', 'vale-pedágio']
+    };
+    
+    for (const [tipo, palavras] of Object.entries(mapaDocumentos)) {
+        if (palavras.some(p => texto.includes(p.toLowerCase()))) {
+            return tipo;
+        }
+    }
+    
+    return null;
 }
 
 // ═══════════════════════════════════════════════════════════
-//  BANCO LOCAL DE REJEIÇÕES SEFAZ
+//  MACHINE LEARNING - Busca na Internet
+// ═══════════════════════════════════════════════════════════
+async function buscarConhecimentoInternet(query) {
+    appendMessage('ml', '🧠 <strong>Machine Learning Ativado</strong> — Buscando conhecimento em fontes confiáveis da internet...');
+    
+    const promptML = `Você é um especialista em sistemas ERP para transportadoras, especificamente o Bsoft TMS. 
+Um usuário fez a seguinte pergunta que NÃO foi encontrada no manual: "${query}"
+
+Por favor, responda APENAS com um JSON válido neste formato exato:
+{
+  "erro": "Título resumido da dúvida/problema",
+  "solucao": "Solução detalhada passo a passo, mencionando menus específicos do Bsoft TMS se possível",
+  "fonte": "Fonte confiável de onde esta informação pode ser verificada (ex: site oficial Bsoft, documentação técnica, etc.)",
+  "confianca": 0.8
+}
+
+REGRAS:
+1. Se você NÃO tem certeza sobre a resposta, coloque "confianca": 0 e "solucao": "Não foi possível encontrar uma resposta confiável para esta dúvida."
+2. Seja específico sobre menus e caminhos do sistema Bsoft TMS.
+3. Mencione APENAS informações que você tem certeza que são corretas.
+4. A fonte deve ser um site real e confiável relacionado a sistemas TMS/ERP.`;
+
+    try {
+        const result = await callCurrentMCP(
+            [{ role: 'user', content: promptML }],
+            { temperature: 0.3, maxTokens: 2048, responseFormat: { type: 'json_object' } }
+        );
+        
+        let parsed = null;
+        try {
+            parsed = JSON.parse(result.text);
+        } catch(e) {
+            const cleaned = result.text.replace(/```json\n?|\n?```/g, '').trim();
+            try { parsed = JSON.parse(cleaned); } catch(e2) {}
+        }
+        
+        return parsed;
+    } catch(e) {
+        console.error("Erro ML:", e);
+        return null;
+    }
+}
+
+async function salvarMLNaPlanilha(erro, solucao, fonte) {
+    try {
+        await fetch(SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            body: JSON.stringify({
+                action: "addToAba",
+                aba: "machinelearning",
+                erro: erro,
+                solucao: solucao,
+                fonte: fonte,
+                data: new Date().toISOString()
+            })
+        });
+        console.log("🧠 Conhecimento ML salvo na aba machinelearning:", erro);
+    } catch(e) {
+        console.error("Erro ao salvar ML na planilha:", e);
+    }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  BANCO LOCAL DE REJEIÇÕES SEFAZ (mantido)
 // ═══════════════════════════════════════════════════════════
 let bancoRejeicoes = [];
 let bancoRejeicoesCarregado = false;
@@ -1492,8 +1968,16 @@ async function carregarBancoRejeicoes() {
     return bancoRejeicoes;
 }
 
+function ehErroSefaz(query) {
+    const qNorm = query.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const palavrasRejeicao = ["rejeicao", "rejeição", "rejeitado", "rejeitada", "rejeicao sefaz", "rejeição sefaz", "erro sefaz", "codigo de rejeicao", "codigo de rejeição", "código de rejeição", "motivo de rejeicao", "motivo de rejeição"];
+    const temPalavraRejeicao = palavrasRejeicao.some(p => qNorm.includes(p));
+    const temRejeicaoComNumero = /rejei[cç][aã]o\s+\d{3,4}/.test(qNorm);
+    return temPalavraRejeicao || temRejeicaoComNumero;
+}
+
 // ═══════════════════════════════════════════════════════════
-//  APRENDIZADO ONLINE COMPARTILHADO (Respostas Fixas)
+//  APRENDIZADO ONLINE COMPARTILHADO
 // ═══════════════════════════════════════════════════════════
 let cachRespostasFixas = null;
 let tsBancamentoFixas = 0;
@@ -1516,10 +2000,8 @@ async function carregarRespostasFixas() {
         });
         cachRespostasFixas = mapa;
         tsBancamentoFixas = Date.now();
-        console.log("📚 Respostas fixas carregadas:", Object.keys(mapa).length);
         return mapa;
     } catch(e) {
-        console.warn("Erro ao carregar respostas fixas:", e);
         try { return JSON.parse(localStorage.getItem('bsoft_fixas_cache') || '{}'); }
         catch(e2) { return {}; }
     }
@@ -1548,31 +2030,41 @@ async function buscarRespostaFixa(pergunta) {
     const fixas = await carregarRespostasFixas();
     const chave = pergunta.toLowerCase().trim().substring(0, 120);
     
-    // Busca exata
     if (fixas[chave]) {
         console.log("⭐ Resposta fixa encontrada (exata):", chave);
         return fixas[chave].resposta;
     }
     
-    // Busca aproximada (75% dos termos batem)
     const termosQ = extrairTermos(pergunta);
+    let melhorMatch = null;
+    let melhorScore = 0;
+    
     for (const [k, v] of Object.entries(fixas)) {
         const termosK = extrairTermos(k);
         const intersecao = termosQ.filter(t => termosK.includes(t)).length;
         const minLen = Math.min(termosQ.length, termosK.length) || 1;
-        if (intersecao / minLen >= 0.75) {
-            console.log("⭐ Resposta fixa encontrada (aproximada):", k);
-            return v.resposta;
+        const score = intersecao / minLen;
+        
+        if (score >= 0.75 && score > melhorScore) {
+            melhorScore = score;
+            melhorMatch = { chave: k, resposta: v.resposta };
         }
+    }
+    
+    if (melhorMatch) {
+        console.log("⭐ Resposta fixa encontrada (aproximada):", melhorMatch.chave);
+        return melhorMatch.resposta;
     }
     
     return null;
 }
 
 // ═══════════════════════════════════════════════════════════
-//  LÓGICA DE CHAT COM CONTEXTO
+//  LÓGICA DE CHAT PRINCIPAL (Sistema Cérebro + ML)
 // ═══════════════════════════════════════════════════════════
 async function handleChat() {
+    const contextoHorario = obterContextoHorario();
+    
     if (isVectorizing) return;
     const input = document.getElementById('searchInput');
     const query = input.value.trim();
@@ -1595,15 +2087,22 @@ async function handleChat() {
     adicionarMensagemNaConversa('user', query);
     input.value = "";
 
-    // Verifica rejeições SEFAZ
-        // Verifica rejeições SEFAZ
+    const conversa = getConversaAtiva();
+    if (conversa) {
+        const docDetectado = detectarDocumento(query.toLowerCase());
+        if (docDetectado) {
+            conversa.documentoContexto = docDetectado;
+            conversa.topicoAtual = query;
+            salvarConversas();
+        }
+    }
+
     if (ehErroSefaz(query)) {
         await gerarRespostaSefaz(query);
         return;
     }
 
-    // Verifica respostas fixas (feedback positivo de usuários)
-    const loadingFixa = appendLoadingCard("⭐ Verificando base de conhecimento confirmada...");
+    const loadingFixa = appendLoadingCard("⭐ Verificando base de conhecimento...");
     const respostaFixa = await buscarRespostaFixa(query);
     loadingFixa.remove();
 
@@ -1621,50 +2120,292 @@ async function handleChat() {
         return;
     }
 
+    // Busca vetorial
+    const loadingDiv = appendLoadingCard("🧠 Elaborando sua resposta...");
     
+    const vetorPergunta = await gerarEmbedding(query);
 
-    const loadingDiv = appendLoadingCard("🔍 Analisando sua pergunta...");
-    const isEmissao = ehPerguntaDeEmissao(query);
-    const variantes = normalizarQuery(query);
-    const termosQuery = extrairTermos(query);
-    const textoParaVetorizar = variantes.slice(0, 2).join(" | ");
-    const vetorPergunta = await gerarEmbedding(textoParaVetorizar);
+    let resultadosRelevantes = [];
+    if (vetorPergunta) {
+        resultadosRelevantes = manualVetorizado
+            .map(item => ({ ...item, similaridade: calcularSimilaridade(vetorPergunta, item.vetor) }))
+            .sort((a, b) => b.similaridade - a.similaridade)
+            .slice(0, 15);
+    }
 
-    if (!vetorPergunta) { loadingDiv.remove(); appendMessage('ai', '❌ Não foi possível processar sua pergunta.'); adicionarMensagemNaConversa('ai', '❌ Erro ao processar.'); return; }
-
-    let resultados = manualVetorizado.map(item => ({ ...item, similaridade: calcularScoreHibrid(vetorPergunta, termosQuery, item, isEmissao) })).sort((a, b) => b.similaridade - a.similaridade);
-    if (isEmissao) {
-        resultados.sort((a, b) => {
-            const aTemEmitir = a.emitir && a.emitir.length > 10 ? 1 : 0;
-            const bTemEmitir = b.emitir && b.emitir.length > 10 ? 1 : 0;
-            if (bTemEmitir !== aTemEmitir) return bTemEmitir - aTemEmitir;
-            return b.similaridade - a.similaridade;
+    // Verifica se encontrou resultados com similaridade adequada
+    const temResultadosBons = resultadosRelevantes.length > 0 && resultadosRelevantes[0].similaridade > 0.65;
+    
+    const contextoManual = prepararContextoManualCompleto();
+    
+    let artigosRelevantes = "";
+    if (resultadosRelevantes.length > 0) {
+        artigosRelevantes = "\n=== ARTIGOS MAIS RELEVANTES ENCONTRADOS ===\n";
+        resultadosRelevantes.forEach((r, i) => {
+            artigosRelevantes += `[RELEVANTE ${i+1} - ${(r.similaridade*100).toFixed(0)}%] ${r.erro}\nSolução: ${r.solucao}\n${r.emitir ? 'Emissão: ' + r.emitir + '\n' : ''}---\n`;
         });
     }
-
-    const limiar = manualVetorizado.length > 20 ? 0.45 : 0.35;
-    filaSolucoes = resultados.filter(r => r.similaridade >= limiar).slice(0, 5);
-    currentResults = resultados.slice(0, 6);
-    loadingDiv.remove();
-    logSearch(query, filaSolucoes.length > 0);
-
-    if (filaSolucoes.length > 0) {
-        processarProximaSolucao(query, isEmissao);
-    } else {
-        await gerarRespostaEstruturada(query, null, Date.now(), resultados.slice(0, 3), isEmissao);
+    
+    // Se não encontrou bons resultados, prepara para ML
+    let mlInfo = "";
+    let vaiUsarML = false;
+    if (!temResultadosBons && resultadosRelevantes.every(r => r.similaridade < 0.5)) {
+        vaiUsarML = true;
+        mlInfo = `\n⚠️ ATENÇÃO: Nenhum resultado relevante encontrado no manual (similaridade máxima: ${resultadosRelevantes.length > 0 ? (resultadosRelevantes[0].similaridade*100).toFixed(0) : 0}%). Você DEVE indicar que a informação não foi encontrada e sugerir que o sistema ative o Machine Learning para buscar na internet.\n`;
     }
-}
+    
+    const contextoConversa = conversa ? conversa.contexto.slice(-20) : [];
+    let historicoConversa = "";
+    if (contextoConversa.length > 0) {
+        historicoConversa = "\n=== HISTÓRICO DA CONVERSA ===\n";
+        contextoConversa.forEach(m => {
+            historicoConversa += `${m.role === 'user' ? '👤 Cliente' : '🤖 Suporte'}: ${m.content.substring(0, 400)}\n`;
+        });
+    }
+    
+    const estruturaSistema = JSON.stringify(SISTEMA_BSOFT_TMS, null, 2);
+    
+    let dadosAdicionais = "";
+    if (dadosParametros.length > 0) {
+        dadosAdicionais += "\n=== PARÂMETROS DO SISTEMA ===\n";
+        dadosParametros.slice(0, 30).forEach((p, i) => {
+            dadosAdicionais += `[${i+1}] ${JSON.stringify(p).substring(0, 300)}\n`;
+        });
+    }
+    if (dadosFuncionalidades.length > 0) {
+        dadosAdicionais += "\n=== FUNCIONALIDADES ===\n";
+        dadosFuncionalidades.slice(0, 30).forEach((f, i) => {
+            dadosAdicionais += `[${i+1}] ${JSON.stringify(f).substring(0, 300)}\n`;
+        });
+    }
+    
+    const docContexto = conversa?.documentoContexto || detectarDocumento(query.toLowerCase());
+    let infoDocumento = "";
+    if (docContexto && SISTEMA_BSOFT_TMS.documentos_principais[docContexto.toUpperCase()]) {
+        infoDocumento = `\n=== DOCUMENTO EM CONTEXTO: ${docContexto.toUpperCase()} ===\n${JSON.stringify(SISTEMA_BSOFT_TMS.documentos_principais[docContexto.toUpperCase()], null, 2)}\n`;
+    }
 
-async function processarProximaSolucao(perguntaOriginal, isEmissao = false) {
-    if (filaSolucoes.length === 0) { appendMessage('ai', '😕 Esgotei todas as opções.'); adicionarMensagemNaConversa('ai', '😕 Esgotei todas as opções.'); return; }
-    const solucaoAtual = filaSolucoes.shift();
-    const loadingDiv = appendLoadingCard("⚙️ Elaborando solução...");
-    await gerarRespostaEstruturada(perguntaOriginal, solucaoAtual, Date.now(), [], isEmissao);
-    loadingDiv.remove();
+    const promptSistema = `🏢 VOCÊ É UM AGENTE DE SUPORTE DA BSOFT TMS
+
+${contextoHorario}
+
+🎯 SUA FUNÇÃO: Atender clientes da Bsoft TMS, um sistema ERP para transportadoras. Seja PROFISSIONAL, AMIGÁVEL e DIDÁTICO.
+
+📋 REGRAS DE OURO:
+1. **Use APENAS informações do manual Bsoft TMS, da estrutura do sistema fornecida, ou de fontes oficiais.**
+2. **NUNCA invente menus, caminhos ou procedimentos.** Se não souber, diga exatamente: "Não encontrei essa informação específica no manual da Bsoft. Vou ativar o Machine Learning para buscar em fontes confiáveis da internet e aprender sobre isso."
+3. **Mantenha o contexto da conversa.**
+4. **Seja conversacional e humano.**
+5. **Explique o passo a passo de forma clara.**
+6. **Diferencie claramente os documentos:** CT-e, MDF-e, NF-e, NFS-e, Minuta, OC, CIOT, VPO.
+
+${mlInfo}
+
+📚 CONHECIMENTO DISPONÍVEL:
+
+=== ESTRUTURA COMPLETA DO SISTEMA BSOFT TMS ===
+${estruturaSistema}
+
+${infoDocumento}
+${artigosRelevantes}
+${historicoConversa}
+
+🗣️ PERGUNTA DO CLIENTE: "${query}"
+
+📝 RESPONDA como um agente de suporte humano, em texto corrido. Seja natural:
+- Comece cumprimentando ou respondendo diretamente
+- Explique o caminho no menu se for relevante
+- Dê o passo a passo
+- Ofereça dicas adicionais se houver
+- Finalize perguntando se precisa de mais alguma ajuda
+${vaiUsarML ? '- Se não encontrou a informação, DIGA CLARAMENTE que vai ativar o Machine Learning para buscar na internet.' : ''}
+
+Use **negrito** para destacar campos, menus e informações importantes.`;
+
+    try {
+        const result = await callCurrentMCP(
+            [{ role: 'user', content: promptSistema }], 
+            { temperature: 0.4, maxTokens: 4096 }
+        );
+        
+        loadingDiv.remove();
+        
+        const respostaFormatada = result.text
+            .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+            .replace(/\n/g, '<br>');
+        
+        const card = document.createElement('div');
+        card.className = 'answer-card';
+        card.innerHTML = `
+            <div class="answer-section">
+                <div class="section-content">${respostaFormatada}</div>
+            </div>
+            <div class="feedback-area">
+                <span>Esta resposta foi útil?</span>
+                <button class="feedback-btn" onclick="saveFeedback(${Date.now()},'positivo',this)">👍</button>
+                <button class="feedback-btn" onclick="saveFeedback(${Date.now()},'negativo',this)">👎</button>
+                ${filaSolucoes.length > 0 ? `<button class="feedback-btn next" onclick="fillAndSend('Próximo')">➡️ Ver outra solução</button>` : ''}
+            </div>
+        `;
+        document.getElementById('chatStream').appendChild(card);
+        scrollToBottom(true);
+        
+        adicionarMensagemNaConversa('ai', result.text.replace(/\*\*(.*?)\*\*/g, '$1'));
+        
+        // ATIVA MACHINE LEARNING se necessário
+        if (vaiUsarML || result.text.toLowerCase().includes('não encontrei') || result.text.toLowerCase().includes('machine learning')) {
+            setTimeout(async () => {
+                await ativarMachineLearning(query);
+            }, 1500);
+        }
+        
+    } catch(e) {
+        loadingDiv.remove();
+        
+        // Se falhou, tenta ML como fallback
+        appendMessage('ai', `❌ Não encontrei esta informação no manual. Vou ativar o <b>Machine Learning</b> para buscar em fontes confiáveis...`);
+        adicionarMensagemNaConversa('ai', '❌ Informação não encontrada. Ativando Machine Learning...');
+        
+        setTimeout(async () => {
+            await ativarMachineLearning(query);
+        }, 1000);
+    }
 }
 
 // ═══════════════════════════════════════════════════════════
-//  RESPOSTA SEFAZ
+//  FUNÇÃO PRINCIPAL DE MACHINE LEARNING
+// ═══════════════════════════════════════════════════════════
+async function ativarMachineLearning(query) {
+    const conversa = getConversaAtiva();
+    
+    appendMessage('ml', '🧠 <strong>Iniciando Machine Learning...</strong>');
+    const loadingML = appendLoadingCard("🌐 Buscando em fontes confiáveis da internet...");
+    
+    const resultadoML = await buscarConhecimentoInternet(query);
+    
+    loadingML.remove();
+    
+    if (!resultadoML || !resultadoML.erro || !resultadoML.solucao || resultadoML.confianca < 0.4) {
+        appendMessage('ml', '😕 <strong>Machine Learning:</strong> Não foi possível encontrar uma resposta confiável na internet para esta dúvida. Recomendo entrar em contato com o suporte técnico da Bsoft.');
+        adicionarMensagemNaConversa('ml', 'ML: Não encontrou resposta confiável.');
+        return;
+    }
+    
+    // Cria o conhecimento ML
+    const novoML = adicionarMLKnowledge(
+        resultadoML.erro,
+        resultadoML.solucao,
+        resultadoML.fonte || 'Internet',
+        resultadoML.confianca || 0.6
+    );
+    
+    // Salva na planilha (aba machinelearning)
+    await salvarMLNaPlanilha(resultadoML.erro, resultadoML.solucao, resultadoML.fonte || 'Internet');
+    
+    // Associa à conversa
+    if (conversa) {
+        conversa.mlKnowledgeId = novoML.id;
+        salvarConversas();
+    }
+    
+    // Vetoriza o novo conhecimento
+    const textoCompleto = `DÚVIDA: ${resultadoML.erro} | PROCEDIMENTO: ${resultadoML.solucao}`;
+    const novoVetor = await gerarEmbedding(textoCompleto);
+    if (novoVetor) {
+        manualVetorizado.push({
+            texto: textoCompleto,
+            erro: resultadoML.erro,
+            solucao: resultadoML.solucao,
+            emitir: '',
+            categoria: 'Machine Learning',
+            vetor: novoVetor,
+            isML: true,
+            mlId: novoML.id
+        });
+    }
+    
+    // Exibe o resultado
+    const card = document.createElement('div');
+    card.className = 'answer-card ml-card';
+    card._mlKnowledgeId = novoML.id;
+    card.innerHTML = `
+        <div style="background:${getComputedStyle(document.documentElement).getPropertyValue('--ml-light')};padding:8px 15px;border-bottom:1px solid ${getComputedStyle(document.documentElement).getPropertyValue('--ml-border')};font-size:11px;color:${getComputedStyle(document.documentElement).getPropertyValue('--ml-color')};display:flex;align-items:center;gap:8px;">
+            🧠 <strong>Machine Learning</strong>
+            <span class="ml-badge">NOVO CONHECIMENTO</span>
+        </div>
+        <div class="answer-section">
+            <div class="section-label ml"><div class="section-icon ml">🔍</div>Pergunta</div>
+            <div class="section-content"><b>${escapeHtml(resultadoML.erro)}</b></div>
+        </div>
+        <div class="answer-section">
+            <div class="section-label how"><div class="section-icon how">✅</div>Resposta Encontrada</div>
+            <div class="section-content">${formatarTexto(resultadoML.solucao)}</div>
+        </div>
+        <div class="answer-section">
+            <div class="section-label tip"><div class="section-icon tip">🌐</div>Fonte</div>
+            <div class="section-content">
+                ${escapeHtml(resultadoML.fonte || 'Internet')}
+                <span class="ml-source-tag">🤖 Conhecimento adquirido automaticamente</span>
+            </div>
+        </div>
+        <div class="feedback-area">
+            <span>Esta resposta foi útil? <small style="color:var(--ml-color);">(Negativo = remove o conhecimento)</small></span>
+            <button class="feedback-btn" onclick="saveMLFeedback('${novoML.id}', 'positivo', this)">👍 Confirmar</button>
+            <button class="feedback-btn" onclick="saveMLFeedback('${novoML.id}', 'negativo', this)">👎 Descartar</button>
+        </div>
+    `;
+    document.getElementById('chatStream').appendChild(card);
+    scrollToBottom(true);
+    
+    const respostaTexto = resultadoML.solucao.replace(/\*\*(.*?)\*\*/g, '$1');
+    adicionarMensagemNaConversa('ml', `[Machine Learning] ${resultadoML.erro}: ${respostaTexto}`);
+    
+    appendMessage('ml', '✅ <strong>Conhecimento salvo!</strong> Esta resposta agora faz parte da base de dados e estará disponível para futuras consultas.');
+}
+
+async function saveMLFeedback(id, tipo, btn) {
+    const feedbackArea = btn.parentElement;
+    
+    if (tipo === 'positivo') {
+        confirmarMLKnowledge(id);
+        feedbackArea.innerHTML = "<span style='color:#166534;font-weight:700;'>✅ Conhecimento confirmado! Ficará disponível para todos.</span>";
+        
+        // Recarrega dados para incluir o novo conhecimento confirmado
+        setTimeout(() => {
+            manualVetorizado = [];
+            loadData();
+        }, 2000);
+    } else {
+        marcarMLKnowledgeNegativo(id);
+        
+        // Remove do manualVetorizado
+        manualVetorizado = manualVetorizado.filter(item => !(item.isML && item.mlId === id));
+        
+        feedbackArea.innerHTML = "<span style='color:#dc2626;font-weight:700;'>🗑️ Conhecimento descartado e removido do banco de dados.</span>";
+    }
+}
+
+async function processarProximaSolucao(perguntaOriginal) {
+    if (filaSolucoes.length === 0) {
+        appendMessage('ai', '😕 Infelizmente não encontrei outras soluções no manual para este caso. Vou ativar o <b>Machine Learning</b> para buscar na internet...');
+        adicionarMensagemNaConversa('ai', '😕 Sem mais soluções. Ativando ML...');
+        
+        setTimeout(async () => {
+            await ativarMachineLearning(perguntaOriginal);
+        }, 1000);
+        return;
+    }
+    
+    const solucaoAtual = filaSolucoes.shift();
+    appendMessage('system', '🔍 Apresentando outra solução do manual...');
+    
+    const query = `Solução alternativa: ${solucaoAtual.erro}`;
+    document.getElementById('searchInput').value = query;
+    await handleChat();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  RESPOSTA SEFAZ (mantida separada)
 // ═══════════════════════════════════════════════════════════
 async function gerarRespostaSefaz(pergunta) {
     appendMessage('system', '🌐 <strong>Erro SEFAZ detectado</strong> — Consultando base de rejeições...');
@@ -1753,207 +2494,6 @@ function formatarTexto(texto) {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  RESPOSTA ESTRUTURADA COM CONTEXTO
-// ═══════════════════════════════════════════════════════════
-// ═══════════════════════════════════════════════════════════
-//  RESPOSTA ESTRUTURADA COM CONTEXTO (CORRIGIDA)
-// ═══════════════════════════════════════════════════════════
-async function gerarRespostaEstruturada(pergunta, dadosBanco, logIndex, candidatosReversa = [], isEmissao = false) {
-    const conversa = getConversaAtiva();
-    const contextoMensagens = conversa ? conversa.contexto.slice(-10) : [];
-
-    let contextoBanco = "";
-    let temDadosReais = false;
-    
-    if (dadosBanco) {
-        const conteudoEmitir = (isEmissao && dadosBanco.emitir && dadosBanco.emitir.length > 10) ? `\nCOMO EMITIR: ${dadosBanco.emitir}` : "";
-        contextoBanco = `\n📋 ENCONTRADO NO MANUAL (${(dadosBanco.similaridade*100).toFixed(0)}% similar):\nDÚVIDA: ${dadosBanco.erro}\nSOLUÇÃO: ${dadosBanco.solucao}${conteudoEmitir}`;
-        temDadosReais = true;
-    } else if (candidatosReversa && candidatosReversa.length > 0 && candidatosReversa[0].similaridade > 0.3) {
-        contextoBanco = "\n📋 CANDIDATOS PARCIAIS DO MANUAL:\n" + candidatosReversa.map((c, i) => `[${i+1} - ${(c.similaridade*100).toFixed(0)}%] ${c.erro} → ${c.solucao}`).join('\n');
-        temDadosReais = true;
-    } else {
-        contextoBanco = "\n⚠️ NENHUMA CORRESPONDÊNCIA ENCONTRADA NO MANUAL TÉCNICO.";
-        temDadosReais = false;
-    }
-
-    let contextoConversa = "";
-    if (contextoMensagens.length > 0) {
-        contextoConversa = "\n\nHISTÓRICO DA CONVERSA:\n" + contextoMensagens.map(m => `${m.role === 'user' ? 'Usuário' : 'Assistente'}: ${m.content.substring(0, 300)}`).join('\n');
-    }
-
-    const prompt = `Você é o Especialista de Suporte do Bsoft TMS, um sistema ERP para empresas de transporte de cargas.
-
-REGRAS CRÍTICAS:
-1. Se o MANUAL TÉCNICO tem uma resposta, USE APENAS o conteúdo do manual. Não invente.
-2. Se o MANUAL TÉCNICO NÃO tem correspondência (⚠️ NENHUMA CORRESPONDÊNCIA), responda EXATAMENTE: "Não encontrei esta informação no manual técnico. Sugiro reformular a pergunta com outros termos ou entrar em contato com o suporte técnico da Bsoft. Para iniciar um novo assunto, sugiro clicar em nova conversa."
-3. NÃO invente caminhos, menus, procedimentos ou soluções que não estejam no manual.
-4. Se houver CANDIDATOS PARCIAIS, use-os como referência mas informe que são aproximações.
-5. O sistema Bsoft TMS funciona com a seguinte estrutura:
-Quando aberto o sistema, tem um menu lateral que no topo tem uma opção de pesquisar as funções digitando e abaixo os seguintes menus principais: 
-Opções do Sistema
-Ambiente
-Recursos
-Financeiro
-Transporte
-Estoque
-Pessoas
-Ordens de Serviço
-Manutenção
-Configurações
-eDoc
-E-mail
-Hub
-Controle de Viagens
-nsdocs
-Dentro desses menu tem vários submenus, você vai encontrar no manual diversos caminhos apontados de como chegar na função ou opção que o usuário te perguntar.
-Para tornar o sistema útilizavel pelo cliente, os primeiros passos são instalar o certificado digital que fica em eDoc/Certificados Digitais. O segundo passo é
-criar os talões dos documentos que irá emitir (Ct-e, Mdf-e, Ordem de Carregamento, Contrato de frete, NFS-e, Pedidos) que fica em Transporte/Configurações/Tipos de talões.
-Dentro dos talões tem diversas configurações e parâmetros que podem automatizar ações ou limitar e editar campos que aparecem durante a emissão do documento.
-Um exemplo para você entender, para gerar ocorrência automática para o ct-e, basta ir no talão do ct-e, editar ele e habilitar a opção ocorrência automática,
-quero que de esse tipo de instrução caso esteja dentro do contexto da pergunta.
-Depois de criados os talões, os caminhos das rotinas mais comuns para emissão dos documentos são:
-Ct-e: vai em Transporte/Documentos/Ct-e ou Transporte/Conhecimentos 
-Mdf-e: vai em Transporte/Manifesto de Carga
-Nf-e, NFs-e ou Notas fiscais: Financeiro/Notas Fiscais/Notas Fiscais
-Ordem de Carregamento (OC): Transporte/Ordem de Carregamento Simplificada
-Cancelamento na SEFAZ: Para cancelar um Ct-e na SEFAZ, vai em Transporte/Documentos/Ct-e ou Transporte/Conhecimentos, seleciona o documento desejado, depois basta clicar no ícone da SEFAZ (CT-e) e executar a opção Cancelar na SEFAZ.
-Cancelamento na SEFAZ: Para cancelar um MDF-e na SEFAZ, vai em Transporte/Documentos/Ct-e ou Transporte/Manifesto de Carga, seleciona o documento desejado, depois basta clicar no ícone da SEFAZ (MDF-e) e executar a opção Cancelar na SEFAZ.
-
-Caminhos das rotinas mais comuns para cadastros (Apenas use os caminhos para encontrar as respostas dentro do Solução):
-
-Veículos: Transporte/Veículos
-Motoristas, clientes, fornecedores, seguradora, proprietários Veículos, Transportadora: Pessoas/Pessoas
-Vincular placas a um motorista: Transporte/Conjuntos de Veículos ou Transporte/Vinculação de Motoristas
-Natureza da Operação ou CFOP: Financeiro/Fiscal/Tipos de Operações
-Apólice de Seguro: Transporte/Configurações/Apólices de Seguro
-Nf-e pré cadastrada: Transporte/Nf-e Pré-cadastrada
-Regra: Transporte/Configurações/Regras
-Tabela de preços: Transporte/Configurações/Tabela de Preços/Tabela de Preços 
-Parâmetros do sistema: Ambiente/Administração/Parâmetros 
-Funcionalidades do sistema: Ambiente/Controle de Acesso/Funcionalidades 
-Parâmetros para EDI Importação Exportação de documentos: Transporte/EDI/Parâmetros 
-Relatório personalizado: Transporte/EDI/Assistente de Relatórios
-Importação/Exportação de documentos: Transporte/EDI/"Importação/Exportação"
-Gerar CIOT: Transporte/Documentos/Ct-e, seleciona o Ct-e e clica na opção Contrato de frete Eletrônico ou Transporte/Contrato de frete seleciona o Contrato de frete e clica na opção Contrato de frete Eletrônico
-VPO ou Vale pedágio: Transporte/Documentos/Ct-e, seleciona o Ct-e e clica na opção Vale-Pedágio Avulso ou Transporte/Contrato de frete seleciona o Contrato de frete e clica na opção Vale-Pedágio Avulso
-Tipos Valores Outros para ct-e: Transporte/Configurações/Tipos Valores Outros
-Tabela de preços Valores Outros: Transporte/Configurações/Tabela de Preços/Tabela de Preços Valores Outros 
-Regras de Importação de Notas: Financeiro/Configurações/Fiscal/Regras de Importação de Notas
-Classificação Fiscal: Financeiro/Configurações/Fiscal/Classificação Fiscal
-Suporte: Opções do Sistema/Suporte 
-Configurações de Ordem de Carregamento: Transporte/Configurações/Documentos PDF/Configurações de Ordem de Carregamento 
-Modelos de notas: Financeiro/Configurações/Fiscal/Modelos de notas
-Contratos com Operadoras de Crédito: Transporte/Configurações/Contratos com Operadoras de Crédito
-Listagens: Ambiente/Listagens
-Usuários do Sistema: Ambiente/Controle de Acesso/Usuários do Sistema
-Remetente de e-mails: Ambiente/Administração/Remetente e-mails
-
-
-
-
-Caminhos assuntos gestão e Relatórios:
-Abastecimentos: Manutenção/Abastecimentos ou Manutenção/Abastecimentos ou Manutenção/Abastecimentos ou Manutenção/Abastecimentos Próprios
-Relatório de abastecimento: Manutenção/Relatórios/Relação de Abastecimentos 
-Recapagens: Manutenção / Pneus / Recapagens 
-Tipos de Recapagens: Manutenção / Configurações / Tipos de Recapagens 
-Grupos de Demonstrativo Financeiro: Manutenção / Configurações / Grupos de Demonstrativo Financeiro
-Grupos de Equipamentos: Manutenção / Configurações / Grupos de Equipamentos
-Títulos a Pagar (Lançamentos): Financeiro / Títulos a Pagar / Títulos a Pagar
-Títulos a Pagar (Gestão): Financeiro / Títulos a Pagar / "Lotes/Duplicatas a Pagar"
-Títulos a Receber: Financeiro (Lançamentos) / Títulos a Receber / Títulos a Receber
-Títulos a Receber (Gestão): Financeiro / Títulos a Receber / "Lotes/Duplicatas a Receber"
-Títulos já pagos ou recebidos: Financeiro/Caixas e Bancos/Consulta Lançamentos
-Espécies: Transporte/Configurações/Espécies
-Unidades: Configurações/Cadastros Básicos/Unidades
-Produtos: Financeiro/Configurações/Produtos e Serviços/Produtos
-Serviços: Financeiro/Configurações/Produtos e Serviços/Serviços
-Família Produtos Serviços: Financeiro/Configurações/Produtos e Serviços/Família Produtos Serviços
-informações de cobrança padrão: Transporte/Configurações/informações de cobrança padrão 
-Centros de Custo (Apropriações): Financeiro/Configurações/Centros de Custo
-Contas Financeiras: Financeiro/Configurações/Contas Financeiras
-Grupos Contas Financeiras: Financeiro/Configurações/Grupos Contas Financeiras
-Tipos de Sinalizadores: Financeiro/Cadastros Básicos/Tipos de Sinalizadores
-Movimentação Estoque: Estoque/Movimentação Estoque
-Relatório do estoque: Estoque/Relatórios/Relatórios do Estoque
-Tipos de Pneus: Manutenção/Configurações/Tipos de Pneus
-Domínios: Manutenção/Configurações/Domínios
-Plano de Contas Gerencial: Financeiro/Configurações/Plano de Contas Gerencial
-Tipos de Documentos: Financeiro/Cadastros Básicos/Tipos de Documentos
-Adiantamento a fornecedores: Financeiro/Caixa e Bancos/Adiantamento a fornecedores
-Arquivos Remessa: Financeiro/Caixa e Bancos/Convênios/Arquivos Remessa
-Arquivos Retorno: Financeiro/Caixa e Bancos/Convênios/Arquivos Retorno
-Pagamento: Financeiro/Caixa e Bancos/Pagamento
-Recebimento: Financeiro/Caixa e Bancos/Recebimento
-Transferências: Financeiro/Caixas e Bancos/Transferências
-Geração de Faturas (Títulos a pagar em lote): Financeiro/Títulos a Pagar/Geração de Faturas
-Lotes a Pagar: Financeiro/Títulos a Pagar/Lotes a Pagar
-Lotes a Receber: Financeiro/Títulos a Pagar/Lotes a Receber
-Relatório de Faturamento de Conhecimentos: Transporte/Relatórios/Relatório de Faturamento de Conhecimentos
-Orçamento: Financeiro/Orçamento/Orçamento
-Relatório de Orçamento: Financeiro/Relatórios/Relatório de Orçamento
-Regras para conciliação bancária: Financeiro/Caixa e Bancos/Regras para conciliação bancária
-Arquivos Importados via Conciliação Bancária: Financeiro/Caixa e Bancos/Regras/Arquivos Importados via Conciliação Bancária
-Conciliação Bancária (histórico de conciliações feitas): Financeiro/Caixa e Bancos/Conciliação Bancária
-Relatório 12 Meses Gerencial Competência: Financeiro/Relatórios/Gerenciais/12 Meses Gerencial Competência
-Relatório 12 Meses Gerencial Demonstrativo: Financeiro/Relatórios/Gerenciais/12 Meses Gerencial Demonstrativo
-Relatório Movimentação Detalhado: Financeiro/Relatórios/Movimentação Financeira/Movimentação Detalhado
-Comissões dos motoristas: Transporte/Relatórios/Comissões dos motoristas
-Relatório de Contratos de Frete: Transporte/Relatórios/Relatório de Contratos de Frete
-Relatório Financeiro dos Equipamentos: Manutenção/Relatórios/Financeiro dos Equipamentos
-Cotações de Frete: Transporte/Contações de Frete
-Solicitação interna de compra: Estoque/Solicitação interna de compra
-Finalidades de Movimentação: Estoque/Configurações/Finalidades de Movimentação.
-
-${contextoBanco}
-${contextoConversa}
-
-PERGUNTA DO USUÁRIO: "${pergunta}"
-
-Responda APENAS com JSON:
-{
-  "caminho": "Caminho no sistema ou null",
-  "como_fazer": "${temDadosReais ? 'Explicação baseada no manual. Use **negrito** para campos.' : 'Não encontrei esta informação no manual técnico. Sugiro reformular a pergunta com outros termos ou entrar em contato com o suporte técnico da Bsoft.'}",
-  "dicas": [],
-  "tem_caminho": ${temDadosReais ? 'true' : 'false'},
-  "encontrado_no_manual": ${temDadosReais}
-}`;
-
-    try {
-        const result = await callCurrentMCP([{ role: 'user', content: prompt }], { temperature: 0.1, maxTokens: 4096, responseFormat: { type: 'json_object' } });
-        const textoRaw = result.text;
-        let parsed = null;
-        try { parsed = JSON.parse(textoRaw); } catch(e) {
-            try { parsed = JSON.parse(textoRaw.replace(/```json|```/g, '').trim()); } catch(e2) {}
-        }
-        
-        if (!parsed) {
-            const txt = textoRaw.replace(/```json|```/g, '').replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>').trim();
-            renderAnswerCard(null, txt, [], logIndex);
-            adicionarMensagemNaConversa('ai', txt.replace(/<[^>]*>/g, ''));
-        } else {
-            // Se a IA insistiu em inventar mesmo sem dados, força a mensagem padrão
-            if (!temDadosReais && parsed.encontrado_no_manual !== false) {
-                const msgPadrao = "Não encontrei esta informação no manual técnico. Sugiro reformular a pergunta com outros termos ou entrar em contato com o suporte técnico da Bsoft.";
-                renderAnswerCard(null, msgPadrao, [], logIndex);
-                adicionarMensagemNaConversa('ai', msgPadrao);
-            } else {
-                renderAnswerCard(
-                    parsed.tem_caminho ? parsed.caminho : null,
-                    (parsed.como_fazer || '').replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>'),
-                    parsed.dicas || [],
-                    logIndex
-                );
-                adicionarMensagemNaConversa('ai', (parsed.como_fazer || '').replace(/\*\*(.*?)\*\*/g, '$1'));
-            }
-        }
-    } catch(e) {
-        appendMessage('ai', `❌ Erro na IA. Tente novamente.`);
-        adicionarMensagemNaConversa('ai', '❌ Erro na comunicação.');
-    }
-}
-
-// ═══════════════════════════════════════════════════════════
 //  RENDER DO CARD
 // ═══════════════════════════════════════════════════════════
 function renderAnswerCard(caminho, comoFazer, dicas, logIndex, ehFixa = false) {
@@ -1997,7 +2537,11 @@ function appendLoadingCard(texto = "🔍 Buscando...") {
 function appendMessage(sender, text) {
     const stream = document.getElementById('chatStream');
     const div = document.createElement('div');
-    div.className = sender === 'system' ? 'message system-msg' : `message ${sender === 'user' ? 'user-msg' : 'ai-msg'}`;
+    if (sender === 'ml') {
+        div.className = 'message ml-msg';
+    } else {
+        div.className = sender === 'system' ? 'message system-msg' : `message ${sender === 'user' ? 'user-msg' : 'ai-msg'}`;
+    }
     div.innerHTML = text;
     stream.appendChild(div);
     scrollToBottom(true);
@@ -2010,57 +2554,64 @@ function fillAndSend(txt) { document.getElementById('searchInput').value = txt; 
 //  FEEDBACK
 // ═══════════════════════════════════════════════════════════
 let currentLogTimestamp = null;
-let perguntaPrimariaAtual = ""; // NOVA: guarda a pergunta principal da conversa
+let perguntaPrimariaAtual = "";
 
 function logSearch(query, found) {
-    currentLogTimestamp = Date.now();
-    
-    // Se for a primeira pergunta da conversa, guarda como pergunta primária
     const conversa = getConversaAtiva();
-    if (conversa && conversa.mensagens.filter(m => m.sender === 'user').length <= 1) {
+    if (!conversa) return;
+    
+    const totalPerguntasUser = conversa.mensagens.filter(m => m.sender === 'user').length;
+    
+    if (totalPerguntasUser === 1) {
+        currentLogTimestamp = Date.now();
         perguntaPrimariaAtual = query;
         conversa.primeiraPergunta = query;
+        conversa.logTimestamp = currentLogTimestamp;
         salvarConversas();
+        
+        if (modoDepuracao) {
+            console.log("🔧 [DEPURAÇÃO] Log NÃO enviado:", query);
+            return;
+        }
+        
+        try { 
+            fetch(SCRIPT_URL, { 
+                method:'POST', 
+                mode:'no-cors', 
+                body: JSON.stringify({ 
+                    action: "addLog",
+                    pergunta: query,
+                    encontrou: found ? "Sim" : "Não", 
+                    feedback: "Pendente",
+                    timestamp: currentLogTimestamp
+                }) 
+            }); 
+        } catch(e) { console.error(e); }
     }
-    
-    try { 
-        fetch(SCRIPT_URL, { 
-            method:'POST', 
-            mode:'no-cors', 
-            body: JSON.stringify({ 
-                action: "addLog",
-                pergunta: perguntaPrimariaAtual || query, // Usa a pergunta primária
-                encontrou: found ? "Sim" : "Não", 
-                feedback: "Pendente",
-                timestamp: currentLogTimestamp
-            }) 
-        }); 
-    } catch(e) { console.error(e); }
 }
 
 async function saveFeedback(logIndex, type, btn) {
     const feedbackArea = btn.parentElement;
     const card = feedbackArea.closest('.answer-card');
 
-    // Busca a pergunta primária e o timestamp do log da conversa atual
     const conversa = getConversaAtiva();
     const perguntaParaLog = conversa?.primeiraPergunta || perguntaPrimariaAtual || lastQuery || "?";
     const timestampLog = conversa?.logTimestamp || currentLogTimestamp;
-    
-    console.log("📝 Feedback associado à pergunta primária:", perguntaParaLog, "| timestamp:", timestampLog);
 
-    try {
-        fetch(SCRIPT_URL, { 
-            method:'POST', 
-            mode:'no-cors',
-            body: JSON.stringify({ 
-                action: "updateFeedback",
-                pergunta: perguntaParaLog,
-                feedback: type === 'positivo' ? "Positivo" : "Negativo",
-                timestamp: timestampLog
-            }) 
-        });
-    } catch(e) { console.error(e); }
+    if (!modoDepuracao) {
+        try {
+            fetch(SCRIPT_URL, { 
+                method:'POST', 
+                mode:'no-cors',
+                body: JSON.stringify({ 
+                    action: "updateFeedback",
+                    pergunta: perguntaParaLog,
+                    feedback: type === 'positivo' ? "Positivo" : "Negativo",
+                    timestamp: timestampLog
+                }) 
+            });
+        } catch(e) { console.error(e); }
+    }
 
     if (type === 'positivo') {
         if (card && card._dadosResposta && perguntaParaLog) {
@@ -2086,17 +2637,19 @@ async function sendDetailedFeedback(logIndex, btn) {
     const perguntaParaLog = conversa?.primeiraPergunta || perguntaPrimariaAtual || lastQuery || "?";
     const timestampLog = conversa?.logTimestamp || currentLogTimestamp;
     
-    fetch(SCRIPT_URL, { 
-        method:'POST', 
-        mode:'no-cors',
-        body: JSON.stringify({ 
-            action: "updateFeedback",
-            pergunta: perguntaParaLog,
-            encontrou: "Não",
-            feedback: "Negativo",
-            timestamp: timestampLog
-        }) 
-    });
+    if (!modoDepuracao) {
+        fetch(SCRIPT_URL, { 
+            method:'POST', 
+            mode:'no-cors',
+            body: JSON.stringify({ 
+                action: "updateFeedback",
+                pergunta: perguntaParaLog,
+                encontrou: "Não",
+                feedback: "Negativo",
+                timestamp: timestampLog
+            }) 
+        });
+    }
     
     btn.parentElement.parentElement.innerHTML = "<span style='color:#991b1b;font-weight:700;'>Feedback enviado! ✅</span>";
 }
@@ -2142,7 +2695,7 @@ function handleFileUpload(file) {
 function speak(text) { if (isCallActive) { window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text.replace(/<[^>]*>/g,'')); u.lang = 'pt-BR'; u.onend = () => { if (isCallActive) recognition.start(); }; window.speechSynthesis.speak(u); } }
 function toggleVoice() { isCallActive = true; document.getElementById('voiceCallPanel').style.display = 'flex'; document.getElementById('callStatus').innerText = "Ouvindo..."; recognition.start(); }
 function endVoiceCall() { isCallActive = false; recognition.stop(); window.speechSynthesis.cancel(); document.getElementById('voiceCallPanel').style.display = 'none'; }
-function toggleMinimizeCall() { /* mantido igual */ }
+function toggleMinimizeCall() { /* mantido */ }
 
 recognition.onspeechstart = () => { clearTimeout(silenceTimer); };
 recognition.onresult = (event) => {
