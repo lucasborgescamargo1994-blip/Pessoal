@@ -1504,7 +1504,7 @@ let dadosFuncionalidades = [];
 let isVectorizing = true;
 let bancoCompletoRaw = [];
 
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz_akl15rwKPBaHUfeyfOxSOZqQukCnVfvw2Ivipsd7P4OR8mlfGrLSwpMYKYlljz6P/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwKVci7JDrv8GcKVKItYQBbJP7CjRfE-3lMg492v4zp-4HN59apf6lDK_lVxq54EwbC/exec";
 const CORRECT_PASSWORD = "camargo1994";
 
 const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
@@ -2154,6 +2154,8 @@ async function handleChat() {
         mlInfo = `\n⚠️ ATENÇÃO: Nenhum resultado relevante encontrado no manual (similaridade máxima: ${resultadosRelevantes.length > 0 ? (resultadosRelevantes[0].similaridade*100).toFixed(0) : 0}%). Você DEVE indicar que a informação não foi encontrada e sugerir que o sistema ative o Machine Learning para buscar na internet.\n`;
     }
     
+	logSearch(query, temResultadosBons || vaiUsarML);
+	
     const contextoConversa = conversa ? conversa.contexto.slice(-20) : [];
     let historicoConversa = "";
     if (contextoConversa.length > 0) {
@@ -2551,7 +2553,7 @@ function appendMessage(sender, text) {
 function fillAndSend(txt) { document.getElementById('searchInput').value = txt; handleChat(); }
 
 // ═══════════════════════════════════════════════════════════
-//  FEEDBACK
+//  FEEDBACK (CORRIGIDO - Lógica do V16 restaurada)
 // ═══════════════════════════════════════════════════════════
 let currentLogTimestamp = null;
 let perguntaPrimariaAtual = "";
@@ -2560,6 +2562,7 @@ function logSearch(query, found) {
     const conversa = getConversaAtiva();
     if (!conversa) return;
     
+    // SÓ CRIA LOG se for a PRIMEIRA pergunta da conversa
     const totalPerguntasUser = conversa.mensagens.filter(m => m.sender === 'user').length;
     
     if (totalPerguntasUser === 1) {
@@ -2569,10 +2572,13 @@ function logSearch(query, found) {
         conversa.logTimestamp = currentLogTimestamp;
         salvarConversas();
         
+        // Verifica modo depuração
         if (modoDepuracao) {
             console.log("🔧 [DEPURAÇÃO] Log NÃO enviado:", query);
-            return;
+            return; // NÃO envia para a planilha
         }
+        
+        console.log("📝 LOG CRIADO para pergunta primária:", query);
         
         try { 
             fetch(SCRIPT_URL, { 
@@ -2587,6 +2593,8 @@ function logSearch(query, found) {
                 }) 
             }); 
         } catch(e) { console.error(e); }
+    } else {
+        console.log("⏭️ Log ignorado (não é a primeira pergunta):", query.substring(0, 50));
     }
 }
 
@@ -2597,7 +2605,10 @@ async function saveFeedback(logIndex, type, btn) {
     const conversa = getConversaAtiva();
     const perguntaParaLog = conversa?.primeiraPergunta || perguntaPrimariaAtual || lastQuery || "?";
     const timestampLog = conversa?.logTimestamp || currentLogTimestamp;
+    
+    console.log("📝 Feedback associado à pergunta primária:", perguntaParaLog, "| timestamp:", timestampLog);
 
+    // Verifica modo depuração
     if (!modoDepuracao) {
         try {
             fetch(SCRIPT_URL, { 
@@ -2611,6 +2622,8 @@ async function saveFeedback(logIndex, type, btn) {
                 }) 
             });
         } catch(e) { console.error(e); }
+    } else {
+        console.log("🔧 [DEPURAÇÃO] Feedback NÃO enviado:", type);
     }
 
     if (type === 'positivo') {
@@ -2637,6 +2650,7 @@ async function sendDetailedFeedback(logIndex, btn) {
     const perguntaParaLog = conversa?.primeiraPergunta || perguntaPrimariaAtual || lastQuery || "?";
     const timestampLog = conversa?.logTimestamp || currentLogTimestamp;
     
+    // Verifica modo depuração
     if (!modoDepuracao) {
         fetch(SCRIPT_URL, { 
             method:'POST', 
@@ -2649,6 +2663,8 @@ async function sendDetailedFeedback(logIndex, btn) {
                 timestamp: timestampLog
             }) 
         });
+    } else {
+        console.log("🔧 [DEPURAÇÃO] Feedback detalhado NÃO enviado:", motivo);
     }
     
     btn.parentElement.parentElement.innerHTML = "<span style='color:#991b1b;font-weight:700;'>Feedback enviado! ✅</span>";
