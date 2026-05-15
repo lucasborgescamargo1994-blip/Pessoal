@@ -1,283 +1,11 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <title>Suporte Bsoft TMS - IA v19 - Central de Ajuda Integrada</title>
+    <title>Suporte Bsoft TMS - IA v20 - Multi Fontes Integradas</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
     <style>
-	/* Manual Confluence - Terceiro painel */
-.manual-tab {
-    position: fixed;
-    right: 0;
-    top: 20%;
-    transform: translateY(-50%);
-    background: linear-gradient(135deg, #2563eb, #1d4ed8);
-    color: white;
-    padding: 12px 8px;
-    border-radius: 8px 0 0 8px;
-    cursor: pointer;
-    font-weight: 700;
-    font-size: 12px;
-    writing-mode: vertical-rl;
-    z-index: 1498;
-    box-shadow: -3px 0 15px rgba(37,99,235,0.3);
-    transition: all 0.3s;
-}
-.manual-tab:hover {
-    background: linear-gradient(135deg, #3b82f6, #2563eb);
-}
-.manual-tab.open {
-    right: 550px;
-}
-
-.manual-panel {
-    position: fixed;
-    right: -580px;
-    top: 0;
-    width: 550px;
-    height: 100vh;
-    background: white;
-    z-index: 1996;
-    box-shadow: -5px 0 30px rgba(0,0,0,0.2);
-    transition: right 0.3s ease;
-    display: flex;
-    flex-direction: column;
-}
-.manual-panel.open {
-    right: 0;
-}
-
-.manual-header {
-    padding: 16px;
-    background: linear-gradient(135deg, #2563eb, #1d4ed8);
-    color: white;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-shrink: 0;
-}
-.manual-header h3 {
-    font-size: 15px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.manual-search {
-    padding: 10px 14px;
-    background: #eff6ff;
-    display: flex;
-    gap: 8px;
-    flex-shrink: 0;
-    align-items: center;
-}
-.manual-search input {
-    flex: 1;
-    padding: 8px 12px;
-    border: 2px solid #bfdbfe;
-    border-radius: 8px;
-    font-family: inherit;
-    font-size: 13px;
-    outline: none;
-}
-.manual-search input:focus {
-    border-color: #2563eb;
-}
-.manual-search button {
-    padding: 8px 14px;
-    background: #2563eb;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 600;
-    font-family: inherit;
-    font-size: 12px;
-    white-space: nowrap;
-}
-.manual-search button:hover {
-    background: #1d4ed8;
-}
-
-.manual-footer {
-    padding: 10px 16px;
-    background: #f8fafc;
-    border-top: 1px solid var(--border);
-    font-size: 11px;
-    color: var(--text-muted);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-shrink: 0;
-    flex-wrap: wrap;
-    gap: 6px;
-}
-
-.btn-manual-action {
-    padding: 7px 14px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 11px;
-    font-weight: 600;
-    font-family: inherit;
-}
-.btn-manual-capturar {
-    background: #eff6ff;
-    color: #1d4ed8;
-    border: 1px solid #bfdbfe;
-}
-.btn-manual-capturar:hover {
-    background: #bfdbfe;
-}
-.btn-manual-ia {
-    background: var(--primary);
-    color: white;
-}
-.btn-manual-ia:hover {
-    background: var(--primary-dark);
-}
-	
-	/* Blog Bsoft - Segundo painel */
-.blog-tab {
-    position: fixed;
-    right: 0;
-    top: 35%;
-    transform: translateY(-50%);
-    background: linear-gradient(135deg, #dc2626, #991b1b);
-    color: white;
-    padding: 12px 8px;
-    border-radius: 8px 0 0 8px;
-    cursor: pointer;
-    font-weight: 700;
-    font-size: 12px;
-    writing-mode: vertical-rl;
-    z-index: 1499;
-    box-shadow: -3px 0 15px rgba(220,38,38,0.3);
-    transition: all 0.3s;
-}
-.blog-tab:hover {
-    background: linear-gradient(135deg, #ef4444, #dc2626);
-}
-.blog-tab.open {
-    right: 550px;
-}
-
-.blog-panel {
-    position: fixed;
-    right: -580px;
-    top: 0;
-    width: 550px;
-    height: 100vh;
-    background: white;
-    z-index: 1997;
-    box-shadow: -5px 0 30px rgba(0,0,0,0.2);
-    transition: right 0.3s ease;
-    display: flex;
-    flex-direction: column;
-}
-.blog-panel.open {
-    right: 0;
-}
-
-.blog-header {
-    padding: 16px;
-    background: linear-gradient(135deg, #dc2626, #991b1b);
-    color: white;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-shrink: 0;
-}
-.blog-header h3 {
-    font-size: 15px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.blog-search {
-    padding: 10px 14px;
-    background: #fef2f2;
-    display: flex;
-    gap: 8px;
-    flex-shrink: 0;
-    align-items: center;
-}
-.blog-search input {
-    flex: 1;
-    padding: 8px 12px;
-    border: 2px solid #fecaca;
-    border-radius: 8px;
-    font-family: inherit;
-    font-size: 13px;
-    outline: none;
-}
-.blog-search input:focus {
-    border-color: #dc2626;
-}
-.blog-search button {
-    padding: 8px 14px;
-    background: #dc2626;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 600;
-    font-family: inherit;
-    font-size: 12px;
-    white-space: nowrap;
-}
-.blog-search button:hover {
-    background: #991b1b;
-}
-
-.blog-iframe {
-    flex: 1;
-    border: none;
-    width: 100%;
-}
-
-.blog-footer {
-    padding: 10px 16px;
-    background: #f8fafc;
-    border-top: 1px solid var(--border);
-    font-size: 11px;
-    color: var(--text-muted);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-shrink: 0;
-    flex-wrap: wrap;
-    gap: 6px;
-}
-
-.btn-blog-action {
-    padding: 7px 14px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 11px;
-    font-weight: 600;
-    font-family: inherit;
-}
-.btn-blog-capturar {
-    background: #fef2f2;
-    color: #991b1b;
-    border: 1px solid #fecaca;
-}
-.btn-blog-capturar:hover {
-    background: #fecaca;
-}
-.btn-blog-ia {
-    background: var(--primary);
-    color: white;
-}
-.btn-blog-ia:hover {
-    background: var(--primary-dark);
-}
-	
         :root {
             --primary: #f97316;
             --primary-dark: #ea6a0a;
@@ -303,17 +31,25 @@
             --central-dark: #0e7490;
             --central-light: #ecfeff;
             --central-border: #a5f3fc;
+            --blog-color: #dc2626;
+            --blog-dark: #991b1b;
+            --blog-light: #fef2f2;
+            --blog-border: #fecaca;
+            --manual-color: #2563eb;
+            --manual-dark: #1d4ed8;
+            --manual-light: #eff6ff;
+            --manual-border: #bfdbfe;
+            --repo-color: #059669;
+            --repo-dark: #047857;
+            --repo-light: #ecfdf5;
+            --repo-border: #a7f3d0;
         }
 
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         html, body {
-            height: 100%;
-            height: 100dvh;
-            width: 100%;
-            overflow: hidden;
-            margin: 0;
-            padding: 0;
+            height: 100%; height: 100dvh; width: 100%;
+            overflow: hidden; margin: 0; padding: 0;
         }
 
         body {
@@ -335,175 +71,80 @@
         }
 
         .app-layout {
-            display: flex;
-            width: 100%;
-            max-width: 1280px;
-            height: 100%;
-            gap: 12px;
+            display: flex; width: 100%; max-width: 1280px; height: 100%; gap: 12px;
         }
 
         .sidebar {
-            width: var(--sidebar-w);
-            flex-shrink: 0;
-            background: var(--surface);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow-lg);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
+            width: var(--sidebar-w); flex-shrink: 0; background: var(--surface);
+            border-radius: var(--radius); box-shadow: var(--shadow-lg);
+            display: flex; flex-direction: column; overflow: hidden;
             border: 1px solid rgba(249,115,22,0.15);
         }
-
         .sidebar-header {
-            padding: 16px;
-            border-bottom: 1px solid var(--border);
+            padding: 16px; border-bottom: 1px solid var(--border);
             background: linear-gradient(135deg, #fff7ed 0%, #ffffff 60%);
         }
-
-        .sidebar-header h3 {
-            font-size: 14px;
-            font-weight: 700;
-            color: var(--text);
-            margin-bottom: 12px;
-        }
-
+        .sidebar-header h3 { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 12px; }
         .btn-nova-conversa {
-            width: 100%;
-            padding: 10px 16px;
+            width: 100%; padding: 10px 16px;
             background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            font-family: inherit;
-            font-weight: 700;
-            font-size: 13px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            justify-content: center;
-            transition: all 0.2s;
-            box-shadow: 0 3px 10px rgba(249,115,22,0.3);
+            color: white; border: none; border-radius: 10px; cursor: pointer;
+            font-family: inherit; font-weight: 700; font-size: 13px;
+            display: flex; align-items: center; gap: 8px; justify-content: center;
+            transition: all 0.2s; box-shadow: 0 3px 10px rgba(249,115,22,0.3);
         }
-
-        .btn-nova-conversa:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 5px 14px rgba(249,115,22,0.45);
-        }
-
-        .sidebar-conversas {
-            flex: 1;
-            overflow-y: auto;
-            padding: 8px;
-        }
-
+        .btn-nova-conversa:hover { transform: translateY(-1px); box-shadow: 0 5px 14px rgba(249,115,22,0.45); }
+        .sidebar-conversas { flex: 1; overflow-y: auto; padding: 8px; }
         .sidebar-conversas::-webkit-scrollbar { width: 3px; }
         .sidebar-conversas::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
-
         .conversa-item {
-            padding: 10px 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.15s;
-            margin-bottom: 4px;
-            border: 1px solid transparent;
-            position: relative;
+            padding: 10px 12px; border-radius: 8px; cursor: pointer;
+            transition: all 0.15s; margin-bottom: 4px; border: 1px solid transparent; position: relative;
         }
-
-        .conversa-item:hover {
-            background: var(--primary-light);
-            border-color: var(--primary-border);
-        }
-
-        .conversa-item.active {
-            background: var(--primary-light);
-            border-color: var(--primary-border);
-            font-weight: 600;
-        }
-
+        .conversa-item:hover { background: var(--primary-light); border-color: var(--primary-border); }
+        .conversa-item.active { background: var(--primary-light); border-color: var(--primary-border); font-weight: 600; }
         .conversa-item .conversa-titulo {
-            font-size: 13px;
-            color: var(--text);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            padding-right: 24px;
+            font-size: 13px; color: var(--text); white-space: nowrap;
+            overflow: hidden; text-overflow: ellipsis; padding-right: 24px;
         }
-
-        .conversa-item .conversa-data {
-            font-size: 10px;
-            color: var(--text-muted);
-            margin-top: 3px;
-        }
-
+        .conversa-item .conversa-data { font-size: 10px; color: var(--text-muted); margin-top: 3px; }
         .conversa-item .btn-excluir-conversa {
-            position: absolute;
-            right: 8px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 12px;
-            opacity: 0;
-            transition: opacity 0.15s;
-            color: var(--text-muted);
-            padding: 4px;
-            border-radius: 4px;
+            position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+            background: none; border: none; cursor: pointer; font-size: 12px;
+            opacity: 0; transition: opacity 0.15s; color: var(--text-muted); padding: 4px; border-radius: 4px;
         }
-
         .conversa-item:hover .btn-excluir-conversa { opacity: 0.7; }
         .conversa-item .btn-excluir-conversa:hover { opacity: 1; background: #fee2e2; color: #dc2626; }
-
         .sidebar-footer {
-            padding: 12px 16px;
-            border-top: 1px solid var(--border);
-            font-size: 10px;
-            color: var(--text-muted);
-            text-align: center;
+            padding: 12px 16px; border-top: 1px solid var(--border);
+            font-size: 10px; color: var(--text-muted); text-align: center;
         }
 
         .main-container {
-            background: var(--surface);
-            flex: 1;
-            min-width: 0;
-            height: 100%;
-            border-radius: var(--radius);
-            box-shadow: var(--shadow-lg);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
+            background: var(--surface); flex: 1; min-width: 0; height: 100%;
+            border-radius: var(--radius); box-shadow: var(--shadow-lg);
+            display: flex; flex-direction: column; overflow: hidden;
             border: 1px solid rgba(249,115,22,0.15);
         }
 
         header {
-            height: var(--header-h);
-            flex: 0 0 auto;
-            padding: 0 16px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: linear-gradient(135deg, #fff7ed 0%, #ffffff 60%);
-            z-index: 10;
+            height: var(--header-h); flex: 0 0 auto; padding: 0 16px;
+            border-bottom: 1px solid var(--border); display: flex;
+            justify-content: space-between; align-items: center;
+            background: linear-gradient(135deg, #fff7ed 0%, #ffffff 60%); z-index: 10;
         }
-
         .header-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
         .logo-mark {
             width: 36px; height: 36px; flex-shrink: 0;
             background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 18px;
-            box-shadow: 0 3px 10px rgba(249,115,22,0.4);
+            border-radius: 10px; display: flex; align-items: center; justify-content: center;
+            font-size: 18px; box-shadow: 0 3px 10px rgba(249,115,22,0.4);
         }
         h1 { font-size: 15px; font-weight: 800; color: var(--text); letter-spacing: -0.3px; white-space: nowrap; }
         h1 span { color: var(--primary); }
-
         .badge { font-size: 9px; font-weight: 700; background: #dcfce7; color: #166534; padding: 3px 7px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap; flex-shrink: 0; }
         .badge-loading { font-size: 9px; font-weight: 700; background: #fff3cd; color: #92400e; padding: 3px 7px; border-radius: 20px; text-transform: uppercase; white-space: nowrap; flex-shrink: 0; animation: pulse-badge 1.5s ease-in-out infinite; }
         @keyframes pulse-badge { 0%,100%{opacity:1} 50%{opacity:0.5} }
-
         .header-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
         .btn-icon {
             width: 32px; height: 32px; border: 1px solid var(--border); border-radius: 8px;
@@ -518,7 +159,8 @@
         #mcpPanel { background: #f0f9ff; border-bottom: 2px solid #bae6fd; }
         #mcpPanel label { font-size: 12px; font-weight: 600; color: #0369a1; }
         #mcpPanel input, #mcpPanel select, #adminPanel input, #adminPanel textarea {
-            padding: 8px 12px; border: 1px solid var(--primary-border); border-radius: 8px; outline: none; font-size: 13px; font-family: inherit; background: white;
+            padding: 8px 12px; border: 1px solid var(--primary-border); border-radius: 8px;
+            outline: none; font-size: 13px; font-family: inherit; background: white;
         }
         #mcpPanel input, #mcpPanel select { border-color: #bae6fd; }
         #mcpPanel input:focus, #mcpPanel select:focus { border-color: #0369a1; box-shadow: 0 0 0 3px rgba(3,105,161,0.1); }
@@ -552,7 +194,6 @@
 
         .message { max-width: 85%; width: fit-content; min-width: 60px; padding: 10px 14px; border-radius: 14px; line-height: 1.55; font-size: 13.5px; white-space: pre-wrap; word-break: break-word; }
         @keyframes slideIn { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform: translateY(0); } }
-
         .user-msg { align-self: flex-end; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; border-bottom-right-radius: 3px; box-shadow: 0 3px 10px rgba(249,115,22,0.28); }
         .ai-msg { align-self: flex-start; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-bottom-left-radius: 3px; box-shadow: var(--shadow-sm); }
         .system-msg { align-self: center; background: var(--primary-light); color: var(--primary-dark); border: 1px solid var(--primary-border); border-radius: 10px; font-size: 12px; font-weight: 500; text-align: center; max-width: 75%; }
@@ -560,71 +201,56 @@
 
         .answer-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-sm); width: 100%; align-self: flex-start; animation: slideIn 0.25s ease; overflow-wrap: break-word; }
         .answer-card.ml-card { border: 2px solid var(--ml-border); box-shadow: 0 4px 15px rgba(124,58,237,0.12); }
-
         .answer-section { padding: 11px 15px; border-bottom: 1px solid var(--border); }
         .answer-section:last-child { border-bottom: none; }
-
         .section-label { display: flex; align-items: center; gap: 7px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 7px; }
-        .section-label.path { color: #0369a1; }
-        .section-label.how { color: #166534; }
-        .section-label.tip { color: #b45309; }
-        .section-label.ml { color: var(--ml-color); }
-
+        .section-label.path { color: #0369a1; } .section-label.how { color: #166534; } .section-label.tip { color: #b45309; } .section-label.ml { color: var(--ml-color); }
         .section-icon { width: 20px; height: 20px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 11px; }
-        .section-icon.path { background: #e0f2fe; }
-        .section-icon.how { background: #dcfce7; }
-        .section-icon.tip { background: #fef3c7; }
-        .section-icon.ml { background: var(--ml-light); }
-
+        .section-icon.path { background: #e0f2fe; } .section-icon.how { background: #dcfce7; } .section-icon.tip { background: #fef3c7; } .section-icon.ml { background: var(--ml-light); }
         .section-content { font-size: 13.5px; line-height: 1.6; color: var(--text); }
         .section-content b { color: var(--primary-dark); }
-
         .path-breadcrumb { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 3px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 7px; padding: 5px 10px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #0c4a6e; }
         .path-breadcrumb .sep { color: var(--primary); font-weight: 700; margin: 0 1px; }
-
         .tip-item { display: flex; align-items: flex-start; gap: 7px; padding: 7px 10px; background: #fffbeb; border-radius: 7px; margin-bottom: 5px; border-left: 3px solid #f59e0b; font-size: 13px; }
         .tip-item:last-child { margin-bottom: 0; }
-
         .tip-link { display: inline-flex; align-items: center; gap: 4px; color: var(--primary-dark); text-decoration: none; cursor: pointer; font-weight: 600; font-size: 11px; margin-left: 6px; background: var(--primary-light); border: 1px solid var(--primary-border); padding: 1px 8px; border-radius: 10px; transition: all 0.18s; white-space: nowrap; }
         .tip-link:hover { background: var(--primary); color: white; border-color: var(--primary); }
-
         .retry-btn { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; background: var(--primary); color: white; border: none; padding: 9px 18px; border-radius: 9px; cursor: pointer; font-family: inherit; font-weight: 700; font-size: 13px; transition: all 0.2s; }
         .retry-btn:hover { background: var(--primary-dark); transform: scale(1.03); }
-
         .feedback-area { display: flex; gap: 7px; padding: 8px 15px; background: #f8fafc; border-top: 1px solid var(--border); align-items: center; font-size: 12px; color: var(--text-muted); flex-wrap: wrap; }
         .feedback-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 5px; cursor: pointer; padding: 3px 9px; transition: all 0.2s; font-size: 13px; font-family: inherit; }
         .feedback-btn:hover { border-color: var(--primary); background: var(--primary-light); }
         .feedback-btn.next { margin-left: auto; font-size: 11px; padding: 4px 11px; color: var(--primary-dark); border-color: var(--primary-border); background: var(--primary-light); font-weight: 600; }
         .feedback-btn.next:hover { background: var(--primary); color: white; }
-
         .reason-box { display: none; flex-direction: column; gap: 7px; margin-top: 8px; width: 100%; }
         .reason-box textarea { width: 100%; min-height: 60px; padding: 9px 11px; border: 1px solid var(--primary-border); border-radius: 7px; font-size: 12px; font-family: inherit; resize: none; outline: none; }
         .reason-box button { align-self: flex-end; background: var(--primary); color: white; border: none; padding: 6px 16px; border-radius: 6px; cursor: pointer; font-weight: 700; font-family: inherit; font-size: 12px; }
-
         .ml-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; background: var(--ml-light); color: var(--ml-color); padding: 3px 8px; border-radius: 20px; border: 1px solid var(--ml-border); white-space: nowrap; }
         .ml-source-tag { font-size: 10px; color: var(--ml-color); background: var(--ml-light); padding: 2px 8px; border-radius: 10px; display: inline-block; margin-top: 4px; }
 
-        /* Botão de pesquisa avançada */
         .btn-pesquisa-avancada {
-            display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px;
-            background: linear-gradient(135deg, var(--central-color), var(--central-dark));
-            color: white; border: none; border-radius: 8px; cursor: pointer;
-            font-family: inherit; font-weight: 600; font-size: 12px; transition: all 0.2s;
-            box-shadow: 0 3px 10px rgba(8,145,178,0.3);
+            display: inline-flex; align-items: center; gap: 4px; padding: 5px 10px;
+            color: white; border: none; border-radius: 6px; cursor: pointer;
+            font-family: inherit; font-weight: 600; font-size: 11px; transition: all 0.2s; white-space: nowrap;
         }
-        .btn-pesquisa-avancada:hover { transform: translateY(-1px); box-shadow: 0 5px 14px rgba(8,145,178,0.45); }
+        .btn-pesquisa-avancada:hover { transform: translateY(-1px); }
 
-        /* Guia da Central de Ajuda */
-        .central-tab {
-            position: fixed; right: 0; top: 50%; transform: translateY(-50%);
-            background: linear-gradient(135deg, var(--central-color), var(--central-dark));
-            color: white; padding: 12px 8px; border-radius: 8px 0 0 8px;
-            cursor: pointer; font-weight: 700; font-size: 12px;
-            writing-mode: vertical-rl; z-index: 1500;
-            box-shadow: -3px 0 15px rgba(8,145,178,0.3); transition: all 0.3s;
+        /* Abas laterais */
+        .central-tab, .blog-tab, .manual-tab, .repo-tab {
+            position: fixed; right: 0; transform: translateY(-50%);
+            color: white; padding: 10px 7px; border-radius: 8px 0 0 8px;
+            cursor: pointer; font-weight: 700; font-size: 11px;
+            writing-mode: vertical-rl; box-shadow: -3px 0 15px rgba(0,0,0,0.2); transition: all 0.3s;
         }
+        .central-tab { top: 55%; background: linear-gradient(135deg, var(--central-color), var(--central-dark)); z-index: 1503; }
+        .blog-tab { top: 42%; background: linear-gradient(135deg, var(--blog-color), var(--blog-dark)); z-index: 1502; }
+        .manual-tab { top: 29%; background: linear-gradient(135deg, var(--manual-color), var(--manual-dark)); z-index: 1501; }
+        .repo-tab { top: 16%; background: linear-gradient(135deg, var(--repo-color), var(--repo-dark)); z-index: 1500; }
         .central-tab:hover { background: linear-gradient(135deg, #06b6d4, var(--central-color)); }
-        .central-tab.open { right: 550px; }
+        .blog-tab:hover { background: linear-gradient(135deg, #ef4444, var(--blog-color)); }
+        .manual-tab:hover { background: linear-gradient(135deg, #3b82f6, var(--manual-color)); }
+        .repo-tab:hover { background: linear-gradient(135deg, #10b981, var(--repo-color)); }
+        .central-tab.open, .blog-tab.open, .manual-tab.open, .repo-tab.open { right: 550px; }
 
         .central-overlay {
             position: fixed; left: 0; top: 0; width: 100%; height: 100%;
@@ -632,90 +258,87 @@
         }
         .central-overlay.active { display: block; }
 
-        .central-panel {
+        .central-panel, .blog-panel, .manual-panel, .repo-panel {
             position: fixed; right: -580px; top: 0; width: 550px; height: 100vh;
-            background: white; z-index: 1999; box-shadow: -5px 0 30px rgba(0,0,0,0.2);
+            background: white; box-shadow: -5px 0 30px rgba(0,0,0,0.2);
             transition: right 0.3s ease; display: flex; flex-direction: column;
         }
-        .central-panel.open { right: 0; }
+        .central-panel { z-index: 1999; } .blog-panel { z-index: 1997; }
+        .manual-panel { z-index: 1996; } .repo-panel { z-index: 1995; }
+        .central-panel.open, .blog-panel.open, .manual-panel.open, .repo-panel.open { right: 0; }
 
-        .central-header {
-            padding: 16px; background: linear-gradient(135deg, var(--central-color), var(--central-dark));
-            color: white; display: flex; justify-content: space-between; align-items: center;
-            flex-shrink: 0;
+        .central-header, .blog-header, .manual-header, .repo-header {
+            padding: 16px; color: white; display: flex;
+            justify-content: space-between; align-items: center; flex-shrink: 0;
         }
-        .central-header h3 { font-size: 15px; display: flex; align-items: center; gap: 8px; }
+        .central-header { background: linear-gradient(135deg, var(--central-color), var(--central-dark)); }
+        .blog-header { background: linear-gradient(135deg, var(--blog-color), var(--blog-dark)); }
+        .manual-header { background: linear-gradient(135deg, var(--manual-color), var(--manual-dark)); }
+        .repo-header { background: linear-gradient(135deg, var(--repo-color), var(--repo-dark)); }
+        .central-header h3, .blog-header h3, .manual-header h3, .repo-header h3 { font-size: 15px; display: flex; align-items: center; gap: 8px; }
 
-        .central-search {
-            padding: 10px 14px; background: var(--central-light);
-            display: flex; gap: 8px; flex-shrink: 0; align-items: center;
+        .central-search, .blog-search, .manual-search, .repo-search {
+            padding: 10px 14px; display: flex; gap: 8px; flex-shrink: 0; align-items: center;
         }
-        .central-search input {
-            flex: 1; padding: 8px 12px; border: 2px solid var(--central-border);
-            border-radius: 8px; font-family: inherit; font-size: 13px; outline: none;
+        .central-search { background: var(--central-light); } .blog-search { background: var(--blog-light); }
+        .manual-search { background: var(--manual-light); } .repo-search { background: var(--repo-light); }
+        .central-search input, .blog-search input, .manual-search input, .repo-search input {
+            flex: 1; padding: 8px 12px; border-radius: 8px; font-family: inherit; font-size: 13px; outline: none;
         }
+        .central-search input { border: 2px solid var(--central-border); }
+        .blog-search input { border: 2px solid var(--blog-border); }
+        .manual-search input { border: 2px solid var(--manual-border); }
+        .repo-search input { border: 2px solid var(--repo-border); }
         .central-search input:focus { border-color: var(--central-color); }
-        .central-search button {
-            padding: 8px 14px; background: var(--central-color); color: white;
-            border: none; border-radius: 8px; cursor: pointer; font-weight: 600;
-            font-family: inherit; font-size: 12px; white-space: nowrap;
+        .blog-search input:focus { border-color: var(--blog-color); }
+        .manual-search input:focus { border-color: var(--manual-color); }
+        .repo-search input:focus { border-color: var(--repo-color); }
+        .central-search button { background: var(--central-color); } .blog-search button { background: var(--blog-color); }
+        .manual-search button { background: var(--manual-color); } .repo-search button { background: var(--repo-color); }
+        .central-search button:hover { background: var(--central-dark); } .blog-search button:hover { background: var(--blog-dark); }
+        .manual-search button:hover { background: var(--manual-dark); } .repo-search button:hover { background: var(--repo-dark); }
+        .central-search button, .blog-search button, .manual-search button, .repo-search button {
+            color: white; border: none; border-radius: 8px; cursor: pointer;
+            font-weight: 600; font-family: inherit; font-size: 12px; white-space: nowrap; padding: 8px 14px;
         }
-        .central-search button:hover { background: var(--central-dark); }
 
         .central-iframe { flex: 1; border: none; width: 100%; }
 
-        .central-footer {
+        .central-footer, .blog-footer, .manual-footer, .repo-footer {
             padding: 10px 16px; background: #f8fafc; border-top: 1px solid var(--border);
             font-size: 11px; color: var(--text-muted); display: flex;
-            justify-content: space-between; align-items: center; flex-shrink: 0;
-            flex-wrap: wrap; gap: 6px;
+            justify-content: space-between; align-items: center; flex-shrink: 0; flex-wrap: wrap; gap: 6px;
         }
-        .central-footer .status-text { font-size: 11px; }
 
-        .btn-central-action {
+        .btn-central-action, .btn-blog-action, .btn-manual-action, .btn-repo-action {
             padding: 7px 14px; border: none; border-radius: 6px; cursor: pointer;
             font-size: 11px; font-weight: 600; font-family: inherit;
         }
         .btn-capturar { background: var(--central-light); color: var(--central-dark); border: 1px solid var(--central-border); }
-        .btn-capturar:hover { background: var(--central-border); }
+        .btn-blog-capturar { background: var(--blog-light); color: var(--blog-dark); border: 1px solid var(--blog-border); }
+        .btn-manual-capturar { background: var(--manual-light); color: var(--manual-dark); border: 1px solid var(--manual-border); }
+        .btn-repo-capturar { background: var(--repo-light); color: var(--repo-dark); border: 1px solid var(--repo-border); }
+        .btn-capturar:hover { background: var(--central-border); } .btn-blog-capturar:hover { background: var(--blog-border); }
+        .btn-manual-capturar:hover { background: var(--manual-border); } .btn-repo-capturar:hover { background: var(--repo-border); }
         .btn-enviar-ia { background: var(--primary); color: white; }
         .btn-enviar-ia:hover { background: var(--primary-dark); }
 
-        .central-badge {
-            display: inline-flex; align-items: center; gap: 4px; font-size: 10px;
-            font-weight: 700; background: var(--central-light); color: var(--central-color);
-            padding: 3px 8px; border-radius: 20px; border: 1px solid var(--central-border);
-        }
+        .central-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; background: var(--central-light); color: var(--central-color); padding: 3px 8px; border-radius: 20px; border: 1px solid var(--central-border); }
 
-        .input-wrapper {
-            height: var(--input-h); flex: 0 0 auto; padding: 10px 14px;
-            background: white; border-top: 1px solid var(--border); display: flex; align-items: center;
-        }
-        .input-area {
-            display: flex; align-items: center; gap: 6px; background: #f8f7f6;
-            padding: 6px 10px; border-radius: 28px; border: 2px solid var(--border);
-            transition: border-color 0.2s, box-shadow 0.2s; width: 100%;
-        }
+        .input-wrapper { height: var(--input-h); flex: 0 0 auto; padding: 10px 14px; background: white; border-top: 1px solid var(--border); display: flex; align-items: center; }
+        .input-area { display: flex; align-items: center; gap: 6px; background: #f8f7f6; padding: 6px 10px; border-radius: 28px; border: 2px solid var(--border); transition: border-color 0.2s, box-shadow 0.2s; width: 100%; }
         .input-area:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(249,115,22,0.08); background: white; }
         .attach-btn { background: none; border: none; font-size: 17px; cursor: pointer; color: var(--text-muted); padding: 4px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; border-radius: 7px; flex-shrink: 0; }
         .attach-btn:hover { color: var(--primary); background: var(--primary-light); }
         #searchInput { flex: 1; padding: 7px 8px; border: none; background: transparent; font-size: 14px; outline: none; font-family: inherit; color: var(--text); min-width: 0; }
         #searchInput::placeholder { color: var(--text-light); }
-        .send-btn {
-            width: 38px; height: 38px; flex-shrink: 0;
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white; border: none; border-radius: 50%;
-            cursor: pointer; font-size: 15px;
-            display: flex; justify-content: center; align-items: center;
-            box-shadow: 0 3px 10px rgba(249,115,22,0.35); transition: all 0.2s;
-        }
+        .send-btn { width: 38px; height: 38px; flex-shrink: 0; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; border: none; border-radius: 50%; cursor: pointer; font-size: 15px; display: flex; justify-content: center; align-items: center; box-shadow: 0 3px 10px rgba(249,115,22,0.35); transition: all 0.2s; }
         .send-btn:hover { transform: scale(1.06); box-shadow: 0 5px 14px rgba(249,115,22,0.45); }
         .send-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
 
         .loading-dots { display: inline-flex; gap: 4px; align-items: center; }
         .loading-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--primary); animation: bounce 1.2s infinite; }
-        .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
-        .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+        .loading-dots span:nth-child(2) { animation-delay: 0.2s; } .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
         @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-5px)} }
 
         .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(6px); }
@@ -725,151 +348,42 @@
         .close-modal:hover { color: var(--primary); }
         .result-item { background: var(--bg); padding: 12px; border-left: 4px solid var(--primary); margin-bottom: 12px; border-radius: 7px; font-size: 13px; color: var(--text); }
 
-        #voiceCallPanel { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 5, 0, 0.95); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; color: white; transition: all 0.3s ease; }
+        #voiceCallPanel { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,5,0,0.95); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; color: white; transition: all 0.3s ease; }
         .call-avatar { width: 110px; height: 110px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); display: flex; align-items: center; justify-content: center; margin-bottom: 18px; box-shadow: 0 0 40px rgba(249,115,22,0.5); }
 
         @media (max-width: 768px) {
             .sidebar { position: fixed; left: -100%; top: 0; height: 100%; z-index: 1000; transition: left 0.3s ease; border-radius: 0; }
-            .sidebar.open { left: 0; }
-            .btn-toggle-sidebar { display: flex; }
-            .app-layout { gap: 0; }
-            body { padding: 0; }
-            .main-container { border-radius: 0; border: none; }
-            .message { max-width: 95%; font-size: 13px; }
-            #searchInput { font-size: 16px; }
-            .central-panel { width: 100%; right: -100%; }
-            .central-tab.open { right: 100%; }
+            .sidebar.open { left: 0; } .btn-toggle-sidebar { display: flex; } .app-layout { gap: 0; } body { padding: 0; }
+            .main-container { border-radius: 0; border: none; } .message { max-width: 95%; font-size: 13px; } #searchInput { font-size: 16px; }
+            .central-panel, .blog-panel, .manual-panel, .repo-panel { width: 100%; right: -100%; }
+            .central-tab.open, .blog-tab.open, .manual-tab.open, .repo-tab.open { right: 100%; }
         }
     </style>
 </head>
 <body>
-<!-- Guia do Manual Técnico Confluence -->
-<div class="manual-tab" id="manualTab" onclick="toggleManualPanel()" title="Manual Técnico Bsoft">
-    📘 Manual Técnico
-</div>
 
-<!-- Painel do Manual Técnico Confluence -->
-<div class="manual-panel" id="manualPanel">
-    <div class="manual-header">
-        <h3>📘 Manual Técnico Bsoft</h3>
-        <div style="display:flex;gap:8px;">
-            <button onclick="abrirManualNovaAba()" style="background:rgba(255,255,255,0.2);border:none;color:white;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit;">🌐 Abrir Manual</button>
-            <button onclick="toggleManualPanel()" style="background:rgba(255,255,255,0.2);border:none;color:white;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:14px;">✕</button>
-        </div>
-    </div>
-    
-    <div class="manual-search">
-        <input type="text" id="manualSearchInput" placeholder="Pesquisar no Manual Técnico..." onkeypress="if(event.key==='Enter') pesquisarNoManual()">
-        <button onclick="pesquisarNoManual()">🔍 Buscar</button>
-        <button onclick="enviarPesquisaManualParaChat()" style="background:var(--primary);" title="Enviar pesquisa para o chat">🤖</button>
-    </div>
-    
-    <!-- Área de colagem -->
-    <div style="flex:1;padding:20px;overflow-y:auto;background:#fafaf8;">
-        <div style="text-align:center;padding:30px;background:white;border-radius:12px;border:2px dashed var(--border);">
-            <div style="font-size:48px;margin-bottom:12px;">📘</div>
-            <h4 style="margin-bottom:8px;color:var(--text);">Manual Técnico Bsoft TMS</h4>
-            <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">
-                Documentação oficial no Confluence (Atlassian)
-            </p>
-            <button onclick="abrirManualNovaAba()" style="padding:10px 20px;background:#2563eb;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-family:inherit;font-size:13px;">
-                🌐 Abrir Manual em Nova Aba
-            </button>
-        </div>
-        
-        <div style="margin-top:16px;padding:16px;background:white;border-radius:12px;border:1px solid var(--border);">
-            <h5 style="margin-bottom:8px;color:var(--text);">📋 Como capturar artigos:</h5>
-            <ol style="font-size:12px;color:var(--text-muted);line-height:1.8;padding-left:20px;">
-                <li>Clique em <b>"Abrir Manual"</b></li>
-                <li>Faça login no Confluence se necessário</li>
-                <li>Navegue até a página desejada</li>
-                <li>Selecione o conteúdo (Ctrl+A)</li>
-                <li>Copie (Ctrl+C) e cole na área abaixo</li>
-                <li>Clique em <b>"Enviar para IA"</b></li>
-            </ol>
-        </div>
-        
-        <div style="margin-top:16px;">
-            <label style="font-size:12px;font-weight:600;color:var(--text);">Cole o conteúdo da página do manual aqui:</label>
-            <textarea id="manualContentArea" placeholder="Cole aqui o texto da página do manual..." style="width:100%;min-height:200px;padding:12px;margin:8px 0;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;resize:vertical;"></textarea>
-            <button onclick="enviarConteudoManualParaIA()" class="btn-manual-action btn-manual-ia" style="width:100%;padding:10px;font-size:13px;">
-                🤖 Enviar para IA analisar
-            </button>
-        </div>
-    </div>
-    
-    <div class="manual-footer">
-        <span id="manualStatus">📘 Manual aberto em nova aba</span>
-    </div>
-</div>
-<!-- Guia do Blog Bsoft -->
-<div class="blog-tab" id="blogTab" onclick="toggleBlogPanel()" title="Blog Bsoft">
-    📝 Blog Bsoft
-</div>
+<!-- ═══════════════════════════════════════════════════════ -->
+<!--  GUIAS LATERAIS                                            -->
+<!-- ═══════════════════════════════════════════════════════ -->
 
-<!-- Painel do Blog Bsoft (versão sem iframe) -->
-<div class="blog-panel" id="blogPanel">
-    <div class="blog-header">
-        <h3>📝 Blog Bsoft</h3>
-        <div style="display:flex;gap:8px;">
-            <button onclick="abrirBlogNovaAba()" style="background:rgba(255,255,255,0.2);border:none;color:white;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit;">🌐 Abrir Blog</button>
-            <button onclick="toggleBlogPanel()" style="background:rgba(255,255,255,0.2);border:none;color:white;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:14px;">✕</button>
-        </div>
-    </div>
-    
-    <div class="blog-search">
-        <input type="text" id="blogSearchInput" placeholder="Pesquisar no Blog Bsoft..." onkeypress="if(event.key==='Enter') pesquisarNoBlog()">
-        <button onclick="pesquisarNoBlog()">🔍 Buscar</button>
-        <button onclick="enviarPesquisaBlogParaChat()" style="background:var(--primary);" title="Enviar pesquisa para o chat">🤖</button>
-    </div>
-    
-    <!-- Área de instruções e colagem -->
-    <div style="flex:1;padding:20px;overflow-y:auto;background:#fafaf8;">
-        <div style="text-align:center;padding:30px;background:white;border-radius:12px;border:2px dashed var(--border);">
-            <div style="font-size:48px;margin-bottom:12px;">📝</div>
-            <h4 style="margin-bottom:8px;color:var(--text);">Blog Bsoft</h4>
-            <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">
-                O site bsoft.com.br não permite exibição em iframe.<br>
-                Use os botões abaixo para acessar o blog.
-            </p>
-            <button onclick="abrirBlogNovaAba()" style="padding:10px 20px;background:#dc2626;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-family:inherit;font-size:13px;">
-                🌐 Abrir Blog em Nova Aba
-            </button>
-        </div>
-        
-        <div style="margin-top:16px;padding:16px;background:white;border-radius:12px;border:1px solid var(--border);">
-            <h5 style="margin-bottom:8px;color:var(--text);">📋 Como capturar artigos:</h5>
-            <ol style="font-size:12px;color:var(--text-muted);line-height:1.8;padding-left:20px;">
-                <li>Clique em <b>"Abrir Blog"</b></li>
-                <li>Navegue até o artigo desejado</li>
-                <li>Selecione o texto do artigo (Ctrl+A)</li>
-                <li>Copie (Ctrl+C) e cole na área abaixo</li>
-                <li>Clique em <b>"Enviar para IA"</b></li>
-            </ol>
-        </div>
-        
-        <div style="margin-top:16px;">
-            <label style="font-size:12px;font-weight:600;color:var(--text);">Cole o conteúdo do artigo aqui:</label>
-            <textarea id="blogContentArea" placeholder="Cole aqui o texto do artigo do blog..." style="width:100%;min-height:200px;padding:12px;margin:8px 0;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;resize:vertical;"></textarea>
-            <button onclick="enviarConteudoBlogParaIA()" class="btn-blog-action btn-blog-ia" style="width:100%;padding:10px;font-size:13px;">
-                🤖 Enviar para IA analisar
-            </button>
-        </div>
-    </div>
-    
-    <div class="blog-footer">
-        <span id="blogStatus">📝 Blog aberto em nova aba</span>
-    </div>
-</div>
-<!-- Guia da Central de Ajuda -->
-<div class="central-tab" id="centralTab" onclick="toggleCentralPanel()" title="Central de Ajuda Bsoft">
-    📚 Central de Ajuda
-</div>
+<!-- Guia Central de Ajuda -->
+<div class="central-tab" id="centralTab" onclick="toggleCentralPanel()" title="Central de Ajuda Bsoft">📚 Central</div>
+
+<!-- Guia Blog Bsoft -->
+<div class="blog-tab" id="blogTab" onclick="toggleBlogPanel()" title="Blog Bsoft">📝 Blog</div>
+
+<!-- Guia Manual Técnico -->
+<div class="manual-tab" id="manualTab" onclick="toggleManualPanel()" title="Manual Técnico Bsoft">📘 Manual</div>
+
+<!-- Guia Repositório -->
+<div class="repo-tab" id="repositorioTab" onclick="toggleRepositorioPanel()" title="Repositório de Documentos">📁 Repositório</div>
 
 <!-- Overlay -->
-<div class="central-overlay" id="centralOverlay" onclick="toggleCentralPanel()"></div>
+<div class="central-overlay" id="centralOverlay" onclick="fecharTodosPaineis()"></div>
 
-<!-- Painel da Central de Ajuda -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<!--  PAINEL CENTRAL DE AJUDA                                   -->
+<!-- ═══════════════════════════════════════════════════════ -->
 <div class="central-panel" id="centralPanel">
     <div class="central-header">
         <h3>📚 Central de Ajuda Bsoft</h3>
@@ -878,27 +392,115 @@
             <button onclick="toggleCentralPanel()" style="background:rgba(255,255,255,0.2);border:none;color:white;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:14px;">✕</button>
         </div>
     </div>
-    
     <div class="central-search">
         <input type="text" id="centralSearchInput" placeholder="Pesquisar na Central de Ajuda..." onkeypress="if(event.key==='Enter') pesquisarNaCentral()">
         <button onclick="pesquisarNaCentral()">🔍 Buscar</button>
         <button onclick="enviarPesquisaParaChat()" style="background:var(--primary);" title="Enviar pesquisa para o chat">🤖</button>
     </div>
-    
     <iframe id="centralIframe" class="central-iframe" src="https://centraldeajuda.e-login.net/"></iframe>
-    
     <div class="central-footer">
-        <span id="centralStatus" class="status-text">🔒 Faça login na Central de Ajuda para navegar</span>
+        <span id="centralStatus" class="status-text">🔒 Faça login para navegar</span>
         <div style="display:flex;gap:6px;">
 			<button onclick="abrirCentralNovaAba()" style="padding:10px 20px;background:#2563eb;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-family:inherit;font-size:13px;">
                 🌐 Clique aqui para fazer o login e depois clica em 🏠 Home no topo.
             </button>
-            <button class="btn-central-action btn-capturar" onclick="capturarConteudoCentral()">📋 Capturar Artigo</button>
+            <button class="btn-central-action btn-capturar" onclick="capturarConteudoCentral()">📋 Capturar</button>
             <button class="btn-central-action btn-enviar-ia" onclick="enviarConteudoParaIA()">🤖 Enviar para IA</button>
         </div>
     </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════════════ -->
+<!--  PAINEL BLOG BSOFT                                          -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="blog-panel" id="blogPanel">
+    <div class="blog-header">
+        <h3>📝 Blog Bsoft</h3>
+        <div style="display:flex;gap:8px;">
+            <button onclick="abrirBlogNovaAba()" style="background:rgba(255,255,255,0.2);border:none;color:white;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit;">🌐 Abrir Blog</button>
+            <button onclick="toggleBlogPanel()" style="background:rgba(255,255,255,0.2);border:none;color:white;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:14px;">✕</button>
+        </div>
+    </div>
+    <div class="blog-search">
+        <input type="text" id="blogSearchInput" placeholder="Pesquisar no Blog Bsoft..." onkeypress="if(event.key==='Enter') pesquisarNoBlog()">
+        <button onclick="pesquisarNoBlog()">🔍 Buscar</button>
+        <button onclick="enviarPesquisaBlogParaChat()" style="background:var(--primary);" title="Enviar pesquisa para o chat">🤖</button>
+    </div>
+    <div style="flex:1;padding:20px;overflow-y:auto;background:#fafaf8;">
+        <div style="text-align:center;padding:30px;background:white;border-radius:12px;border:2px dashed var(--border);">
+            <div style="font-size:48px;margin-bottom:12px;">📝</div>
+            <h4 style="margin-bottom:8px;color:var(--text);">Blog Bsoft</h4>
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">O site bsoft.com.br não permite iframe.<br>Abra em nova aba e cole o texto abaixo.</p>
+            <button onclick="abrirBlogNovaAba()" style="padding:10px 20px;background:var(--blog-color);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-family:inherit;font-size:13px;">🌐 Abrir Blog em Nova Aba</button>
+        </div>
+        <div style="margin-top:16px;">
+            <label style="font-size:12px;font-weight:600;color:var(--text);">Cole o conteúdo do artigo:</label>
+            <textarea id="blogContentArea" placeholder="Cole aqui o texto do artigo..." style="width:100%;min-height:200px;padding:12px;margin:8px 0;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;resize:vertical;"></textarea>
+            <button onclick="enviarConteudoBlogParaIA()" class="btn-blog-action btn-enviar-ia" style="width:100%;padding:10px;font-size:13px;">🤖 Enviar para IA analisar</button>
+        </div>
+    </div>
+    <div class="blog-footer"><span id="blogStatus">📝 Blog aberto em nova aba</span></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!--  PAINEL MANUAL TÉCNICO CONFLUENCE                           -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="manual-panel" id="manualPanel">
+    <div class="manual-header">
+        <h3>📘 Manual Técnico Bsoft</h3>
+        <div style="display:flex;gap:8px;">
+            <button onclick="abrirManualNovaAba()" style="background:rgba(255,255,255,0.2);border:none;color:white;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit;">🌐 Abrir Manual</button>
+            <button onclick="toggleManualPanel()" style="background:rgba(255,255,255,0.2);border:none;color:white;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:14px;">✕</button>
+        </div>
+    </div>
+    <div class="manual-search">
+        <input type="text" id="manualSearchInput" placeholder="Pesquisar no Manual Técnico..." onkeypress="if(event.key==='Enter') pesquisarNoManual()">
+        <button onclick="pesquisarNoManual()">🔍 Buscar</button>
+        <button onclick="enviarPesquisaManualParaChat()" style="background:var(--primary);" title="Enviar pesquisa para o chat">🤖</button>
+    </div>
+    <div style="flex:1;padding:20px;overflow-y:auto;background:#fafaf8;">
+        <div style="text-align:center;padding:30px;background:white;border-radius:12px;border:2px dashed var(--border);">
+            <div style="font-size:48px;margin-bottom:12px;">📘</div>
+            <h4 style="margin-bottom:8px;color:var(--text);">Manual Técnico Bsoft TMS</h4>
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">Documentação oficial no Confluence (Atlassian)</p>
+            <button onclick="abrirManualNovaAba()" style="padding:10px 20px;background:var(--manual-color);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-family:inherit;font-size:13px;">🌐 Abrir Manual em Nova Aba</button>
+        </div>
+        <div style="margin-top:16px;">
+            <label style="font-size:12px;font-weight:600;color:var(--text);">Cole o conteúdo da página:</label>
+            <textarea id="manualContentArea" placeholder="Cole aqui o texto da página do manual..." style="width:100%;min-height:200px;padding:12px;margin:8px 0;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;resize:vertical;"></textarea>
+            <button onclick="enviarConteudoManualParaIA()" class="btn-manual-action btn-enviar-ia" style="width:100%;padding:10px;font-size:13px;">🤖 Enviar para IA analisar</button>
+        </div>
+    </div>
+    <div class="manual-footer"><span id="manualStatus">📘 Manual aberto em nova aba</span></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!--  PAINEL REPOSITÓRIO DE DOCUMENTOS                           -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="repo-panel" id="repositorioPanel">
+    <div class="repo-header">
+        <h3>📁 Repositório de Conhecimento</h3>
+        <div style="display:flex;gap:8px;">
+            <button onclick="sincronizarRepositorio()" style="background:rgba(255,255,255,0.2);border:none;color:white;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit;">🔄 Sincronizar</button>
+            <button onclick="toggleRepositorioPanel()" style="background:rgba(255,255,255,0.2);border:none;color:white;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:14px;">✕</button>
+        </div>
+    </div>
+    <div class="repo-search">
+        <input type="text" id="repositorioSearchInput" placeholder="Buscar no repositório..." onkeypress="if(event.key==='Enter') buscarERenderizarRepositorio()">
+        <button onclick="buscarERenderizarRepositorio()">🔍 Buscar</button>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:12px;" id="repositorioLista">
+        <div style="text-align:center;padding:40px;color:var(--text-muted);">
+            <div style="font-size:48px;">📁</div>
+            <p>Carregando repositório...</p>
+        </div>
+    </div>
+    <div class="repo-footer"><span id="repositorioStatus">📁 Repositório de documentos</span></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!--  LAYOUT PRINCIPAL                                          -->
+<!-- ═══════════════════════════════════════════════════════ -->
 <div class="app-layout">
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
@@ -906,7 +508,7 @@
             <button class="btn-nova-conversa" onclick="novaConversa()">➕ Nova Conversa</button>
         </div>
         <div class="sidebar-conversas" id="listaConversas"></div>
-        <div class="sidebar-footer">Bsoft TMS Suporte IA v19</div>
+        <div class="sidebar-footer">Bsoft TMS Suporte IA v20</div>
     </div>
 
     <div class="main-container">
@@ -925,9 +527,7 @@
         </header>
 
         <div id="voiceCallPanel">
-            <button onclick="toggleMinimizeCall()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.1);border:none;color:white;padding:9px 13px;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600;font-size:13px;">
-                <span id="minimizeIcon">🔳 Minimizar</span>
-            </button>
+            <button onclick="toggleMinimizeCall()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.1);border:none;color:white;padding:9px 13px;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600;font-size:13px;"><span id="minimizeIcon">🔳 Minimizar</span></button>
             <div class="call-avatar" id="callAvatar"><span style="font-size:46px;">🤖</span></div>
             <h2 id="callStatus" style="font-size:1.8em;margin-bottom:6px;">Ouvindo...</h2>
             <p id="callTranscript" style="color:#d97706;margin-bottom:36px;font-style:italic;text-align:center;padding:0 20px;font-size:14px;">(Diga sua dúvida)</p>
@@ -937,37 +537,16 @@
         <div id="mcpPanel">
             <strong style="color:#0369a1;font-size:13px;">⚙️ Configuração MCP (Multi-Cloud Provider)</strong>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                <div style="flex:1;min-width:200px;">
-                    <label>Provedor:</label>
-                    <select id="mcpProvider" onchange="onProviderChange()" style="width:100%;">
-                        <option value="openrouter">OpenRouter</option>
-                        <option value="google">Google Gemini</option>
-                        <option value="custom">Custom (OpenAI Compatible)</option>
-                    </select>
-                </div>
-                <div style="flex:1;min-width:200px;">
-                    <label>Modelo:</label>
-                    <select id="mcpModel" style="width:100%;">
-                        <option value="baidu/cobuddy:free">baidu/cobuddy:free (OpenRouter)</option>
-                        <option value="google/gemma-4-26b-a4b-it">Gemma 4 26B A4B (OpenRouter)</option>
-                        <option value="gemma-4-26b-a4b-it">Gemma 4 26B A4B (Google)</option>
-                        <option value="gemini-2.0-flash">Gemini 2.0 Flash (Google)</option>
-                    </select>
-                </div>
+                <div style="flex:1;min-width:200px;"><label>Provedor:</label><select id="mcpProvider" onchange="onProviderChange()" style="width:100%;"><option value="openrouter">OpenRouter</option><option value="google">Google Gemini</option><option value="custom">Custom (OpenAI Compatible)</option></select></div>
+                <div style="flex:1;min-width:200px;"><label>Modelo:</label><select id="mcpModel" style="width:100%;"><option value="baidu/cobuddy:free">baidu/cobuddy:free (OpenRouter)</option><option value="google/gemma-4-26b-a4b-it">Gemma 4 26B A4B (OpenRouter)</option><option value="gemma-4-26b-a4b-it">Gemma 4 26B A4B (Google)</option><option value="gemini-2.0-flash">Gemini 2.0 Flash (Google)</option></select></div>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                <div style="flex:1;min-width:200px;">
-                    <label>API Key:</label>
-                    <input type="password" id="mcpApiKey" placeholder="sk-or-v1-..." style="width:100%;">
-                </div>
-                <div style="flex:1;min-width:200px;">
-                    <label>Base URL (opcional):</label>
-                    <input type="text" id="mcpBaseUrl" placeholder="https://openrouter.ai/api/v1" style="width:100%;">
-                </div>
+                <div style="flex:1;min-width:200px;"><label>API Key:</label><input type="password" id="mcpApiKey" placeholder="sk-or-v1-..." style="width:100%;"></div>
+                <div style="flex:1;min-width:200px;"><label>Base URL:</label><input type="text" id="mcpBaseUrl" placeholder="https://openrouter.ai/api/v1" style="width:100%;"></div>
             </div>
             <div class="mcp-actions">
-                <span id="mcpStatus" class="mcp-status">✅ Configuração carregada do storage</span>
-                <button onclick="testMCPConnection()" style="background:#0369a1;color:white;">🔌 Testar Conexão</button>
+                <span id="mcpStatus" class="mcp-status">✅ Configuração carregada</span>
+                <button onclick="testMCPConnection()" style="background:#0369a1;color:white;">🔌 Testar</button>
                 <button onclick="saveMCPConfig()" style="background:#15803d;color:white;">💾 Salvar</button>
                 <button onclick="closeMCP()" style="background:var(--border);color:var(--text-muted);">Fechar</button>
             </div>
@@ -976,15 +555,10 @@
         <div id="adminPanel">
             <strong style="color:#92400e;font-size:13px;">🛠️ Painel Administrativo</strong>
             <div style="display:flex;align-items:center;gap:12px;padding:10px;background:#fef3c7;border-radius:8px;border:1px solid #fde68a;">
-                <div style="flex:1;">
-                    <strong style="font-size:12px;color:#92400e;">🔧 Modo Depuração</strong>
-                    <p style="font-size:10px;color:#78716c;margin:2px 0 0;">Quando ATIVO, não gera logs na planilha (para testes)</p>
-                </div>
+                <div style="flex:1;"><strong style="font-size:12px;color:#92400e;">🔧 Modo Depuração</strong><p style="font-size:10px;color:#78716c;margin:2px 0 0;">Quando ATIVO, não gera logs na planilha</p></div>
                 <button id="btnModoDepuracao" onclick="toggleModoDepuracao()" style="padding:8px 16px;border-radius:7px;border:2px solid #f59e0b;cursor:pointer;font-family:inherit;font-weight:700;font-size:12px;transition:all 0.2s;background:#fef3c7;color:#92400e;">🟢 ON</button>
             </div>
-            <div style="border-top:1px solid var(--primary-border);padding-top:8px;margin-top:4px;">
-                <strong style="color:#92400e;font-size:13px;">📝 Adicionar Conhecimento ao Banco de Dados</strong>
-            </div>
+            <div style="border-top:1px solid var(--primary-border);padding-top:8px;margin-top:4px;"><strong style="color:#92400e;font-size:13px;">📝 Adicionar Conhecimento</strong></div>
             <input type="text" id="newError" placeholder="Título do Erro / Dúvida">
             <textarea id="newSolution" placeholder="Solução detalhada..." style="min-height:70px;resize:vertical;"></textarea>
             <div class="admin-actions">
@@ -995,17 +569,14 @@
 
         <div class="suggestions" id="topTermsBar">
             <span>Em alta:</span>
-            <a onclick="fillAndSend('Medida Provisória nº 1.343/2026')">Medida Provisória nº 1.343/2026 do CIOT</a>
+            <a onclick="fillAndSend('Medida Provisória nº 1.343/2026')">MP 1.343/2026 CIOT</a>
             <a onclick="fillAndSend('Erro de validação')">Validação</a>
             <a onclick="fillAndSend('MDF-e Encerrado')">MDF-e</a>
-            <a onclick="fillAndSend('Erro comunicação Sefaz')">Erro comunicação Sefaz</a>
+            <a onclick="fillAndSend('Erro comunicação Sefaz')">Erro Sefaz</a>
         </div>
 
         <div id="chatStream">
-            <div class="message ai-msg" id="welcomeMsg">
-                👋 Olá! Sou o assistente IA <strong>Bsoft TMS</strong>.<br>
-                Aguarde, carregando a base de conhecimento... ⏳
-            </div>
+            <div class="message ai-msg" id="welcomeMsg">👋 Olá! Sou o assistente IA <strong>Bsoft TMS</strong>.<br>Aguarde, carregando a base de conhecimento... ⏳</div>
         </div>
 
         <div class="input-wrapper">
@@ -1130,320 +701,13 @@ const CONVERSAS_KEY = 'bsoft_conversas_v2';
 const CONVERSA_ATIVA_KEY = 'bsoft_conversa_ativa_v2';
 const ML_KNOWLEDGE_KEY = 'bsoft_ml_knowledge_v1';
 const CENTRAL_ARTIGOS_KEY = 'bsoft_central_artigos';
+const BLOG_ARTIGOS_KEY = 'bsoft_blog_artigos';
+const MANUAL_ARTIGOS_KEY = 'bsoft_repositorio_cache';
+const REPO_ARTIGOS_KEY = 'bsoft_repositorio_cache';
 
 let conversas = [];
 let conversaAtivaId = null;
 let mlKnowledge = [];
-let centralPanelOpen = false;
-let ultimoConteudoCapturado = '';
-
-// ═══════════════════════════════════════════════════════════
-//  MANUAL TÉCNICO CONFLUENCE INTEGRADO
-// ═══════════════════════════════════════════════════════════
-let manualPanelOpen = false;
-let ultimoConteudoManualCapturado = '';
-const MANUAL_BASE_URL = 'https://manuaisbsoft.atlassian.net/wiki/spaces/BT/overview';
-
-function toggleManualPanel() {
-    manualPanelOpen = !manualPanelOpen;
-    document.getElementById('manualPanel').classList.toggle('open', manualPanelOpen);
-    document.getElementById('manualTab').classList.toggle('open', manualPanelOpen);
-}
-
-function abrirManualNovaAba(pagina) {
-    const url = pagina || MANUAL_BASE_URL;
-    window.open(url, '_blank');
-    document.getElementById('manualStatus').textContent = '📘 Manual aberto em nova aba';
-    document.getElementById('manualStatus').style.color = '#166534';
-}
-
-function pesquisarNoManual() {
-    const query = document.getElementById('manualSearchInput').value.trim();
-    if (!query) return;
-    
-    // Confluence usa search assim:
-    const urlBusca = `https://manuaisbsoft.atlassian.net/wiki/search?text=${encodeURIComponent(query)}`;
-    window.open(urlBusca, '_blank');
-    
-    document.getElementById('manualStatus').textContent = '🔍 Pesquisa aberta: ' + query;
-    document.getElementById('manualStatus').style.color = '#2563eb';
-}
-
-function enviarPesquisaManualParaChat() {
-    const query = document.getElementById('manualSearchInput').value.trim();
-    if (query) {
-        document.getElementById('searchInput').value = query + ' manual bsoft';
-        handleChat();
-    }
-}
-
-async function enviarConteudoManualParaIA() {
-    let conteudo = document.getElementById('manualContentArea').value.trim();
-    
-    if (!conteudo) {
-        alert('Cole o conteúdo da página do manual na área de texto primeiro!');
-        return;
-    }
-    
-    if (conteudo.length < 50) {
-        alert('O conteúdo parece muito curto. Cole o texto completo da página.');
-        return;
-    }
-    
-    ultimoConteudoManualCapturado = conteudo;
-    
-    appendMessage('system', '📘 <strong>Analisando página do Manual Técnico...</strong>');
-    
-    // Adiciona ao contexto da conversa
-    const conversa = getConversaAtiva();
-    if (conversa) {
-        conversa.contexto.push({
-            role: 'user',
-            content: `[MANUAL TÉCNICO BSOFT - CONFLUENCE]: ${conteudo.substring(0, 3000)}`
-        });
-        salvarConversas();
-    }
-    
-    // Dispara o chat
-    document.getElementById('searchInput').value = 'Analise esta página do manual técnico e me explique o conteúdo';
-    document.getElementById('manualContentArea').value = '';
-    document.getElementById('manualStatus').textContent = '✅ Página enviada para IA';
-    document.getElementById('manualStatus').style.color = '#166534';
-    
-    await handleChat();
-}
-
-// Atalho Ctrl+Shift+M para abrir/fechar Manual
-document.addEventListener('keydown', function(e) {
-    if (e.ctrlKey && e.shiftKey && e.key === 'M') {
-        e.preventDefault();
-        toggleManualPanel();
-    }
-});
-// ═══════════════════════════════════════════════════════════
-//  BLOG BSOFT INTEGRADO (versão sem iframe)
-// ═══════════════════════════════════════════════════════════
-let blogPanelOpen = false;
-let ultimoConteudoBlogCapturado = '';
-
-function toggleBlogPanel() {
-    blogPanelOpen = !blogPanelOpen;
-    document.getElementById('blogPanel').classList.toggle('open', blogPanelOpen);
-    document.getElementById('blogTab').classList.toggle('open', blogPanelOpen);
-}
-
-function abrirBlogNovaAba() {
-    window.open('https://bsoft.com.br/blog/', '_blank');
-    document.getElementById('blogStatus').textContent = '📝 Blog aberto em nova aba';
-    document.getElementById('blogStatus').style.color = '#166534';
-}
-
-function pesquisarNoBlog() {
-    const query = document.getElementById('blogSearchInput').value.trim();
-    if (!query) return;
-    
-    // Abre o blog com a pesquisa em nova aba
-    const urlBusca = `https://bsoft.com.br/blog/?s=${encodeURIComponent(query)}`;
-    window.open(urlBusca, '_blank');
-    
-    document.getElementById('blogStatus').textContent = '🔍 Pesquisa aberta em nova aba: ' + query;
-    document.getElementById('blogStatus').style.color = '#dc2626';
-}
-
-function enviarPesquisaBlogParaChat() {
-    const query = document.getElementById('blogSearchInput').value.trim();
-    if (query) {
-        document.getElementById('searchInput').value = query + ' site:bsoft.com.br/blog';
-        handleChat();
-    }
-}
-
-async function enviarConteudoBlogParaIA() {
-    let conteudo = document.getElementById('blogContentArea').value.trim();
-    
-    if (!conteudo) {
-        alert('Cole o conteúdo do artigo do blog na área de texto primeiro!');
-        return;
-    }
-    
-    if (conteudo.length < 50) {
-        alert('O conteúdo parece muito curto. Cole o texto completo do artigo.');
-        return;
-    }
-    
-    ultimoConteudoBlogCapturado = conteudo;
-    
-    appendMessage('system', '📝 <strong>Analisando artigo do Blog Bsoft...</strong>');
-    
-    // Adiciona ao contexto da conversa
-    const conversa = getConversaAtiva();
-    if (conversa) {
-        conversa.contexto.push({
-            role: 'user',
-            content: `[ARTIGO DO BLOG BSOFT]: ${conteudo.substring(0, 3000)}`
-        });
-        salvarConversas();
-    }
-    
-    // Dispara o chat
-    document.getElementById('searchInput').value = 'Analise este artigo do blog da Bsoft e me explique os pontos principais';
-    document.getElementById('blogContentArea').value = '';
-    document.getElementById('blogStatus').textContent = '✅ Artigo enviado para IA';
-    document.getElementById('blogStatus').style.color = '#166534';
-    
-    await handleChat();
-}
-
-// Atalho Ctrl+Shift+B para abrir/fechar Blog
-document.addEventListener('keydown', function(e) {
-    if (e.ctrlKey && e.shiftKey && e.key === 'B') {
-        e.preventDefault();
-        toggleBlogPanel();
-    }
-});
-
-// Também monitora o Ctrl+V global para sugestão de colar no blog
-document.addEventListener('paste', function(e) {
-    // A função original de paste já existe, esta é adicional
-    if (blogPanelOpen) {
-        setTimeout(() => {
-            const textarea = document.getElementById('blogContentArea');
-            if (textarea && document.activeElement !== textarea) {
-                const pastedText = (e.clipboardData || window.clipboardData).getData('text');
-                if (pastedText && pastedText.length > 200) {
-                    textarea.value = pastedText;
-                    document.getElementById('blogStatus').textContent = '📋 Texto colado! Clique em "Enviar para IA"';
-                    document.getElementById('blogStatus').style.color = '#166534';
-                }
-            }
-        }, 100);
-    }
-});
-// ═══════════════════════════════════════════════════════════
-//  CENTRAL DE AJUDA INTEGRADA
-// ═══════════════════════════════════════════════════════════
-
-const CENTRAL_BASE_URL = 'https://centraldeajuda.e-login.net/';
-
-function toggleCentralPanel() {
-    centralPanelOpen = !centralPanelOpen;
-    document.getElementById('centralPanel').classList.toggle('open', centralPanelOpen);
-    document.getElementById('centralTab').classList.toggle('open', centralPanelOpen);
-    document.getElementById('centralOverlay').classList.toggle('active', centralPanelOpen);
-}
-
-function navegarCentral(url) {
-    document.getElementById('centralIframe').src = url;
-    document.getElementById('centralStatus').textContent = '🌐 Navegando...';
-    document.getElementById('centralStatus').style.color = 'var(--text-muted)';
-}
-
-function abrirCentralNovaAba(pagina) {
-    const url = pagina || CENTRAL_BASE_URL;
-    window.open(url, '_blank');
-    document.getElementById('manualStatus').textContent = '📘 Manual aberto em nova aba';
-    document.getElementById('manualStatus').style.color = '#166534';
-}
-
-function pesquisarNaCentral() {
-    const query = document.getElementById('centralSearchInput').value.trim();
-    if (!query) return;
-    
-    const iframe = document.getElementById('centralIframe');
-    const urlBusca = `https://centraldeajuda.e-login.net/index.php?s=${encodeURIComponent(query)}`;
-    iframe.src = urlBusca;
-    
-    document.getElementById('centralStatus').textContent = '🔍 Pesquisando: ' + query;
-    document.getElementById('centralStatus').style.color = 'var(--central-color)';
-}
-
-function enviarPesquisaParaChat() {
-    const query = document.getElementById('centralSearchInput').value.trim();
-    if (query) {
-        document.getElementById('searchInput').value = query;
-        handleChat();
-    }
-}
-
-function capturarConteudoCentral() {
-    const iframe = document.getElementById('centralIframe');
-    
-    try {
-        const doc = iframe.contentDocument || iframe.contentWindow.document;
-        if (doc) {
-            const conteudo = doc.querySelector('article, .content, .entry-content, main, .post-content')?.innerText || '';
-            const titulo = doc.title || 'Sem título';
-            const url = iframe.contentWindow.location.href;
-            
-            if (conteudo && conteudo.length > 100) {
-                ultimoConteudoCapturado = conteudo;
-                
-                // Salva no cache
-                const artigos = JSON.parse(localStorage.getItem(CENTRAL_ARTIGOS_KEY) || '{}');
-                artigos[url] = { titulo, conteudo: conteudo.substring(0, 10000), data: new Date().toISOString() };
-                localStorage.setItem(CENTRAL_ARTIGOS_KEY, JSON.stringify(artigos));
-                
-                document.getElementById('centralStatus').textContent = '✅ Artigo capturado: ' + titulo + ' (' + conteudo.length + ' caracteres)';
-                document.getElementById('centralStatus').style.color = '#166534';
-                
-                appendMessage('system', '📚 <strong>Artigo da Central de Ajuda capturado!</strong> Clique em "Enviar para IA" para analisar.');
-                return conteudo;
-            }
-        }
-    } catch(e) {
-        // CORS bloqueou
-    }
-    
-    // Fallback
-    const conteudoManual = prompt('Não foi possível acessar o artigo automaticamente.\n\nCole aqui o conteúdo do artigo da Central de Ajuda:');
-    if (conteudoManual && conteudoManual.length > 50) {
-        ultimoConteudoCapturado = conteudoManual;
-        document.getElementById('centralStatus').textContent = '✅ Conteúdo colado manualmente (' + conteudoManual.length + ' caracteres)';
-        document.getElementById('centralStatus').style.color = '#166534';
-        return conteudoManual;
-    }
-    
-    document.getElementById('centralStatus').textContent = '⚠️ Navegue até um artigo e tente novamente';
-    document.getElementById('centralStatus').style.color = '#b45309';
-    return null;
-}
-
-async function enviarConteudoParaIA() {
-    let conteudo = ultimoConteudoCapturado;
-    
-    if (!conteudo) {
-        conteudo = capturarConteudoCentral();
-    }
-    
-    if (!conteudo) {
-        alert('Capture um artigo primeiro! Clique em "📋 Capturar Artigo" enquanto estiver em um artigo da Central de Ajuda.');
-        return;
-    }
-    
-    appendMessage('system', '📚 <strong>Analisando artigo da Central de Ajuda...</strong>');
-    
-    // Adiciona ao contexto da conversa
-    const conversa = getConversaAtiva();
-    if (conversa) {
-        conversa.contexto.push({
-            role: 'user',
-            content: `[ARTIGO DA CENTRAL DE AJUDA BSOFT]: ${conteudo.substring(0, 3000)}`
-        });
-        salvarConversas();
-    }
-    
-    // Dispara o chat
-    document.getElementById('searchInput').value = 'Analise o artigo da Central de Ajuda e me explique o conteúdo principal';
-    await handleChat();
-}
-
-// Atalho Ctrl+Shift+C para abrir/fechar Central de Ajuda
-document.addEventListener('keydown', function(e) {
-    if (e.ctrlKey && e.shiftKey && e.key === 'C') {
-        e.preventDefault();
-        toggleCentralPanel();
-    }
-});
 
 // ═══════════════════════════════════════════════════════════
 //  ML KNOWLEDGE
@@ -1576,7 +840,7 @@ async function callCurrentMCP(messages,config={}){return callMCPAPI(mcpConfig.pr
 let filaSolucoes=[],lastQuery="",attachedFileData=null,screenStream=null,isMinimized=false,isCallActive=false,silenceTimer,currentResults=[];
 window.currentAudio=null;
 let manualVetorizado=[],dadosParametros=[],dadosFuncionalidades=[],isVectorizing=true,bancoCompletoRaw=[];
-const SCRIPT_URL="https://script.google.com/macros/s/AKfycbwKVci7JDrv8GcKVKItYQBbJP7CjRfE-3lMg492v4zp-4HN59apf6lDK_lVxq54EwbC/exec";
+const SCRIPT_URL="https://script.google.com/macros/s/AKfycbykgMWVr-exeV8ozl5DRQQw4yYSWmfzslO6cXfPj2i8GK59nSZzQ4fWYrOSR5Ge4BDO/exec";
 const CORRECT_PASSWORD="camargo1994";
 const recognition=new(window.SpeechRecognition||window.webkitSpeechRecognition)();recognition.lang='pt-BR';recognition.continuous=true;recognition.interimResults=false;
 
@@ -1591,7 +855,15 @@ function atualizarBotaoDepuracao(){const b=document.getElementById('btnModoDepur
 // ═══════════════════════════════════════════════════════════
 //  INICIALIZAÇÃO
 // ═══════════════════════════════════════════════════════════
-window.addEventListener('DOMContentLoaded',()=>{carregarConversas();carregarModoDepuracao();carregarMLKnowledge();loadMCPConfig();loadData();document.getElementById('searchInput').addEventListener("keypress",(e)=>{if(e.key==="Enter"&&!isVectorizing)handleChat();});});
+window.addEventListener('DOMContentLoaded',()=>{
+    carregarConversas();
+    carregarModoDepuracao();
+    carregarMLKnowledge();
+    loadMCPConfig();
+    loadData();
+    setTimeout(() => { carregarDadosRepositorio().then(() => { console.log("📁 Repositório pré-carregado."); }); }, 8000);
+    document.getElementById('searchInput').addEventListener("keypress",(e)=>{if(e.key==="Enter"&&!isVectorizing)handleChat();});
+});
 
 // ═══════════════════════════════════════════════════════════
 //  EMBEDDINGS
@@ -1611,93 +883,348 @@ function liberarChat(modo="completo"){const b=document.getElementById('statusBad
 function salvarVetorNaPlanilha(nl,nc,vs){fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',body:JSON.stringify({action:"updateVetor",linha:nl,coluna:nc,vetor:vs})}).catch(e=>console.error(e));}
 
 // ═══════════════════════════════════════════════════════════
-//  PREPARAR CONTEXTO MANUAL
+//  PREPARAR CONTEXTO MANUAL (COM REPOSITÓRIO)
 // ═══════════════════════════════════════════════════════════
-function prepararContextoManualCompleto(){let cm="=== MANUAL COMPLETO BSOFT TMS ===\n\n";cm+="--- BASE DE CONHECIMENTO (BancoDados) ---\n";bancoCompletoRaw.forEach((item,index)=>{const chaves=Object.keys(item);const ek=chaves.find(k=>k.toLowerCase().trim()==='erro');const sk=chaves.find(k=>k.toLowerCase().trim()==='solucao'||k.toLowerCase().trim()==='solução');const ck=chaves.find(k=>k.toLowerCase().trim()==='categoria');const emk=chaves.find(k=>{const kn=k.toLowerCase().trim();return kn==='como emitir'||kn==='como_emitir'||kn==='emissao'||kn==='emissão'||kn==='emitir';});if(ek&&sk){cm+=`[ARTIGO ${index+1}] ${item[ek]||'Sem título'}\nSolução: ${item[sk]||''}\n`;if(ck&&item[ck])cm+=`Categoria: ${item[ck]}\n`;if(emk&&item[emk])cm+=`Como emitir: ${item[emk]}\n`;cm+="---\n";}});const mlc=mlKnowledge.filter(k=>k.confirmado&&!k.feedbackNegativo);if(mlc.length>0){cm+="\n--- CONHECIMENTOS ML (Confirmados) ---\n";mlc.forEach((k,i)=>{cm+=`[ML ${i+1}] ${k.erro}\nSolução: ${k.solucao}\nFonte: ${k.fonte}\n---\n`;});}cm+="\n--- PARÂMETROS ---\n";dadosParametros.forEach((p,i)=>{cm+=`[PARÂMETRO ${i+1}] ${JSON.stringify(p).substring(0,500)}\n`;if(i>20){cm+="... (mais parâmetros)\n";return;}});cm+="\n--- FUNCIONALIDADES ---\n";dadosFuncionalidades.forEach((f,i)=>{cm+=`[FUNCIONALIDADE ${i+1}] ${JSON.stringify(f).substring(0,500)}\n`;if(i>20){cm+="... (mais funcionalidades)\n";return;}});return cm;}
-function extrairTermos(texto){const sw=new Set(["como","que","qual","quais","para","com","sem","não","mas","por","mais","uma","isso","este","esta","esse","essa","num","numa","meu","minha","meus","minhas","tem","ter","ser","foi","vai","vou","tenho","posso","pode","quero","preciso","saber","sobre","nao","onde","quando","porque","pois","também","ainda","mesmo","tipo","ah","e","o","a","os","as","um","uns","umas","no","na","nos","nas","do","da","dos","das","de","em"]);return texto.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9 ]/g," ").split(/\s+/).filter(t=>t.length>2&&!sw.has(t));}
-function detectarDocumento(texto){const md={'cte':['ct-e','cte','conhecimento de transporte','conhecimento eletrônico','conhecimento'],'nfse':['nfs-e','nfse','nota fiscal de serviço','nota de serviço','notas de serviço'],'nfe':['nf-e','nfe','nota fiscal eletrônica','nota fiscal','notas fiscais'],'mdfe':['mdf-e','mdfe','manifesto de carga','manifesto eletrônico','manifesto'],'minuta':['minuta','conhecimento não fiscal'],'oc':['ordem de carregamento','oc'],'contrato':['contrato de frete','contrato'],'ciot':['ciot','contrato de frete eletrônico'],'vpo':['vpo','vale pedágio','vale-pedágio']};for(const[t,p]of Object.entries(md)){if(p.some(p=>texto.includes(p.toLowerCase())))return t;}return null;}
+function prepararContextoManualCompleto() {
+    let cm = "=== MANUAL COMPLETO BSOFT TMS ===\n\n";
+    
+    cm += "--- BASE DE CONHECIMENTO (BancoDados) ---\n";
+    bancoCompletoRaw.forEach((item, index) => {
+        const chaves = Object.keys(item);
+        const ek = chaves.find(k => k.toLowerCase().trim() === 'erro');
+        const sk = chaves.find(k => k.toLowerCase().trim() === 'solucao' || k.toLowerCase().trim() === 'solução');
+        const ck = chaves.find(k => k.toLowerCase().trim() === 'categoria');
+        const emk = chaves.find(k => { const kn = k.toLowerCase().trim(); return kn === 'como emitir' || kn === 'como_emitir' || kn === 'emissao' || kn === 'emissão' || kn === 'emitir'; });
+        if (ek && sk) {
+            cm += `[ARTIGO ${index + 1}] ${item[ek] || 'Sem título'}\n`;
+            cm += `Solução: ${item[sk] || ''}\n`;
+            if (ck && item[ck]) cm += `Categoria: ${item[ck]}\n`;
+            if (emk && item[emk]) cm += `Como emitir: ${item[emk]}\n`;
+            cm += "---\n";
+        }
+    });
+    
+    // Conteúdo do Repositório
+    cm += "\n--- 📁 CONHECIMENTO DO REPOSITÓRIO (Drive) ---\n";
+    const artigosCache = JSON.parse(localStorage.getItem(REPO_ARTIGOS_KEY) || '{}');
+    const cacheKeys = Object.keys(artigosCache);
+    if (cacheKeys.length > 0) {
+        let count = 0;
+        cacheKeys.forEach(key => {
+            const artigo = artigosCache[key];
+            if (artigo && artigo.conteudo && artigo.conteudo.length > 100) {
+                count++;
+                cm += `[REPOSITÓRIO ${count}: ${artigo.titulo || 'Sem título'}]\n`;
+                cm += artigo.conteudo.substring(0, 2000) + '\n';
+                cm += "---\n";
+            }
+        });
+    }
+    
+    const mlc = mlKnowledge.filter(k => k.confirmado && !k.feedbackNegativo);
+    if (mlc.length > 0) { cm += "\n--- CONHECIMENTOS ML (Confirmados) ---\n"; mlc.forEach((k, i) => { cm += `[ML ${i + 1}] ${k.erro}\nSolução: ${k.solucao}\nFonte: ${k.fonte}\n---\n`; }); }
+    cm += "\n--- PARÂMETROS ---\n"; dadosParametros.forEach((p, i) => { cm += `[PARÂMETRO ${i + 1}] ${JSON.stringify(p).substring(0, 500)}\n`; if (i > 20) { cm += "... (mais parâmetros)\n"; return; } });
+    cm += "\n--- FUNCIONALIDADES ---\n"; dadosFuncionalidades.forEach((f, i) => { cm += `[FUNCIONALIDADE ${i + 1}] ${JSON.stringify(f).substring(0, 500)}\n`; if (i > 20) { cm += "... (mais funcionalidades)\n"; return; } });
+    return cm;
+}
+
+function extrairTermos(texto) {
+    const sw = new Set(["como","que","qual","quais","para","com","sem","não","mas","por","mais","uma","isso","este","esta","esse","essa","num","numa","meu","minha","meus","minhas","tem","ter","ser","foi","vai","vou","tenho","posso","pode","quero","preciso","saber","sobre","nao","onde","quando","porque","pois","também","ainda","mesmo","tipo","ah","e","o","a","os","as","um","uns","umas","no","na","nos","nas","do","da","dos","das","de","em"]);
+    return texto.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9 ]/g," ").split(/\s+/).filter(t => t.length > 2 && !sw.has(t));
+}
+
+function detectarDocumento(texto) {
+    const md = {'cte':['ct-e','cte','conhecimento de transporte','conhecimento eletrônico','conhecimento'],'nfse':['nfs-e','nfse','nota fiscal de serviço','nota de serviço','notas de serviço'],'nfe':['nf-e','nfe','nota fiscal eletrônica','nota fiscal','notas fiscais'],'mdfe':['mdf-e','mdfe','manifesto de carga','manifesto eletrônico','manifesto'],'minuta':['minuta','conhecimento não fiscal'],'oc':['ordem de carregamento','oc'],'contrato':['contrato de frete','contrato'],'ciot':['ciot','contrato de frete eletrônico'],'vpo':['vpo','vale pedágio','vale-pedágio']};
+    for (const [t, p] of Object.entries(md)) { if (p.some(p => texto.includes(p.toLowerCase()))) return t; }
+    return null;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  LÓGICA DE CHAT PRINCIPAL (com Repositório integrado)
+// ═══════════════════════════════════════════════════════════
+async function handleChat() {
+    const ch = obterContextoHorario();
+    if (isVectorizing) return;
+    const input = document.getElementById('searchInput');
+    const query = input.value.trim();
+    if (!query) return;
+
+    const fn = ["não deu", "não funcionou", "continuo com erro", "ainda não", "não deu certo", "proximo", "próximo", "outra opção", "mais alguma", "próxima solução"];
+    const uqp = fn.some(f => query.toLowerCase().includes(f));
+
+    if (uqp && filaSolucoes.length > 0) {
+        appendMessage('user', query); adicionarMensagemNaConversa('user', query); input.value = "";
+        processarProximaSolucao(lastQuery); return;
+    }
+
+    filaSolucoes = []; lastQuery = query;
+    appendMessage('user', query); adicionarMensagemNaConversa('user', query); input.value = "";
+
+    const conversa = getConversaAtiva();
+    if (conversa) { const dd = detectarDocumento(query.toLowerCase()); if (dd) { conversa.documentoContexto = dd; conversa.topicoAtual = query; salvarConversas(); } }
+
+    if (ehErroSefaz(query)) { await gerarRespostaSefaz(query); return; }
+
+    const lf = appendLoadingCard("⭐ Verificando base de conhecimento...");
+    const rf = await buscarRespostaFixa(query);
+    lf.remove();
+
+    if (rf) {
+        appendMessage('system', '⭐ <strong>Resposta Confirmada</strong> — Baseada em feedback positivo.');
+        renderAnswerCard(rf.caminho || null, rf.como_fazer || rf.texto || '', rf.dicas || [], Date.now(), true);
+        const tc = (rf.como_fazer || rf.texto || '').replace(/\*\*(.*?)\*\*/g, '$1');
+        adicionarMensagemNaConversa('ai', tc); return;
+    }
+
+    const ld = appendLoadingCard("🧠 Elaborando sua resposta...");
+    const vp = await gerarEmbedding(query);
+    let rr = [];
+    if (vp) { rr = manualVetorizado.map(item => ({ ...item, similaridade: calcularSimilaridade(vp, item.vetor) })).sort((a, b) => b.similaridade - a.similaridade).slice(0, 15); }
+
+    const trb = rr.length > 0 && rr[0].similaridade > 0.65;
+    const ctx = prepararContextoManualCompleto();
+    let ar = "";
+    if (rr.length > 0) { ar = "\n=== ARTIGOS MAIS RELEVANTES ===\n"; rr.forEach((r, i) => { ar += `[RELEVANTE ${i + 1} - ${(r.similaridade * 100).toFixed(0)}%] ${r.erro}\nSolução: ${r.solucao}\n${r.emitir ? 'Emissão: ' + r.emitir + '\n' : ''}---\n`; }); }
+
+    let mi = "", vum = false;
+    if (!trb && rr.every(r => r.similaridade < 0.5)) { vum = true; mi = `\n⚠️ ATENÇÃO: Nenhum resultado encontrado no manual (max: ${rr.length > 0 ? (rr[0].similaridade * 100).toFixed(0) : 0}%).\n`; }
+
+    logSearch(query, trb || vum);
+
+    let conhecimentoRepositorio = '';
+    if (!trb || vum) {
+        const repoKnowledge = await buscarConhecimentoRelevanteNoRepositorio(query);
+        if (repoKnowledge) { conhecimentoRepositorio = repoKnowledge; appendMessage('system', '📁 <strong>Documento relevante encontrado no repositório!</strong>'); }
+    }
+
+    const cc = conversa ? conversa.contexto.slice(-20) : [];
+    let hc = ""; if (cc.length > 0) { hc = "\n=== HISTÓRICO DA CONVERSA ===\n"; cc.forEach(m => { hc += `${m.role === 'user' ? '👤 Cliente' : '🤖 Suporte'}: ${m.content.substring(0, 400)}\n`; }); }
+
+    const es = JSON.stringify(SISTEMA_BSOFT_TMS, null, 2);
+    let da = ""; if (dadosParametros.length > 0) { da += "\n=== PARÂMETROS ===\n"; dadosParametros.slice(0, 30).forEach((p, i) => { da += `[${i + 1}] ${JSON.stringify(p).substring(0, 300)}\n`; }); }
+    if (dadosFuncionalidades.length > 0) { da += "\n=== FUNCIONALIDADES ===\n"; dadosFuncionalidades.slice(0, 30).forEach((f, i) => { da += `[${i + 1}] ${JSON.stringify(f).substring(0, 300)}\n`; }); }
+
+    const dc = conversa?.documentoContexto || detectarDocumento(query.toLowerCase());
+    let ido = ""; if (dc && SISTEMA_BSOFT_TMS.documentos_principais[dc.toUpperCase()]) { ido = `\n=== DOCUMENTO EM CONTEXTO: ${dc.toUpperCase()} ===\n${JSON.stringify(SISTEMA_BSOFT_TMS.documentos_principais[dc.toUpperCase()], null, 2)}\n`; }
+
+    const ps = `🏢 VOCÊ É UM AGENTE DE SUPORTE DA BSOFT TMS\n\n${ch}\n\n🎯 Atenda o cliente de forma PROFISSIONAL e DIDÁTICA.\n\n📋 REGRAS:\n1. Use APENAS informações do manual ou fontes oficiais.\n2. NUNCA invente. Se não souber, diga que vai ativar o Machine Learning.\n3. Mantenha o contexto da conversa.\n4. Seja conversacional e humano.\n5. Explique passo a passo com caminhos do menu.\n6. Diferencie: CT-e, MDF-e, NF-e, NFS-e, Minuta, OC, CIOT, VPO.\n\n${mi}\n📚 CONHECIMENTO:\n${es}\n${ido}${ar}${conhecimentoRepositorio}${hc}\n\n🗣️ PERGUNTA: "${query}"\n\n📝 Responda como um agente humano. Use **negrito** para destacar.${vum ? ' Se não encontrou, DIGA que vai ativar ML.' : ''}`;
+
+    try {
+        const result = await callCurrentMCP([{ role: 'user', content: ps }], { temperature: 0.4, maxTokens: 4096 });
+        ld.remove();
+        const rf2 = result.text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
+        const card = document.createElement('div'); card.className = 'answer-card';
+        card.innerHTML = `<div class="answer-section"><div class="section-content">${rf2}</div></div>
+            <div class="feedback-area">
+                <span>Esta resposta foi útil?</span>
+                <button class="feedback-btn" onclick="saveFeedback(${Date.now()},'positivo',this)">👍</button>
+                <button class="feedback-btn" onclick="saveFeedback(${Date.now()},'negativo',this)">👎</button>
+                <button class="btn-pesquisa-avancada" style="background:linear-gradient(135deg, #dc2626, #991b1b);" onclick="toggleBlogPanel();document.getElementById('blogSearchInput').value='${query.replace(/'/g, "\\'")}';pesquisarNoBlog();">📝 Blog</button>
+                <button class="btn-pesquisa-avancada" style="background:linear-gradient(135deg, #2563eb, #1d4ed8);" onclick="toggleManualPanel();">📘 Manual</button>
+                <button class="btn-pesquisa-avancada" style="background:linear-gradient(135deg, var(--central-color), var(--central-dark));" onclick="toggleCentralPanel();document.getElementById('centralSearchInput').value='${query.replace(/'/g, "\\'")}';pesquisarNaCentral();">📚 Central</button>
+                ${filaSolucoes.length > 0 ? `<button class="feedback-btn next" onclick="fillAndSend('Próximo')">➡️ Próxima</button>` : ''}
+            </div>`;
+        document.getElementById('chatStream').appendChild(card); scrollToBottom(true);
+        adicionarMensagemNaConversa('ai', result.text.replace(/\*\*(.*?)\*\*/g, '$1'));
+        if (vum || result.text.toLowerCase().includes('não encontrei') || result.text.toLowerCase().includes('machine learning')) { setTimeout(async () => { await ativarMachineLearning(query); }, 1500); }
+    } catch (e) {
+        ld.remove(); appendMessage('ai', '❌ Não encontrei esta informação. Vou ativar o <b>Machine Learning</b>...'); adicionarMensagemNaConversa('ai', '❌ Ativando ML...');
+        setTimeout(async () => { await ativarMachineLearning(query); }, 1000);
+    }
+}
 
 // ═══════════════════════════════════════════════════════════
 //  MACHINE LEARNING
 // ═══════════════════════════════════════════════════════════
-async function buscarConhecimentoInternet(query){appendMessage('ml','🧠 <strong>Machine Learning Ativado</strong> — Buscando conhecimento em fontes confiáveis...');const p=`Você é um especialista em sistemas ERP para transportadoras (Bsoft TMS). Pergunta NÃO encontrada no manual: "${query}". Responda JSON: {"erro":"título","solucao":"solução detalhada com menus","fonte":"site confiável","confianca":0.8}. Se não souber, confianca:0.`;try{const r=await callCurrentMCP([{role:'user',content:p}],{temperature:0.3,maxTokens:2048,responseFormat:{type:'json_object'}});let parsed=null;try{parsed=JSON.parse(r.text);}catch(e){const c=r.text.replace(/```json\n?|\n?```/g,'').trim();try{parsed=JSON.parse(c);}catch(e2){}}return parsed;}catch(e){return null;}}
-async function salvarMLNaPlanilha(erro,solucao,fonte){try{await fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',body:JSON.stringify({action:"addToAba",aba:"machinelearning",erro,solucao,fonte,data:new Date().toISOString()})});}catch(e){}}
+async function buscarConhecimentoInternet(query) {
+    appendMessage('ml', '🧠 <strong>Machine Learning Ativado</strong> — Buscando conhecimento em fontes confiáveis...');
+    const p = `Você é um especialista em sistemas ERP para transportadoras (Bsoft TMS). Pergunta NÃO encontrada no manual: "${query}". Responda JSON: {"erro":"título","solucao":"solução detalhada com menus","fonte":"site confiável","confianca":0.8}. Se não souber, confianca:0.`;
+    try { const r = await callCurrentMCP([{ role: 'user', content: p }], { temperature: 0.3, maxTokens: 2048, responseFormat: { type: 'json_object' } }); let parsed = null; try { parsed = JSON.parse(r.text); } catch (e) { const c = r.text.replace(/```json\n?|\n?```/g, '').trim(); try { parsed = JSON.parse(c); } catch (e2) {} } return parsed; } catch (e) { return null; }
+}
+async function salvarMLNaPlanilha(erro, solucao, fonte) { try { await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "addToAba", aba: "machinelearning", erro, solucao, fonte, data: new Date().toISOString() }) }); } catch (e) {} }
+
+async function ativarMachineLearning(query) {
+    const conversa = getConversaAtiva();
+    appendMessage('ml', '🧠 <strong>Iniciando Machine Learning...</strong>');
+    const lm = appendLoadingCard("🌐 Buscando em fontes confiáveis...");
+    const rml = await buscarConhecimentoInternet(query);
+    lm.remove();
+    if (!rml || !rml.erro || !rml.solucao || rml.confianca < 0.4) { appendMessage('ml', '😕 <strong>ML:</strong> Não foi possível encontrar resposta confiável.'); adicionarMensagemNaConversa('ml', 'ML: Não encontrou.'); return; }
+    const novo = adicionarMLKnowledge(rml.erro, rml.solucao, rml.fonte || 'Internet', rml.confianca || 0.6);
+    await salvarMLNaPlanilha(rml.erro, rml.solucao, rml.fonte || 'Internet');
+    if (conversa) { conversa.mlKnowledgeId = novo.id; salvarConversas(); }
+    const txc = `DÚVIDA: ${rml.erro} | PROCEDIMENTO: ${rml.solucao}`;
+    const nv = await gerarEmbedding(txc);
+    if (nv) { manualVetorizado.push({ texto: txc, erro: rml.erro, solucao: rml.solucao, emitir: '', categoria: 'Machine Learning', vetor: nv, isML: true, mlId: novo.id }); }
+    const card = document.createElement('div'); card.className = 'answer-card ml-card'; card._mlKnowledgeId = novo.id;
+    card.innerHTML = `<div style="background:var(--ml-light);padding:8px 15px;border-bottom:1px solid var(--ml-border);font-size:11px;color:var(--ml-color);display:flex;align-items:center;gap:8px;">🧠 <strong>Machine Learning</strong><span class="ml-badge">NOVO CONHECIMENTO</span></div><div class="answer-section"><div class="section-label ml"><div class="section-icon ml">🔍</div>Pergunta</div><div class="section-content"><b>${escapeHtml(rml.erro)}</b></div></div><div class="answer-section"><div class="section-label how"><div class="section-icon how">✅</div>Resposta</div><div class="section-content">${formatarTexto(rml.solucao)}</div></div><div class="answer-section"><div class="section-label tip"><div class="section-icon tip">🌐</div>Fonte</div><div class="section-content">${escapeHtml(rml.fonte || 'Internet')}<span class="ml-source-tag">🤖 Adquirido automaticamente</span></div></div><div class="feedback-area"><span>Útil? <small style="color:var(--ml-color);">(Negativo = remove)</small></span><button class="feedback-btn" onclick="saveMLFeedback('${novo.id}','positivo',this)">👍 Confirmar</button><button class="feedback-btn" onclick="saveMLFeedback('${novo.id}','negativo',this)">👎 Descartar</button></div>`;
+    document.getElementById('chatStream').appendChild(card); scrollToBottom(true);
+    const rt = rml.solucao.replace(/\*\*(.*?)\*\*/g, '$1'); adicionarMensagemNaConversa('ml', `[ML] ${rml.erro}: ${rt}`);
+    appendMessage('ml', '✅ <strong>Conhecimento salvo!</strong> Disponível para futuras consultas.');
+}
+
+async function saveMLFeedback(id, tipo, btn) {
+    const fa = btn.parentElement;
+    if (tipo === 'positivo') { confirmarMLKnowledge(id); fa.innerHTML = "<span style='color:#166534;font-weight:700;'>✅ Conhecimento confirmado!</span>"; setTimeout(() => { manualVetorizado = []; loadData(); }, 2000); }
+    else { marcarMLKnowledgeNegativo(id); manualVetorizado = manualVetorizado.filter(item => !(item.isML && item.mlId === id)); fa.innerHTML = "<span style='color:#dc2626;font-weight:700;'>🗑️ Conhecimento removido.</span>"; }
+}
+
+async function processarProximaSolucao(po) {
+    if (filaSolucoes.length === 0) { appendMessage('ai', '😕 Sem mais soluções. Ativando <b>Machine Learning</b>...'); setTimeout(async () => { await ativarMachineLearning(po); }, 1000); return; }
+    const sa = filaSolucoes.shift(); appendMessage('system', '🔍 Outra solução do manual...');
+    document.getElementById('searchInput').value = `Solução alternativa: ${sa.erro}`; await handleChat();
+}
 
 // ═══════════════════════════════════════════════════════════
 //  BANCO LOCAL DE REJEIÇÕES SEFAZ
 // ═══════════════════════════════════════════════════════════
-let bancoRejeicoes=[],bancoRejeicoesCarregado=false;
-async function carregarBancoRejeicoes(){if(bancoRejeicoesCarregado&&bancoRejeicoes.length>0)return bancoRejeicoes;try{const r=await fetch(SCRIPT_URL+"?aba=RejeicoesSEFAZ");if(!r.ok)throw new Error("Erro");const d=await r.json();if(Array.isArray(d)){bancoRejeicoes=d;bancoRejeicoesCarregado=true;}}catch(e){bancoRejeicoes=[];}return bancoRejeicoes;}
-function ehErroSefaz(query){const q=query.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");const pr=["rejeicao","rejeição","rejeitado","rejeitada","rejeicao sefaz","rejeição sefaz","erro sefaz","codigo de rejeicao","codigo de rejeição","código de rejeição","motivo de rejeicao","motivo de rejeição"];return pr.some(p=>q.includes(p))||/rejei[cç][aã]o\s+\d{3,4}/.test(q);}
+let bancoRejeicoes = [], bancoRejeicoesCarregado = false;
+async function carregarBancoRejeicoes() { if (bancoRejeicoesCarregado && bancoRejeicoes.length > 0) return bancoRejeicoes; try { const r = await fetch(SCRIPT_URL + "?aba=RejeicoesSEFAZ"); if (!r.ok) throw new Error("Erro"); const d = await r.json(); if (Array.isArray(d)) { bancoRejeicoes = d; bancoRejeicoesCarregado = true; } } catch (e) { bancoRejeicoes = []; } return bancoRejeicoes; }
+function ehErroSefaz(query) { const q = query.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); const pr = ["rejeicao", "rejeição", "rejeitado", "rejeitada", "rejeicao sefaz", "rejeição sefaz", "erro sefaz", "codigo de rejeicao", "codigo de rejeição", "código de rejeição", "motivo de rejeicao", "motivo de rejeição"]; return pr.some(p => q.includes(p)) || /rejei[cç][aã]o\s+\d{3,4}/.test(q); }
+
+async function gerarRespostaSefaz(pergunta) {
+    appendMessage('system', '🌐 <strong>Erro SEFAZ detectado</strong>'); adicionarMensagemNaConversa('system', '🌐 Consultando SEFAZ...');
+    const ld = appendLoadingCard("🔍 Buscando rejeições SEFAZ..."); const li = Date.now();
+    const cm = pergunta.match(/\b(\d{3,4})\b/); const cr = cm ? cm[1] : ''; const pl = pergunta.toLowerCase(); let td = '';
+    if (pl.includes('ct-e') || pl.includes('cte')) td = 'CT-e'; else if (pl.includes('mdf-e') || pl.includes('mdfe')) td = 'MDF-e'; else if (pl.includes('nf-e') || pl.includes('nfe')) td = 'NF-e';
+    await carregarBancoRejeicoes(); let re = null;
+    if (cr && bancoRejeicoes.length > 0) { if (td) re = bancoRejeicoes.find(r => r.codigo === cr && r.tipo_doc && r.tipo_doc.toLowerCase().includes(td.toLowerCase())); if (!re) re = bancoRejeicoes.find(r => r.codigo === cr); }
+    if (re) { ld.remove(); const da = re.dicas ? re.dicas.split('|').map(d => d.trim()).filter(Boolean) : []; renderizarCardRejeicaoLocal(re, da, li); adicionarMensagemNaConversa('ai', `Rejeição ${re.codigo}: ${re.significado}`); return; }
+    ld.querySelector('span').textContent = "🔍 Consultando IA...";
+    const ps = `Especialista SEFAZ. Erro: "${pergunta}". Código: ${cr}. Tipo: ${td}. JSON: {"codigo":"${cr}","significado":"...","causa":"...","solucao":"...","dicas":["..."]}`;
+    try { let r; try { r = await callMCPAPI('openrouter', 'google/gemma-4-26b-a4b-it', mcpConfig.apiKey, mcpConfig.baseUrl, [{ role: 'user', content: ps }], { temperature: 0.1, maxTokens: 2048 }); } catch (e) { r = await callMCPAPI('openrouter', 'meta-llama/llama-3.3-70b-instruct', mcpConfig.apiKey, mcpConfig.baseUrl, [{ role: 'user', content: ps }], { temperature: 0.1, maxTokens: 2048 }); } ld.remove(); let parsed = null; try { parsed = JSON.parse(r.text); } catch (e) { try { parsed = JSON.parse(r.text.replace(/```json|```/g, '').trim()); } catch (e2) {} } renderizarCardRejeicaoIA(parsed, r.text, li); const rt = parsed ? `Rejeição ${parsed.codigo}: ${parsed.significado}` : r.text; adicionarMensagemNaConversa('ai', rt); } catch (e) { ld.remove(); appendMessage('ai', '❌ Erro na consulta. Pesquise em: https://atendimento.tecnospeed.com.br'); adicionarMensagemNaConversa('ai', '❌ Erro SEFAZ.'); }
+}
+
+function renderizarCardRejeicaoLocal(re, dicas, li) { const s = document.getElementById('chatStream'); const c = document.createElement('div'); c.className = 'answer-card'; let h = `<div style="background:#f0fdf4;padding:8px 15px;border-bottom:1px solid #bbf7d0;font-size:11px;color:#166534;">📚 Banco Local • ${re.fonte || 'Tecnospeed'}</div>`; h += `<div class="answer-section"><div class="section-label path">🔢 Código</div><div style="font-size:28px;font-weight:800;color:#dc2626;">${re.codigo}</div></div>`; if (re.tipo_doc) h += `<div class="answer-section"><div class="section-label path">📄 Tipo</div><div class="section-content"><b>${re.tipo_doc}</b></div></div>`; if (re.significado) h += `<div class="answer-section"><div class="section-label how">📋 Significado</div><div class="section-content">${formatarTexto(re.significado)}</div></div>`; if (re.causa) h += `<div class="answer-section"><div class="section-label path">🔍 Causa</div><div class="section-content">${formatarTexto(re.causa)}</div></div>`; if (re.solucao) h += `<div class="answer-section"><div class="section-label how">✅ Solução</div><div class="section-content">${formatarTexto(re.solucao)}</div></div>`; h += `<div class="feedback-area"><span>Ajudou?</span><button class="feedback-btn" onclick="saveFeedback(${li},'positivo',this)">👍</button><button class="feedback-btn" onclick="saveFeedback(${li},'negativo',this)">👎</button></div>`; c.innerHTML = h; s.appendChild(c); scrollToBottom(true); }
+function renderizarCardRejeicaoIA(parsed, tr, li) { const s = document.getElementById('chatStream'); const c = document.createElement('div'); c.className = 'answer-card'; let h = `<div style="background:#fef3c7;padding:8px 15px;border-bottom:1px solid #fde68a;font-size:11px;color:#92400e;">🤖 Resposta IA</div>`; if (parsed) { if (parsed.codigo) h += `<div class="answer-section"><div class="section-label path">🔢 Código</div><div style="font-size:28px;font-weight:800;color:#dc2626;">${parsed.codigo}</div></div>`; if (parsed.significado) h += `<div class="answer-section"><div class="section-label how">📋 Significado</div><div class="section-content">${formatarTexto(parsed.significado)}</div></div>`; if (parsed.causa) h += `<div class="answer-section"><div class="section-label path">🔍 Causa</div><div class="section-content">${formatarTexto(parsed.causa)}</div></div>`; if (parsed.solucao) h += `<div class="answer-section"><div class="section-label how">✅ Solução</div><div class="section-content">${formatarTexto(parsed.solucao)}</div></div>`; } else { h += `<div class="answer-section"><div class="section-content">${formatarTexto(tr)}</div></div>`; } h += `<div class="feedback-area"><span>Ajudou?</span><button class="feedback-btn" onclick="saveFeedback(${li},'positivo',this)">👍</button><button class="feedback-btn" onclick="saveFeedback(${li},'negativo',this)">👎</button></div>`; c.innerHTML = h; s.appendChild(c); scrollToBottom(true); }
+
+function formatarTexto(texto) { return texto.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>'); }
 
 // ═══════════════════════════════════════════════════════════
 //  APRENDIZADO ONLINE COMPARTILHADO
 // ═══════════════════════════════════════════════════════════
-let cachRespostasFixas=null,tsBancamentoFixas=0;
-async function carregarRespostasFixas(){if(cachRespostasFixas&&(Date.now()-tsBancamentoFixas)<5*60*1000)return cachRespostasFixas;try{const r=await fetch(SCRIPT_URL+"?aba=RespostasFixas");if(!r.ok)throw new Error("sem acesso");const d=await r.json();const m={};(Array.isArray(d)?d:[]).forEach(row=>{if(row.chave&&row.resposta){try{m[row.chave]={resposta:JSON.parse(row.resposta),confirmacoes:parseInt(row.confirmacoes)||1};}catch(e){}}});cachRespostasFixas=m;tsBancamentoFixas=Date.now();return m;}catch(e){try{return JSON.parse(localStorage.getItem('bsoft_fixas_cache')||'{}');}catch(e2){return{};}}}
-async function salvarRespostaFixa(pergunta,resposta){const c=pergunta.toLowerCase().trim().substring(0,120);cachRespostasFixas=null;fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',body:JSON.stringify({action:"fixarResposta",chave:c,pergunta,resposta:JSON.stringify(resposta),ts:new Date().toISOString()})}).catch(e=>{});try{const l=JSON.parse(localStorage.getItem('bsoft_fixas_cache')||'{}');l[c]={resposta,confirmacoes:(l[c]?.confirmacoes||0)+1};localStorage.setItem('bsoft_fixas_cache',JSON.stringify(l));}catch(e){}}
-async function buscarRespostaFixa(pergunta){const f=await carregarRespostasFixas();const c=pergunta.toLowerCase().trim().substring(0,120);if(f[c])return f[c].resposta;const tq=extrairTermos(pergunta);let mm=null,ms=0;for(const[k,v]of Object.entries(f)){const tk=extrairTermos(k);const inter=tq.filter(t=>tk.includes(t)).length;const ml=Math.min(tq.length,tk.length)||1;const sc=inter/ml;if(sc>=0.75&&sc>ms){ms=sc;mm={chave:k,resposta:v.resposta};}}if(mm)return mm.resposta;return null;}
+let cachRespostasFixas = null, tsBancamentoFixas = 0;
+async function carregarRespostasFixas() { if (cachRespostasFixas && (Date.now() - tsBancamentoFixas) < 5 * 60 * 1000) return cachRespostasFixas; try { const r = await fetch(SCRIPT_URL + "?aba=RespostasFixas"); if (!r.ok) throw new Error("sem acesso"); const d = await r.json(); const m = {}; (Array.isArray(d) ? d : []).forEach(row => { if (row.chave && row.resposta) { try { m[row.chave] = { resposta: JSON.parse(row.resposta), confirmacoes: parseInt(row.confirmacoes) || 1 }; } catch (e) {} } }); cachRespostasFixas = m; tsBancamentoFixas = Date.now(); return m; } catch (e) { try { return JSON.parse(localStorage.getItem('bsoft_fixas_cache') || '{}'); } catch (e2) { return {}; } } }
+async function salvarRespostaFixa(pergunta, resposta) { const c = pergunta.toLowerCase().trim().substring(0, 120); cachRespostasFixas = null; fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "fixarResposta", chave: c, pergunta, resposta: JSON.stringify(resposta), ts: new Date().toISOString() }) }).catch(e => {}); try { const l = JSON.parse(localStorage.getItem('bsoft_fixas_cache') || '{}'); l[c] = { resposta, confirmacoes: (l[c]?.confirmacoes || 0) + 1 }; localStorage.setItem('bsoft_fixas_cache', JSON.stringify(l)); } catch (e) {} }
+async function buscarRespostaFixa(pergunta) { const f = await carregarRespostasFixas(); const c = pergunta.toLowerCase().trim().substring(0, 120); if (f[c]) return f[c].resposta; const tq = extrairTermos(pergunta); let mm = null, ms = 0; for (const [k, v] of Object.entries(f)) { const tk = extrairTermos(k); const inter = tq.filter(t => tk.includes(t)).length; const ml = Math.min(tq.length, tk.length) || 1; const sc = inter / ml; if (sc >= 0.75 && sc > ms) { ms = sc; mm = { chave: k, resposta: v.resposta }; } } if (mm) return mm.resposta; return null; }
 
 // ═══════════════════════════════════════════════════════════
-//  LÓGICA DE CHAT PRINCIPAL
+//  RENDER CARD / UI HELPERS
 // ═══════════════════════════════════════════════════════════
-async function handleChat(){const ch=obterContextoHorario();if(isVectorizing)return;const input=document.getElementById('searchInput');const query=input.value.trim();if(!query)return;const fn=["não deu","não funcionou","continuo com erro","ainda não","não deu certo","proximo","próximo","outra opção","mais alguma","próxima solução"];const uqp=fn.some(f=>query.toLowerCase().includes(f));if(uqp&&filaSolucoes.length>0){appendMessage('user',query);adicionarMensagemNaConversa('user',query);input.value="";processarProximaSolucao(lastQuery);return;}filaSolucoes=[];lastQuery=query;appendMessage('user',query);adicionarMensagemNaConversa('user',query);input.value="";const conversa=getConversaAtiva();if(conversa){const dd=detectarDocumento(query.toLowerCase());if(dd){conversa.documentoContexto=dd;conversa.topicoAtual=query;salvarConversas();}}if(ehErroSefaz(query)){await gerarRespostaSefaz(query);return;}const lf=appendLoadingCard("⭐ Verificando base de conhecimento...");const rf=await buscarRespostaFixa(query);lf.remove();if(rf){appendMessage('system','⭐ <strong>Resposta Confirmada</strong> — Baseada em feedback positivo.');renderAnswerCard(rf.caminho||null,rf.como_fazer||rf.texto||'',rf.dicas||[],Date.now(),true);const tc=(rf.como_fazer||rf.texto||'').replace(/\*\*(.*?)\*\*/g,'$1');adicionarMensagemNaConversa('ai',tc);return;}const ld=appendLoadingCard("🧠 Elaborando sua resposta...");const vp=await gerarEmbedding(query);let rr=[];if(vp){rr=manualVetorizado.map(item=>({...item,similaridade:calcularSimilaridade(vp,item.vetor)})).sort((a,b)=>b.similaridade-a.similaridade).slice(0,15);}const trb=rr.length>0&&rr[0].similaridade>0.65;const ctx=prepararContextoManualCompleto();let ar="";if(rr.length>0){ar="\n=== ARTIGOS MAIS RELEVANTES ===\n";rr.forEach((r,i)=>{ar+=`[RELEVANTE ${i+1} - ${(r.similaridade*100).toFixed(0)}%] ${r.erro}\nSolução: ${r.solucao}\n${r.emitir?'Emissão: '+r.emitir+'\n':''}---\n`;});}let mi="",vum=false;if(!trb&&rr.every(r=>r.similaridade<0.5)){vum=true;mi=`\n⚠️ ATENÇÃO: Nenhum resultado encontrado no manual (max: ${rr.length>0?(rr[0].similaridade*100).toFixed(0):0}%). Indique que vai ativar Machine Learning.\n`;}logSearch(query,trb||vum);const cc=conversa?conversa.contexto.slice(-20):[];let hc="";if(cc.length>0){hc="\n=== HISTÓRICO DA CONVERSA ===\n";cc.forEach(m=>{hc+=`${m.role==='user'?'👤 Cliente':'🤖 Suporte'}: ${m.content.substring(0,400)}\n`;});}const es=JSON.stringify(SISTEMA_BSOFT_TMS,null,2);let da="";if(dadosParametros.length>0){da+="\n=== PARÂMETROS ===\n";dadosParametros.slice(0,30).forEach((p,i)=>{da+=`[${i+1}] ${JSON.stringify(p).substring(0,300)}\n`;});}if(dadosFuncionalidades.length>0){da+="\n=== FUNCIONALIDADES ===\n";dadosFuncionalidades.slice(0,30).forEach((f,i)=>{da+=`[${i+1}] ${JSON.stringify(f).substring(0,300)}\n`;});}const dc=conversa?.documentoContexto||detectarDocumento(query.toLowerCase());let ido="";if(dc&&SISTEMA_BSOFT_TMS.documentos_principais[dc.toUpperCase()]){ido=`\n=== DOCUMENTO EM CONTEXTO: ${dc.toUpperCase()} ===\n${JSON.stringify(SISTEMA_BSOFT_TMS.documentos_principais[dc.toUpperCase()],null,2)}\n`;}const ps=`🏢 VOCÊ É UM AGENTE DE SUPORTE DA BSOFT TMS\n\n${ch}\n\n🎯 Atenda o cliente de forma PROFISSIONAL e DIDÁTICA.\n\n📋 REGRAS:\n1. Use APENAS informações do manual ou fontes oficiais.\n2. NUNCA invente. Se não souber, diga que vai ativar o Machine Learning.\n3. Mantenha o contexto da conversa.\n4. Seja conversacional e humano.\n5. Explique passo a passo com caminhos do menu.\n6. Diferencie: CT-e, MDF-e, NF-e, NFS-e, Minuta, OC, CIOT, VPO.\n\n${mi}\n📚 CONHECIMENTO:\n${es}\n${ido}${ar}${hc}\n\n🗣️ PERGUNTA: "${query}"\n\n📝 Responda como um agente humano. Use **negrito** para destacar.${vum?' Se não encontrou, DIGA que vai ativar ML.':''}`;try{const result=await callCurrentMCP([{role:'user',content:ps}],{temperature:0.4,maxTokens:4096});ld.remove();const rf2=result.text.replace(/\*\*(.*?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>');const card=document.createElement('div');card.className='answer-card';card.innerHTML=`<div class="answer-section"><div class="section-content">${rf2}</div></div><div class="feedback-area"><span>Esta resposta foi útil?</span><button class="feedback-btn" onclick="saveFeedback(${Date.now()},'positivo',this)">👍</button><button class="feedback-btn" onclick="saveFeedback(${Date.now()},'negativo',this)">👎</button><button class="btn-pesquisa-avancada" style="background:linear-gradient(135deg, #dc2626, #991b1b);" onclick="toggleBlogPanel();document.getElementById('blogSearchInput').value='${query.replace(/'/g,"\\'")}';pesquisarNoBlog();" title="Pesquisar no Blog Bsoft">📝 Blog</button><button class="btn-pesquisa-avancada" style="background:linear-gradient(135deg, #2563eb, #1d4ed8);" onclick="toggleManualPanel();" title="Consultar Manual Técnico">📘 Manual</button><button class="btn-pesquisa-avancada" onclick="toggleCentralPanel();document.getElementById('centralSearchInput').value='${query.replace(/'/g,"\\'")}';pesquisarNaCentral();" title="Pesquisar na Central de Ajuda">📚 Central de Ajuda</button>${filaSolucoes.length>0?`<button class="feedback-btn next" onclick="fillAndSend('Próximo')">➡️ Próxima</button>`:''}</div>`;document.getElementById('chatStream').appendChild(card);scrollToBottom(true);adicionarMensagemNaConversa('ai',result.text.replace(/\*\*(.*?)\*\*/g,'$1'));if(vum||result.text.toLowerCase().includes('não encontrei')||result.text.toLowerCase().includes('machine learning')){setTimeout(async()=>{await ativarMachineLearning(query);},1500);}}catch(e){ld.remove();appendMessage('ai','❌ Não encontrei esta informação. Vou ativar o <b>Machine Learning</b>...');adicionarMensagemNaConversa('ai','❌ Ativando ML...');setTimeout(async()=>{await ativarMachineLearning(query);},1000);}}
-
-// ═══════════════════════════════════════════════════════════
-//  ATIVAR MACHINE LEARNING
-// ═══════════════════════════════════════════════════════════
-async function ativarMachineLearning(query){const conversa=getConversaAtiva();appendMessage('ml','🧠 <strong>Iniciando Machine Learning...</strong>');const lm=appendLoadingCard("🌐 Buscando em fontes confiáveis...");const rml=await buscarConhecimentoInternet(query);lm.remove();if(!rml||!rml.erro||!rml.solucao||rml.confianca<0.4){appendMessage('ml','😕 <strong>ML:</strong> Não foi possível encontrar resposta confiável.');adicionarMensagemNaConversa('ml','ML: Não encontrou.');return;}const novo=adicionarMLKnowledge(rml.erro,rml.solucao,rml.fonte||'Internet',rml.confianca||0.6);await salvarMLNaPlanilha(rml.erro,rml.solucao,rml.fonte||'Internet');if(conversa){conversa.mlKnowledgeId=novo.id;salvarConversas();}const txc=`DÚVIDA: ${rml.erro} | PROCEDIMENTO: ${rml.solucao}`;const nv=await gerarEmbedding(txc);if(nv){manualVetorizado.push({texto:txc,erro:rml.erro,solucao:rml.solucao,emitir:'',categoria:'Machine Learning',vetor:nv,isML:true,mlId:novo.id});}const card=document.createElement('div');card.className='answer-card ml-card';card._mlKnowledgeId=novo.id;card.innerHTML=`<div style="background:var(--ml-light);padding:8px 15px;border-bottom:1px solid var(--ml-border);font-size:11px;color:var(--ml-color);display:flex;align-items:center;gap:8px;">🧠 <strong>Machine Learning</strong><span class="ml-badge">NOVO CONHECIMENTO</span></div><div class="answer-section"><div class="section-label ml"><div class="section-icon ml">🔍</div>Pergunta</div><div class="section-content"><b>${escapeHtml(rml.erro)}</b></div></div><div class="answer-section"><div class="section-label how"><div class="section-icon how">✅</div>Resposta</div><div class="section-content">${formatarTexto(rml.solucao)}</div></div><div class="answer-section"><div class="section-label tip"><div class="section-icon tip">🌐</div>Fonte</div><div class="section-content">${escapeHtml(rml.fonte||'Internet')}<span class="ml-source-tag">🤖 Adquirido automaticamente</span></div></div><div class="feedback-area"><span>Útil? <small style="color:var(--ml-color);">(Negativo = remove)</small></span><button class="feedback-btn" onclick="saveMLFeedback('${novo.id}','positivo',this)">👍 Confirmar</button><button class="feedback-btn" onclick="saveMLFeedback('${novo.id}','negativo',this)">👎 Descartar</button></div>`;document.getElementById('chatStream').appendChild(card);scrollToBottom(true);const rt=rml.solucao.replace(/\*\*(.*?)\*\*/g,'$1');adicionarMensagemNaConversa('ml',`[ML] ${rml.erro}: ${rt}`);appendMessage('ml','✅ <strong>Conhecimento salvo!</strong> Disponível para futuras consultas.');}
-async function saveMLFeedback(id,tipo,btn){const fa=btn.parentElement;if(tipo==='positivo'){confirmarMLKnowledge(id);fa.innerHTML="<span style='color:#166534;font-weight:700;'>✅ Conhecimento confirmado!</span>";setTimeout(()=>{manualVetorizado=[];loadData();},2000);}else{marcarMLKnowledgeNegativo(id);manualVetorizado=manualVetorizado.filter(item=>!(item.isML&&item.mlId===id));fa.innerHTML="<span style='color:#dc2626;font-weight:700;'>🗑️ Conhecimento removido.</span>";}}
-async function processarProximaSolucao(po){if(filaSolucoes.length===0){appendMessage('ai','😕 Sem mais soluções. Ativando <b>Machine Learning</b>...');setTimeout(async()=>{await ativarMachineLearning(po);},1000);return;}const sa=filaSolucoes.shift();appendMessage('system','🔍 Outra solução do manual...');document.getElementById('searchInput').value=`Solução alternativa: ${sa.erro}`;await handleChat();}
-
-// ═══════════════════════════════════════════════════════════
-//  RESPOSTA SEFAZ
-// ═══════════════════════════════════════════════════════════
-async function gerarRespostaSefaz(pergunta){appendMessage('system','🌐 <strong>Erro SEFAZ detectado</strong>');adicionarMensagemNaConversa('system','🌐 Consultando SEFAZ...');const ld=appendLoadingCard("🔍 Buscando rejeições SEFAZ...");const li=Date.now();const cm=pergunta.match(/\b(\d{3,4})\b/);const cr=cm?cm[1]:'';const pl=pergunta.toLowerCase();let td='';if(pl.includes('ct-e')||pl.includes('cte'))td='CT-e';else if(pl.includes('mdf-e')||pl.includes('mdfe'))td='MDF-e';else if(pl.includes('nf-e')||pl.includes('nfe'))td='NF-e';await carregarBancoRejeicoes();let re=null;if(cr&&bancoRejeicoes.length>0){if(td)re=bancoRejeicoes.find(r=>r.codigo===cr&&r.tipo_doc&&r.tipo_doc.toLowerCase().includes(td.toLowerCase()));if(!re)re=bancoRejeicoes.find(r=>r.codigo===cr);}if(re){ld.remove();const da=re.dicas?re.dicas.split('|').map(d=>d.trim()).filter(Boolean):[];renderizarCardRejeicaoLocal(re,da,li);adicionarMensagemNaConversa('ai',`Rejeição ${re.codigo}: ${re.significado}`);return;}ld.querySelector('span').textContent="🔍 Consultando IA...";const ps=`Especialista SEFAZ. Erro: "${pergunta}". Código: ${cr}. Tipo: ${td}. JSON: {"codigo":"${cr}","significado":"...","causa":"...","solucao":"...","dicas":["..."]}`;try{let r;try{r=await callMCPAPI('openrouter','google/gemma-4-26b-a4b-it',mcpConfig.apiKey,mcpConfig.baseUrl,[{role:'user',content:ps}],{temperature:0.1,maxTokens:2048});}catch(e){r=await callMCPAPI('openrouter','meta-llama/llama-3.3-70b-instruct',mcpConfig.apiKey,mcpConfig.baseUrl,[{role:'user',content:ps}],{temperature:0.1,maxTokens:2048});}ld.remove();let parsed=null;try{parsed=JSON.parse(r.text);}catch(e){try{parsed=JSON.parse(r.text.replace(/```json|```/g,'').trim());}catch(e2){}}renderizarCardRejeicaoIA(parsed,r.text,li);const rt=parsed?`Rejeição ${parsed.codigo}: ${parsed.significado}`:r.text;adicionarMensagemNaConversa('ai',rt);}catch(e){ld.remove();appendMessage('ai','❌ Erro na consulta. Pesquise em: https://atendimento.tecnospeed.com.br');adicionarMensagemNaConversa('ai','❌ Erro SEFAZ.');}}
-function renderizarCardRejeicaoLocal(re,dicas,li){const s=document.getElementById('chatStream');const c=document.createElement('div');c.className='answer-card';let h=`<div style="background:#f0fdf4;padding:8px 15px;border-bottom:1px solid #bbf7d0;font-size:11px;color:#166534;">📚 Banco Local • ${re.fonte||'Tecnospeed'}</div>`;h+=`<div class="answer-section"><div class="section-label path">🔢 Código</div><div style="font-size:28px;font-weight:800;color:#dc2626;">${re.codigo}</div></div>`;if(re.tipo_doc)h+=`<div class="answer-section"><div class="section-label path">📄 Tipo</div><div class="section-content"><b>${re.tipo_doc}</b></div></div>`;if(re.significado)h+=`<div class="answer-section"><div class="section-label how">📋 Significado</div><div class="section-content">${formatarTexto(re.significado)}</div></div>`;if(re.causa)h+=`<div class="answer-section"><div class="section-label path">🔍 Causa</div><div class="section-content">${formatarTexto(re.causa)}</div></div>`;if(re.solucao)h+=`<div class="answer-section"><div class="section-label how">✅ Solução</div><div class="section-content">${formatarTexto(re.solucao)}</div></div>`;h+=`<div class="feedback-area"><span>Ajudou?</span><button class="feedback-btn" onclick="saveFeedback(${li},'positivo',this)">👍</button><button class="feedback-btn" onclick="saveFeedback(${li},'negativo',this)">👎</button></div>`;c.innerHTML=h;s.appendChild(c);scrollToBottom(true);}
-function renderizarCardRejeicaoIA(parsed,tr,li){const s=document.getElementById('chatStream');const c=document.createElement('div');c.className='answer-card';let h=`<div style="background:#fef3c7;padding:8px 15px;border-bottom:1px solid #fde68a;font-size:11px;color:#92400e;">🤖 Resposta IA</div>`;if(parsed){if(parsed.codigo)h+=`<div class="answer-section"><div class="section-label path">🔢 Código</div><div style="font-size:28px;font-weight:800;color:#dc2626;">${parsed.codigo}</div></div>`;if(parsed.significado)h+=`<div class="answer-section"><div class="section-label how">📋 Significado</div><div class="section-content">${formatarTexto(parsed.significado)}</div></div>`;if(parsed.causa)h+=`<div class="answer-section"><div class="section-label path">🔍 Causa</div><div class="section-content">${formatarTexto(parsed.causa)}</div></div>`;if(parsed.solucao)h+=`<div class="answer-section"><div class="section-label how">✅ Solução</div><div class="section-content">${formatarTexto(parsed.solucao)}</div></div>`;}else{h+=`<div class="answer-section"><div class="section-content">${formatarTexto(tr)}</div></div>`;}h+=`<div class="feedback-area"><span>Ajudou?</span><button class="feedback-btn" onclick="saveFeedback(${li},'positivo',this)">👍</button><button class="feedback-btn" onclick="saveFeedback(${li},'negativo',this)">👎</button></div>`;c.innerHTML=h;s.appendChild(c);scrollToBottom(true);}
-function formatarTexto(texto){return texto.replace(/\*\*(.*?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>');}
-
-// ═══════════════════════════════════════════════════════════
-//  RENDER CARD
-// ═══════════════════════════════════════════════════════════
-function renderAnswerCard(caminho,comoFazer,dicas,li,ehFixa=false){const s=document.getElementById('chatStream');const c=document.createElement('div');c.className='answer-card';c._dadosResposta={caminho,como_fazer:comoFazer,dicas};let h='';if(caminho&&caminho!=='null'&&caminho.trim()!==''){const p=caminho.split('>').map(p=>p.trim());const b=p.map((p,i)=>i<p.length-1?`<span>${p}</span><span class="sep">›</span>`:`<strong>${p}</strong>`).join('');h+=`<div class="answer-section"><div class="section-label path"><div class="section-icon path">🗺️</div>Caminho</div><div class="path-breadcrumb">${b}</div></div>`;}if(comoFazer)h+=`<div class="answer-section"><div class="section-label how"><div class="section-icon how">✅</div>Como Fazer</div><div class="section-content">${comoFazer}</div></div>`;if(dicas&&dicas.length>0){const dh=dicas.map(d=>`<div class="tip-item"><span>💡</span><span>${d.replace(/\*\*(.*?)\*\*/g,'<b>$1</b>')}</span></div>`).join('');h+=`<div class="answer-section"><div class="section-label tip"><div class="section-icon tip">💡</div>Dicas</div>${dh}</div>`;}h+=`<div class="feedback-area"><span>${ehFixa?'Continua útil?':'Ajudou?'}</span><button class="feedback-btn" onclick="saveFeedback(${li},'positivo',this)">👍</button><button class="feedback-btn" onclick="saveFeedback(${li},'negativo',this)">👎</button></div>`;c.innerHTML=h;s.appendChild(c);scrollToBottom(true);setTimeout(()=>scrollToBottom(true),50);return c;}
-
-// ═══════════════════════════════════════════════════════════
-//  UI HELPERS
-// ═══════════════════════════════════════════════════════════
-function appendLoadingCard(texto="🔍 Buscando..."){const s=document.getElementById('chatStream');const d=document.createElement('div');d.className='message ai-msg';d.style.cssText='display:flex;align-items:center;gap:10px;';d.innerHTML=`<span>${texto}</span><span class="loading-dots"><span></span><span></span><span></span></span>`;s.appendChild(d);scrollToBottom(true);return d;}
-function appendMessage(sender,text){const s=document.getElementById('chatStream');const d=document.createElement('div');if(sender==='ml')d.className='message ml-msg';else d.className=sender==='system'?'message system-msg':`message ${sender==='user'?'user-msg':'ai-msg'}`;d.innerHTML=text;s.appendChild(d);scrollToBottom(true);return d;}
-function fillAndSend(txt){document.getElementById('searchInput').value=txt;handleChat();}
+function renderAnswerCard(caminho, comoFazer, dicas, li, ehFixa = false) { const s = document.getElementById('chatStream'); const c = document.createElement('div'); c.className = 'answer-card'; c._dadosResposta = { caminho, como_fazer: comoFazer, dicas }; let h = ''; if (caminho && caminho !== 'null' && caminho.trim() !== '') { const p = caminho.split('>').map(p => p.trim()); const b = p.map((p, i) => i < p.length - 1 ? `<span>${p}</span><span class="sep">›</span>` : `<strong>${p}</strong>`).join(''); h += `<div class="answer-section"><div class="section-label path"><div class="section-icon path">🗺️</div>Caminho</div><div class="path-breadcrumb">${b}</div></div>`; } if (comoFazer) h += `<div class="answer-section"><div class="section-label how"><div class="section-icon how">✅</div>Como Fazer</div><div class="section-content">${comoFazer}</div></div>`; if (dicas && dicas.length > 0) { const dh = dicas.map(d => `<div class="tip-item"><span>💡</span><span>${d.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')}</span></div>`).join(''); h += `<div class="answer-section"><div class="section-label tip"><div class="section-icon tip">💡</div>Dicas</div>${dh}</div>`; } h += `<div class="feedback-area"><span>${ehFixa ? 'Continua útil?' : 'Ajudou?'}</span><button class="feedback-btn" onclick="saveFeedback(${li},'positivo',this)">👍</button><button class="feedback-btn" onclick="saveFeedback(${li},'negativo',this)">👎</button></div>`; c.innerHTML = h; s.appendChild(c); scrollToBottom(true); setTimeout(() => scrollToBottom(true), 50); return c; }
+function appendLoadingCard(texto = "🔍 Buscando...") { const s = document.getElementById('chatStream'); const d = document.createElement('div'); d.className = 'message ai-msg'; d.style.cssText = 'display:flex;align-items:center;gap:10px;'; d.innerHTML = `<span>${texto}</span><span class="loading-dots"><span></span><span></span><span></span></span>`; s.appendChild(d); scrollToBottom(true); return d; }
+function appendMessage(sender, text) { const s = document.getElementById('chatStream'); const d = document.createElement('div'); if (sender === 'ml') d.className = 'message ml-msg'; else d.className = sender === 'system' ? 'message system-msg' : `message ${sender === 'user' ? 'user-msg' : 'ai-msg'}`; d.innerHTML = text; s.appendChild(d); scrollToBottom(true); return d; }
+function fillAndSend(txt) { document.getElementById('searchInput').value = txt; handleChat(); }
 
 // ═══════════════════════════════════════════════════════════
 //  FEEDBACK
 // ═══════════════════════════════════════════════════════════
-let currentLogTimestamp=null,perguntaPrimariaAtual="";
-function logSearch(query,found){const c=getConversaAtiva();if(!c)return;const tpu=c.mensagens.filter(m=>m.sender==='user').length;if(tpu===1){currentLogTimestamp=Date.now();perguntaPrimariaAtual=query;c.primeiraPergunta=query;c.logTimestamp=currentLogTimestamp;salvarConversas();if(modoDepuracao){console.log("🔧 [DEPURAÇÃO] Log NÃO enviado:",query);return;}console.log("📝 LOG CRIADO:",query);try{fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',body:JSON.stringify({action:"addLog",pergunta:query,encontrou:found?"Sim":"Não",feedback:"Pendente",timestamp:currentLogTimestamp})});}catch(e){}}else{console.log("⏭️ Log ignorado:",query.substring(0,50));}}
-async function saveFeedback(li,type,btn){const fa=btn.parentElement;const card=fa.closest('.answer-card');const c=getConversaAtiva();const pp=c?.primeiraPergunta||perguntaPrimariaAtual||lastQuery||"?";const tl=c?.logTimestamp||currentLogTimestamp;if(!modoDepuracao){try{fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',body:JSON.stringify({action:"updateFeedback",pergunta:pp,feedback:type==='positivo'?"Positivo":"Negativo",timestamp:tl})});}catch(e){}}if(type==='positivo'){if(card&&card._dadosResposta&&pp){await salvarRespostaFixa(pp,card._dadosResposta);fa.innerHTML="<span style='color:#166534;font-weight:700;'>✅ Obrigado! Resposta fixada.</span>";}else{fa.innerHTML="<span style='color:#166534;font-weight:700;'>Obrigado! 👍</span>";}}else{fa.innerHTML=`<div class="reason-box" style="display:flex;"><textarea id="reason_${li}" placeholder="O que faltou?"></textarea><button onclick="sendDetailedFeedback(${li},this)">Enviar</button></div>`;}}
-async function sendDetailedFeedback(li,btn){const ta=document.getElementById(`reason_${li}`);const m=ta.value.trim();if(!m)return alert("Descreva!");const c=getConversaAtiva();const pp=c?.primeiraPergunta||perguntaPrimariaAtual||lastQuery||"?";const tl=c?.logTimestamp||currentLogTimestamp;if(!modoDepuracao){fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',body:JSON.stringify({action:"updateFeedback",pergunta:pp,encontrou:"Não",feedback:"Negativo",timestamp:tl})});}btn.parentElement.parentElement.innerHTML="<span style='color:#991b1b;font-weight:700;'>Feedback enviado! ✅</span>";}
+let currentLogTimestamp = null, perguntaPrimariaAtual = "";
+function logSearch(query, found) { const c = getConversaAtiva(); if (!c) return; const tpu = c.mensagens.filter(m => m.sender === 'user').length; if (tpu === 1) { currentLogTimestamp = Date.now(); perguntaPrimariaAtual = query; c.primeiraPergunta = query; c.logTimestamp = currentLogTimestamp; salvarConversas(); if (modoDepuracao) { console.log("🔧 [DEPURAÇÃO] Log NÃO enviado:", query); return; } console.log("📝 LOG CRIADO:", query); try { fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "addLog", pergunta: query, encontrou: found ? "Sim" : "Não", feedback: "Pendente", timestamp: currentLogTimestamp }) }); } catch (e) {} } else { console.log("⏭️ Log ignorado:", query.substring(0, 50)); } }
+async function saveFeedback(li, type, btn) { const fa = btn.parentElement; const card = fa.closest('.answer-card'); const c = getConversaAtiva(); const pp = c?.primeiraPergunta || perguntaPrimariaAtual || lastQuery || "?"; const tl = c?.logTimestamp || currentLogTimestamp; if (!modoDepuracao) { try { fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "updateFeedback", pergunta: pp, feedback: type === 'positivo' ? "Positivo" : "Negativo", timestamp: tl }) }); } catch (e) {} } if (type === 'positivo') { if (card && card._dadosResposta && pp) { await salvarRespostaFixa(pp, card._dadosResposta); fa.innerHTML = "<span style='color:#166534;font-weight:700;'>✅ Obrigado! Resposta fixada.</span>"; } else { fa.innerHTML = "<span style='color:#166534;font-weight:700;'>Obrigado! 👍</span>"; } } else { fa.innerHTML = `<div class="reason-box" style="display:flex;"><textarea id="reason_${li}" placeholder="O que faltou?"></textarea><button onclick="sendDetailedFeedback(${li},this)">Enviar</button></div>`; } }
+async function sendDetailedFeedback(li, btn) { const ta = document.getElementById(`reason_${li}`); const m = ta.value.trim(); if (!m) return alert("Descreva!"); const c = getConversaAtiva(); const pp = c?.primeiraPergunta || perguntaPrimariaAtual || lastQuery || "?"; const tl = c?.logTimestamp || currentLogTimestamp; if (!modoDepuracao) { fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "updateFeedback", pergunta: pp, encontrou: "Não", feedback: "Negativo", timestamp: tl }) }); } btn.parentElement.parentElement.innerHTML = "<span style='color:#991b1b;font-weight:700;'>Feedback enviado! ✅</span>"; }
 
 // ═══════════════════════════════════════════════════════════
 //  ADMIN
 // ═══════════════════════════════════════════════════════════
-function openAdmin(){if(prompt("Senha Administrativa:")===CORRECT_PASSWORD)document.getElementById('adminPanel').style.display='flex';}
-function closeAdmin(){document.getElementById('adminPanel').style.display='none';}
-async function saveToDatabase(){const e=document.getElementById('newError').value.trim();const s=document.getElementById('newSolution').value.trim();if(!e||!s)return alert("Preencha!");try{await fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',body:JSON.stringify({action:"addKnowledge",erro:e,solucao:s})});alert("Sucesso!");closeAdmin();loadData();}catch(e){alert("Erro.");}}
-function openModal(){const b=document.getElementById('modalBody');b.innerHTML=currentResults.map(r=>`<div class="result-item"><strong>${(r.similaridade*100).toFixed(0)}%</strong><br>${r.erro}<br>→ ${r.solucao}</div>`).join('')||'<em>Nenhum resultado.</em>';document.getElementById('resultsModal').style.display="block";}
-function closeModal(){document.getElementById('resultsModal').style.display="none";}
+function openAdmin() { if (prompt("Senha Administrativa:") === CORRECT_PASSWORD) document.getElementById('adminPanel').style.display = 'flex'; }
+function closeAdmin() { document.getElementById('adminPanel').style.display = 'none'; }
+async function saveToDatabase() { const e = document.getElementById('newError').value.trim(); const s = document.getElementById('newSolution').value.trim(); if (!e || !s) return alert("Preencha!"); try { await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "addKnowledge", erro: e, solucao: s }) }); alert("Sucesso!"); closeAdmin(); loadData(); } catch (e) { alert("Erro."); } }
+function openModal() { const b = document.getElementById('modalBody'); b.innerHTML = currentResults.map(r => `<div class="result-item"><strong>${(r.similaridade * 100).toFixed(0)}%</strong><br>${r.erro}<br>→ ${r.solucao}</div>`).join('') || '<em>Nenhum resultado.</em>'; document.getElementById('resultsModal').style.display = "block"; }
+function closeModal() { document.getElementById('resultsModal').style.display = "none"; }
 
 // ═══════════════════════════════════════════════════════════
 //  TELA / ARQUIVO / VOZ
 // ═══════════════════════════════════════════════════════════
-async function toggleScreenShare(){const b=document.getElementById('btnScreen');if(screenStream){screenStream.getTracks().forEach(t=>t.stop());screenStream=null;b.style.color="";return;}try{screenStream=await navigator.mediaDevices.getDisplayMedia({video:{cursor:"always"},audio:false});b.style.color="var(--primary)";}catch(err){}}
-document.addEventListener('paste',(e)=>{for(let item of e.clipboardData.items){if(item.type.indexOf("image")!==-1)handleFileUpload(item.getAsFile());}});
-function handleFileUpload(file){if(!file)return;const r=new FileReader();r.onload=(e)=>{attachedFileData={mime_type:file.type,data:e.target.result.split(',')[1]};appendMessage('user',`<em>📎 ${file.name||'Imagem'}</em>`);};r.readAsDataURL(file);}
-function speak(text){if(isCallActive){window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text.replace(/<[^>]*>/g,''));u.lang='pt-BR';u.onend=()=>{if(isCallActive)recognition.start();};window.speechSynthesis.speak(u);}}
-function toggleVoice(){isCallActive=true;document.getElementById('voiceCallPanel').style.display='flex';document.getElementById('callStatus').innerText="Ouvindo...";recognition.start();}
-function endVoiceCall(){isCallActive=false;recognition.stop();window.speechSynthesis.cancel();document.getElementById('voiceCallPanel').style.display='none';}
-function toggleMinimizeCall(){}
-recognition.onspeechstart=()=>{clearTimeout(silenceTimer);};
-recognition.onresult=(event)=>{const t=event.results[event.results.length-1][0].transcript.trim();document.getElementById('callTranscript').innerText=`"${t}"`;clearTimeout(silenceTimer);silenceTimer=setTimeout(()=>{processarFalaFinal(t);},2000);};
-function processarFalaFinal(t){if(["tchau","encerrar","obrigado"].some(x=>t.toLowerCase().includes(x))){endVoiceCall();}else{recognition.stop();document.getElementById('searchInput').value=t;handleChat();}}
+async function toggleScreenShare() { const b = document.getElementById('btnScreen'); if (screenStream) { screenStream.getTracks().forEach(t => t.stop()); screenStream = null; b.style.color = ""; return; } try { screenStream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: "always" }, audio: false }); b.style.color = "var(--primary)"; } catch (err) {} }
+document.addEventListener('paste', (e) => { for (let item of e.clipboardData.items) { if (item.type.indexOf("image") !== -1) handleFileUpload(item.getAsFile()); } });
+function handleFileUpload(file) { if (!file) return; const r = new FileReader(); r.onload = (e) => { attachedFileData = { mime_type: file.type, data: e.target.result.split(',')[1] }; appendMessage('user', `<em>📎 ${file.name || 'Imagem'}</em>`); }; r.readAsDataURL(file); }
+function speak(text) { if (isCallActive) { window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text.replace(/<[^>]*>/g, '')); u.lang = 'pt-BR'; u.onend = () => { if (isCallActive) recognition.start(); }; window.speechSynthesis.speak(u); } }
+function toggleVoice() { isCallActive = true; document.getElementById('voiceCallPanel').style.display = 'flex'; document.getElementById('callStatus').innerText = "Ouvindo..."; recognition.start(); }
+function endVoiceCall() { isCallActive = false; recognition.stop(); window.speechSynthesis.cancel(); document.getElementById('voiceCallPanel').style.display = 'none'; }
+function toggleMinimizeCall() { }
+recognition.onspeechstart = () => { clearTimeout(silenceTimer); };
+recognition.onresult = (event) => { const t = event.results[event.results.length - 1][0].transcript.trim(); document.getElementById('callTranscript').innerText = `"${t}"`; clearTimeout(silenceTimer); silenceTimer = setTimeout(() => { processarFalaFinal(t); }, 2000); };
+function processarFalaFinal(t) { if (["tchau", "encerrar", "obrigado"].some(x => t.toLowerCase().includes(x))) { endVoiceCall(); } else { recognition.stop(); document.getElementById('searchInput').value = t; handleChat(); } }
+
+// ═══════════════════════════════════════════════════════════
+//  PAINÉIS LATERAIS
+// ═══════════════════════════════════════════════════════════
+let centralPanelOpen = false, blogPanelOpen = false, manualPanelOpen = false, repositorioPanelOpen = false;
+let ultimoConteudoCapturado = '', ultimoConteudoBlogCapturado = '', ultimoConteudoManualCapturado = '';
+const CENTRAL_BASE_URL = 'https://centraldeajuda.e-login.net/';
+const MANUAL_BASE_URL = 'https://manuaisbsoft.atlassian.net/wiki/spaces/BT/overview';
+
+function fecharTodosPaineis() { if (centralPanelOpen) toggleCentralPanel(); if (blogPanelOpen) toggleBlogPanel(); if (manualPanelOpen) toggleManualPanel(); if (repositorioPanelOpen) toggleRepositorioPanel(); }
+
+// Central de Ajuda
+function abrirCentralNovaAba(pagina) {
+    const url = pagina || CENTRAL_BASE_URL;
+    window.open(url, '_blank');
+    document.getElementById('manualStatus').textContent = '📘 Manual aberto em nova aba';
+    document.getElementById('manualStatus').style.color = '#166534';
+}
+function toggleCentralPanel() { centralPanelOpen = !centralPanelOpen; document.getElementById('centralPanel').classList.toggle('open', centralPanelOpen); document.getElementById('centralTab').classList.toggle('open', centralPanelOpen); document.getElementById('centralOverlay').classList.toggle('active', centralPanelOpen); }
+function navegarCentral(url) { document.getElementById('centralIframe').src = url; document.getElementById('centralStatus').textContent = '🌐 Navegando...'; document.getElementById('centralStatus').style.color = 'var(--text-muted)'; }
+function pesquisarNaCentral() { const query = document.getElementById('centralSearchInput').value.trim(); if (!query) return; document.getElementById('centralIframe').src = `https://centraldeajuda.e-login.net/index.php?s=${encodeURIComponent(query)}`; document.getElementById('centralStatus').textContent = '🔍 Pesquisando: ' + query; document.getElementById('centralStatus').style.color = 'var(--central-color)'; }
+function enviarPesquisaParaChat() { const query = document.getElementById('centralSearchInput').value.trim(); if (query) { document.getElementById('searchInput').value = query; handleChat(); } }
+function capturarConteudoCentral() { const iframe = document.getElementById('centralIframe'); try { const doc = iframe.contentDocument || iframe.contentWindow.document; if (doc) { const conteudo = doc.querySelector('article, .content, .entry-content, main, .post-content')?.innerText || ''; const titulo = doc.title || 'Sem título'; if (conteudo && conteudo.length > 100) { ultimoConteudoCapturado = conteudo; const artigos = JSON.parse(localStorage.getItem(CENTRAL_ARTIGOS_KEY) || '{}'); artigos[iframe.contentWindow.location.href] = { titulo, conteudo: conteudo.substring(0, 10000), data: new Date().toISOString() }; localStorage.setItem(CENTRAL_ARTIGOS_KEY, JSON.stringify(artigos)); document.getElementById('centralStatus').textContent = '✅ Capturado: ' + titulo; document.getElementById('centralStatus').style.color = '#166534'; appendMessage('system', '📚 Artigo capturado!'); return conteudo; } } } catch (e) { } const cm = prompt('Cole o conteúdo do artigo:'); if (cm && cm.length > 50) { ultimoConteudoCapturado = cm; document.getElementById('centralStatus').textContent = '✅ Conteúdo colado'; document.getElementById('centralStatus').style.color = '#166534'; return cm; } document.getElementById('centralStatus').textContent = '⚠️ Navegue até um artigo'; document.getElementById('centralStatus').style.color = '#b45309'; return null; }
+async function enviarConteudoParaIA() { let conteudo = ultimoConteudoCapturado; if (!conteudo) conteudo = capturarConteudoCentral(); if (!conteudo) { alert('Capture um artigo primeiro!'); return; } appendMessage('system', '📚 Analisando artigo...'); const conversa = getConversaAtiva(); if (conversa) { conversa.contexto.push({ role: 'user', content: `[CENTRAL DE AJUDA]: ${conteudo.substring(0, 3000)}` }); salvarConversas(); } document.getElementById('searchInput').value = 'Analise este artigo e me explique'; await handleChat(); }
+
+// Blog
+function toggleBlogPanel() { blogPanelOpen = !blogPanelOpen; document.getElementById('blogPanel').classList.toggle('open', blogPanelOpen); document.getElementById('blogTab').classList.toggle('open', blogPanelOpen); }
+function abrirBlogNovaAba() { window.open('https://bsoft.com.br/blog/', '_blank'); document.getElementById('blogStatus').textContent = '📝 Blog aberto'; document.getElementById('blogStatus').style.color = '#166534'; }
+function pesquisarNoBlog() { const query = document.getElementById('blogSearchInput').value.trim(); if (!query) return; window.open(`https://bsoft.com.br/blog/?s=${encodeURIComponent(query)}`, '_blank'); document.getElementById('blogStatus').textContent = '🔍 Pesquisa: ' + query; document.getElementById('blogStatus').style.color = '#dc2626'; }
+function enviarPesquisaBlogParaChat() { const query = document.getElementById('blogSearchInput').value.trim(); if (query) { document.getElementById('searchInput').value = query + ' site:bsoft.com.br/blog'; handleChat(); } }
+async function enviarConteudoBlogParaIA() { let conteudo = document.getElementById('blogContentArea').value.trim(); if (!conteudo) { alert('Cole o conteúdo primeiro!'); return; } if (conteudo.length < 50) { alert('Conteúdo muito curto!'); return; } ultimoConteudoBlogCapturado = conteudo; appendMessage('system', '📝 Analisando artigo do Blog...'); const conversa = getConversaAtiva(); if (conversa) { conversa.contexto.push({ role: 'user', content: `[BLOG BSOFT]: ${conteudo.substring(0, 3000)}` }); salvarConversas(); } document.getElementById('searchInput').value = 'Analise este artigo do blog'; document.getElementById('blogContentArea').value = ''; document.getElementById('blogStatus').textContent = '✅ Enviado para IA'; document.getElementById('blogStatus').style.color = '#166534'; await handleChat(); }
+
+// Manual
+function toggleManualPanel() { manualPanelOpen = !manualPanelOpen; document.getElementById('manualPanel').classList.toggle('open', manualPanelOpen); document.getElementById('manualTab').classList.toggle('open', manualPanelOpen); }
+function abrirManualNovaAba(pagina) { window.open(pagina || MANUAL_BASE_URL, '_blank'); document.getElementById('manualStatus').textContent = '📘 Manual aberto'; document.getElementById('manualStatus').style.color = '#166534'; }
+function pesquisarNoManual() { const query = document.getElementById('manualSearchInput').value.trim(); if (!query) return; window.open(`https://manuaisbsoft.atlassian.net/wiki/search?text=${encodeURIComponent(query)}`, '_blank'); document.getElementById('manualStatus').textContent = '🔍 Pesquisa: ' + query; document.getElementById('manualStatus').style.color = '#2563eb'; }
+function enviarPesquisaManualParaChat() { const query = document.getElementById('manualSearchInput').value.trim(); if (query) { document.getElementById('searchInput').value = query + ' manual bsoft'; handleChat(); } }
+async function enviarConteudoManualParaIA() { let conteudo = document.getElementById('manualContentArea').value.trim(); if (!conteudo) { alert('Cole o conteúdo primeiro!'); return; } if (conteudo.length < 50) { alert('Conteúdo muito curto!'); return; } ultimoConteudoManualCapturado = conteudo; appendMessage('system', '📘 Analisando página do Manual...'); const conversa = getConversaAtiva(); if (conversa) { conversa.contexto.push({ role: 'user', content: `[MANUAL TÉCNICO]: ${conteudo.substring(0, 3000)}` }); salvarConversas(); } document.getElementById('searchInput').value = 'Analise esta página do manual'; document.getElementById('manualContentArea').value = ''; document.getElementById('manualStatus').textContent = '✅ Enviado para IA'; document.getElementById('manualStatus').style.color = '#166534'; await handleChat(); }
+
+// ═══════════════════════════════════════════════════════════
+//  REPOSITÓRIO DE DOCUMENTOS
+// ═══════════════════════════════════════════════════════════
+let repositorioCache = [], repositorioCarregado = false;
+
+function toggleRepositorioPanel() { repositorioPanelOpen = !repositorioPanelOpen; document.getElementById('repositorioPanel').classList.toggle('open', repositorioPanelOpen); document.getElementById('repositorioTab').classList.toggle('open', repositorioPanelOpen); if (repositorioPanelOpen) { carregarRepositorio().then(() => renderizarListaRepositorio()); } }
+
+async function carregarRepositorio() { if (repositorioCarregado && repositorioCache.length > 0) return repositorioCache; try { const response = await fetch(SCRIPT_URL + "?aba=Repositorio"); if (!response.ok) throw new Error("Erro"); const data = await response.json(); if (Array.isArray(data)) { repositorioCache = data; } else if (data.erro) { console.warn("Repositório:", data.erro); repositorioCache = []; } repositorioCarregado = true; console.log(`📁 Repositório: ${repositorioCache.length} arquivos`); return repositorioCache; } catch (e) { repositorioCache = []; repositorioCarregado = true; return []; } }
+
+async function extrairTextoRepositorio(fileId) { try { const r = await fetch(`${SCRIPT_URL}?aba=Repositorio&action=extrairTexto&fileId=${fileId}`); return await r.json(); } catch (e) { return null; } }
+
+async function buscarNoRepositorio(query) { await carregarRepositorio(); const termos = query.toLowerCase().split(' '); return repositorioCache.filter(a => { const n = a.nome.toLowerCase(); return termos.some(t => n.includes(t)); }).slice(0, 5); }
+
+async function carregarDadosRepositorio() { try { await carregarRepositorio(); if (repositorioCache.length === 0) return; console.log(`📁 Pré-carregando ${repositorioCache.length} arquivos...`); const artigosCache = JSON.parse(localStorage.getItem(REPO_ARTIGOS_KEY) || '{}'); let carregados = 0; for (const arquivo of repositorioCache) { if (artigosCache[arquivo.id]) { const d = new Date(artigosCache[arquivo.id].data); if ((Date.now() - d.getTime()) / 86400000 < 3) continue; } const tipo = (arquivo.tipo || '').toLowerCase(); if (!['pdf', 'document', 'text', 'spreadsheet', 'presentation'].some(t => tipo.includes(t))) continue; try { const r = await extrairTextoRepositorio(arquivo.id); if (r && r.texto && r.texto.length > 100) { artigosCache[arquivo.id] = { titulo: arquivo.nome, conteudo: r.texto.substring(0, 10000), data: new Date().toISOString() }; carregados++; await new Promise(r => setTimeout(r, 2000)); } } catch (e) { } } localStorage.setItem(REPO_ARTIGOS_KEY, JSON.stringify(artigosCache)); console.log(`📁 Pré-carregamento: ${carregados} novos`); } catch (e) { } }
+
+async function buscarConhecimentoRelevanteNoRepositorio(query) { try { await carregarRepositorio(); if (repositorioCache.length === 0) return null; const termos = query.toLowerCase().split(' ').filter(t => t.length > 2); const relevantes = repositorioCache.filter(a => { const n = a.nome.toLowerCase(); return termos.some(t => n.includes(t)); }); if (relevantes.length === 0) return null; const artigosCache = JSON.parse(localStorage.getItem(REPO_ARTIGOS_KEY) || '{}'); const textos = []; for (let i = 0; i < Math.min(relevantes.length, 3); i++) { const a = relevantes[i]; if (artigosCache[a.id]) { textos.push({ nome: a.nome, texto: artigosCache[a.id].conteudo }); continue; } try { const r = await extrairTextoRepositorio(a.id); if (r && r.texto && r.texto.length > 100) { textos.push({ nome: a.nome, texto: r.texto }); artigosCache[a.id] = { titulo: a.nome, conteudo: r.texto.substring(0, 10000), data: new Date().toISOString() }; } } catch (e) { } } localStorage.setItem(REPO_ARTIGOS_KEY, JSON.stringify(artigosCache)); if (textos.length === 0) return null; let cr = "\n=== 📁 CONHECIMENTO DO REPOSITÓRIO ===\n"; textos.forEach((d, i) => { cr += `[DOC ${i + 1}: ${d.nome}]\n${d.texto.substring(0, 2000)}\n---\n`; }); return cr; } catch (e) { return null; } }
+
+async function renderizarListaRepositorio(arquivos = null) { const lista = document.getElementById('repositorioLista'); if (!arquivos) arquivos = repositorioCache; if (!arquivos || !Array.isArray(arquivos) || arquivos.length === 0) { lista.innerHTML = `<div style="text-align:center;padding:40px;"><div style="font-size:48px;">📭</div><p>Nenhum arquivo</p><button onclick="sincronizarRepositorio()" style="padding:10px 20px;background:#059669;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;">🔄 Sincronizar</button></div>`; document.getElementById('repositorioStatus').textContent = '📁 Vazio'; return; } lista.innerHTML = arquivos.map(a => { const icone = (a.tipo || '').includes('pdf') ? '📄' : (a.tipo || '').includes('image') ? '🖼️' : (a.tipo || '').includes('video') ? '🎬' : (a.tipo || '').includes('spreadsheet') ? '📊' : (a.tipo || '').includes('document') ? '📝' : '📁'; const nome = a.nome || 'Sem nome'; return `<div style="padding:12px;margin:8px 0;background:white;border-radius:8px;border:1px solid var(--border);cursor:pointer;" onclick="aprenderDoRepositorio('${a.id}', '${escapeHtml(nome).replace(/'/g, "\\'")}')"><div style="display:flex;align-items:center;gap:10px;"><span style="font-size:24px;">${icone}</span><div style="flex:1;min-width:0;"><div style="font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(nome)}</div><div style="font-size:11px;color:var(--text-muted);">${formatarTamanho(a.tamanho)} • ${a.data ? new Date(a.data).toLocaleDateString('pt-BR') : 'N/A'}</div></div><button onclick="event.stopPropagation();aprenderDoRepositorio('${a.id}', '${escapeHtml(nome).replace(/'/g, "\\'")}')" style="background:var(--primary);color:white;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;">🤖</button></div></div>`; }).join(''); document.getElementById('repositorioStatus').textContent = `📁 ${arquivos.length} arquivo(s)`; }
+
+async function sincronizarRepositorio() { appendMessage('system', '🔄 Sincronizando repositório...'); try { await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "sincronizarRepositorio" }) }); repositorioCarregado = false; repositorioCache = []; appendMessage('system', '✅ Sincronização concluída!'); await carregarRepositorio(); renderizarListaRepositorio(); } catch (e) { appendMessage('system', '⚠️ Erro ao sincronizar.'); } }
+
+async function buscarERenderizarRepositorio() { const q = document.getElementById('repositorioSearchInput').value.trim(); if (!q) { renderizarListaRepositorio(); return; } renderizarListaRepositorio(await buscarNoRepositorio(q)); }
+
+function formatarTamanho(bytes) { if (!bytes) return 'N/A'; if (bytes < 1024) return bytes + ' B'; if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB'; return (bytes / 1048576).toFixed(1) + ' MB'; }
+
+async function aprenderDoRepositorio(fileId, nome) { appendMessage('system', `📁 Aprendendo: ${nome}...`); const loading = appendLoadingCard("Extraindo..."); try { const r = await fetch(`${SCRIPT_URL}?aba=Repositorio&action=extrairTexto&fileId=${fileId}`); const d = await r.json(); loading.remove(); if (!d || d.erro) { appendMessage('system', '⚠️ Erro ao extrair.'); return; } if (!d.texto || d.texto.length < 50) { appendMessage('system', '⚠️ Texto muito curto.'); return; } const conversa = getConversaAtiva(); if (conversa) { conversa.contexto.push({ role: 'user', content: `[REPOSITÓRIO: ${nome}]: ${d.texto.substring(0, 3000)}` }); salvarConversas(); } appendMessage('system', `✅ Extraído: ${d.tamanhoTexto || d.texto.length} caracteres`); document.getElementById('searchInput').value = `Analise o documento "${nome}" do repositório`; } catch (e) { loading.remove(); appendMessage('system', '⚠️ Erro ao acessar arquivo.'); } }
+
+// Atalhos
+document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey && e.shiftKey && e.key === 'C') { e.preventDefault(); toggleCentralPanel(); }
+    if (e.ctrlKey && e.shiftKey && e.key === 'B') { e.preventDefault(); toggleBlogPanel(); }
+    if (e.ctrlKey && e.shiftKey && e.key === 'M') { e.preventDefault(); toggleManualPanel(); }
+    if (e.ctrlKey && e.shiftKey && e.key === 'R') { e.preventDefault(); toggleRepositorioPanel(); }
+});
+
+// Monitora Ctrl+V para colar nos painéis
+document.addEventListener('paste', function(e) {
+    if (blogPanelOpen) { setTimeout(() => { const ta = document.getElementById('blogContentArea'); if (ta && document.activeElement !== ta) { const t = (e.clipboardData || window.clipboardData).getData('text'); if (t && t.length > 200) { ta.value = t; document.getElementById('blogStatus').textContent = '📋 Texto colado!'; document.getElementById('blogStatus').style.color = '#166534'; } } }, 100); }
+    if (manualPanelOpen) { setTimeout(() => { const ta = document.getElementById('manualContentArea'); if (ta && document.activeElement !== ta) { const t = (e.clipboardData || window.clipboardData).getData('text'); if (t && t.length > 200) { ta.value = t; document.getElementById('manualStatus').textContent = '📋 Texto colado!'; document.getElementById('manualStatus').style.color = '#166534'; } } }, 100); }
+});
 </script>
+</body>
+</html>
