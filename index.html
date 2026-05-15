@@ -890,6 +890,9 @@
     <div class="central-footer">
         <span id="centralStatus" class="status-text">🔒 Faça login na Central de Ajuda para navegar</span>
         <div style="display:flex;gap:6px;">
+			<button onclick="abrirCentralNovaAba()" style="padding:10px 20px;background:#2563eb;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-family:inherit;font-size:13px;">
+                🌐 Clique aqui para fazer o login e depois clica em 🏠 Home no topo.
+            </button>
             <button class="btn-central-action btn-capturar" onclick="capturarConteudoCentral()">📋 Capturar Artigo</button>
             <button class="btn-central-action btn-enviar-ia" onclick="enviarConteudoParaIA()">🤖 Enviar para IA</button>
         </div>
@@ -1319,6 +1322,9 @@ document.addEventListener('paste', function(e) {
 // ═══════════════════════════════════════════════════════════
 //  CENTRAL DE AJUDA INTEGRADA
 // ═══════════════════════════════════════════════════════════
+
+const CENTRAL_BASE_URL = 'https://centraldeajuda.e-login.net/';
+
 function toggleCentralPanel() {
     centralPanelOpen = !centralPanelOpen;
     document.getElementById('centralPanel').classList.toggle('open', centralPanelOpen);
@@ -1330,6 +1336,13 @@ function navegarCentral(url) {
     document.getElementById('centralIframe').src = url;
     document.getElementById('centralStatus').textContent = '🌐 Navegando...';
     document.getElementById('centralStatus').style.color = 'var(--text-muted)';
+}
+
+function abrirCentralNovaAba(pagina) {
+    const url = pagina || CENTRAL_BASE_URL;
+    window.open(url, '_blank');
+    document.getElementById('manualStatus').textContent = '📘 Manual aberto em nova aba';
+    document.getElementById('manualStatus').style.color = '#166534';
 }
 
 function pesquisarNaCentral() {
