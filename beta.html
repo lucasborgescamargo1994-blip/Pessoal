@@ -413,16 +413,14 @@
 }
 .yt-player {
     width: 100%; 
-    min-height: 280px; 
+    min-height: 300px; 
     background: #000; 
     flex-shrink: 0;
-    position: relative;
-    padding-bottom: 56.25%; /* Proporção 16:9 */
 }
 .yt-player iframe {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
+    width: 100%; 
+    height: 300px;
+    border: none;
 }
 .yt-video-list {
     flex: 1; overflow-y: auto; padding: 12px;
@@ -1608,130 +1606,61 @@ document.addEventListener('paste', function(e) {
 });
 
 // ═══════════════════════════════════════════════════════════
-//  YOUTUBE BSOFT INTEGRADO (iframe direto - sem API)
+//  YOUTUBE BSOFT INTEGRADO (versão iframe puro - sem CORS)
 // ═══════════════════════════════════════════════════════════
 let ytPanelOpen = false;
 let ytCurrentVideoId = null;
-let ytVideosCache = [];
 const YT_CHANNEL_ID = 'UCbmFIPD1wvpBlQuDIA5h-Cg';
+const YT_CHANNEL_URL = 'https://www.youtube.com/@bsoft';
 
 function toggleYTPanel() {
     ytPanelOpen = !ytPanelOpen;
     document.getElementById('ytPanel').classList.toggle('open', ytPanelOpen);
     document.getElementById('ytTab').classList.toggle('open', ytPanelOpen);
     
-    if (ytPanelOpen && ytVideosCache.length === 0) {
-        carregarVideosCanal();
+    if (ytPanelOpen) {
+        // Sempre carrega o canal quando abre
+        carregarCanalNoPlayer();
     }
 }
 
-function abrirCanalYT() {
-    // Abre o canal DENTRO do iframe do player
+function carregarCanalNoPlayer() {
     const playerDiv = document.getElementById('ytPlayer');
+    // Usa o formato de URL do YouTube para carregar o canal
+    // UU + ID do canal (sem o UC) = uploads playlist
+    const uploadsPlaylist = 'UU' + YT_CHANNEL_ID.substring(2);
+    
     playerDiv.innerHTML = `
         <iframe 
             width="100%" height="100%" 
-            src="https://www.youtube.com/embed?listType=playlist&list=UU${YT_CHANNEL_ID.substring(2)}&autoplay=0" 
+            src="https://www.youtube.com/embed?listType=playlist&list=${uploadsPlaylist}" 
             frameborder="0" 
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
             allowfullscreen>
         </iframe>`;
-    document.getElementById('ytStatus').textContent = '🎬 Canal Bsoft carregado';
-    document.getElementById('ytStatus').style.color = '#166534';
-}
-
-async function carregarVideosCanal() {
-    document.getElementById('ytStatus').textContent = '🎬 Carregando vídeos...';
     
-    try {
-        // Usa RSS feed do YouTube (gratuito, sem API key)
-        const rssUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${YT_CHANNEL_ID}`;
-        const response = await fetch(rssUrl);
-        
-        if (!response.ok) throw new Error('Erro ao carregar');
-        
-        const text = await response.text();
-        const parser = new DOMParser();
-        const xml = parser.parseFromString(text, 'text/xml');
-        const entries = xml.querySelectorAll('entry');
-        
-        ytVideosCache = [];
-        entries.forEach(entry => {
-            const titulo = entry.querySelector('title')?.textContent || '';
-            const videoUrl = entry.querySelector('link')?.getAttribute('href') || '';
-            const videoId = videoUrl.split('v=')[1] || '';
-            const publicado = entry.querySelector('published')?.textContent || '';
-            const thumbnail = entry.querySelector('media\\:thumbnail, thumbnail')?.getAttribute('url') || 
-                              `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
-            
-            if (videoId) {
-                ytVideosCache.push({
-                    id: { videoId: videoId },
-                    snippet: {
-                        title: titulo,
-                        publishedAt: publicado,
-                        channelTitle: 'Bsoft',
-                        thumbnails: { medium: { url: thumbnail } }
-                    }
-                });
-            }
-        });
-        
-        if (ytVideosCache.length > 0) {
-            renderizarListaVideos(ytVideosCache);
-            document.getElementById('ytStatus').textContent = `🎬 ${ytVideosCache.length} vídeos carregados`;
-            document.getElementById('ytStatus').style.color = '#166534';
-        } else {
-            document.getElementById('ytVideoList').innerHTML = `
-                <div style="text-align:center;padding:40px;color:var(--text-muted);">
-                    <p>Nenhum vídeo encontrado</p>
-                    <button onclick="abrirCanalYT()" style="margin-top:12px;padding:10px 20px;background:#ff0000;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-family:inherit;">🎬 Carregar Canal</button>
-                </div>`;
-        }
-    } catch(e) {
-        console.error("Erro RSS:", e);
-        // Fallback: carrega o canal via iframe
-        abrirCanalYT();
-        document.getElementById('ytVideoList').innerHTML = `
-            <div style="text-align:center;padding:20px;color:var(--text-muted);">
-                <p>Clique nos vídeos do canal acima para assistir</p>
-            </div>`;
-    }
+    document.getElementById('ytStatus').textContent = '🎬 Canal Bsoft carregado - Use a busca abaixo';
+    document.getElementById('ytStatus').style.color = '#166534';
+    
+    // Mostra instruções na lista
+    document.getElementById('ytVideoList').innerHTML = `
+        <div style="text-align:center;padding:20px;color:var(--text-muted);">
+            <p style="margin-bottom:12px;">📺 <b>Canal @bsoft carregado no player acima</b></p>
+            <p style="font-size:12px;">Use o player para navegar pelos vídeos</p>
+            <p style="font-size:12px;">Ou use a busca abaixo para pesquisar</p>
+        </div>`;
 }
 
 function pesquisarNoYT() {
     const query = document.getElementById('ytSearchInput').value.trim();
     
     if (!query) {
-        renderizarListaVideos(ytVideosCache);
-        document.getElementById('ytStatus').textContent = `🎬 ${ytVideosCache.length} vídeos`;
+        carregarCanalNoPlayer();
+        document.getElementById('ytStatus').textContent = '🎬 Canal Bsoft';
         return;
     }
     
-    // Filtra localmente
-    const filtrados = ytVideosCache.filter(v => 
-        v.snippet.title.toLowerCase().includes(query.toLowerCase())
-    );
-    
-    if (filtrados.length > 0) {
-        renderizarListaVideos(filtrados);
-        document.getElementById('ytStatus').textContent = `🔍 ${filtrados.length} vídeos encontrados`;
-        document.getElementById('ytStatus').style.color = '#ff0000';
-    } else {
-        // Se não encontrou localmente, pesquisa no YouTube via iframe
-        document.getElementById('ytVideoList').innerHTML = `
-            <div style="text-align:center;padding:40px;color:var(--text-muted);">
-                <p>Nenhum vídeo local encontrado para "${query}"</p>
-                <button onclick="pesquisarNoYTExterno('${query.replace(/'/g, "\\'")}')" 
-                        style="margin-top:12px;padding:10px 20px;background:#ff0000;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-family:inherit;">
-                    🔍 Pesquisar no YouTube
-                </button>
-            </div>`;
-    }
-}
-
-function pesquisarNoYTExterno(query) {
-    // Abre pesquisa do YouTube DENTRO do iframe
+    // Carrega a pesquisa DIRETO no player
     const playerDiv = document.getElementById('ytPlayer');
     playerDiv.innerHTML = `
         <iframe 
@@ -1741,37 +1670,28 @@ function pesquisarNoYTExterno(query) {
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
             allowfullscreen>
         </iframe>`;
+    
     document.getElementById('ytStatus').textContent = '🔍 Pesquisando: ' + query;
     document.getElementById('ytStatus').style.color = '#ff0000';
+    
+    // Mostra links úteis
+    document.getElementById('ytVideoList').innerHTML = `
+        <div style="text-align:center;padding:20px;color:var(--text-muted);">
+            <p style="margin-bottom:12px;">🔍 <b>Pesquisando por "${query}"</b></p>
+            <p style="font-size:12px;">Use o player acima para navegar pelos resultados</p>
+            <button onclick="abrirPesquisaExterna('${query.replace(/'/g, "\\'")}')" 
+                    style="margin-top:12px;padding:10px 20px;background:#ff0000;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-family:inherit;">
+                🌐 Abrir pesquisa no YouTube
+            </button>
+        </div>`;
 }
 
-function renderizarListaVideos(videos) {
-    const lista = document.getElementById('ytVideoList');
-    
-    if (!videos || videos.length === 0) {
-        lista.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);">Nenhum vídeo</div>';
-        return;
-    }
-    
-    lista.innerHTML = videos.map(video => {
-        const videoId = video.id.videoId;
-        const titulo = video.snippet.title;
-        const thumbnail = video.snippet.thumbnails?.medium?.url || 
-                          `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
-        const data = new Date(video.snippet.publishedAt).toLocaleDateString('pt-BR');
-        
-        return `
-            <div class="yt-video-item${ytCurrentVideoId === videoId ? ' active' : ''}" 
-                 onclick="reproduzirVideo('${videoId}', '${escapeHtml(titulo).replace(/'/g, "\\'")}')">
-                <img src="${thumbnail}" alt="${escapeHtml(titulo)}" 
-                     onerror="this.src='https://img.youtube.com/vi/${videoId}/default.jpg'" 
-                     loading="lazy">
-                <div class="yt-video-info">
-                    <div class="yt-title">${escapeHtml(titulo)}</div>
-                    <div class="yt-meta">Bsoft • ${data}</div>
-                </div>
-            </div>`;
-    }).join('');
+function abrirPesquisaExterna(query) {
+    window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(query + ' Bsoft')}`, '_blank');
+}
+
+function abrirCanalYT() {
+    window.open(YT_CHANNEL_URL + '/videos', '_blank');
 }
 
 function reproduzirVideo(videoId, titulo) {
@@ -1790,37 +1710,43 @@ function reproduzirVideo(videoId, titulo) {
     document.getElementById('ytStatus').textContent = '▶️ ' + titulo.substring(0, 50);
     document.getElementById('ytStatus').style.color = '#166534';
     
-    // Atualiza destaque na lista
-    renderizarListaVideos(ytVideosCache);
-    
-    // Salva info para transcrição
+    // Salva para transcrição
     window._ytVideoId = videoId;
     window._ytVideoTitle = titulo;
 }
 
 function obterTranscricaoYT() {
     if (!ytCurrentVideoId) {
-        alert('Selecione um vídeo primeiro!');
+        alert('Selecione um vídeo primeiro! Clique em um vídeo no player ou use a busca.');
         return;
     }
     
-    // Abre o vídeo no YouTube com parâmetro para mostrar transcrição
-    window.open(`https://www.youtube.com/watch?v=${ytCurrentVideoId}`, '_blank');
-    
-    document.getElementById('ytStatus').textContent = '📝 Vídeo aberto - Cole a transcrição abaixo';
+    // Mostra área para colar transcrição
+    document.getElementById('ytStatus').textContent = '📝 Cole a transcrição abaixo';
     document.getElementById('ytStatus').style.color = '#b45309';
     
-    // Cria/seleciona área de transcrição
     let area = document.getElementById('ytTranscriptArea');
     if (!area) {
         area = document.createElement('div');
         area.id = 'ytTranscriptArea';
-        area.style.cssText = 'padding:12px;background:#fffbeb;border-top:2px solid #f59e0b;';
+        area.style.cssText = 'padding:12px;background:#fffbeb;border-top:2px solid #f59e0b;margin-top:8px;';
         area.innerHTML = `
-            <label style="font-size:11px;font-weight:600;">📝 Cole a transcrição do vídeo:</label>
-            <textarea id="ytTranscriptInput" placeholder="No YouTube: '...' > 'Mostrar transcrição' > Copie e cole aqui..." 
-                      style="width:100%;min-height:80px;padding:8px;margin:6px 0;border:1px solid #f59e0b;border-radius:6px;font-family:inherit;font-size:12px;resize:vertical;"></textarea>
-            <button onclick="enviarTranscricaoManual()" style="padding:8px 16px;background:var(--primary);color:white;border:none;border-radius:6px;cursor:pointer;font-weight:600;">🤖 Enviar para IA</button>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <label style="font-size:11px;font-weight:600;">📝 Transcrição do vídeo:</label>
+                <button onclick="document.getElementById('ytTranscriptArea').remove()" style="background:none;border:none;cursor:pointer;font-size:14px;">✕</button>
+            </div>
+            <textarea id="ytTranscriptInput" placeholder="Para obter a transcrição:&#10;1. Clique no botão abaixo para abrir o vídeo&#10;2. No YouTube, clique em '...' abaixo do vídeo&#10;3. Selecione 'Mostrar transcrição'&#10;4. Copie o texto e cole aqui..." 
+                      style="width:100%;min-height:100px;padding:8px;margin:6px 0;border:1px solid #f59e0b;border-radius:6px;font-family:inherit;font-size:12px;resize:vertical;"></textarea>
+            <div style="display:flex;gap:8px;">
+                <button onclick="window.open('https://www.youtube.com/watch?v=${ytCurrentVideoId}', '_blank')" 
+                        style="padding:8px 16px;background:#ff0000;color:white;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-family:inherit;font-size:12px;">
+                    ▶️ Abrir vídeo no YouTube
+                </button>
+                <button onclick="enviarTranscricaoManual()" 
+                        style="padding:8px 16px;background:var(--primary);color:white;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-family:inherit;font-size:12px;">
+                    🤖 Enviar para IA
+                </button>
+            </div>
         `;
         const videoList = document.getElementById('ytVideoList');
         videoList.insertBefore(area, videoList.firstChild);
@@ -1833,11 +1759,11 @@ async function enviarTranscricaoManual() {
     const transcricao = input?.value?.trim();
     
     if (!transcricao || transcricao.length < 20) {
-        alert('Cole a transcrição do vídeo primeiro!\n\nNo YouTube: clique em "..." abaixo do vídeo > "Mostrar transcrição" > selecione e copie o texto.');
+        alert('Cole a transcrição do vídeo primeiro!\n\nClique em "Abrir vídeo no YouTube" > "..." > "Mostrar transcrição" > copie e cole aqui.');
         return;
     }
     
-    appendMessage('system', '🎬 <strong>Analisando transcrição do vídeo...</strong>');
+    appendMessage('system', '🎬 <strong>Analisando transcrição do vídeo da Bsoft...</strong>');
     
     const conversa = getConversaAtiva();
     if (conversa) {
@@ -1848,7 +1774,7 @@ async function enviarTranscricaoManual() {
         salvarConversas();
     }
     
-    document.getElementById('searchInput').value = `Analise esta transcrição do vídeo "${window._ytVideoTitle || ''}" e me explique os pontos principais`;
+    document.getElementById('searchInput').value = `Analise esta transcrição do vídeo "${window._ytVideoTitle || ''}" da Bsoft e me explique os pontos principais`;
     document.getElementById('ytStatus').textContent = '✅ Transcrição enviada para IA';
     document.getElementById('ytStatus').style.color = '#166534';
     
