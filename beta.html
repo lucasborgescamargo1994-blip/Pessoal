@@ -707,8 +707,6 @@
         <div id="adminPanel">
             <strong style="color:#92400e;font-size:13px;">🛠️ Painel Administrativo</strong>
             <div style="display:flex;align-items:center;gap:12px;padding:10px;background:#fef3c7;border-radius:8px;border:1px solid #fde68a;">
-                <div style="flex:1;"><strong style="font-size:12px;color:#92400e;">🔧 Modo Depuração</strong><p style="font-size:10px;color:#78716c;margin:2px 0 0;">Quando ATIVO, não gera logs na planilha</p></div>
-                <button id="btnModoDepuracao" onclick="toggleModoDepuracao()" style="padding:8px 16px;border-radius:7px;border:2px solid #f59e0b;cursor:pointer;font-family:inherit;font-weight:700;font-size:12px;transition:all 0.2s;background:#fef3c7;color:#92400e;">🟢 ON</button>
             </div>
             <div style="border-top:1px solid var(--primary-border);padding-top:8px;margin-top:4px;"><strong style="color:#92400e;font-size:13px;">📝 Adicionar Conhecimento</strong></div>
             <input type="text" id="newError" placeholder="Título do Erro / Dúvida">
@@ -996,20 +994,12 @@ const SCRIPT_URL="https://script.google.com/macros/s/AKfycbykgMWVr-exeV8ozl5DRQQ
 const CORRECT_PASSWORD="camargo1994";
 const recognition=new(window.SpeechRecognition||window.webkitSpeechRecognition)();recognition.lang='pt-BR';recognition.continuous=true;recognition.interimResults=false;
 
-// ═══════════════════════════════════════════════════════════
-//  MODO DEPURAÇÃO
-// ═══════════════════════════════════════════════════════════
-let modoDepuracao=false;
-function carregarModoDepuracao(){try{modoDepuracao=localStorage.getItem('bsoft_modo_depuracao')==='true';}catch(e){modoDepuracao=false;}atualizarBotaoDepuracao();}
-function toggleModoDepuracao(){modoDepuracao=!modoDepuracao;localStorage.setItem('bsoft_modo_depuracao',modoDepuracao.toString());atualizarBotaoDepuracao();}
-function atualizarBotaoDepuracao(){const b=document.getElementById('btnModoDepuracao');if(!b)return;if(modoDepuracao){b.innerHTML='🔴 OFF';b.style.background='#fef2f2';b.style.color='#991b1b';b.style.borderColor='#ef4444';}else{b.innerHTML='🟢 ON';b.style.background='#f0fdf4';b.style.color='#166534';b.style.borderColor='#22c55e';}}
 
 // ═══════════════════════════════════════════════════════════
 //  INICIALIZAÇÃO (REPOSITÓRIO CARREGA PRIMEIRO)
 // ═══════════════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', async () => {
     carregarConversas();
-    carregarModoDepuracao();
     carregarMLKnowledge();
     loadMCPConfig();
     
@@ -1355,12 +1345,73 @@ function appendMessage(sender, text) { const s = document.getElementById('chatSt
 function fillAndSend(txt) { document.getElementById('searchInput').value = txt; handleChat(); }
 
 // ═══════════════════════════════════════════════════════════
-//  FEEDBACK
+//  FEEDBACK (CORRIGIDO - Lógica do V16 restaurada)
 // ═══════════════════════════════════════════════════════════
-let currentLogTimestamp = null, perguntaPrimariaAtual = "";
-function logSearch(query, found) { const c = getConversaAtiva(); if (!c) return; const tpu = c.mensagens.filter(m => m.sender === 'user').length; if (tpu === 1) { currentLogTimestamp = Date.now(); perguntaPrimariaAtual = query; c.primeiraPergunta = query; c.logTimestamp = currentLogTimestamp; salvarConversas(); if (modoDepuracao) { console.log("🔧 [DEPURAÇÃO] Log NÃO enviado:", query); return; } console.log("📝 LOG CRIADO:", query); try { fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "addLog", pergunta: query, encontrou: found ? "Sim" : "Não", feedback: "Pendente", timestamp: currentLogTimestamp }) }); } catch (e) {} } else { console.log("⏭️ Log ignorado:", query.substring(0, 50)); } }
-async function saveFeedback(li, type, btn) { const fa = btn.parentElement; const card = fa.closest('.answer-card'); const c = getConversaAtiva(); const pp = c?.primeiraPergunta || perguntaPrimariaAtual || lastQuery || "?"; const tl = c?.logTimestamp || currentLogTimestamp; if (!modoDepuracao) { try { fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "updateFeedback", pergunta: pp, feedback: type === 'positivo' ? "Positivo" : "Negativo", timestamp: tl }) }); } catch (e) {} } if (type === 'positivo') { if (card && card._dadosResposta && pp) { await salvarRespostaFixa(pp, card._dadosResposta); fa.innerHTML = "<span style='color:#166534;font-weight:700;'>✅ Obrigado! Resposta fixada.</span>"; } else { fa.innerHTML = "<span style='color:#166534;font-weight:700;'>Obrigado! 👍</span>"; } } else { fa.innerHTML = `<div class="reason-box" style="display:flex;"><textarea id="reason_${li}" placeholder="O que faltou?"></textarea><button onclick="sendDetailedFeedback(${li},this)">Enviar</button></div>`; } }
-async function sendDetailedFeedback(li, btn) { const ta = document.getElementById(`reason_${li}`); const m = ta.value.trim(); if (!m) return alert("Descreva!"); const c = getConversaAtiva(); const pp = c?.primeiraPergunta || perguntaPrimariaAtual || lastQuery || "?"; const tl = c?.logTimestamp || currentLogTimestamp; if (!modoDepuracao) { fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "updateFeedback", pergunta: pp, encontrou: "Não", feedback: "Negativo", timestamp: tl }) }); } btn.parentElement.parentElement.innerHTML = "<span style='color:#991b1b;font-weight:700;'>Feedback enviado! ✅</span>"; }
+let currentLogTimestamp = null;
+let perguntaPrimariaAtual = "";
+
+function logSearch(query, found) {
+    const conversa = getConversaAtiva();
+    if (!conversa) return;
+    
+    // SÓ CRIA LOG se for a PRIMEIRA pergunta da conversa
+    const totalPerguntasUser = conversa.mensagens.filter(m => m.sender === 'user').length;
+    
+    if (totalPerguntasUser === 1) {
+        currentLogTimestamp = Date.now();
+        perguntaPrimariaAtual = query;
+        conversa.primeiraPergunta = query;
+        conversa.logTimestamp = currentLogTimestamp;
+        salvarConversas();
+        
+        
+        
+        console.log("📝 LOG CRIADO para pergunta primária:", query);
+        
+        try { 
+            fetch(SCRIPT_URL, { 
+                method:'POST', 
+                mode:'no-cors', 
+                body: JSON.stringify({ 
+                    action: "addLog",
+                    pergunta: query,
+                    encontrou: found ? "Sim" : "Não", 
+                    feedback: "Pendente",
+                    timestamp: currentLogTimestamp
+                }) 
+            }); 
+        } catch(e) { console.error(e); }
+    } else {
+        console.log("⏭️ Log ignorado (não é a primeira pergunta):", query.substring(0, 50));
+    }
+}
+
+async function saveFeedback(logIndex, type, btn) {
+    const feedbackArea = btn.parentElement;
+    const card = feedbackArea.closest('.answer-card');
+
+    const conversa = getConversaAtiva();
+    const perguntaParaLog = conversa?.primeiraPergunta || perguntaPrimariaAtual || lastQuery || "?";
+    const timestampLog = conversa?.logTimestamp || currentLogTimestamp;
+    
+    console.log("📝 Feedback associado à pergunta primária:", perguntaParaLog, "| timestamp:", timestampLog);
+
+    
+
+    if (type === 'positivo') {
+        if (card && card._dadosResposta && perguntaParaLog) {
+            await salvarRespostaFixa(perguntaParaLog, card._dadosResposta);
+            feedbackArea.innerHTML = "<span style='color:#166534;font-weight:700;'>✅ Obrigado! Resposta fixada para todos os usuários.</span>";
+        } else {
+            feedbackArea.innerHTML = "<span style='color:#166534;font-weight:700;'>Obrigado! 👍</span>";
+        }
+    } else {
+        feedbackArea.innerHTML = `<div class="reason-box" style="display:flex;">
+            <textarea id="reason_${logIndex}" placeholder="O que faltou na resposta? Descreva o problema para melhorarmos."></textarea>
+            <button onclick="sendDetailedFeedback(${logIndex},this)">Enviar Feedback</button>
+        </div>`;
+    }
+}
 
 // ═══════════════════════════════════════════════════════════
 //  ADMIN
