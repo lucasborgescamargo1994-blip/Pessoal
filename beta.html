@@ -461,6 +461,306 @@
 .btn-yt-transcricao:hover { background: #ffcccc; }
 .btn-yt-enviar { background: var(--primary); color: white; }
 .btn-yt-enviar:hover { background: var(--primary-dark); }
+
+/* ═══════════════════════════════════════════════════════
+   SUPORTE REMOTO IA - ESTILOS
+═══════════════════════════════════════════════════════ */
+
+/* Botão flutuante de ativar suporte remoto */
+#btnRemotoIA {
+    position: fixed;
+    bottom: 90px;
+    right: 18px;
+    z-index: 3000;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #7c3aed, #5b21b6);
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 22px;
+    box-shadow: 0 4px 20px rgba(124,58,237,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    animation: pulseRemoto 2.5s ease-in-out infinite;
+}
+#btnRemotoIA:hover { transform: scale(1.12); box-shadow: 0 6px 28px rgba(124,58,237,0.7); }
+#btnRemotoIA.ativo { background: linear-gradient(135deg, #dc2626, #b91c1c); animation: none; }
+@keyframes pulseRemoto {
+    0%,100% { box-shadow: 0 4px 20px rgba(124,58,237,0.5); }
+    50% { box-shadow: 0 4px 32px rgba(124,58,237,0.9), 0 0 0 8px rgba(124,58,237,0.15); }
+}
+
+/* Popup flutuante do chat de suporte remoto */
+#remotoPopup {
+    position: fixed;
+    bottom: 155px;
+    right: 18px;
+    width: 360px;
+    max-height: 520px;
+    background: white;
+    border-radius: 18px;
+    box-shadow: 0 12px 50px rgba(0,0,0,0.25), 0 0 0 1px rgba(124,58,237,0.15);
+    z-index: 3001;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    animation: slideUpPopup 0.25s cubic-bezier(0.34,1.56,0.64,1);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+#remotoPopup.visivel { display: flex; }
+@keyframes slideUpPopup {
+    from { opacity:0; transform: translateY(20px) scale(0.95); }
+    to { opacity:1; transform: translateY(0) scale(1); }
+}
+
+.remoto-header {
+    background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+    color: white;
+    padding: 13px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+.remoto-header-icon {
+    width: 34px; height: 34px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+}
+.remoto-header-info { flex: 1; min-width: 0; }
+.remoto-header-info h4 { font-size: 13px; font-weight: 700; margin: 0; }
+.remoto-header-info p { font-size: 10px; opacity: 0.8; margin: 2px 0 0; }
+.remoto-header-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.remoto-header-actions button {
+    background: rgba(255,255,255,0.15);
+    border: none; color: white; cursor: pointer;
+    padding: 5px 9px; border-radius: 7px; font-size: 12px;
+    font-family: inherit; transition: background 0.2s;
+}
+.remoto-header-actions button:hover { background: rgba(255,255,255,0.3); }
+
+/* Status barra (tela compartilhada) */
+.remoto-status-bar {
+    padding: 8px 14px;
+    background: #faf5ff;
+    border-bottom: 1px solid #ede9fe;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: #6d28d9;
+    flex-shrink: 0;
+}
+.remoto-status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #dc2626; flex-shrink: 0;
+    animation: blinkDot 1s ease-in-out infinite;
+}
+.remoto-status-dot.conectado { background: #16a34a; animation: none; }
+.remoto-status-dot.aguardando { background: #f59e0b; }
+@keyframes blinkDot { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+/* Preview miniatura da tela */
+#remotoPreviewWrap {
+    padding: 8px 14px;
+    background: #1a0a00;
+    flex-shrink: 0;
+    display: none;
+    position: relative;
+}
+#remotoPreviewWrap.visivel { display: block; }
+#remotoVideoPreview {
+    width: 100%; border-radius: 8px;
+    max-height: 120px;
+    object-fit: contain;
+    background: #000;
+}
+#remotoPreviewCanvas { display: none; }
+.remoto-preview-label {
+    position: absolute; top: 12px; left: 18px;
+    font-size: 9px; font-weight: 700;
+    background: rgba(220,38,38,0.9);
+    color: white; padding: 2px 7px; border-radius: 10px;
+    letter-spacing: 0.5px;
+}
+
+/* Área de mensagens do popup */
+#remotoChatMsgs {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 120px;
+    max-height: 220px;
+    background: #fafaf8;
+}
+#remotoChatMsgs::-webkit-scrollbar { width: 3px; }
+#remotoChatMsgs::-webkit-scrollbar-thumb { background: #ede9fe; border-radius: 10px; }
+
+.rm-msg {
+    padding: 8px 12px;
+    border-radius: 12px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    max-width: 90%;
+    word-break: break-word;
+    animation: slideIn 0.2s ease;
+}
+.rm-msg.ia {
+    align-self: flex-start;
+    background: white;
+    border: 1px solid #ede9fe;
+    color: #1c1917;
+    border-bottom-left-radius: 3px;
+}
+.rm-msg.user {
+    align-self: flex-end;
+    background: linear-gradient(135deg, #7c3aed, #6d28d9);
+    color: white;
+    border-bottom-right-radius: 3px;
+}
+.rm-msg.sistema {
+    align-self: center;
+    background: #faf5ff;
+    border: 1px solid #ede9fe;
+    color: #7c3aed;
+    font-size: 11px;
+    font-weight: 600;
+    text-align: center;
+    max-width: 95%;
+    border-radius: 10px;
+}
+
+/* Indicador de análise */
+.remoto-analisando {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px; background: #faf5ff;
+    border: 1px solid #ede9fe; border-radius: 12px;
+    font-size: 11.5px; color: #7c3aed; font-weight: 500;
+}
+.remoto-dots span {
+    display: inline-block; width: 5px; height: 5px;
+    background: #7c3aed; border-radius: 50; margin: 0 2px;
+    animation: dotBounce 1.2s ease-in-out infinite;
+}
+.remoto-dots span:nth-child(2) { animation-delay: 0.2s; }
+.remoto-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes dotBounce { 0%,80%,100%{transform:scale(0.6);opacity:0.4} 40%{transform:scale(1);opacity:1} }
+
+/* Input do popup */
+.remoto-input-area {
+    padding: 10px 12px;
+    border-top: 1px solid #ede9fe;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    background: white;
+    flex-shrink: 0;
+}
+.remoto-input-area input {
+    flex: 1;
+    padding: 9px 13px;
+    border: 1.5px solid #ede9fe;
+    border-radius: 22px;
+    font-family: inherit;
+    font-size: 12.5px;
+    outline: none;
+    transition: border 0.2s;
+}
+.remoto-input-area input:focus { border-color: #7c3aed; }
+.remoto-input-area button {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, #7c3aed, #6d28d9);
+    color: white; border: none; border-radius: 50%;
+    cursor: pointer; font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all 0.2s;
+}
+.remoto-input-area button:hover { transform: scale(1.08); }
+.remoto-input-area button.analisar {
+    width: auto; border-radius: 18px;
+    padding: 0 12px; font-size: 11px; font-weight: 700;
+}
+
+/* Overlay de dica visual sobre a tela compartilhada */
+#remotoOverlayDica {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 9999;
+    display: none;
+}
+.dica-balao {
+    position: absolute;
+    background: #7c3aed;
+    color: white;
+    padding: 8px 14px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    max-width: 280px;
+    box-shadow: 0 6px 24px rgba(124,58,237,0.5);
+    animation: dicaAppear 0.3s ease;
+}
+.dica-balao::before {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 20px;
+    border: 8px solid transparent;
+    border-top-color: #7c3aed;
+    border-bottom: 0;
+}
+.dica-cursor {
+    position: absolute;
+    width: 30px; height: 30px;
+    border: 3px solid #f97316;
+    border-radius: 50%;
+    box-shadow: 0 0 0 4px rgba(249,115,22,0.3);
+    animation: pulseCursor 1s ease-in-out infinite;
+}
+.dica-seta {
+    position: absolute;
+    font-size: 32px;
+    animation: dicaAppear 0.3s ease, seta-bounce 0.6s ease-in-out infinite alternate;
+    filter: drop-shadow(0 2px 6px rgba(124,58,237,0.6));
+}
+@keyframes dicaAppear { from{opacity:0;transform:scale(0.7)} to{opacity:1;transform:scale(1)} }
+@keyframes pulseCursor { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.4);opacity:0.5} }
+@keyframes seta-bounce { from{transform:translateY(0)} to{transform:translateY(-8px)} }
+
+/* Botão "Analisar Tela Agora" */
+.btn-analisar-tela {
+    width: 100%;
+    padding: 9px;
+    background: linear-gradient(135deg, #f97316, #ea6a0a);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    margin: 0 12px 10px;
+    width: calc(100% - 24px);
+}
+.btn-analisar-tela:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(249,115,22,0.4); }
+.btn-analisar-tela:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
     </style>
 </head>
 <body>
@@ -673,6 +973,7 @@
                 <span id="horarioBadge" style="font-size:10px;color:var(--text-muted);margin-left:8px;"></span>
             </div>
             <div class="header-actions">
+                <button class="btn-icon" onclick="abrirSuporteRemoto()" title="Suporte Remoto com IA" id="btnRemotoHeader" style="background:linear-gradient(135deg,#7c3aed,#5b21b6);color:white;border-color:#7c3aed;font-size:16px;">🖥️</button>
                 <button class="btn-icon" onclick="openMCP()" title="Configurar API (MCP)">⚙️</button>
                 <button class="btn-icon" onclick="openAdmin()" title="Admin">🔑</button>
             </div>
@@ -739,6 +1040,62 @@
                 <button class="send-btn" onclick="handleChat()" id="sendBtn" disabled>➤</button>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!--  SUPORTE REMOTO IA - POPUP FLUTUANTE                       -->
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<!-- Botão flutuante para abrir/fechar o suporte remoto -->
+<button id="btnRemotoIA" onclick="toggleRemotoPopup()" title="Suporte Remoto com IA">🖥️</button>
+
+<!-- Overlay de dicas visuais (aparece sobre a tela compartilhada) -->
+<div id="remotoOverlayDica"></div>
+
+<!-- Canvas oculto para capturar frames da tela -->
+<canvas id="remotoPreviewCanvas" style="display:none;"></canvas>
+
+<!-- Popup flutuante de chat -->
+<div id="remotoPopup">
+    <div class="remoto-header">
+        <div class="remoto-header-icon">🤖</div>
+        <div class="remoto-header-info">
+            <h4>Suporte Remoto com IA</h4>
+            <p id="remotoHeaderStatus">Pronto para compartilhar sua tela</p>
+        </div>
+        <div class="remoto-header-actions">
+            <button onclick="analisarTelaAgora()" id="btnAnalisarHeader" title="Analisar tela agora">🔍</button>
+            <button onclick="fecharRemotoPopup()" title="Fechar">✕</button>
+        </div>
+    </div>
+
+    <!-- Status da captura de tela -->
+    <div class="remoto-status-bar" id="remotoStatusBar">
+        <div class="remoto-status-dot aguardando" id="remotoStatusDot"></div>
+        <span id="remotoStatusTexto">Clique em "📡 Compartilhar Tela" para iniciar o suporte</span>
+    </div>
+
+    <!-- Preview miniatura da tela capturada -->
+    <div id="remotoPreviewWrap">
+        <div class="remoto-preview-label">● AO VIVO</div>
+        <video id="remotoVideoPreview" autoplay muted playsinline></video>
+    </div>
+
+    <!-- Mensagens do chat -->
+    <div id="remotoChatMsgs">
+        <div class="rm-msg sistema">👋 Olá! Ative o compartilhamento de tela e eu vou <strong>analisar o que está em tela</strong> e indicar exatamente onde clicar para resolver sua dúvida.</div>
+    </div>
+
+    <!-- Botão analisar tela -->
+    <button class="btn-analisar-tela" id="btnAnalisarTela" onclick="analisarTelaAgora()" disabled>
+        🔍 Analisar Tela Agora
+    </button>
+
+    <!-- Input para digitar -->
+    <div class="remoto-input-area">
+        <input type="text" id="remotoInput" placeholder="Digite sua dúvida ou aperte Enter..." onkeypress="if(event.key==='Enter') enviarMsgRemoto()">
+        <button onclick="enviarMsgRemoto()" title="Enviar">➤</button>
     </div>
 </div>
 
@@ -993,6 +1350,37 @@ let manualVetorizado=[],dadosParametros=[],dadosFuncionalidades=[],isVectorizing
 const SCRIPT_URL="https://script.google.com/macros/s/AKfycbyxuDqwFCdhkLSE59cSD5FrAaTS6gbNC6jpOvj8hWp-2oOGQF_w-UL2QjPm0E1VqwU/exec";
 const CORRECT_PASSWORD="camargo1994";
 const recognition=new(window.SpeechRecognition||window.webkitSpeechRecognition)();recognition.lang='pt-BR';recognition.continuous=true;recognition.interimResults=false;
+// ═══════════════════════════════════════════════════════════
+//  SISTEMA DE SINÔNIMOS
+// ═══════════════════════════════════════════════════════════
+const SINONIMOS = {
+    emitir: ["emito","criar","emitir","gerar","lançar","fazer","abrir","registrar","incluir","cadastrar","inserir","montar","produzir","processar","emissão","geração","criação","lançamento","abertura"],
+    cancelar: ["cancelar","estornar","desfazer","anular","reverter","excluir","deletar","remover","apagar","cancelamento","estorno"],
+    cte: ["conhecimento", "conhecimento de transporte", "ct-e", "cte"],
+    mdfe: ["manifesto", "manifesto de carga", "mdf-e", "mdf", "mdfe"],
+    nfse: ["nfs-e", "nfs", "nota fiscal de serviço", "notas fiscais de serviço", "nfse"],
+    nfe: ["nf-e", "nfe", "nota fiscal eletrônica", "nota fiscal", "notas fiscais"],
+    consultar: ["consultar","buscar","localizar","pesquisar","encontrar","ver","visualizar","verificar","checar","acessar","abrir","listar","mostrar","exibir","onde fica","como ver","como achar","como encontrar","onde encontrar","onde localizar"],
+    motorista: ["motorista", "condutor", "piloto", "chofer", "colaborador", "funcionário", "pessoa"],
+    veiculo: ["veículo", "caminhão", "carreta", "truck", "trucado", "bitrem", "rodotrem", "carro", "frota", "cavalo", "conjunto", "conjuntos"],
+    cliente: ["cliente", "contratante", "pagador", "remetente", "destinatário", "tomador", "pessoa"],
+    transporte: ["transporte", "frete", "carga", "entrega", "coleta", "movimentação", "logística", "transferência"],
+    financeiro: ["financeiro", "pagamento", "recebimento", "cobrança", "faturamento", "contas", "títulos", "caixa", "banco", "dinheiro", "valor"],
+    nota: ["nota", "documento", "doc", "docs", "documentos", "papel"],
+    estoque: ["estoque", "armazenagem", "armazém", "depósito", "inventário", "almoxarifado"],
+    configuracao: ["configuração", "config", "parâmetro", "parametrização", "ajuste", "configurar", "parametrizar", "ajustar", "configurações", "parâmetros"],
+    relatorio: ["relatório", "relatorio", "relatorios", "relatórios", "relação", "lista", "listagem", "impressão", "imprimir", "gerar relatório"],
+    erro: ["erro", "problema", "falha", "defeito", "bug", "travamento", "mensagem de erro", "rejeição", "rejeicao", "rejeitado"],
+    sefaz: ["sefaz", "receita", "fisco", "fazenda", "órgão", "orgão", "governo", "receita federal", "secretaria da fazenda", "validação", "validador"],
+    talao: ["talão", "talao", "numeração", "série", "serie", "sequência", "sequencia", "faixa"],
+    certificado: ["certificado", "digital", "a1", "a3", "token", "assinatura", "ssl", "validade", "vencimento", "cert"],
+    tabela: ["tabela", "preço", "preco", "valor", "custo", "tarifa", "taxa", "tabela de preço", "tabela de preços"],
+    contrato: ["contrato", "acordo", "negociação", "negociacao", "ajuste contratual", "contrato de frete"],
+    manifesto: ["manifesto", "mdfe", "mdf-e", "mdf", "manifesto de carga"],
+    conhecimento: ["conhecimento", "cte", "ct-e", "ct", "conhecimento de transporte"],
+    ordem: ["ordem", "oc", "ordem de carregamento", "carregamento", "ordem de coleta"],
+    minuta: ["minuta", "rascunho", "pré-conhecimento", "pre-conhecimento", "documento não fiscal"]
+};
 
 
 // ═══════════════════════════════════════════════════════════
@@ -1003,17 +1391,26 @@ window.addEventListener('DOMContentLoaded', async () => {
     carregarMLKnowledge();
     loadMCPConfig();
     
+    // ══ NOVO: Habilita o campo de texto desde o início para o usuário digitar ══
+    const searchInput = document.getElementById('searchInput');
+    const sendBtn = document.getElementById('sendBtn');
+    
+    // Campo de texto habilitado para digitar
+    searchInput.disabled = false;
+    searchInput.placeholder = "Carregando banco de dados... (digite sua pergunta enquanto carrega)";
+    
+    // Botão de envio desabilitado até carregar
+    sendBtn.disabled = true;
+    
     // ══ PRIORIDADE 1: Carrega banco de dados e libera o chat ══
     console.log("🔄 Carregando banco de dados...");
     await loadData();
     console.log("✅ Banco de dados carregado! Chat liberado.");
     
     // ══ PRIORIDADE 2: Carrega repositório em segundo plano ══
-    // Não bloqueia o chat - o usuário já pode digitar
     console.log("📁 Iniciando carregamento do repositório em segundo plano...");
     carregarDadosRepositorio().then(() => {
         console.log("✅ Repositório carregado e vetorizado!");
-        // Atualiza o badge com a contagem total
         const badge = document.getElementById('statusBadge');
         if (badge && !isVectorizing) {
             const repoCount = manualVetorizado.filter(item => item.isRepositorio).length;
@@ -1023,11 +1420,111 @@ window.addEventListener('DOMContentLoaded', async () => {
         console.warn("⚠️ Repositório carregado com erros (não afeta o chat):", e);
     });
     
-    document.getElementById('searchInput').addEventListener("keypress", (e) => {
-        if (e.key === "Enter" && !isVectorizing) handleChat();
+    // Evento de Enter - só processa se não estiver carregando
+    searchInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter" && !isVectorizing && !sendBtn.disabled) {
+            handleChat();
+        }
     });
 });
 
+/**
+ * Normaliza um texto substituindo palavras pelos seus termos principais usando o dicionário de sinônimos
+ * @param {string} texto - Texto a ser normalizado
+ * @returns {string} - Texto com sinônimos substituídos pelos termos principais
+ */
+function normalizarSinonimos(texto) {
+    if (!texto) return texto;
+    
+    let textoNormalizado = texto.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    let textoOriginal = texto.toLowerCase();
+    
+    // Para cada grupo de sinônimos
+    for (const [termoPrincipal, sinonimos] of Object.entries(SINONIMOS)) {
+        // Ordena os sinônimos do maior para o menor para evitar substituições parciais
+        const sinonimosOrdenados = [...sinonimos].sort((a, b) => b.length - a.length);
+        
+        for (const sinonimo of sinonimosOrdenados) {
+            const sinonimoNormalizado = sinonimo.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            
+            // Verifica se o sinônimo está no texto original (case insensitive)
+            // Usa regex com word boundaries para evitar substituições parciais
+            const regex = new RegExp(`\\b${escapeRegExp(sinonimo)}\\b`, 'gi');
+            
+            if (regex.test(textoOriginal)) {
+                // Substitui todas as ocorrências mantendo o texto original para referência
+                textoOriginal = textoOriginal.replace(regex, termoPrincipal);
+            }
+            
+            // Também verifica no texto normalizado (sem acentos)
+            const regexNormalizado = new RegExp(`\\b${escapeRegExp(sinonimoNormalizado)}\\b`, 'gi');
+            if (regexNormalizado.test(textoNormalizado)) {
+                textoNormalizado = textoNormalizado.replace(regexNormalizado, termoPrincipal);
+            }
+        }
+    }
+    
+    return textoOriginal;
+}
+
+/**
+ * Escapa caracteres especiais para uso em regex
+ */
+function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Extrai termos de um texto já aplicando sinônimos
+ * @param {string} texto - Texto para extrair termos
+ * @returns {Array} - Array de termos normalizados
+ */
+function extrairTermosComSinonimos(texto) {
+    // Primeiro normaliza os sinônimos
+    const textoNormalizado = normalizarSinonimos(texto);
+    
+    // Depois extrai os termos normalmente
+    const sw = new Set([
+        "como","que","qual","quais","para","com","sem","não","mas","por","mais","uma",
+        "isso","este","esta","esse","essa","num","numa","meu","minha","meus","minhas",
+        "tem","ter","ser","foi","vai","vou","tenho","posso","pode","quero","preciso",
+        "saber","sobre","nao","onde","quando","porque","pois","também","ainda","mesmo",
+        "tipo","ah","e","o","a","os","as","um","uns","umas","no","na","nos","nas",
+        "do","da","dos","das","de","em"
+    ]);
+    
+    return textoNormalizado
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9 ]/g, " ")
+        .split(/\s+/)
+        .filter(t => t.length > 2 && !sw.has(t));
+}
+
+function detectarDocumento(texto) {
+    // Normaliza o texto com sinônimos primeiro
+    const textoNormalizado = normalizarSinonimos(texto);
+    
+    const md = {
+        'cte': ['cte', 'conhecimento', 'conhecimento de transporte', 'ct-e'],
+        'nfse': ['nfse', 'nfs-e', 'nota fiscal de serviço', 'nota de serviço'],
+        'nfe': ['nfe', 'nf-e', 'nota fiscal', 'nota fiscal eletrônica'],
+        'mdfe': ['mdfe', 'mdf-e', 'manifesto', 'manifesto de carga'],
+        'minuta': ['minuta', 'conhecimento não fiscal', 'rascunho'],
+        'oc': ['ordem de carregamento', 'oc', 'ordem'],
+        'contrato': ['contrato de frete', 'contrato'],
+        'ciot': ['ciot', 'contrato de frete eletrônico'],
+        'vpo': ['vpo', 'vale pedágio', 'vale-pedágio']
+    };
+    
+    for (const [t, p] of Object.entries(md)) {
+        if (p.some(palavra => textoNormalizado.includes(palavra.toLowerCase()))) {
+            return t;
+        }
+    }
+    return null;
+}
 // ═══════════════════════════════════════════════════════════
 //  FORÇAR ATUALIZAÇÃO DO REPOSITÓRIO
 // ═══════════════════════════════════════════════════════════
@@ -1131,7 +1628,42 @@ async function loadData() {
 function popularBarraEmAlta(logsData){try{const isO=Array.isArray(logsData)&&logsData.length>0&&typeof logsData[0]==='object'&&!Array.isArray(logsData[0]);const rows=Array.isArray(logsData)?logsData:[];if(!rows.length)return;const cont={};const po=[];const agora=Date.now();const seteD=7*24*60*60*1000;rows.forEach((row)=>{let p="",ts=0;if(isO){p=(row.pergunta||row.Pergunta||"").toString().trim();if(row.data){const d=new Date(row.data);if(!isNaN(d.getTime()))ts=d.getTime();}}else{p=(row[1]||"").toString().trim();}if(!p||p.length<3||p.toUpperCase().startsWith("FEEDBACK")||p==="Pendente")return;if(!cont[p]){cont[p]={freq:0};po.push(p);}cont[p].freq++;if((agora-ts)<seteD&&ts>0)cont[p].recente=true;});if(Object.keys(cont).length===0)return;const u4=po.filter(p=>cont[p].recente).slice(0,4);const su4=new Set(u4);const rec=Object.entries(cont).filter(([k])=>!su4.has(k)&&cont[k].freq>=2).sort((a,b)=>b[1].freq-a[1].freq).map(([k])=>k);let lf=[...u4,...rec].filter((v,i,a)=>a.indexOf(v)===i).slice(0,8);const bar=document.getElementById('topTermsBar');if(!bar||!lf.length)return;bar.innerHTML='<span>Em alta:</span>';lf.forEach(t=>{const a=document.createElement('a');a.textContent=t.length>35?t.substring(0,33)+'…':t;a.title=t;a.onclick=()=>fillAndSend(t);bar.appendChild(a);});}catch(e){}}
 function carregarVetoresExistentes(dados){if(!dados.length)return{linhasComVetor:0,linhasSemVetor:[],chaves:[]};const chaves=Object.keys(dados[0]);const cv=chaves.find(k=>k.toLowerCase().trim()==='vetor');const ce=chaves.find(k=>k.toLowerCase().trim()==='erro');const cs=chaves.find(k=>k.toLowerCase().trim()==='solucao'||k.toLowerCase().trim()==='solução');const cc=chaves.find(k=>k.toLowerCase().trim()==='categoria');const cem=chaves.find(k=>{const kn=k.toLowerCase().trim();return kn==='como emitir'||kn==='como_emitir'||kn==='emissao'||kn==='emissão'||kn==='emitir';});if(!cv)return{linhasComVetor:0,linhasSemVetor:[],chaves};let lcv=0;const lsv=[];dados.forEach((linha,i)=>{const te=linha[ce]||"";const ts=linha[cs]||"";const tc=cc?(linha[cc]||""):"";const tem=cem?(linha[cem]||""):"";if(!te&&!ts)return;const tc2=`DÚVIDA: ${te} | PROCEDIMENTO: ${ts}${tem?' | COMO EMITIR: '+tem:''}${tc?' | CATEGORIA: '+tc:''}`;const ve=linha[cv];if(ve&&ve.toString().trim().startsWith('[')){try{manualVetorizado.push({texto:tc2,erro:te,solucao:ts,emitir:tem,categoria:tc,vetor:JSON.parse(ve)});lcv++;}catch(e){lsv.push({linha,textoCompleto:tc2,textoErro:te,textoSolucao:ts,textoEmitir:tem,textoCategoria:tc,indexPlanilha:i+2,chaveVetor:cv,chaves});}}else{lsv.push({linha,textoCompleto:tc2,textoErro:te,textoSolucao:ts,textoEmitir:tem,textoCategoria:tc,indexPlanilha:i+2,chaveVetor:cv,chaves});}});return{linhasComVetor:lcv,linhasSemVetor:lsv,chaves};}
 async function vetorizarEmBackground(lsv,chaves){const b=document.getElementById('statusBadge');let es=0;const ncv=chaves.indexOf(lsv[0]?.chaveVetor)+1;for(let i=0;i<lsv.length;i++){if(es>5){b.innerText='IA Pronta ⚠️';break;}const item=lsv[i];b.innerText=`Vet. ${i+1}/${lsv.length}`;await new Promise(r=>setTimeout(r,3500));const nv=await gerarEmbedding(item.textoCompleto);if(nv){manualVetorizado.push({texto:item.textoCompleto,erro:item.textoErro,solucao:item.textoSolucao,emitir:item.textoEmitir||"",categoria:item.textoCategoria,vetor:nv});salvarVetorNaPlanilha(item.indexPlanilha,ncv,JSON.stringify(nv));es=0;}else{es++;await new Promise(r=>setTimeout(r,10000));}}document.getElementById('statusBadge').innerText=`IA Pronta (${manualVetorizado.length})`;document.getElementById('statusBadge').className="badge";}
-function liberarChat(modo="completo"){const b=document.getElementById('statusBadge');const w=document.getElementById('welcomeMsg');const si=obterSaudacao();isVectorizing=false;document.getElementById('searchInput').disabled=false;document.getElementById('searchInput').placeholder="Como posso ajudar?";document.getElementById('sendBtn').disabled=false;const pi=` [${mcpConfig.provider}/${mcpConfig.model.split('/').pop()}]`;if(modo==="completo"){b.innerText=`IA Pronta (${manualVetorizado.length})${pi}`;b.className="badge";if(w)w.innerHTML=`${si.emoji} <strong>${si.saudacao}!</strong> Sou o assistente IA <strong>Bsoft TMS</strong>.<br>Pronto! Base com <strong>${manualVetorizado.length} artigos</strong> carregada.<br><small style="color:var(--text-muted);">${si.diaSemana}, ${si.dataCompleta} | IA: ${mcpConfig.model} via ${mcpConfig.provider}</small>`;}else if(modo==="parcial"){b.innerText=`IA Pronta (${manualVetorizado.length} +)${pi}`;b.className="badge";if(w)w.innerHTML=`${si.emoji} <strong>${si.saudacao}!</strong> Sou o assistente IA <strong>Bsoft TMS</strong>.<br>Já posso ajudar! <strong>${manualVetorizado.length} artigos</strong> disponíveis.<br><small style="color:#b45309;">⏳ Novos artigos sendo vetorizados... | IA: ${mcpConfig.provider}</small>`;}else if(modo==="vazio"){b.innerText="Banco vazio";b.className="badge-loading";if(w)w.innerHTML=`${si.emoji} <strong>${si.saudacao}!</strong> Nenhum dado encontrado no banco, mas posso tentar ajudar com conhecimento geral.<br><small style="color:var(--text-muted);">IA: ${mcpConfig.model} via ${mcpConfig.provider}</small>`;}else{b.innerText="Modo Offline";b.className="badge-loading";if(w)w.innerHTML='⚠️ Não consegui conectar ao banco de dados.<br>Posso tentar ajudar com conhecimento geral. Digite sua dúvida.<br><button class="retry-btn" onclick="location.reload()">🔄 Tentar Novamente</button>';}}
+function liberarChat(modo="completo"){
+    const b = document.getElementById('statusBadge');
+    const w = document.getElementById('welcomeMsg');
+    const si = obterSaudacao();
+    const sendBtn = document.getElementById('sendBtn');
+    const searchInput = document.getElementById('searchInput');
+    
+    isVectorizing = false;
+    
+    // ══ HABILITA O ENVIO ══
+    sendBtn.disabled = false;
+    searchInput.placeholder = "Digite sua dúvida...";
+    
+    const pi = ` [${mcpConfig.provider}/${mcpConfig.model.split('/').pop()}]`;
+    
+    if(modo === "completo"){
+        b.innerText = `IA Pronta (${manualVetorizado.length})${pi}`;
+        b.className = "badge";
+        if(w) w.innerHTML = `${si.emoji} <strong>${si.saudacao}!</strong> Sou o assistente IA <strong>Bsoft TMS</strong>.<br>Pronto! Base com <strong>${manualVetorizado.length} artigos</strong> carregada.<br><small style="color:var(--text-muted);">${si.diaSemana}, ${si.dataCompleta} | IA: ${mcpConfig.model} via ${mcpConfig.provider}</small>`;
+    }
+    else if(modo === "parcial"){
+        b.innerText = `IA Pronta (${manualVetorizado.length} +)${pi}`;
+        b.className = "badge";
+        if(w) w.innerHTML = `${si.emoji} <strong>${si.saudacao}!</strong> Sou o assistente IA <strong>Bsoft TMS</strong>.<br>Já posso ajudar! <strong>${manualVetorizado.length} artigos</strong> disponíveis.<br><small style="color:#b45309;">⏳ Novos artigos sendo vetorizados... | IA: ${mcpConfig.provider}</small>`;
+    }
+    else if(modo === "vazio"){
+        b.innerText = "Banco vazio";
+        b.className = "badge-loading";
+        if(w) w.innerHTML = `${si.emoji} <strong>${si.saudacao}!</strong> Nenhum dado encontrado no banco, mas posso tentar ajudar com conhecimento geral.<br><small style="color:var(--text-muted);">IA: ${mcpConfig.model} via ${mcpConfig.provider}</small>`;
+    }
+    else{
+        b.innerText = "Modo Offline";
+        b.className = "badge-loading";
+        if(w) w.innerHTML = '⚠️ Não consegui conectar ao banco de dados.<br>Posso tentar ajudar com conhecimento geral. Digite sua dúvida.<br><button class="retry-btn" onclick="location.reload()">🔄 Tentar Novamente</button>';
+    }
+}
 function salvarVetorNaPlanilha(nl,nc,vs){fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',body:JSON.stringify({action:"updateVetor",linha:nl,coluna:nc,vetor:vs})}).catch(e=>console.error(e));}
 
 // ═══════════════════════════════════════════════════════════
@@ -1201,6 +1733,7 @@ async function handleChat() {
     const query = input.value.trim();
     if (!query) return;
 
+	const queryNormalizada = normalizarSinonimos(query);
     const fn = ["não deu", "não funcionou", "continuo com erro", "ainda não", "não deu certo", "proximo", "próximo", "outra opção", "mais alguma", "próxima solução"];
     const uqp = fn.some(f => query.toLowerCase().includes(f));
 
@@ -1229,7 +1762,7 @@ async function handleChat() {
     }
 
     const ld = appendLoadingCard("🧠 Elaborando sua resposta...");
-    const vp = await gerarEmbedding(query);
+    const vp = await gerarEmbedding(queryNormalizada);
     let rr = [];
     if (vp) { rr = manualVetorizado.map(item => ({ ...item, similaridade: calcularSimilaridade(vp, item.vetor) })).sort((a, b) => b.similaridade - a.similaridade).slice(0, 15); }
 
@@ -1259,7 +1792,16 @@ async function handleChat() {
     const dc = conversa?.documentoContexto || detectarDocumento(query.toLowerCase());
     let ido = ""; if (dc && SISTEMA_BSOFT_TMS.documentos_principais[dc.toUpperCase()]) { ido = `\n=== DOCUMENTO EM CONTEXTO: ${dc.toUpperCase()} ===\n${JSON.stringify(SISTEMA_BSOFT_TMS.documentos_principais[dc.toUpperCase()], null, 2)}\n`; }
 
-    const ps = `🏢 VOCÊ É UM AGENTE DE SUPORTE DA BSOFT TMS\n\n${ch}\n\n🎯 Atenda o cliente de forma PROFISSIONAL e DIDÁTICA.\n\n📋 REGRAS:\n1. Use APENAS informações do manual ou fontes oficiais.\n2. NUNCA invente. Se não souber, diga que vai ativar o Machine Learning.\n3. Mantenha o contexto da conversa.\n4. Seja conversacional e humano.\n5. Explique passo a passo com caminhos do menu.\n6. Diferencie: CT-e, MDF-e, NF-e, NFS-e, Minuta, OC, CIOT, VPO.\n\n${mi}\n📚 CONHECIMENTO:\n${es}\n${ido}${ar}${conhecimentoRepositorio}${hc}\n\n🗣️ PERGUNTA: "${query}"\n\n📝 Responda como um agente humano. Use **negrito** para destacar.${vum ? ' Se não encontrou, DIGA que vai ativar ML.' : ''}`;
+    const ps = `🏢 VOCÊ É UM AGENTE DE SUPORTE DA BSOFT TMS\n\n${ch}\n\n🎯 Atenda o cliente de forma PROFISSIONAL e DIDÁTICA.\n\n📋 
+	
+	REGRAS:\n1. Use APENAS informações do manual ou fontes oficiais.\n2. NUNCA invente. 
+	Se não souber, diga que vai ativar o Machine Learning.\n3. 
+	Mantenha o contexto da conversa.\n4. Seja conversacional e humano.\n5. 
+	Explique passo a passo com caminhos do menu.\n6. 
+	Diferencie: CT-e, MDF-e, NF-e, NFS-e, Minuta, OC, CIOT, VPO.\n\n${mi}\n📚 
+	CONHECIMENTO:\n${es}\n${ido}${ar}${conhecimentoRepositorio}${hc}\n\n🗣️ 
+	PERGUNTA: "${query}"\n\n📝 Responda como um agente humano. 
+	Use **negrito** para destacar.${vum ? ' Se não encontrou, DIGA que vai ativar ML.' : ''}`;
 
     try {
         const result = await callCurrentMCP([{ role: 'user', content: ps }], { temperature: 0.4, maxTokens: 4096 });
@@ -1291,7 +1833,7 @@ async function handleChat() {
 // ═══════════════════════════════════════════════════════════
 async function buscarConhecimentoInternet(query) {
     appendMessage('ml', '🧠 <strong>Machine Learning Ativado</strong> — Buscando conhecimento em fontes confiáveis...');
-    const p = `Você é um especialista em sistemas ERP para transportadoras (Bsoft TMS). Pergunta NÃO encontrada no manual: "${query}". Responda JSON: {"erro":"título","solucao":"solução detalhada com menus","fonte":"site confiável","confianca":0.8}. Se não souber, confianca:0.`;
+    const p = `Você é um especialista em sistemas ERP para transportadoras (Bsoft TMS). Não invente caminhos no sistema ou informações que não encontrar. Pergunta NÃO encontrada no manual: "${query}". Responda JSON: {"erro":"título","solucao":"solução detalhada com menus","fonte":"site confiável","confianca":0.8}. Se não souber, confianca:0.`;
     try { const r = await callCurrentMCP([{ role: 'user', content: p }], { temperature: 0.3, maxTokens: 2048, responseFormat: { type: 'json_object' } }); let parsed = null; try { parsed = JSON.parse(r.text); } catch (e) { const c = r.text.replace(/```json\n?|\n?```/g, '').trim(); try { parsed = JSON.parse(c); } catch (e2) {} } return parsed; } catch (e) { return null; }
 }
 async function salvarMLNaPlanilha(erro, solucao, fonte) { try { await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "addToAba", aba: "machinelearning", erro, solucao, fonte, data: new Date().toISOString() }) }); } catch (e) {} }
@@ -1333,7 +1875,20 @@ async function processarProximaSolucao(po) {
 // ═══════════════════════════════════════════════════════════
 let bancoRejeicoes = [], bancoRejeicoesCarregado = false;
 async function carregarBancoRejeicoes() { if (bancoRejeicoesCarregado && bancoRejeicoes.length > 0) return bancoRejeicoes; try { const r = await fetch(SCRIPT_URL + "?aba=RejeicoesSEFAZ"); if (!r.ok) throw new Error("Erro"); const d = await r.json(); if (Array.isArray(d)) { bancoRejeicoes = d; bancoRejeicoesCarregado = true; } } catch (e) { bancoRejeicoes = []; } return bancoRejeicoes; }
-function ehErroSefaz(query) { const q = query.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); const pr = ["rejeicao", "rejeição", "rejeitado", "rejeitada", "rejeicao sefaz", "rejeição sefaz", "erro sefaz", "codigo de rejeicao", "codigo de rejeição", "código de rejeição", "motivo de rejeicao", "motivo de rejeição"]; return pr.some(p => q.includes(p)) || /rejei[cç][aã]o\s+\d{3,4}/.test(q); }
+function ehErroSefaz(query) {
+    // Normaliza com sinônimos
+    const q = normalizarSinonimos(query);
+    
+    const pr = [
+        "rejeicao", "rejeição", "rejeitado", "rejeitada",
+        "falha",
+        "sefaz", "fisco", "fazenda", "receita",
+        "codigo de rejeicao", "codigo de rejeição", 
+        "código de rejeição", "motivo de rejeicao", "motivo de rejeição"
+    ];
+    
+    return pr.some(p => q.includes(p)) || /rejei[cç][aã]o\s+\d{3,4}/.test(q);
+}
 
 async function gerarRespostaSefaz(pergunta) {
     appendMessage('system', '🌐 <strong>Erro SEFAZ detectado</strong>'); adicionarMensagemNaConversa('system', '🌐 Consultando SEFAZ...');
@@ -1359,7 +1914,36 @@ function formatarTexto(texto) { return texto.replace(/\*\*(.*?)\*\*/g, '<b>$1</b
 let cachRespostasFixas = null, tsBancamentoFixas = 0;
 async function carregarRespostasFixas() { if (cachRespostasFixas && (Date.now() - tsBancamentoFixas) < 5 * 60 * 1000) return cachRespostasFixas; try { const r = await fetch(SCRIPT_URL + "?aba=RespostasFixas"); if (!r.ok) throw new Error("sem acesso"); const d = await r.json(); const m = {}; (Array.isArray(d) ? d : []).forEach(row => { if (row.chave && row.resposta) { try { m[row.chave] = { resposta: JSON.parse(row.resposta), confirmacoes: parseInt(row.confirmacoes) || 1 }; } catch (e) {} } }); cachRespostasFixas = m; tsBancamentoFixas = Date.now(); return m; } catch (e) { try { return JSON.parse(localStorage.getItem('bsoft_fixas_cache') || '{}'); } catch (e2) { return {}; } } }
 async function salvarRespostaFixa(pergunta, resposta) { const c = pergunta.toLowerCase().trim().substring(0, 120); cachRespostasFixas = null; fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "fixarResposta", chave: c, pergunta, resposta: JSON.stringify(resposta), ts: new Date().toISOString() }) }).catch(e => {}); try { const l = JSON.parse(localStorage.getItem('bsoft_fixas_cache') || '{}'); l[c] = { resposta, confirmacoes: (l[c]?.confirmacoes || 0) + 1 }; localStorage.setItem('bsoft_fixas_cache', JSON.stringify(l)); } catch (e) {} }
-async function buscarRespostaFixa(pergunta) { const f = await carregarRespostasFixas(); const c = pergunta.toLowerCase().trim().substring(0, 120); if (f[c]) return f[c].resposta; const tq = extrairTermos(pergunta); let mm = null, ms = 0; for (const [k, v] of Object.entries(f)) { const tk = extrairTermos(k); const inter = tq.filter(t => tk.includes(t)).length; const ml = Math.min(tq.length, tk.length) || 1; const sc = inter / ml; if (sc >= 0.75 && sc > ms) { ms = sc; mm = { chave: k, resposta: v.resposta }; } } if (mm) return mm.resposta; return null; }
+async function buscarRespostaFixa(pergunta) {
+    const f = await carregarRespostasFixas();
+    
+    // Normaliza a pergunta usando sinônimos
+    const perguntaNormalizada = normalizarSinonimos(pergunta);
+    const c = perguntaNormalizada.toLowerCase().trim().substring(0, 120);
+    
+    // Busca direta pela chave normalizada
+    if (f[c]) return f[c].resposta;
+    
+    // Busca por similaridade usando termos com sinônimos
+    const tq = extrairTermosComSinonimos(pergunta);
+    let mm = null, ms = 0;
+    
+    for (const [k, v] of Object.entries(f)) {
+        const kNormalizada = normalizarSinonimos(k);
+        const tk = extrairTermosComSinonimos(kNormalizada);
+        
+        const inter = tq.filter(t => tk.includes(t)).length;
+        const ml = Math.min(tq.length, tk.length) || 1;
+        const sc = inter / ml;
+        
+        if (sc >= 0.75 && sc > ms) {
+            ms = sc;
+            mm = { chave: k, resposta: v.resposta };
+        }
+    }
+    
+    return mm ? mm.resposta : null;
+}
 
 // ═══════════════════════════════════════════════════════════
 //  RENDER CARD / UI HELPERS
@@ -1960,13 +2544,580 @@ function enviarPesquisaYTParaChat() {
     }
 }
 
-// Atalho Ctrl+Shift+Y
+
+// ═══════════════════════════════════════════════════════════
+//  SUPORTE REMOTO COM IA
+// ═══════════════════════════════════════════════════════════
+
+let remotoStreamAtivo = null;        // MediaStream da captura de tela
+let remotoPopupAberto = false;       // Estado do popup
+let remotoAnalisando = false;        // Se IA está analisando
+let remotoContexto = [];             // Histórico de mensagens do suporte remoto
+let remotoFrameInterval = null;      // Intervalo de captura automática
+let remotoUltimoFrame = null;        // Último frame capturado (base64)
+let remotoAutoAnalisarTimer = null;  // Timer de análise automática
+
+// --- Abrir suporte remoto (via botão no header) ---
+function abrirSuporteRemoto() {
+    const popup = document.getElementById('remotoPopup');
+    popup.classList.add('visivel');
+    remotoPopupAberto = true;
+    document.getElementById('btnRemotoIA').classList.add('ativo');
+    document.getElementById('btnRemotoIA').textContent = '✕';
+    document.getElementById('btnRemotoHeader').style.background = 'linear-gradient(135deg,#dc2626,#b91c1c)';
+    document.getElementById('remotoInput').focus();
+
+    // Se não tem tela compartilhada ainda, tenta automaticamente
+    if (!remotoStreamAtivo) {
+        setTimeout(() => {
+            adicionarMsgRemoto('ia', '👋 Olá! Sou seu assistente de <strong>Suporte Remoto</strong>. Vou analisar sua tela e indicar <strong>exatamente onde clicar</strong>.\n\n📡 Clique no botão abaixo para compartilhar sua tela e começar!');
+        }, 300);
+    }
+}
+
+// --- Toggle popup ---
+function toggleRemotoPopup() {
+    if (remotoPopupAberto) {
+        fecharRemotoPopup();
+    } else {
+        abrirSuporteRemoto();
+    }
+}
+
+// --- Fechar popup ---
+function fecharRemotoPopup() {
+    document.getElementById('remotoPopup').classList.remove('visivel');
+    remotoPopupAberto = false;
+    document.getElementById('btnRemotoIA').classList.remove('ativo');
+    document.getElementById('btnRemotoIA').textContent = '🖥️';
+    document.getElementById('btnRemotoHeader').style.background = 'linear-gradient(135deg,#7c3aed,#5b21b6)';
+    limparDicasVisuais();
+}
+
+// --- Ativar compartilhamento de tela ---
+async function ativarCompartilhamentoTela() {
+    try {
+        // Para stream anterior se existir
+        if (remotoStreamAtivo) {
+            remotoStreamAtivo.getTracks().forEach(t => t.stop());
+            remotoStreamAtivo = null;
+        }
+
+        atualizarStatusRemoto('aguardando', '⏳ Aguardando seleção da tela ou guia...');
+        adicionarMsgRemoto('sistema', '⏳ Selecione a tela, janela ou guia que deseja compartilhar...');
+
+        const stream = await navigator.mediaDevices.getDisplayMedia({
+            video: { cursor: 'always', displaySurface: 'browser' },
+            audio: false
+        });
+
+        remotoStreamAtivo = stream;
+
+        // Conecta ao elemento de vídeo preview
+        const video = document.getElementById('remotoVideoPreview');
+        video.srcObject = stream;
+        await video.play();
+
+        // Mostra preview
+        document.getElementById('remotoPreviewWrap').classList.add('visivel');
+        document.getElementById('btnAnalisarTela').disabled = false;
+
+        atualizarStatusRemoto('conectado', '🟢 Tela compartilhada — IA pode analisar');
+        document.getElementById('remotoHeaderStatus').textContent = 'Tela compartilhada ativa';
+
+        adicionarMsgRemoto('sistema', '✅ Tela conectada! Agora posso ver o que está em sua tela.');
+        adicionarMsgRemoto('ia', '🖥️ Perfeito! Sua tela está sendo compartilhada. Clique em <strong>🔍 Analisar Tela Agora</strong> ou me diga o que você precisa fazer e eu vou analisar e indicar onde clicar!');
+
+        // Detecta quando o usuário para o compartilhamento
+        stream.getVideoTracks()[0].addEventListener('ended', () => {
+            pararCompartilhamentoTela();
+        });
+
+        // Inicia captura automática de frame a cada 5s para contexto
+        iniciarCapturaAutomatica();
+
+        return true;
+    } catch (err) {
+        if (err.name !== 'NotAllowedError') {
+            adicionarMsgRemoto('sistema', '❌ Não foi possível compartilhar a tela: ' + err.message);
+        } else {
+            adicionarMsgRemoto('sistema', '⚠️ Compartilhamento cancelado. Clique em "📡 Compartilhar Tela" quando quiser tentar novamente.');
+        }
+        atualizarStatusRemoto('aguardando', 'Compartilhamento cancelado');
+        return false;
+    }
+}
+
+// --- Parar compartilhamento ---
+function pararCompartilhamentoTela() {
+    if (remotoStreamAtivo) {
+        remotoStreamAtivo.getTracks().forEach(t => t.stop());
+        remotoStreamAtivo = null;
+    }
+    if (remotoFrameInterval) {
+        clearInterval(remotoFrameInterval);
+        remotoFrameInterval = null;
+    }
+    document.getElementById('remotoPreviewWrap').classList.remove('visivel');
+    document.getElementById('btnAnalisarTela').disabled = true;
+    atualizarStatusRemoto('aguardando', 'Compartilhamento encerrado');
+    document.getElementById('remotoHeaderStatus').textContent = 'Pronto para compartilhar sua tela';
+    adicionarMsgRemoto('sistema', '🔴 Compartilhamento encerrado.');
+    remotoUltimoFrame = null;
+    limparDicasVisuais();
+}
+
+// --- Captura automática de frame (mantém contexto atualizado) ---
+function iniciarCapturaAutomatica() {
+    if (remotoFrameInterval) clearInterval(remotoFrameInterval);
+    remotoFrameInterval = setInterval(() => {
+        if (remotoStreamAtivo) {
+            capturarFrameAtual();
+        } else {
+            clearInterval(remotoFrameInterval);
+        }
+    }, 4000);
+}
+
+// --- Captura um frame da tela ---
+function capturarFrameAtual() {
+    if (!remotoStreamAtivo) return null;
+    try {
+        const video = document.getElementById('remotoVideoPreview');
+        const canvas = document.getElementById('remotoPreviewCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const W = video.videoWidth || 1280;
+        const H = video.videoHeight || 720;
+        // Reduz para max 960px de largura para economizar tokens
+        const escala = Math.min(1, 960 / W);
+        canvas.width = Math.round(W * escala);
+        canvas.height = Math.round(H * escala);
+
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        const base64 = dataUrl.split(',')[1];
+        remotoUltimoFrame = base64;
+        return base64;
+    } catch (e) {
+        return null;
+    }
+}
+
+// --- Atualizar status ---
+function atualizarStatusRemoto(tipo, texto) {
+    const dot = document.getElementById('remotoStatusDot');
+    const txt = document.getElementById('remotoStatusTexto');
+    dot.className = 'remoto-status-dot ' + tipo;
+    txt.textContent = texto;
+}
+
+// --- Adicionar mensagem ao chat remoto ---
+function adicionarMsgRemoto(tipo, html) {
+    const container = document.getElementById('remotoChatMsgs');
+    const div = document.createElement('div');
+    div.className = 'rm-msg ' + tipo;
+    div.innerHTML = html;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+
+    // Adiciona ao contexto se for troca de usuário/ia
+    if (tipo === 'user') remotoContexto.push({ role: 'user', content: div.textContent });
+    else if (tipo === 'ia') remotoContexto.push({ role: 'assistant', content: div.textContent });
+    if (remotoContexto.length > 20) remotoContexto = remotoContexto.slice(-20);
+}
+
+// --- Mostrar indicador de digitação/análise ---
+function mostrarAnalisando(texto = 'Analisando sua tela...') {
+    const container = document.getElementById('remotoChatMsgs');
+    const div = document.createElement('div');
+    div.className = 'rm-msg ia remoto-analisando';
+    div.id = 'remotoDigitando';
+    div.innerHTML = `🤖 ${texto} <span class="remoto-dots"><span>.</span><span>.</span><span>.</span></span>`;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+}
+function removerAnalisando() {
+    const el = document.getElementById('remotoDigitando');
+    if (el) el.remove();
+}
+
+// --- Analisar tela agora ---
+async function analisarTelaAgora() {
+    if (remotoAnalisando) return;
+
+    // Se não tem tela, pede para compartilhar primeiro
+    if (!remotoStreamAtivo) {
+        const ok = await ativarCompartilhamentoTela();
+        if (!ok) return;
+        await new Promise(r => setTimeout(r, 1500));
+    }
+
+    const frame = capturarFrameAtual();
+    if (!frame) {
+        adicionarMsgRemoto('sistema', '⚠️ Não foi possível capturar o frame. Verifique se a tela está sendo compartilhada.');
+        return;
+    }
+
+    remotoAnalisando = true;
+    document.getElementById('btnAnalisarTela').disabled = true;
+    document.getElementById('btnAnalisarHeader').style.opacity = '0.5';
+    mostrarAnalisando('Analisando o que está em tela...');
+
+    try {
+        const msgUsuario = remotoContexto.length > 0 && remotoContexto[remotoContexto.length-1]?.role === 'user'
+            ? remotoContexto[remotoContexto.length-1].content
+            : 'Analise o que está em tela e diga o que vê e como posso ajudar.';
+
+        const historicoStr = remotoContexto.slice(-6).map(m =>
+            `${m.role === 'user' ? 'Usuário' : 'IA'}: ${m.content}`
+        ).join('\n');
+
+        const systemPrompt = `Você é o assistente de Suporte Remoto do sistema Bsoft TMS. Sua função é analisar screenshots da tela do usuário e indicar EXATAMENTE onde clicar para realizar as operações no sistema.
+
+REGRAS:
+- Analise cuidadosamente a imagem da tela
+- Identifique menus, botões, campos e elementos visíveis
+- Dê instruções claras e específicas: "Clique no botão X que está no canto superior direito", "Vá em Menu > Submenu > Opção"
+- Use referências visuais precisas: cores, posições (canto, centro, topo, base), textos dos elementos
+- Quando houver erro ou problema visível na tela, identifique-o e proponha solução
+- Pergunte ao usuário o que ele precisa fazer caso não esteja claro
+- Seja objetivo, claro e direto. Use emojis para indicar direções (👆 👇 👈 👉 🔴 🟢)
+- Se identificar um erro específico do Bsoft TMS, use seu conhecimento para resolver
+- Responda em português brasileiro
+
+Contexto do sistema: ${JSON.stringify(SISTEMA_BSOFT_TMS.estrutura_menus).substring(0, 500)}`;
+
+        const mensagensAPI = [
+            {
+                role: 'user',
+                content: [
+                    {
+                        type: 'image',
+                        source: { type: 'base64', media_type: 'image/jpeg', data: frame }
+                    },
+                    {
+                        type: 'text',
+                        text: historicoStr
+                            ? `Histórico da conversa:\n${historicoStr}\n\nAnalisando a tela atual: ${msgUsuario}`
+                            : `Analise esta tela do sistema Bsoft TMS. O usuário precisa de ajuda. Descreva o que está vendo e pergunte o que ele precisa fazer, ou se há algo errado, identifique e proponha solução.`
+                    }
+                ]
+            }
+        ];
+
+        // Usa a API Anthropic diretamente (melhor para visão)
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: 'claude-sonnet-4-20250514',
+                max_tokens: 1000,
+                system: systemPrompt,
+                messages: mensagensAPI
+            })
+        });
+
+        const data = await response.json();
+        removerAnalisando();
+
+        if (data.content && data.content[0]) {
+            const resposta = data.content[0].text || '';
+            adicionarMsgRemoto('ia', formatarMsgRemoto(resposta));
+            // Tenta mostrar dica visual baseada na resposta
+            processarDicaVisual(resposta);
+        } else if (data.error) {
+            // Fallback para o MCP se Anthropic direto falhar (sem key)
+            await analisarComMCP(frame, msgUsuario, historicoStr);
+        } else {
+            adicionarMsgRemoto('ia', '⚠️ Não consegui analisar a tela. Tente descrever o que está vendo e o que deseja fazer.');
+        }
+    } catch (err) {
+        removerAnalisando();
+        // Tenta fallback com MCP
+        try {
+            await analisarComMCPFallback();
+        } catch(e2) {
+            adicionarMsgRemoto('ia', '⚠️ Houve um erro na análise. Descreva o que está vendo na tela e eu ajudo com as instruções.');
+        }
+    } finally {
+        remotoAnalisando = false;
+        document.getElementById('btnAnalisarTela').disabled = !remotoStreamAtivo;
+        document.getElementById('btnAnalisarHeader').style.opacity = '1';
+    }
+}
+
+// --- Fallback: analisar via MCP configurado ---
+// --- Fallback: analisar via MCP configurado (COM IMAGEM) ---
+async function analisarComMCP(frame, pergunta, historico) {
+    try {
+        const preset = PROVIDER_PRESETS[mcpConfig.provider];
+        if (!preset) throw new Error('Sem provider');
+
+        // Verifica se o provider atual suporta imagens
+        // OpenRouter com modelos Gemini suporta entrada multimodal
+        const suportaImagem = (
+            mcpConfig.provider === 'google' || 
+            (mcpConfig.provider === 'openrouter' && mcpConfig.model.includes('gemini')) ||
+            (mcpConfig.provider === 'openrouter' && mcpConfig.model.includes('gemma'))
+        );
+
+        let msgs;
+        
+        if (suportaImagem && frame) {
+            // Envia a imagem junto com o texto
+            msgs = [{
+                role: 'user',
+                content: [
+                    {
+                        type: 'image_url',
+                        image_url: {
+                            url: `data:image/jpeg;base64,${frame}`,
+                            detail: 'low'
+                        }
+                    },
+                    {
+                        type: 'text',
+                        text: `${historico ? 'Histórico:\n' + historico + '\n\n' : ''}Analise a tela do sistema Bsoft TMS acima. 
+${pergunta || 'O que está visível na tela? O usuário precisa de ajuda.'}
+
+IMPORTANTE: 
+- Descreva o que vê na tela (menus, campos, botões, erros)
+- Indique EXATAMENTE onde clicar (use referências visuais como "canto superior direito", "menu lateral", "botão verde no centro")
+- Se houver erro, identifique-o e proponha solução
+- Use seu conhecimento sobre o sistema Bsoft TMS
+
+Estrutura de menus: ${JSON.stringify(SISTEMA_BSOFT_TMS.estrutura_menus).substring(0, 500)}
+Caminhos rápidos: ${JSON.stringify(SISTEMA_BSOFT_TMS.caminhos_rapidos).substring(0, 500)}`
+                    }
+                ]
+            }];
+        } else {
+            // Fallback sem imagem - tenta deduzir pelo contexto
+            const prompt = `${historico ? 'Histórico:\n' + historico + '\n\n' : ''}
+O usuário está compartilhando a tela do sistema Bsoft TMS, mas não foi possível processar a imagem diretamente.
+
+Pergunta do usuário: "${pergunta || 'Preciso de ajuda com o que está na tela'}"
+
+Com base no contexto da conversa e no seu conhecimento do sistema Bsoft TMS, forneça:
+1. Possíveis telas que o usuário pode estar vendo baseado no contexto
+2. Instruções passo a passo para as operações mais prováveis
+3. Perguntas para esclarecer melhor o que o usuário precisa
+
+Estrutura de menus: ${JSON.stringify(SISTEMA_BSOFT_TMS.estrutura_menus).substring(0, 500)}
+Caminhos rápidos: ${JSON.stringify(SISTEMA_BSOFT_TMS.caminhos_rapidos).substring(0, 500)}`;
+
+            msgs = [{ role: 'user', content: prompt }];
+        }
+
+        const resultado = await callMCPAPI(
+            mcpConfig.provider, 
+            mcpConfig.model, 
+            mcpConfig.apiKey, 
+            mcpConfig.baseUrl,
+            msgs, 
+            { maxTokens: 1500, temperature: 0.3 }
+        );
+        
+        removerAnalisando();
+        adicionarMsgRemoto('ia', formatarMsgRemoto(resultado.text));
+        
+        // Tenta mostrar dica visual baseada na resposta
+        processarDicaVisual(resultado.text);
+        
+    } catch(e) {
+        console.error('Erro analisarComMCP:', e);
+        removerAnalisando();
+        adicionarMsgRemoto('ia', '⚠️ Não consegui processar a imagem. Por favor, descreva o que está vendo na tela e eu ajudo com as instruções baseadas no conhecimento do Bsoft TMS.');
+    }
+}
+
+async function analisarComMCPFallback() {
+    const pergunta = document.getElementById('remotoInput').value.trim() || 'O que está em tela?';
+    await analisarComMCP(null, pergunta, '');
+}
+
+// --- Enviar mensagem de texto ---
+async function enviarMsgRemoto() {
+    if (remotoAnalisando) return;
+    const input = document.getElementById('remotoInput');
+    const texto = input.value.trim();
+    if (!texto) {
+        // Se não tem texto mas tem tela, só analisa
+        if (remotoStreamAtivo) { analisarTelaAgora(); return; }
+        return;
+    }
+
+    input.value = '';
+    adicionarMsgRemoto('user', escapeHtml(texto));
+
+    // Se tem tela compartilhada, analisa com contexto da mensagem
+    if (remotoStreamAtivo) {
+        await analisarTelaAgora();
+        return;
+    }
+
+    // Sem tela, responde com texto baseado no conhecimento
+    remotoAnalisando = true;
+    mostrarAnalisando('Buscando resposta...');
+    try {
+        const historicoStr = remotoContexto.slice(-8).map(m =>
+            `${m.role === 'user' ? 'Usuário' : 'IA'}: ${m.content}`
+        ).join('\n');
+
+        const prompt = `${historicoStr}\n\nVocê é o assistente de suporte do Bsoft TMS. Responda de forma clara e objetiva. Conhecimento do sistema: ${JSON.stringify(SISTEMA_BSOFT_TMS.caminhos_rapidos).substring(0,800)}`;
+        const resultado = await callMCPAPI(
+            mcpConfig.provider, mcpConfig.model, mcpConfig.apiKey, mcpConfig.baseUrl,
+            [{ role: 'user', content: prompt }],
+            { maxTokens: 600, temperature: 0.3 }
+        );
+        removerAnalisando();
+        adicionarMsgRemoto('ia', formatarMsgRemoto(resultado.text));
+
+        // Sugere compartilhar a tela
+        if (remotoContexto.length <= 4) {
+            setTimeout(() => {
+                adicionarMsgRemoto('sistema', '💡 Dica: Compartilhe sua tela clicando em "📡 Compartilhar Tela" para eu ver exatamente o que está acontecendo e indicar onde clicar!');
+            }, 500);
+        }
+    } catch(e) {
+        removerAnalisando();
+        adicionarMsgRemoto('ia', '⚠️ Erro ao processar. Tente compartilhar sua tela para análise visual.');
+    } finally {
+        remotoAnalisando = false;
+    }
+}
+
+// --- Formatar texto da IA para HTML ---
+function formatarMsgRemoto(texto) {
+    return texto
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/`(.*?)`/g, '<code style="background:#f3e8ff;padding:1px 5px;border-radius:4px;font-size:11px;">$1</code>')
+        .replace(/\n/g, '<br>');
+}
+
+// --- Processar dica visual na tela ---
+function processarDicaVisual(textoIA) {
+    limparDicasVisuais();
+    if (!remotoStreamAtivo) return;
+
+    // Detecta se a IA mencionou onde clicar (heurística simples)
+    const textoLower = textoIA.toLowerCase();
+    const temDica = textoLower.includes('clique') || textoLower.includes('botão') ||
+                    textoLower.includes('menu') || textoLower.includes('acesse') ||
+                    textoLower.includes('vá em') || textoLower.includes('selecione');
+
+    if (!temDica) return;
+
+    // Detecta posição aproximada com base em palavras-chave
+    let posX = 50, posY = 50, seta = '👆', dicaTexto = '';
+
+    if (textoLower.includes('canto superior direito') || textoLower.includes('topo direito')) {
+        posX = 85; posY = 8; seta = '↗️';
+    } else if (textoLower.includes('canto superior esquerdo') || textoLower.includes('topo esquerdo')) {
+        posX = 12; posY = 8; seta = '↖️';
+    } else if (textoLower.includes('menu lateral') || textoLower.includes('barra lateral') || textoLower.includes('menu à esquerda')) {
+        posX = 8; posY = 40; seta = '👈';
+    } else if (textoLower.includes('topo') || textoLower.includes('superior') || textoLower.includes('cabeçalho')) {
+        posX = 50; posY = 5; seta = '👆';
+    } else if (textoLower.includes('inferior') || textoLower.includes('base') || textoLower.includes('rodapé')) {
+        posX = 50; posY = 90; seta = '👇';
+    } else if (textoLower.includes('centro') || textoLower.includes('central')) {
+        posX = 50; posY = 50; seta = '🎯';
+    } else if (textoLower.includes('direita')) {
+        posX = 85; posY = 40; seta = '👉';
+    }
+
+    // Extrai trecho relevante para o balão
+    const linhas = textoIA.split('\n').filter(l => l.trim().length > 0);
+    const linhaDica = linhas.find(l =>
+        l.toLowerCase().includes('clique') || l.toLowerCase().includes('botão') ||
+        l.toLowerCase().includes('selecione') || l.toLowerCase().includes('acesse')
+    );
+    dicaTexto = linhaDica ? linhaDica.replace(/\*\*/g,'').trim() : '';
+    if (dicaTexto.length > 80) dicaTexto = dicaTexto.substring(0,80) + '...';
+
+    if (dicaTexto) {
+        mostrarDicaVisual(posX, posY, seta, dicaTexto);
+    }
+}
+
+// --- Mostrar dica visual na tela ---
+function mostrarDicaVisual(xPct, yPct, seta, texto) {
+    const overlay = document.getElementById('remotoOverlayDica');
+    overlay.style.display = 'block';
+    overlay.innerHTML = '';
+
+    const vW = window.innerWidth;
+    const vH = window.innerHeight;
+    const x = Math.round(vW * xPct / 100);
+    const y = Math.round(vH * yPct / 100);
+
+    // Seta animada
+    const setaEl = document.createElement('div');
+    setaEl.className = 'dica-seta';
+    setaEl.textContent = seta;
+    setaEl.style.left = (x - 20) + 'px';
+    setaEl.style.top = (y - 40) + 'px';
+    overlay.appendChild(setaEl);
+
+    // Cursor pulsante
+    const cursor = document.createElement('div');
+    cursor.className = 'dica-cursor';
+    cursor.style.left = (x - 15) + 'px';
+    cursor.style.top = (y - 15) + 'px';
+    overlay.appendChild(cursor);
+
+    // Balão de texto
+    if (texto) {
+        const balao = document.createElement('div');
+        balao.className = 'dica-balao';
+        balao.textContent = texto;
+        balao.style.left = Math.max(10, Math.min(x - 10, vW - 310)) + 'px';
+        balao.style.top = Math.max(10, y - 80) + 'px';
+        overlay.appendChild(balao);
+    }
+
+    // Remove a dica após 6 segundos
+    setTimeout(limparDicasVisuais, 6000);
+}
+
+// --- Limpar dicas visuais ---
+function limparDicasVisuais() {
+    const overlay = document.getElementById('remotoOverlayDica');
+    overlay.style.display = 'none';
+    overlay.innerHTML = '';
+}
+
+// --- Teclado Enter no input remoto ---
+document.addEventListener('DOMContentLoaded', () => {
+    const ri = document.getElementById('remotoInput');
+    if (ri) ri.addEventListener('keypress', e => { if (e.key === 'Enter') enviarMsgRemoto(); });
+});
+
+// Atalho Ctrl+Shift+R para abrir suporte remoto
 document.addEventListener('keydown', function(e) {
-    if (e.ctrlKey && e.shiftKey && e.key === 'Y') {
+    if (e.ctrlKey && e.shiftKey && e.key === 'R') {
         e.preventDefault();
-        toggleYTPanel();
+        toggleRemotoPopup();
     }
 });
+
+// Modifica o botão original de compartilhar tela para integrar com o remoto
+const _toggleScreenShareOriginal = window.toggleScreenShare || function(){};
+window.toggleScreenShare = async function() {
+    if (!remotoPopupAberto) {
+        abrirSuporteRemoto();
+    }
+    await ativarCompartilhamentoTela();
+};
+
+// Expõe funções para os botões inline que precisam chamar compartilhamento
+window.ativarCompartilhamentoTela = ativarCompartilhamentoTela;
+window.analisarTelaAgora = analisarTelaAgora;
+
+
 </script>
 </body>
 </html>
