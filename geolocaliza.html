@@ -537,15 +537,13 @@
                 <div class="tabs">
                     <button class="tab-btn active" data-tab="tab-xml">📄 XML (NF-e/CT-e)</button>
                     <button class="tab-btn" data-tab="tab-ciot">🚛 Validador CIOT</button>
-                    <button class="tab-btn" data-tab="tab-error">🔍 Analisador de Erros</button>
+                    <button class="tab-btn" data-tab="tab-error">🔍 Analisador de Erros CIOT (Request e Response)</button>
                 </div>
 
                 <!-- ABA XML (mantida) -->
                 <div id="tab-xml" class="tab-content active">
                     <div class="config-section">
-                        <label style="font-weight:600; font-size:0.75rem;">🔑 Token Rota Brasil API</label>
-                        <input type="password" id="rotaBrasilToken" placeholder="Cole seu token aqui" style="width:100%; padding:8px; margin-top:4px; border-radius:8px; border:1px solid #cbd5e1;">
-                        <div id="tokenStatus" style="font-size:0.6rem; margin-top:4px; color:#64748b;">ℹ️ Cadastre-se em rotasbrasil.com.br</div>
+                      
                     </div>
 
                     <div class="upload-area" id="uploadArea">
@@ -742,7 +740,7 @@
                 </div>
                 <div id="freteDetalhes">
                     <div class="frete-card" style="background:#475569;">
-                        <div style="font-size:0.7rem;">💰 FRETE MÍNIMO ANTT</div>
+                        <div style="font-size:0.7rem;">💰 FRETE MÍNIMO ANTT (Em construção)</div>
                         <div class="frete-valor">---</div>
                         <div style="font-size:0.6rem;">Preencha os parâmetros e calcule a rota</div>
                     </div>
@@ -809,7 +807,7 @@
     // ============================================================
     // API ROTA BRASIL
     // ============================================================
-    let ROTA_BRASIL_TOKEN = "";
+    let ROTA_BRASIL_TOKEN = "4590d3bc9f9e57293b21bb4d1c82d139";
     
     function loadToken() {
         try {
@@ -830,8 +828,7 @@
         }
     }
     
-    document.getElementById('rotaBrasilToken').addEventListener('change', saveToken);
-    document.getElementById('rotaBrasilToken').addEventListener('blur', saveToken);
+ 
     
     function toNumber(value) {
         if (value === undefined || value === null) return 0;
@@ -1894,7 +1891,7 @@
                     document.getElementById('tabelaReferencia').value,
                     document.getElementById('pesoCarga').value ? parseFloat(document.getElementById('pesoCarga').value) : null);
                 document.getElementById('distanciaInfo').innerHTML = `<div class="frete-card"><div class="frete-valor">${rota.distancia.toFixed(2)} KM</div><div>${rota.source}</div></div>`;
-                document.getElementById('freteDetalhes').innerHTML = `<div class="frete-card"><div class="frete-valor">R$ ${frete.freteTotal.toFixed(2)}</div><button class="btn-copiar" style="background:#10b981; margin-top:8px;" onclick="navigator.clipboard.writeText('R$ ${frete.freteTotal.toFixed(2)}')">📋 Copiar frete</button></div>`;
+                
             } else {
                 btnValidar.style.display = 'none';
             }
