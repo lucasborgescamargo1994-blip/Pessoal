@@ -516,6 +516,28 @@
             position: relative;
             z-index: 1;
         }
+
+        .progress-bar-container {
+            background: #e2e8f0;
+            border-radius: 20px;
+            overflow: hidden;
+            margin: 10px 0;
+            display: none;
+        }
+        .progress-bar {
+            background: linear-gradient(135deg, #10b981, #059669);
+            width: 0%;
+            height: 4px;
+            transition: width 0.3s ease;
+        }
+        .coord-item-small {
+            font-size: 0.65rem;
+            font-family: monospace;
+            background: #f1f5f9;
+            padding: 4px 8px;
+            border-radius: 6px;
+            margin-top: 4px;
+        }
     </style>
 </head>
 <body>
@@ -543,7 +565,11 @@
                 <!-- ABA XML (mantida) -->
                 <div id="tab-xml" class="tab-content active">
                     <div class="config-section">
-                      
+                        <div class="config-row">
+                            <div class="config-field">
+                                
+                            </div>
+                        </div>
                     </div>
 
                     <div class="upload-area" id="uploadArea">
@@ -586,7 +612,7 @@
                     <div id="resultAreaManual"></div>
                 </div>
 
-                <!-- ABA CIOT (ATUALIZADA - TERCEIROS E FROTA PRÓPRIA) -->
+                <!-- ABA CIOT (ATUALIZADA - COM API ROTA BRASIL) -->
                 <div id="tab-ciot" class="tab-content">
                     <div class="ciot-card" style="background: var(--ciot-bg); border: 1px solid var(--ciot-border); border-radius: 14px; padding: 16px; margin-bottom: 16px;">
                         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
@@ -595,8 +621,12 @@
                         </div>
                         <p style="font-size: 0.7rem; color: #475569; margin-bottom: 12px;">
                             Suporta <strong>Terceiros</strong> (com campos Latitude/Longitude) e <strong>Frota Própria</strong> (apenas CEPs e Municípios).
-                            Cole o conteúdo do Request (XML/LOG) ou anexe o arquivo. O sistema irá extrair todas as coordenadas de cada CT-e, calcular a rota otimizada (origem mais próxima + destino mais longo) e identificar os pontos mais distantes.
+                            Cole o conteúdo do Request (XML/LOG) ou anexe o arquivo. O sistema irá extrair todas as coordenadas de cada CT-e, calcular a <strong>rota rodoviária via API Rota Brasil</strong>, identificar a rota otimizada (origem mais próxima + destino mais longo) e os pontos mais distantes.
                         </p>
+                        
+                        <div class="progress-bar-container" id="ciotProgressContainer">
+                            <div class="progress-bar" id="ciotProgressBar"></div>
+                        </div>
                         
                         <div class="ciot-upload-area" id="ciotUploadArea">
                             <div class="upload-icon">📁</div>
@@ -618,9 +648,10 @@
                         <div id="ciotAlertContainer"></div>
                         <div id="ciotRotaPlanejada" class="rota-planejada">
                             <div style="font-size:0.7rem; opacity:0.9;">🚛 ROTA PLANEJADA DO TRANSPORTADOR</div>
-                            <div style="font-size:0.65rem; margin-top: 4px;">(Origem mais próxima + Destino mais longo)</div>
+                            <div style="font-size:0.65rem; margin-top: 4px;">(Origem mais próxima + Destino mais longo - KM Rodoviário)</div>
                             <div class="distancia-valor" id="ciotDistanciaTotal" style="font-size:1.3rem;">--- KM</div>
                             <div id="ciotDetalheRota" style="font-size:0.6rem; margin-top: 6px;"></div>
+                            <div id="ciotFonteRota" style="font-size:0.55rem; opacity:0.8; margin-top: 4px;"></div>
                         </div>
                         
                         <div id="ciotDistanciaCard" class="distancia-card" style="margin-top: 8px;">
@@ -738,13 +769,7 @@
                         <div style="font-size:0.6rem;">Geolocalize origem e destino</div>
                     </div>
                 </div>
-                <div id="freteDetalhes">
-                    <div class="frete-card" style="background:#475569;">
-                        <div style="font-size:0.7rem;">💰 FRETE MÍNIMO ANTT (Em construção)</div>
-                        <div class="frete-valor">---</div>
-                        <div style="font-size:0.6rem;">Preencha os parâmetros e calcule a rota</div>
-                    </div>
-                </div>
+                
                 <div id="historyList" class="history-list">
                     <div style="text-align: center; color: #94a3b8; padding: 20px;">Nenhuma geolocalização</div>
                 </div>
@@ -814,7 +839,8 @@
             const saved = localStorage.getItem('rota_brasil_token');
             if (saved) {
                 ROTA_BRASIL_TOKEN = saved;
-                document.getElementById('rotaBrasilToken').value = saved;
+                const tokenInput = document.getElementById('rotaBrasilToken');
+                if (tokenInput) tokenInput.value = saved;
             }
         } catch(e) {}
     }
@@ -824,11 +850,15 @@
         if (token) {
             ROTA_BRASIL_TOKEN = token;
             localStorage.setItem('rota_brasil_token', token);
-            mostrarToast('✅ Token salvo!');
+            mostrarToast('✅ Token salvo! As rotas serão calculadas via API Rota Brasil.');
+        } else {
+            ROTA_BRASIL_TOKEN = "";
+            localStorage.removeItem('rota_brasil_token');
+            mostrarToast('⚠️ Token removido. As distâncias serão calculadas em linha reta.');
         }
     }
     
- 
+    document.getElementById('btnSalvarToken')?.addEventListener('click', saveToken);
     
     function toNumber(value) {
         if (value === undefined || value === null) return 0;
@@ -842,18 +872,31 @@
     
     async function calcularDistanciaRotaBrasil(lat1, lng1, lat2, lng2) {
         if (!ROTA_BRASIL_TOKEN) return null;
+        
         const ponto1 = `${lng1},${lat1}`;
         const ponto2 = `${lng2},${lat2}`;
         const url = `https://rotasbrasil.com.br/apiRotas/coordenadas/?token=${ROTA_BRASIL_TOKEN}&pontos=${ponto1};${ponto2}&veiculo=caminhao&eixo=3`;
+        
         try {
-            const response = await fetch(url);
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000);
+            const response = await fetch(url, { signal: controller.signal });
+            clearTimeout(timeoutId);
+            
             if (!response.ok) return null;
             const data = await response.json();
-            if (data && data.rotas && data.rotas[0]) {
-                return { distancia: toNumber(data.rotas[0].distancia), source: "Rota Brasil API" };
+            
+            if (data && data.rotas && data.rotas[0] && data.rotas[0].distancia) {
+                const distancia = toNumber(data.rotas[0].distancia);
+                if (distancia > 0) {
+                    return { distancia: distancia, source: "Rota Brasil API (rodoviário)" };
+                }
             }
             return null;
-        } catch(e) { return null; }
+        } catch(e) {
+            console.warn("Erro na API Rota Brasil:", e);
+            return null;
+        }
     }
     
     function calcularDistanciaLinhaReta(lat1, lng1, lat2, lng2) {
@@ -869,7 +912,7 @@
         const resultado = await calcularDistanciaRotaBrasil(lat1, lng1, lat2, lng2);
         if (resultado) return resultado;
         const linhaReta = calcularDistanciaLinhaReta(lat1, lng1, lat2, lng2);
-        return { distancia: linhaReta, source: "linha reta (fallback)", isFallback: true };
+        return { distancia: linhaReta, source: "linha reta (fallback - sem token ou erro na API)", isFallback: true };
     }
     
     function mostrarToast(mensagem) {
@@ -1083,11 +1126,10 @@
         } catch(e) {}
         return null;
     }
-	    // ============================================================
-    // CIOT - PROCESSADOR DE MÚLTIPLOS CT-es (Terceiros e Frota Própria)
-    // ============================================================
     
+    // ============================================================
     // Mapeamento de códigos IBGE para coordenadas aproximadas (fallback)
+    // ============================================================
     const MUNICIPIOS_IBGE = {
         "4307807": { nome: "Estrela", uf: "RS", lat: -29.5019, lng: -51.9625 },
         "4320008": { nome: "Tupandi", uf: "RS", lat: -29.4764, lng: -51.4181 },
@@ -1097,11 +1139,9 @@
     };
     
     async function buscarCoordenadaPorMunicipio(codigo, nome) {
-        // Tenta via API primeiro
         const coords = await geocodeByMunicipio(codigo, nome, null);
         if (coords) return coords;
         
-        // Fallback para tabela local
         if (MUNICIPIOS_IBGE[codigo]) {
             const mun = MUNICIPIOS_IBGE[codigo];
             return { lat: mun.lat, lng: mun.lng };
@@ -1109,22 +1149,23 @@
         return null;
     }
     
+    // ============================================================
+    // CIOT - PROCESSADOR COM API ROTA BRASIL (ATUALIZADO)
+    // ============================================================
+    
     function extrairCoordenadasDoRequest(texto) {
         const viagens = [];
         const alertasCEP = [];
         
-        // Tags para Terceiros (com latitude/longitude)
         const docPattern = /<adic:DocumentoViagem>(\d+)<\/adic:DocumentoViagem>/g;
         const latOrigemPattern = /<adic:LatitudeOrigem>([^<]+)<\/adic:LatitudeOrigem>/g;
         const lngOrigemPattern = /<adic:LongitudeOrigem>([^<]+)<\/adic:LongitudeOrigem>/g;
         const latDestinoPattern = /<adic:LatitudeDestino>([^<]+)<\/adic:LatitudeDestino>/g;
         const lngDestinoPattern = /<adic:LongitudeDestino>([^<]+)<\/adic:LongitudeDestino>/g;
         
-        // Tags para Frota Própria (com CEP)
         const cepOrigemPattern = /<adic:CepOrigem>([^<]+)<\/adic:CepOrigem>/g;
         const cepDestinoPattern = /<adic:CepDestino>([^<]+)<\/adic:CepDestino>/g;
         
-        // Tags para Frota Própria (com município)
         const munOrigemPattern = /<adic:CodigoMunicipioOrigem>(\d+)<\/adic:CodigoMunicipioOrigem>/g;
         const munDestinoPattern = /<adic:CodigoMunicipioDestino>(\d+)<\/adic:CodigoMunicipioDestino>/g;
         const munOrigemNomePattern = /<adic:CodigoMunicipioOrigem_nome>([^<]+)<\/adic:CodigoMunicipioOrigem_nome>/g;
@@ -1154,7 +1195,6 @@
             let alerta = null;
             let tipoFonte = "desconhecido";
             
-            // 1. Tentar coordenadas (Terceiros)
             if (i < latsO.length && i < lngsO.length && i < latsD.length && i < lngsD.length) {
                 const latOrigem = parseFloat(latsO[i][1]);
                 const lngOrigem = parseFloat(lngsO[i][1]);
@@ -1168,7 +1208,6 @@
                 }
             }
             
-            // 2. Tentar CEP (Frota Própria)
             if (!origem && i < cepsO.length && i < cepsD.length) {
                 const cepOrigem = cepsO[i][1];
                 const cepDestino = cepsD[i][1];
@@ -1179,7 +1218,6 @@
                 tipoFonte = "cep";
             }
             
-            // 3. Tentar Município (Frota Própria - fallback)
             if (!origem && i < munsO.length && i < munsD.length) {
                 const munOrigem = munsO[i][1];
                 const munDestino = munsD[i][1];
@@ -1201,6 +1239,7 @@
                     destino: destino,
                     distanciaInformada: distanciaInformada,
                     distanciaCalculada: null,
+                    fonteDistancia: null,
                     alerta: alerta,
                     tipoFonte: tipoFonte
                 });
@@ -1240,29 +1279,37 @@
         return viagens;
     }
     
-    function calcularDistanciasViagens(viagens) {
+    async function calcularDistanciasViagensRodoviario(viagens, onProgress) {
+        const total = viagens.filter(v => v.origem.lat !== undefined && v.destino.lat !== undefined).length;
+        let processed = 0;
+        
         for (let viagem of viagens) {
             if (viagem.origem.lat !== undefined && viagem.destino.lat !== undefined) {
-                const dist = calcularDistanciaLinhaReta(viagem.origem.lat, viagem.origem.lng, viagem.destino.lat, viagem.destino.lng);
-                viagem.distanciaCalculada = dist;
+                const result = await calcularDistanciaRodoviaria(viagem.origem.lat, viagem.origem.lng, viagem.destino.lat, viagem.destino.lng);
+                viagem.distanciaCalculada = result.distancia;
+                viagem.fonteDistancia = result.source;
+                viagem.isFallback = result.isFallback || false;
+                processed++;
+                if (onProgress) onProgress(processed, total);
+                await new Promise(r => setTimeout(r, 200));
             } else {
                 viagem.distanciaCalculada = null;
+                viagem.fonteDistancia = null;
             }
         }
         return viagens;
     }
     
-    async function processarCiotRequest(texto) {
+    async function processarCiotRequest(texto, onProgress) {
         const { viagens, alertasCEP } = extrairCoordenadasDoRequest(texto);
         if (viagens.length === 0) return null;
         
         const viagensComCoordenadas = await buscarCoordenadasPorCEPOuMunicipio(viagens);
-        const viagensComDistancia = calcularDistanciasViagens(viagensComCoordenadas);
+        const viagensComDistancia = await calcularDistanciasViagensRodoviario(viagensComCoordenadas, onProgress);
         
         const viagensValidas = viagensComDistancia.filter(v => v.distanciaCalculada !== null);
         if (viagensValidas.length === 0) return null;
         
-        // Encontrar ORIGEM MAIS PRÓXIMA e DESTINO MAIS LONGO
         let origemMaisProxima = null;
         let menorDistanciaOrigem = Infinity;
         let destinoMaisLongo = null;
@@ -1279,22 +1326,24 @@
             }
         }
         
-        // Calcular rota planejada
         let distanciaRotaPlanejada = 0;
         let rotaDescricao = "";
+        let fonteRota = "";
         
         if (origemMaisProxima && destinoMaisLongo) {
             distanciaRotaPlanejada = origemMaisProxima.distanciaCalculada;
             rotaDescricao = `📍 ${origemMaisProxima.documento}: ${origemMaisProxima.distanciaCalculada.toFixed(2)} km`;
+            fonteRota = origemMaisProxima.fonteDistancia || "desconhecida";
             
             if (origemMaisProxima.documento !== destinoMaisLongo.documento) {
                 if (origemMaisProxima.destino.lat && destinoMaisLongo.destino.lat) {
-                    const distEntreDestinos = calcularDistanciaLinhaReta(
+                    const distEntreDestinos = await calcularDistanciaRodoviaria(
                         origemMaisProxima.destino.lat, origemMaisProxima.destino.lng,
                         destinoMaisLongo.destino.lat, destinoMaisLongo.destino.lng
                     );
-                    distanciaRotaPlanejada += distEntreDestinos;
-                    rotaDescricao += ` + ${distEntreDestinos.toFixed(2)} km (${origemMaisProxima.documento} → ${destinoMaisLongo.documento})`;
+                    distanciaRotaPlanejada += distEntreDestinos.distancia;
+                    rotaDescricao += ` + ${distEntreDestinos.distancia.toFixed(2)} km (${origemMaisProxima.documento} → ${destinoMaisLongo.documento})`;
+                    fonteRota += " + " + distEntreDestinos.source;
                 }
             }
         }
@@ -1307,6 +1356,7 @@
             destinoMaisLongo: destinoMaisLongo,
             distanciaRotaPlanejada: distanciaRotaPlanejada,
             rotaDescricao: rotaDescricao,
+            fonteRota: fonteRota,
             maiorDistancia: maiorDistancia,
             maiorViagem: destinoMaisLongo
         };
@@ -1318,6 +1368,7 @@
         const listaContainer = document.getElementById('ciotListaViagens');
         const distanciaTotalSpan = document.getElementById('ciotDistanciaTotal');
         const detalheRotaSpan = document.getElementById('ciotDetalheRota');
+        const fonteRotaSpan = document.getElementById('ciotFonteRota');
         const maiorValor = document.getElementById('ciotMaiorDistanciaValor');
         const maiorInfo = document.getElementById('ciotMaiorDistanciaInfo');
         const btnValidar = document.getElementById('btnValidarRotaCiot');
@@ -1350,14 +1401,17 @@
         if (resultado.distanciaRotaPlanejada > 0) {
             distanciaTotalSpan.innerHTML = `${resultado.distanciaRotaPlanejada.toFixed(2)} KM`;
             detalheRotaSpan.innerHTML = resultado.rotaDescricao;
+            fonteRotaSpan.innerHTML = `📡 Fonte: ${resultado.fonteRota}`;
         } else {
             distanciaTotalSpan.innerHTML = `--- KM`;
             detalheRotaSpan.innerHTML = 'Não foi possível calcular a rota planejada';
+            fonteRotaSpan.innerHTML = '';
         }
         
         maiorValor.innerHTML = `${resultado.maiorDistancia.toFixed(2)} KM`;
         if (resultado.maiorViagem) {
-            maiorInfo.innerHTML = `CT-e: ${resultado.maiorViagem.documento} | Origem → Destino: ${resultado.maiorViagem.distanciaCalculada.toFixed(2)} km | Fonte: ${resultado.maiorViagem.tipoFonte}`;
+            const fonteMsg = resultado.maiorViagem.isFallback ? '⚠️ (linha reta - sem token API)' : '✅ (rota rodoviária)';
+            maiorInfo.innerHTML = `CT-e: ${resultado.maiorViagem.documento} | Origem → Destino: ${resultado.maiorViagem.distanciaCalculada.toFixed(2)} km | Fonte: ${resultado.maiorViagem.tipoFonte} ${fonteMsg}`;
             
             window.maiorViagemCiot = resultado.maiorViagem;
             btnValidar.style.display = 'flex';
@@ -1386,12 +1440,14 @@
                                   (isOrigemMaisProxima ? '📍 ORIGEM MAIS PRÓXIMA' : 
                                   (isDestinoMaisLongo ? '🎯 DESTINO MAIS LONGO' : ''));
             const fonteTag = `<span style="background:#e2e8f0; color:#475569; font-size:0.55rem; padding:2px 6px; border-radius:10px;">📡 ${v.tipoFonte}</span>`;
+            const fallbackWarning = v.isFallback ? `<span style="background:#fef3c7; color:#92400e; font-size:0.55rem; padding:2px 6px; border-radius:10px;">⚠️ linha reta</span>` : 
+                                      (v.fonteDistancia ? `<span style="background:#dcfce7; color:#166534; font-size:0.55rem; padding:2px 6px; border-radius:10px;">✅ rodoviário</span>` : '');
             
             return `
             <div class="viagem-item">
                 <div style="display: flex; justify-content: space-between; flex-wrap: wrap; margin-bottom: 8px;">
                     <div>
-                        <strong>📄 CT-e ${v.documento}</strong> ${fonteTag}
+                        <strong>📄 CT-e ${v.documento}</strong> ${fonteTag} ${fallbackWarning}
                         ${v.alerta ? `<span style="background:#fef3c7; color:#92400e; font-size:0.6rem; padding:2px 6px; border-radius:10px;">⚠️ ${v.alerta.tipo === 'CEP' ? 'Calculado por CEP' : 'Calculado por Município'}</span>` : ''}
                         ${highlightBadge ? `<span style="background:#10b981; color:white; font-size:0.6rem; padding:2px 6px; border-radius:10px;">${highlightBadge}</span>` : ''}
                     </div>
@@ -1400,11 +1456,11 @@
                 <div style="display: flex; flex-wrap: wrap; gap: 16px; margin-top: 8px;">
                     <div>
                         <div style="font-size: 0.65rem; color: #475569;">📍 ORIGEM</div>
-                        <div class="coordenada-item">${origemStr}</div>
+                        <div class="coord-item-small">${origemStr}</div>
                     </div>
                     <div>
                         <div style="font-size: 0.65rem; color: #475569;">🎯 DESTINO</div>
-                        <div class="coordenada-item">${destinoStr}</div>
+                        <div class="coord-item-small">${destinoStr}</div>
                     </div>
                 </div>
                 ${v.origem.lat && v.destino.lat ? `<button class="small" style="margin-top: 8px; padding: 4px 12px;" onclick="window.open('https://www.google.com/maps/dir/${v.origem.lat},${v.origem.lng}/${v.destino.lat},${v.destino.lng}', '_blank')">🗺️ Ver rota</button>` : ''}
@@ -1414,74 +1470,78 @@
     
     async function processarArquivoCiot(file) {
         const previewDiv = document.getElementById('ciotFilePreview');
+        const progressContainer = document.getElementById('ciotProgressContainer');
+        const progressBar = document.getElementById('ciotProgressBar');
+        
         previewDiv.style.display = 'block';
         previewDiv.innerHTML = `📄 Processando ${file.name}... <span class="loading-spinner"></span>`;
         
         const reader = new FileReader();
         reader.onload = async (e) => {
             const texto = e.target.result;
-            const resultado = await processarCiotRequest(texto);
+            
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+            
+            const onProgress = (processed, total) => {
+                const percent = (processed / total) * 100;
+                progressBar.style.width = `${percent}%`;
+                previewDiv.innerHTML = `📄 Processando ${file.name}... ${processed}/${total} CT-e(s) calculados (${percent.toFixed(0)}%)`;
+            };
+            
+            const resultado = await processarCiotRequest(texto, onProgress);
+            progressContainer.style.display = 'none';
+            
             if (!resultado || resultado.viagens.length === 0 || resultado.viagensValidas.length === 0) {
                 previewDiv.innerHTML = `❌ Nenhuma coordenada encontrada no arquivo. Verifique se contém as tags necessárias (Latitude/Longitude, CEP ou CódigoMunicipio).`;
                 document.getElementById('ciotResultadoContainer').style.display = 'none';
                 return;
             }
-            previewDiv.innerHTML = `✅ ${file.name} processado! ${resultado.viagensValidas.length} CT-e(s) válidos.`;
+            
+            const tokenStatus = ROTA_BRASIL_TOKEN ? "com token" : "sem token";
+            previewDiv.innerHTML = `✅ ${file.name} processado! ${resultado.viagensValidas.length} CT-e(s) válidos. (${tokenStatus})`;
             document.getElementById('ciotXmlInput').value = texto.substring(0, 500) + (texto.length > 500 ? '\n... (conteúdo truncado)' : '');
             renderizarResultadoCiot(resultado);
             mostrarToast(`✅ Rota planejada: ${resultado.distanciaRotaPlanejada.toFixed(2)} km | Maior CT-e: ${resultado.maiorDistancia.toFixed(2)} km`);
         };
         reader.onerror = () => {
+            progressContainer.style.display = 'none';
             previewDiv.innerHTML = `❌ Erro ao ler o arquivo`;
         };
         reader.readAsText(file, 'UTF-8');
     }
-	        // ============================================================
-    // ANALISADOR DE ERROS SOAP - VERSÃO CORRIGIDA
+    
+    // ============================================================
+    // ANALISADOR DE ERROS SOAP (mantido)
     // ============================================================
     let errorResponseContent = "";
     let errorRequestContent = "";
     
-    // Função para encontrar a tag XML em uma posição específica
     function encontrarTagNaPosicao(xmlContent, coluna) {
         if (!xmlContent || coluna < 0) return null;
-        
-        // Buscar a tag mais próxima antes da posição
         const beforePos = xmlContent.substring(0, coluna);
-        
-        // Encontrar a última tag de abertura antes da posição
         const openTagMatch = beforePos.match(/<([a-zA-Z][a-zA-Z0-9_:]*)(?:\s[^>]*)?>/g);
         if (openTagMatch && openTagMatch.length > 0) {
             const lastOpenTag = openTagMatch[openTagMatch.length - 1];
             const tagNameMatch = lastOpenTag.match(/<([a-zA-Z][a-zA-Z0-9_:]*)/);
-            if (tagNameMatch) {
-                return tagNameMatch[1];
-            }
+            if (tagNameMatch) return tagNameMatch[1];
         }
-        
-        // Tentar encontrar tag de fechamento
         const closeTagMatch = beforePos.match(/<\/([a-zA-Z][a-zA-Z0-9_:]*)>/g);
         if (closeTagMatch && closeTagMatch.length > 0) {
             const lastCloseTag = closeTagMatch[closeTagMatch.length - 1];
             const tagNameMatch = lastCloseTag.match(/<\/([a-zA-Z][a-zA-Z0-9_:]*)/);
-            if (tagNameMatch) {
-                return tagNameMatch[1];
-            }
+            if (tagNameMatch) return tagNameMatch[1];
         }
-        
         return null;
     }
     
-    // Função para extrair o conteúdo de uma tag específica no XML
     function extrairConteudoTag(xmlContent, tagName) {
         const pattern = new RegExp(`<${tagName}>(.*?)</${tagName}>`, 'i');
         const match = xmlContent.match(pattern);
         return match ? match[1] : null;
     }
     
-    // Função para encontrar a empresa/envolvido baseado na tag problemática
     function identificarEnvolvidoPorTag(xmlContent, tagProblematica) {
-        // Mapeamento de tags para seções do XML
         const mapeamento = {
             'NomeOuRazaoSocial': 'Envolvido',
             'CpfOuCnpj': 'Envolvido',
@@ -1499,13 +1559,10 @@
         };
         
         const secao = mapeamento[tagProblematica] || 'Campo';
-        
-        // Tentar identificar qual seção do XML contém a tag problemática
         let secaoXml = "";
         let empresaNome = "";
         let cnpjCpf = "";
         
-        // Buscar a seção onde a tag está localizada
         const linhas = xmlContent.split('\n');
         let linhaEncontrada = null;
         
@@ -1517,16 +1574,13 @@
         }
         
         if (linhaEncontrada) {
-            // Verificar se está dentro de Destinatario
             if (xmlContent.includes('<Destinatario>') && linhaEncontrada.includes('</Destinatario>')) {
                 secaoXml = "Destinatário";
-                // Extrair nome do destinatário
                 const nomeMatch = xmlContent.match(/<Destinatario>[\s\S]*?<NomeOuRazaoSocial>([^<]+)<\/NomeOuRazaoSocial>/);
                 if (nomeMatch) empresaNome = nomeMatch[1];
                 const cnpjMatch = xmlContent.match(/<Destinatario>[\s\S]*?<CpfOuCnpj>([^<]+)<\/CpfOuCnpj>/);
                 if (cnpjMatch) cnpjCpf = cnpjMatch[1];
             }
-            // Verificar se está dentro de Contratante
             else if (xmlContent.includes('<Contratante>') && linhaEncontrada.includes('</Contratante>')) {
                 secaoXml = "Contratante";
                 const nomeMatch = xmlContent.match(/<Contratante>[\s\S]*?<NomeOuRazaoSocial>([^<]+)<\/NomeOuRazaoSocial>/);
@@ -1534,7 +1588,6 @@
                 const cnpjMatch = xmlContent.match(/<Contratante>[\s\S]*?<CpfOuCnpj>([^<]+)<\/CpfOuCnpj>/);
                 if (cnpjMatch) cnpjCpf = cnpjMatch[1];
             }
-            // Verificar se está dentro de TomadorServico
             else if (xmlContent.includes('<TomadorServico>') && linhaEncontrada.includes('</TomadorServico>')) {
                 secaoXml = "Tomador de Serviço";
                 const nomeMatch = xmlContent.match(/<TomadorServico>[\s\S]*?<NomeOuRazaoSocial>([^<]+)<\/NomeOuRazaoSocial>/);
@@ -1542,10 +1595,8 @@
                 const cnpjMatch = xmlContent.match(/<TomadorServico>[\s\S]*?<CpfOuCnpj>([^<]+)<\/CpfOuCnpj>/);
                 if (cnpjMatch) cnpjCpf = cnpjMatch[1];
             }
-            // Verificar se está dentro de Endereco (subtag)
             else if (linhaEncontrada.includes('Endereco')) {
                 secaoXml = "Endereço";
-                // Tenta encontrar qual seção pai contém este endereço
                 if (xmlContent.includes('<Destinatario>') && xmlContent.indexOf('<Destinatario>') < xmlContent.indexOf(linhaEncontrada)) {
                     secaoXml = "Destinatário - Endereço";
                     const nomeMatch = xmlContent.match(/<Destinatario>[\s\S]*?<NomeOuRazaoSocial>([^<]+)<\/NomeOuRazaoSocial>/);
@@ -1562,7 +1613,6 @@
             }
         }
         
-        // Verificar se é um campo vazio
         let conteudo = extrairConteudoTag(xmlContent, tagProblematica);
         let estaVazio = (conteudo === null || conteudo === "" || conteudo.trim() === "");
         
@@ -1593,7 +1643,6 @@
         
         resultContainer.style.display = 'block';
         
-        // Extrair linha e coluna do erro do RESPONSE
         const linhaColunaPattern = /\((\d+),\s*(\d+)\)/;
         const match = errorResponseContent.match(linhaColunaPattern);
         
@@ -1606,45 +1655,29 @@
             coluna = parseInt(match[2]);
         }
         
-        // Extrair mensagem de erro detalhada
         const faultStringPattern = /<faultstring>([^<]+)<\/faultstring>/;
         const faultMatch = errorResponseContent.match(faultStringPattern);
-        if (faultMatch) {
-            mensagemErro = faultMatch[1];
-        }
+        if (faultMatch) mensagemErro = faultMatch[1];
         
-        // Extrair o XML do REQUEST (a partir de <?xml)
         let xmlRequest = errorRequestContent;
         const xmlStartIndex = xmlRequest.indexOf('<?xml');
-        if (xmlStartIndex > -1) {
-            xmlRequest = xmlRequest.substring(xmlStartIndex);
-        }
+        if (xmlStartIndex > -1) xmlRequest = xmlRequest.substring(xmlStartIndex);
         
-        // Ajustar a coluna (coluna - 1 para apontar para o caractere anterior)
         let colunaAjustada = coluna ? coluna - 1 : 0;
-        
-        // Encontrar a tag problemática
         let tagProblematica = null;
         let contextoError = "";
         
         if (colunaAjustada > 0 && xmlRequest.length > colunaAjustada) {
             tagProblematica = encontrarTagNaPosicao(xmlRequest, colunaAjustada);
-            
-            // Extrair contexto ao redor do erro
             const startContext = Math.max(0, colunaAjustada - 100);
             const endContext = Math.min(xmlRequest.length, colunaAjustada + 100);
             contextoError = xmlRequest.substring(startContext, endContext);
         }
         
-        // Identificar o envolvido baseado na tag
         let envolvidoInfo = { secao: "", empresaNome: "", cnpjCpf: "", tag: tagProblematica, estaVazio: false };
-        if (tagProblematica) {
-            envolvidoInfo = identificarEnvolvidoPorTag(xmlRequest, tagProblematica);
-        }
+        if (tagProblematica) envolvidoInfo = identificarEnvolvidoPorTag(xmlRequest, tagProblematica);
         
-        // Determinar a ação corretiva
         let acaoCorretiva = "";
-        let campoFaltante = "";
         let sugestaoCorrecao = "";
         
         if (mensagemErro.includes("Input string was not in a correct format")) {
@@ -1655,15 +1688,12 @@
             sugestaoCorrecao = "Verifique se todas as tags estão corretamente fechadas e não há caracteres especiais inválidos.";
         } else if (tagProblematica && envolvidoInfo.estaVazio) {
             acaoCorretiva = `Preencher campo obrigatório: ${tagProblematica}`;
-            campoFaltante = tagProblematica;
             sugestaoCorrecao = `O campo <strong>${tagProblematica}</strong> está <strong>vazio</strong> ou <strong>ausente</strong> no XML. Preencha com um valor válido.`;
         } else if (tagProblematica === "CodigoMunicipio" && contextoError.includes('CodigoMunicipio />')) {
             acaoCorretiva = "Preencher Código do Município";
-            campoFaltante = "CodigoMunicipio";
             sugestaoCorrecao = "O campo <strong>Código do Município</strong> está vazio. É necessário preencher com o código IBGE da cidade (ex: 4307807 para Estrela/RS).";
         } else if (tagProblematica === "CEP" && contextoError.includes('CEP>')) {
             acaoCorretiva = "Corrigir formato do CEP";
-            campoFaltante = "CEP";
             sugestaoCorrecao = "O CEP informado está em formato inválido. Use o formato 8 dígitos (ex: 95880000) ou 12345-678.";
         } else if (tagProblematica) {
             acaoCorretiva = `Revisar campo: ${tagProblematica}`;
@@ -1673,26 +1703,16 @@
             sugestaoCorrecao = "Não foi possível identificar a tag específica. Verifique o XML na posição (linha, coluna) mencionada no erro.";
         }
         
-        // Construir mensagem de correção
         let mensagemCorrecao = "";
-        
         if (envolvidoInfo.secao) {
             mensagemCorrecao = `<div style="background: #f1f5f9; padding: 12px; border-radius: 8px; margin-bottom: 12px;">
-                <strong>📍 SEÇÃO IDENTIFICADA:</strong> ${envolvidoInfo.secao}<br>`;
-            
-            if (envolvidoInfo.empresaNome) {
-                mensagemCorrecao += `<strong>🏢 EMPRESA/ENVOLVIDO:</strong> ${envolvidoInfo.empresaNome}<br>`;
-            }
-            if (envolvidoInfo.cnpjCpf) {
-                mensagemCorrecao += `<strong>📄 CNPJ/CPF:</strong> ${envolvidoInfo.cnpjCpf}<br>`;
-            }
-            if (campoFaltante) {
-                mensagemCorrecao += `<strong>⚠️ CAMPO COM PROBLEMA:</strong> ${campoFaltante}<br>`;
-            }
-            mensagemCorrecao += `</div>`;
+                <strong>📍 SEÇÃO IDENTIFICADA:</strong> ${envolvidoInfo.secao}<br>
+                ${envolvidoInfo.empresaNome ? `<strong>🏢 EMPRESA/ENVOLVIDO:</strong> ${envolvidoInfo.empresaNome}<br>` : ''}
+                ${envolvidoInfo.cnpjCpf ? `<strong>📄 CNPJ/CPF:</strong> ${envolvidoInfo.cnpjCpf}<br>` : ''}
+                ${tagProblematica ? `<strong>⚠️ CAMPO COM PROBLEMA:</strong> ${tagProblematica}<br>` : ''}
+                </div>`;
         }
         
-        // Se for o caso específico do exemplo (CodigoMunicipio vazio)
         if (contextoError.includes('CodigoMunicipio') && contextoError.includes('/>')) {
             mensagemCorrecao = `<div style="background: #f1f5f9; padding: 12px; border-radius: 8px; margin-bottom: 12px;">
                 <strong>📍 PROBLEMA IDENTIFICADO:</strong> Campo "CodigoMunicipio" vazio<br>
@@ -1704,14 +1724,13 @@
             acaoCorretiva = "Preencher Código do Município no cadastro do destinatário";
         }
         
-        // Exibir resultado
         alertContainer.innerHTML = `
             <div class="alert-error">
                 <strong>🔍 ANÁLISE DO ERRO</strong><br><br>
                 <strong>📍 Posição no XML:</strong> Linha ${linha || '?'}, Coluna ${coluna || '?'}<br>
                 <strong>📝 Mensagem:</strong> ${mensagemErro || 'Não disponível'}<br>
                 <strong>🏷️ Tag problemática:</strong> ${tagProblematica || 'Não identificada'}<br>
-                <strong>⚠️ Tipo do erro:</strong> ${mensagemErro.includes("Input string") ? 'Formato numérico inválido' : (campoFaltante ? 'Campo obrigatório vazio' : 'Erro de estrutura')}
+                <strong>⚠️ Tipo do erro:</strong> ${mensagemErro.includes("Input string") ? 'Formato numérico inválido' : (tagProblematica ? 'Campo obrigatório vazio' : 'Erro de estrutura')}
             </div>
         `;
         
@@ -1735,15 +1754,11 @@
         const alertDiv = document.getElementById('analiseAlertContainer');
         const correcaoDiv = document.getElementById('analiseCorrecaoContainer');
         let texto = "";
-        
-        // Extrair texto do alerta
         const alertText = alertDiv.innerText || "";
-        // Extrair texto da correção (remover botões)
         const correcaoClone = correcaoDiv.cloneNode(true);
         const buttons = correcaoClone.querySelectorAll('button');
         buttons.forEach(btn => btn.remove());
         const correcaoText = correcaoClone.innerText || "";
-        
         texto = "=== ANÁLISE DE ERRO SOAP ===\n\n" + alertText + "\n\n=== SOLUÇÃO RECOMENDADA ===\n\n" + correcaoText;
         navigator.clipboard.writeText(texto);
         mostrarToast('✅ Análise copiada para área de transferência!');
@@ -1757,21 +1772,13 @@
         const reader = new FileReader();
         reader.onload = async (e) => {
             errorResponseContent = e.target.result;
-            previewDiv.innerHTML = `✅ ${file.name} carregado! (${errorResponseContent.length} caracteres)<br>📌 Erro detectado na posição: ${extrairPosicaoErro(errorResponseContent)}`;
+            const posMatch = errorResponseContent.match(/\((\d+),\s*(\d+)\)/);
+            const posText = posMatch ? `linha ${posMatch[1]}, coluna ${posMatch[2]}` : "não detectada";
+            previewDiv.innerHTML = `✅ ${file.name} carregado! (${errorResponseContent.length} caracteres)<br>📌 Erro detectado na posição: ${posText}`;
             mostrarToast('✅ Arquivo RESPONSE carregado! Agora anexe o REQUEST correspondente.');
         };
-        reader.onerror = () => {
-            previewDiv.innerHTML = `❌ Erro ao ler o arquivo`;
-        };
+        reader.onerror = () => { previewDiv.innerHTML = `❌ Erro ao ler o arquivo`; };
         reader.readAsText(file, 'UTF-8');
-    }
-    
-    function extrairPosicaoErro(content) {
-        const match = content.match(/\((\d+),\s*(\d+)\)/);
-        if (match) {
-            return `linha ${match[1]}, coluna ${match[2]}`;
-        }
-        return "não detectada";
     }
     
     function processarArquivoRequest(file) {
@@ -1785,9 +1792,7 @@
             previewDiv.innerHTML = `✅ ${file.name} carregado! (${errorRequestContent.length} caracteres)`;
             mostrarToast('✅ Arquivo REQUEST carregado! Clique em "Analisar Erro" para ver a correção.');
         };
-        reader.onerror = () => {
-            previewDiv.innerHTML = `❌ Erro ao ler o arquivo`;
-        };
+        reader.onerror = () => { previewDiv.innerHTML = `❌ Erro ao ler o arquivo`; };
         reader.readAsText(file, 'UTF-8');
     }
     
@@ -1891,7 +1896,7 @@
                     document.getElementById('tabelaReferencia').value,
                     document.getElementById('pesoCarga').value ? parseFloat(document.getElementById('pesoCarga').value) : null);
                 document.getElementById('distanciaInfo').innerHTML = `<div class="frete-card"><div class="frete-valor">${rota.distancia.toFixed(2)} KM</div><div>${rota.source}</div></div>`;
-                
+                document.getElementById('freteDetalhes').innerHTML = `<div class="frete-card"><div class="frete-valor">R$ ${frete.freteTotal.toFixed(2)}</div><div>Frete mínimo ANTT</div><div style="font-size:0.55rem;">Base: R$ ${frete.valorBasePorKm.toFixed(2)}/km × ${frete.multiplicadorCarga.toFixed(3)} (carga)</div></div>`;
             } else {
                 btnValidar.style.display = 'none';
             }
@@ -2034,9 +2039,22 @@
             mostrarToast('⚠️ Cole o conteúdo do request ou anexe um arquivo primeiro!');
             return;
         }
-        const resultado = await processarCiotRequest(texto);
+        const progressContainer = document.getElementById('ciotProgressContainer');
+        const progressBar = document.getElementById('ciotProgressBar');
+        progressContainer.style.display = 'block';
+        progressBar.style.width = '0%';
+        
+        const onProgress = (processed, total) => {
+            const percent = (processed / total) * 100;
+            progressBar.style.width = `${percent}%`;
+        };
+        
+        const resultado = await processarCiotRequest(texto, onProgress);
+        progressContainer.style.display = 'none';
+        
         if (!resultado || resultado.viagens.length === 0 || resultado.viagensValidas.length === 0) {
-            mostrarToast('❌ Nenhuma coordenada encontrada. Verifique se o request contém as tags: Latitude/Longitude, CEP ou CódigoMunicipio');
+            const tokenMsg = ROTA_BRASIL_TOKEN ? "Token configurado" : "Sem token (usando linha reta)";
+            mostrarToast(`❌ Nenhuma coordenada encontrada. Verifique o request. ${tokenMsg}`);
             document.getElementById('ciotResultadoContainer').style.display = 'none';
             return;
         }
@@ -2064,7 +2082,6 @@
         mostrarToast('🧹 Dados do analisador limpos!');
     });
     
-    // Uploads para CIOT
     const ciotUploadArea = document.getElementById('ciotUploadArea');
     const ciotFileInput = document.getElementById('ciotFileInput');
     ciotUploadArea.addEventListener('click', () => ciotFileInput.click());
@@ -2077,7 +2094,6 @@
         if (e.dataTransfer.files[0]) processarArquivoCiot(e.dataTransfer.files[0]);
     });
     
-    // Uploads para Analisador de Erros
     const errorResponseArea = document.getElementById('errorResponseUploadArea');
     const errorResponseInput = document.getElementById('errorResponseInput');
     errorResponseArea.addEventListener('click', () => errorResponseInput.click());
@@ -2102,7 +2118,6 @@
         if (e.dataTransfer.files[0]) processarArquivoRequest(e.dataTransfer.files[0]);
     });
     
-    // Upload para XML
     const uploadArea = document.getElementById('uploadArea');
     const fileInput = document.getElementById('fileInput');
     uploadArea.addEventListener('click', () => fileInput.click());
@@ -2112,7 +2127,7 @@
     uploadArea.addEventListener('drop', async (e) => {
         e.preventDefault();
         uploadArea.style.borderColor = '#cbd5e1';
-        if (e.dataTransfer.files[0]) processarArquivo(e.target.files[0]);
+        if (e.dataTransfer.files[0]) processarArquivo(e.dataTransfer.files[0]);
     });
     
     document.addEventListener('click', (e) => {
