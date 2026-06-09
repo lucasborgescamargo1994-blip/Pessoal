@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <title>Suporte Bsoft TMS - IA v20 - Multi Fontes Integradas</title>
+    <title>Suporte Bsoft TMS - IA v20 - Com Geolocalizador CIOT</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -43,6 +43,10 @@
             --repo-dark: #047857;
             --repo-light: #ecfdf5;
             --repo-border: #a7f3d0;
+            --ciot-color: #10b981;
+            --ciot-dark: #059669;
+            --ciot-light: #ecfdf5;
+            --ciot-border: #a7f3d0;
         }
 
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -236,21 +240,23 @@
         .btn-pesquisa-avancada:hover { transform: translateY(-1px); }
 
         /* Abas laterais */
-        .central-tab, .blog-tab, .manual-tab, .repo-tab {
+        .central-tab, .blog-tab, .manual-tab, .repo-tab, .ciot-tab {
             position: fixed; right: 0; transform: translateY(-50%);
             color: white; padding: 10px 7px; border-radius: 8px 0 0 8px;
             cursor: pointer; font-weight: 700; font-size: 11px;
             writing-mode: vertical-rl; box-shadow: -3px 0 15px rgba(0,0,0,0.2); transition: all 0.3s;
         }
-        .central-tab { top: 55%; background: linear-gradient(135deg, var(--central-color), var(--central-dark)); z-index: 1503; }
-        .blog-tab { top: 42%; background: linear-gradient(135deg, var(--blog-color), var(--blog-dark)); z-index: 1502; }
-        .manual-tab { top: 29%; background: linear-gradient(135deg, var(--manual-color), var(--manual-dark)); z-index: 1501; }
-        .repo-tab { top: 16%; background: linear-gradient(135deg, var(--repo-color), var(--repo-dark)); z-index: 1500; }
+        .central-tab { top: 60%; background: linear-gradient(135deg, var(--central-color), var(--central-dark)); z-index: 1503; }
+        .blog-tab { top: 48%; background: linear-gradient(135deg, var(--blog-color), var(--blog-dark)); z-index: 1502; }
+        .manual-tab { top: 36%; background: linear-gradient(135deg, var(--manual-color), var(--manual-dark)); z-index: 1501; }
+        .repo-tab { top: 24%; background: linear-gradient(135deg, var(--repo-color), var(--repo-dark)); z-index: 1500; }
+        .ciot-tab { top: 12%; background: linear-gradient(135deg, var(--ciot-color), var(--ciot-dark)); z-index: 1504; }
         .central-tab:hover { background: linear-gradient(135deg, #06b6d4, var(--central-color)); }
         .blog-tab:hover { background: linear-gradient(135deg, #ef4444, var(--blog-color)); }
         .manual-tab:hover { background: linear-gradient(135deg, #3b82f6, var(--manual-color)); }
         .repo-tab:hover { background: linear-gradient(135deg, #10b981, var(--repo-color)); }
-        .central-tab.open, .blog-tab.open, .manual-tab.open, .repo-tab.open { right: 550px; }
+        .ciot-tab:hover { background: linear-gradient(135deg, #34d399, var(--ciot-color)); }
+        .central-tab.open, .blog-tab.open, .manual-tab.open, .repo-tab.open, .ciot-tab.open { right: 550px; }
 
         .central-overlay {
             position: fixed; left: 0; top: 0; width: 100%; height: 100%;
@@ -258,16 +264,18 @@
         }
         .central-overlay.active { display: block; }
 
-        .central-panel, .blog-panel, .manual-panel, .repo-panel {
+        .central-panel, .blog-panel, .manual-panel, .repo-panel, .ciot-panel {
             position: fixed; right: -580px; top: 0; width: 550px; height: 100vh;
             background: white; box-shadow: -5px 0 30px rgba(0,0,0,0.2);
             transition: right 0.3s ease; display: flex; flex-direction: column;
         }
         .central-panel { z-index: 1999; } .blog-panel { z-index: 1997; }
         .manual-panel { z-index: 1996; } .repo-panel { z-index: 1995; }
-        .central-panel.open, .blog-panel.open, .manual-panel.open, .repo-panel.open { right: 0; }
+        .ciot-panel { z-index: 2000; }
 
-        .central-header, .blog-header, .manual-header, .repo-header {
+        .central-panel.open, .blog-panel.open, .manual-panel.open, .repo-panel.open, .ciot-panel.open { right: 0; }
+
+        .central-header, .blog-header, .manual-header, .repo-header, .ciot-header {
             padding: 16px; color: white; display: flex;
             justify-content: space-between; align-items: center; flex-shrink: 0;
         }
@@ -275,7 +283,8 @@
         .blog-header { background: linear-gradient(135deg, var(--blog-color), var(--blog-dark)); }
         .manual-header { background: linear-gradient(135deg, var(--manual-color), var(--manual-dark)); }
         .repo-header { background: linear-gradient(135deg, var(--repo-color), var(--repo-dark)); }
-        .central-header h3, .blog-header h3, .manual-header h3, .repo-header h3 { font-size: 15px; display: flex; align-items: center; gap: 8px; }
+        .ciot-header { background: linear-gradient(135deg, var(--ciot-color), var(--ciot-dark)); }
+        .central-header h3, .blog-header h3, .manual-header h3, .repo-header h3, .ciot-header h3 { font-size: 15px; display: flex; align-items: center; gap: 8px; }
 
         .central-search, .blog-search, .manual-search, .repo-search {
             padding: 10px 14px; display: flex; gap: 8px; flex-shrink: 0; align-items: center;
@@ -302,15 +311,23 @@
             font-weight: 600; font-family: inherit; font-size: 12px; white-space: nowrap; padding: 8px 14px;
         }
 
+        .ciot-iframe-container {
+            flex: 1; overflow-y: auto;
+            background: #1a0a00;
+        }
+        .ciot-iframe {
+            width: 100%; height: 100%; border: none; min-height: 500px;
+        }
+
         .central-iframe { flex: 1; border: none; width: 100%; }
 
-        .central-footer, .blog-footer, .manual-footer, .repo-footer {
+        .central-footer, .blog-footer, .manual-footer, .repo-footer, .ciot-footer {
             padding: 10px 16px; background: #f8fafc; border-top: 1px solid var(--border);
             font-size: 11px; color: var(--text-muted); display: flex;
             justify-content: space-between; align-items: center; flex-shrink: 0; flex-wrap: wrap; gap: 6px;
         }
 
-        .btn-central-action, .btn-blog-action, .btn-manual-action, .btn-repo-action {
+        .btn-central-action, .btn-blog-action, .btn-manual-action, .btn-repo-action, .btn-ciot-action {
             padding: 7px 14px; border: none; border-radius: 6px; cursor: pointer;
             font-size: 11px; font-weight: 600; font-family: inherit;
         }
@@ -318,8 +335,10 @@
         .btn-blog-capturar { background: var(--blog-light); color: var(--blog-dark); border: 1px solid var(--blog-border); }
         .btn-manual-capturar { background: var(--manual-light); color: var(--manual-dark); border: 1px solid var(--manual-border); }
         .btn-repo-capturar { background: var(--repo-light); color: var(--repo-dark); border: 1px solid var(--repo-border); }
+        .btn-ciot-action { background: var(--ciot-light); color: var(--ciot-dark); border: 1px solid var(--ciot-border); }
         .btn-capturar:hover { background: var(--central-border); } .btn-blog-capturar:hover { background: var(--blog-border); }
         .btn-manual-capturar:hover { background: var(--manual-border); } .btn-repo-capturar:hover { background: var(--repo-border); }
+        .btn-ciot-action:hover { background: var(--ciot-border); }
         .btn-enviar-ia { background: var(--primary); color: white; }
         .btn-enviar-ia:hover { background: var(--primary-dark); }
 
@@ -355,8 +374,8 @@
             .sidebar { position: fixed; left: -100%; top: 0; height: 100%; z-index: 1000; transition: left 0.3s ease; border-radius: 0; }
             .sidebar.open { left: 0; } .btn-toggle-sidebar { display: flex; } .app-layout { gap: 0; } body { padding: 0; }
             .main-container { border-radius: 0; border: none; } .message { max-width: 95%; font-size: 13px; } #searchInput { font-size: 16px; }
-            .central-panel, .blog-panel, .manual-panel, .repo-panel { width: 100%; right: -100%; }
-            .central-tab.open, .blog-tab.open, .manual-tab.open, .repo-tab.open { right: 100%; }
+            .central-panel, .blog-panel, .manual-panel, .repo-panel, .ciot-panel { width: 100%; right: -100%; }
+            .central-tab.open, .blog-tab.open, .manual-tab.open, .repo-tab.open, .ciot-tab.open { right: 100%; }
         }
 		
 		/* YouTube Bsoft */
@@ -380,7 +399,7 @@
 
 .yt-panel {
     position: fixed; right: -580px; top: 0; width: 550px; height: 100vh;
-    background: white; z-index: 2000;
+    background: white; z-index: 2001;
     box-shadow: -5px 0 30px rgba(0,0,0,0.2);
     transition: right 0.3s ease; display: flex; flex-direction: column;
 }
@@ -482,6 +501,9 @@
 <!-- Guia Repositório -->
 <div class="repo-tab" id="repositorioTab" onclick="toggleRepositorioPanel()" title="Repositório de Documentos">📁 Repositório</div>
 
+<!-- Guia Geolocalizador CIOT -->
+<div class="ciot-tab" id="ciotTab" onclick="toggleCiotPanel()" title="Geolocalizador CIOT - Validador de Rotas">🗺️ CIOT</div>
+
 <!-- Overlay -->
 <div class="central-overlay" id="centralOverlay" onclick="fecharTodosPaineis()"></div>
 
@@ -562,6 +584,7 @@
         </div>
     </div>
 </div>
+
 <!-- ═══════════════════════════════════════════════════════ -->
 <!--  PAINEL BLOG BSOFT                                          -->
 <!-- ═══════════════════════════════════════════════════════ -->
@@ -648,6 +671,29 @@
         </div>
     </div>
     <div class="repo-footer"><span id="repositorioStatus">📁 Repositório de documentos</span></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!--  PAINEL GEOLOCALIZADOR CIOT                                -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="ciot-panel" id="ciotPanel">
+    <div class="ciot-header">
+        <h3>🗺️ Geolocalizador CIOT - Validador de Rotas</h3>
+        <div style="display:flex;gap:8px;">
+            <button onclick="abrirCiotNovaAba()" style="background:rgba(255,255,255,0.2);border:none;color:white;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit;">🌐 Abrir em Nova Aba</button>
+            <button onclick="toggleCiotPanel()" style="background:rgba(255,255,255,0.2);border:none;color:white;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:14px;">✕</button>
+        </div>
+    </div>
+    <div class="ciot-iframe-container" id="ciotIframeContainer">
+        <iframe id="ciotIframe" class="ciot-iframe" src="about:blank" title="Geolocalizador CIOT"></iframe>
+    </div>
+    <div class="ciot-footer">
+        <span id="ciotStatus">🗺️ Validador de Rotas e CIOT - By Lucas Camargo</span>
+        <div style="display:flex;gap:6px;">
+            <button class="btn-ciot-action" onclick="recarregarCiot()">🔄 Recarregar</button>
+            <button class="btn-ciot-action btn-enviar-ia" onclick="enviarContextoCiotParaIA()">🤖 Enviar para IA</button>
+        </div>
+    </div>
 </div>
 
 <!-- ═══════════════════════════════════════════════════════ -->
@@ -993,6 +1039,71 @@ let manualVetorizado=[],dadosParametros=[],dadosFuncionalidades=[],isVectorizing
 const SCRIPT_URL="https://script.google.com/macros/s/AKfycbyxuDqwFCdhkLSE59cSD5FrAaTS6gbNC6jpOvj8hWp-2oOGQF_w-UL2QjPm0E1VqwU/exec";
 const CORRECT_PASSWORD="camargo1994";
 const recognition=new(window.SpeechRecognition||window.webkitSpeechRecognition)();recognition.lang='pt-BR';recognition.continuous=true;recognition.interimResults=false;
+
+// ═══════════════════════════════════════════════════════════
+//  PAINEL CIOT
+// ═══════════════════════════════════════════════════════════
+let ciotPanelOpen = false;
+const CIOT_URL = "https://lucasborgescamargo1994-blip.github.io/Pessoal/geolocaliza";
+
+function toggleCiotPanel() {
+    ciotPanelOpen = !ciotPanelOpen;
+    const panel = document.getElementById('ciotPanel');
+    const tab = document.getElementById('ciotTab');
+    const overlay = document.getElementById('centralOverlay');
+    
+    panel.classList.toggle('open', ciotPanelOpen);
+    tab.classList.toggle('open', ciotPanelOpen);
+    
+    if (ciotPanelOpen) {
+        if (overlay) overlay.classList.add('active');
+        // Carrega o iframe pela primeira vez ou recarrega
+        const iframe = document.getElementById('ciotIframe');
+        if (iframe && iframe.src === 'about:blank') {
+            iframe.src = CIOT_URL;
+            document.getElementById('ciotStatus').textContent = '🗺️ Carregando Geolocalizador CIOT...';
+        } else if (iframe && iframe.src !== CIOT_URL) {
+            iframe.src = CIOT_URL;
+        } else {
+            document.getElementById('ciotStatus').textContent = '🗺️ Validador de Rotas e CIOT - By Lucas Camargo';
+        }
+    } else {
+        if (overlay) overlay.classList.remove('active');
+    }
+}
+
+function abrirCiotNovaAba() {
+    window.open(CIOT_URL, '_blank');
+    document.getElementById('ciotStatus').textContent = '🗺️ Aberto em nova aba';
+    setTimeout(() => {
+        document.getElementById('ciotStatus').textContent = '🗺️ Validador de Rotas e CIOT - By Lucas Camargo';
+    }, 3000);
+}
+
+function recarregarCiot() {
+    const iframe = document.getElementById('ciotIframe');
+    const currentSrc = iframe.src;
+    iframe.src = 'about:blank';
+    document.getElementById('ciotStatus').textContent = '🔄 Recarregando...';
+    setTimeout(() => {
+        iframe.src = CIOT_URL;
+        document.getElementById('ciotStatus').textContent = '🗺️ Validador de Rotas e CIOT - By Lucas Camargo';
+    }, 500);
+}
+
+function enviarContextoCiotParaIA() {
+    appendMessage('system', '🗺️ <strong>Geolocalizador CIOT aberto</strong><br>Utilize a ferramenta ao lado para validar rotas e distâncias de CT-e.');
+    const conversa = getConversaAtiva();
+    if (conversa) {
+        conversa.contexto.push({
+            role: 'user',
+            content: 'O usuário abriu o Geolocalizador CIOT para validar rotas e calcular distâncias rodoviárias.'
+        });
+        salvarConversas();
+    }
+    toggleCiotPanel();
+}
+
 // ═══════════════════════════════════════════════════════════
 //  SISTEMA DE SINÔNIMOS
 // ═══════════════════════════════════════════════════════════
@@ -1025,108 +1136,33 @@ const SINONIMOS = {
     minuta: ["minuta", "rascunho", "pré-conhecimento", "pre-conhecimento", "documento não fiscal"]
 };
 
-
-// ═══════════════════════════════════════════════════════════
-//  INICIALIZAÇÃO (CHAT PRIMEIRO, REPOSITÓRIO DEPOIS)
-// ═══════════════════════════════════════════════════════════
-window.addEventListener('DOMContentLoaded', async () => {
-    carregarConversas();
-    carregarMLKnowledge();
-    loadMCPConfig();
-    
-    // ══ NOVO: Habilita o campo de texto desde o início para o usuário digitar ══
-    const searchInput = document.getElementById('searchInput');
-    const sendBtn = document.getElementById('sendBtn');
-    
-    // Campo de texto habilitado para digitar
-    searchInput.disabled = false;
-    searchInput.placeholder = "Carregando banco de dados... (digite sua pergunta enquanto carrega)";
-    
-    // Botão de envio desabilitado até carregar
-    sendBtn.disabled = true;
-    
-    // ══ PRIORIDADE 1: Carrega banco de dados e libera o chat ══
-    console.log("🔄 Carregando banco de dados...");
-    await loadData();
-    console.log("✅ Banco de dados carregado! Chat liberado.");
-    
-    // ══ PRIORIDADE 2: Carrega repositório em segundo plano ══
-    console.log("📁 Iniciando carregamento do repositório em segundo plano...");
-    carregarDadosRepositorio().then(() => {
-        console.log("✅ Repositório carregado e vetorizado!");
-        const badge = document.getElementById('statusBadge');
-        if (badge && !isVectorizing) {
-            const repoCount = manualVetorizado.filter(item => item.isRepositorio).length;
-            badge.innerText = `IA Pronta (${manualVetorizado.length}) [+${repoCount} repo]`;
-        }
-    }).catch(e => {
-        console.warn("⚠️ Repositório carregado com erros (não afeta o chat):", e);
-    });
-    
-    // Evento de Enter - só processa se não estiver carregando
-    searchInput.addEventListener("keypress", (e) => {
-        if (e.key === "Enter" && !isVectorizing && !sendBtn.disabled) {
-            handleChat();
-        }
-    });
-});
-
-/**
- * Normaliza um texto substituindo palavras pelos seus termos principais usando o dicionário de sinônimos
- * @param {string} texto - Texto a ser normalizado
- * @returns {string} - Texto com sinônimos substituídos pelos termos principais
- */
 function normalizarSinonimos(texto) {
     if (!texto) return texto;
-    
     let textoNormalizado = texto.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     let textoOriginal = texto.toLowerCase();
-    
-    // Para cada grupo de sinônimos
     for (const [termoPrincipal, sinonimos] of Object.entries(SINONIMOS)) {
-        // Ordena os sinônimos do maior para o menor para evitar substituições parciais
         const sinonimosOrdenados = [...sinonimos].sort((a, b) => b.length - a.length);
-        
         for (const sinonimo of sinonimosOrdenados) {
             const sinonimoNormalizado = sinonimo.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-            
-            // Verifica se o sinônimo está no texto original (case insensitive)
-            // Usa regex com word boundaries para evitar substituições parciais
             const regex = new RegExp(`\\b${escapeRegExp(sinonimo)}\\b`, 'gi');
-            
             if (regex.test(textoOriginal)) {
-                // Substitui todas as ocorrências mantendo o texto original para referência
                 textoOriginal = textoOriginal.replace(regex, termoPrincipal);
             }
-            
-            // Também verifica no texto normalizado (sem acentos)
             const regexNormalizado = new RegExp(`\\b${escapeRegExp(sinonimoNormalizado)}\\b`, 'gi');
             if (regexNormalizado.test(textoNormalizado)) {
                 textoNormalizado = textoNormalizado.replace(regexNormalizado, termoPrincipal);
             }
         }
     }
-    
     return textoOriginal;
 }
 
-/**
- * Escapa caracteres especiais para uso em regex
- */
 function escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-/**
- * Extrai termos de um texto já aplicando sinônimos
- * @param {string} texto - Texto para extrair termos
- * @returns {Array} - Array de termos normalizados
- */
 function extrairTermosComSinonimos(texto) {
-    // Primeiro normaliza os sinônimos
     const textoNormalizado = normalizarSinonimos(texto);
-    
-    // Depois extrai os termos normalmente
     const sw = new Set([
         "como","que","qual","quais","para","com","sem","não","mas","por","mais","uma",
         "isso","este","esta","esse","essa","num","numa","meu","minha","meus","minhas",
@@ -1135,7 +1171,6 @@ function extrairTermosComSinonimos(texto) {
         "tipo","ah","e","o","a","os","as","um","uns","umas","no","na","nos","nas",
         "do","da","dos","das","de","em"
     ]);
-    
     return textoNormalizado
         .toLowerCase()
         .normalize("NFD")
@@ -1146,9 +1181,7 @@ function extrairTermosComSinonimos(texto) {
 }
 
 function detectarDocumento(texto) {
-    // Normaliza o texto com sinônimos primeiro
     const textoNormalizado = normalizarSinonimos(texto);
-    
     const md = {
         'cte': ['cte', 'conhecimento', 'conhecimento de transporte', 'ct-e'],
         'nfse': ['nfse', 'nfs-e', 'nota fiscal de serviço', 'nota de serviço'],
@@ -1160,7 +1193,6 @@ function detectarDocumento(texto) {
         'ciot': ['ciot', 'contrato de frete eletrônico'],
         'vpo': ['vpo', 'vale pedágio', 'vale-pedágio']
     };
-    
     for (const [t, p] of Object.entries(md)) {
         if (p.some(palavra => textoNormalizado.includes(palavra.toLowerCase()))) {
             return t;
@@ -1168,23 +1200,17 @@ function detectarDocumento(texto) {
     }
     return null;
 }
+
 // ═══════════════════════════════════════════════════════════
 //  FORÇAR ATUALIZAÇÃO DO REPOSITÓRIO
 // ═══════════════════════════════════════════════════════════
 async function forcarAtualizacaoRepositorio() {
     appendMessage('system', '🔄 <strong>Atualizando repositório...</strong>');
-    
-    // Limpa o cache
     localStorage.removeItem(REPO_ARTIGOS_KEY);
     repositorioCarregado = false;
     repositorioCache = [];
-    
-    // Remove entradas antigas do repositório do manualVetorizado
     manualVetorizado = manualVetorizado.filter(item => !item.isRepositorio);
-    
-    // Recarrega
     await carregarDadosRepositorio();
-    
     appendMessage('system', '✅ <strong>Repositório atualizado!</strong>');
 }
 
@@ -1208,8 +1234,6 @@ async function loadData() {
     const b = document.getElementById('statusBadge');
     try {
         b.innerText = `Carregando banco de dados...`;
-        
-        // Carrega APENAS o essencial primeiro (BancoDados, Parâmetros, Funcionalidades, Logs)
         const [rB, rP, rF, rL, rM] = await Promise.allSettled([
             fetch(SCRIPT_URL).then(r => r.json()),
             fetch(SCRIPT_URL + "?aba=Parametros").then(r => r.json()),
@@ -1217,12 +1241,9 @@ async function loadData() {
             fetch(SCRIPT_URL + "?tipo=logs").then(r => r.json()),
             fetch(SCRIPT_URL + "?aba=machinelearning").then(r => r.json())
         ]);
-        
         if (rP.status === 'fulfilled') dadosParametros = Array.isArray(rP.value) ? rP.value : (typeof rP.value === 'string' ? JSON.parse(rP.value) : []);
         if (rF.status === 'fulfilled') dadosFuncionalidades = Array.isArray(rF.value) ? rF.value : (typeof rF.value === 'string' ? JSON.parse(rF.value) : []);
         if (rL.status === 'fulfilled') popularBarraEmAlta(rL.value);
-        
-        // Carrega ML knowledge
         if (rM.status === 'fulfilled' && Array.isArray(rM.value)) {
             rM.value.forEach(item => {
                 const e = mlKnowledge.find(k => k.erro === item.erro);
@@ -1238,30 +1259,22 @@ async function loadData() {
             });
             salvarMLKnowledge();
         }
-        
         if (rB.status !== 'fulfilled') throw new Error("Falha ao buscar BancoDados");
         let dados = rB.value;
         if (typeof dados === 'string') dados = JSON.parse(dados);
         if (!Array.isArray(dados)) throw new Error("Formato inválido");
-        
         bancoCompletoRaw = dados;
         b.innerText = "Vetorizando base...";
-        
         const { linhasComVetor, linhasSemVetor, chaves } = carregarVetoresExistentes(dados);
-        
-        // ══ LIBERA O CHAT IMEDIATAMENTE se já tem dados vetorizados ══
         if (manualVetorizado.length > 0) {
             liberarChat(linhasSemVetor.length > 0 ? "parcial" : "completo");
         }
-        
-        // Continua vetorização em background se necessário
         if (linhasSemVetor.length > 0) {
             vetorizarEmBackground(linhasSemVetor, chaves);
         } else if (manualVetorizado.length === 0) {
             b.innerText = "Sem dados";
             liberarChat("vazio");
         }
-        
     } catch (error) {
         console.error("Erro loadData:", error);
         document.getElementById('statusBadge').innerText = "Erro de Conexão";
@@ -1277,15 +1290,10 @@ function liberarChat(modo="completo"){
     const si = obterSaudacao();
     const sendBtn = document.getElementById('sendBtn');
     const searchInput = document.getElementById('searchInput');
-    
     isVectorizing = false;
-    
-    // ══ HABILITA O ENVIO ══
     sendBtn.disabled = false;
     searchInput.placeholder = "Digite sua dúvida...";
-    
     const pi = ` [${mcpConfig.provider}/${mcpConfig.model.split('/').pop()}]`;
-    
     if(modo === "completo"){
         b.innerText = `IA Pronta (${manualVetorizado.length})${pi}`;
         b.className = "badge";
@@ -1314,7 +1322,6 @@ function salvarVetorNaPlanilha(nl,nc,vs){fetch(SCRIPT_URL,{method:'POST',mode:'n
 // ═══════════════════════════════════════════════════════════
 function prepararContextoManualCompleto() {
     let cm = "=== MANUAL COMPLETO BSOFT TMS ===\n\n";
-    
     cm += "--- BASE DE CONHECIMENTO (BancoDados) ---\n";
     bancoCompletoRaw.forEach((item, index) => {
         const chaves = Object.keys(item);
@@ -1330,8 +1337,6 @@ function prepararContextoManualCompleto() {
             cm += "---\n";
         }
     });
-    
-    // Conteúdo do Repositório
     cm += "\n--- 📁 CONHECIMENTO DO REPOSITÓRIO (Drive) ---\n";
     const artigosCache = JSON.parse(localStorage.getItem(REPO_ARTIGOS_KEY) || '{}');
     const cacheKeys = Object.keys(artigosCache);
@@ -1347,7 +1352,6 @@ function prepararContextoManualCompleto() {
             }
         });
     }
-    
     const mlc = mlKnowledge.filter(k => k.confirmado && !k.feedbackNegativo);
     if (mlc.length > 0) { cm += "\n--- CONHECIMENTOS ML (Confirmados) ---\n"; mlc.forEach((k, i) => { cm += `[ML ${i + 1}] ${k.erro}\nSolução: ${k.solucao}\nFonte: ${k.fonte}\n---\n`; }); }
     cm += "\n--- PARÂMETROS ---\n"; dadosParametros.forEach((p, i) => { cm += `[PARÂMETRO ${i + 1}] ${JSON.stringify(p).substring(0, 500)}\n`; if (i > 20) { cm += "... (mais parâmetros)\n"; return; } });
@@ -1358,12 +1362,6 @@ function prepararContextoManualCompleto() {
 function extrairTermos(texto) {
     const sw = new Set(["como","que","qual","quais","para","com","sem","não","mas","por","mais","uma","isso","este","esta","esse","essa","num","numa","meu","minha","meus","minhas","tem","ter","ser","foi","vai","vou","tenho","posso","pode","quero","preciso","saber","sobre","nao","onde","quando","porque","pois","também","ainda","mesmo","tipo","ah","e","o","a","os","as","um","uns","umas","no","na","nos","nas","do","da","dos","das","de","em"]);
     return texto.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9 ]/g," ").split(/\s+/).filter(t => t.length > 2 && !sw.has(t));
-}
-
-function detectarDocumento(texto) {
-    const md = {'cte':['ct-e','cte','conhecimento de transporte','conhecimento eletrônico','conhecimento'],'nfse':['nfs-e','nfse','nota fiscal de serviço','nota de serviço','notas de serviço'],'nfe':['nf-e','nfe','nota fiscal eletrônica','nota fiscal','notas fiscais'],'mdfe':['mdf-e','mdfe','manifesto de carga','manifesto eletrônico','manifesto'],'minuta':['minuta','conhecimento não fiscal'],'oc':['ordem de carregamento','oc'],'contrato':['contrato de frete','contrato'],'ciot':['ciot','contrato de frete eletrônico'],'vpo':['vpo','vale pedágio','vale-pedágio']};
-    for (const [t, p] of Object.entries(md)) { if (p.some(p => texto.includes(p.toLowerCase()))) return t; }
-    return null;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1456,6 +1454,7 @@ async function handleChat() {
                 <span>Esta resposta foi útil?</span>
                 <button class="feedback-btn" onclick="saveFeedback(${Date.now()},'positivo',this)">👍</button>
                 <button class="feedback-btn" onclick="saveFeedback(${Date.now()},'negativo',this)">👎</button>
+                <button class="btn-pesquisa-avancada" style="background:linear-gradient(135deg, #10b981, #059669);" onclick="toggleCiotPanel()">🗺️ CIOT</button>
                 <button class="btn-pesquisa-avancada" style="background:linear-gradient(135deg, #dc2626, #991b1b);" onclick="toggleBlogPanel();document.getElementById('blogSearchInput').value='${query.replace(/'/g, "\\'")}';pesquisarNoBlog();">📝 Blog</button>
                 <button class="btn-pesquisa-avancada" style="background:linear-gradient(135deg, #2563eb, #1d4ed8);" onclick="toggleManualPanel();">📘 Manual</button>
                 <button class="btn-pesquisa-avancada" style="background:linear-gradient(135deg, #ff0000, #cc0000);" onclick="toggleYTPanel();document.getElementById('ytSearchInput').value='${query.replace(/'/g, "\\'")}';pesquisarNoYT();">🎬 YouTube</button>
@@ -1519,9 +1518,7 @@ async function processarProximaSolucao(po) {
 let bancoRejeicoes = [], bancoRejeicoesCarregado = false;
 async function carregarBancoRejeicoes() { if (bancoRejeicoesCarregado && bancoRejeicoes.length > 0) return bancoRejeicoes; try { const r = await fetch(SCRIPT_URL + "?aba=RejeicoesSEFAZ"); if (!r.ok) throw new Error("Erro"); const d = await r.json(); if (Array.isArray(d)) { bancoRejeicoes = d; bancoRejeicoesCarregado = true; } } catch (e) { bancoRejeicoes = []; } return bancoRejeicoes; }
 function ehErroSefaz(query) {
-    // Normaliza com sinônimos
     const q = normalizarSinonimos(query);
-    
     const pr = [
         "rejeicao", "rejeição", "rejeitado", "rejeitada",
         "falha",
@@ -1529,7 +1526,6 @@ function ehErroSefaz(query) {
         "codigo de rejeicao", "codigo de rejeição", 
         "código de rejeição", "motivo de rejeicao", "motivo de rejeição"
     ];
-    
     return pr.some(p => q.includes(p)) || /rejei[cç][aã]o\s+\d{3,4}/.test(q);
 }
 
@@ -1559,32 +1555,22 @@ async function carregarRespostasFixas() { if (cachRespostasFixas && (Date.now() 
 async function salvarRespostaFixa(pergunta, resposta) { const c = pergunta.toLowerCase().trim().substring(0, 120); cachRespostasFixas = null; fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "fixarResposta", chave: c, pergunta, resposta: JSON.stringify(resposta), ts: new Date().toISOString() }) }).catch(e => {}); try { const l = JSON.parse(localStorage.getItem('bsoft_fixas_cache') || '{}'); l[c] = { resposta, confirmacoes: (l[c]?.confirmacoes || 0) + 1 }; localStorage.setItem('bsoft_fixas_cache', JSON.stringify(l)); } catch (e) {} }
 async function buscarRespostaFixa(pergunta) {
     const f = await carregarRespostasFixas();
-    
-    // Normaliza a pergunta usando sinônimos
     const perguntaNormalizada = normalizarSinonimos(pergunta);
     const c = perguntaNormalizada.toLowerCase().trim().substring(0, 120);
-    
-    // Busca direta pela chave normalizada
     if (f[c]) return f[c].resposta;
-    
-    // Busca por similaridade usando termos com sinônimos
     const tq = extrairTermosComSinonimos(pergunta);
     let mm = null, ms = 0;
-    
     for (const [k, v] of Object.entries(f)) {
         const kNormalizada = normalizarSinonimos(k);
         const tk = extrairTermosComSinonimos(kNormalizada);
-        
         const inter = tq.filter(t => tk.includes(t)).length;
         const ml = Math.min(tq.length, tk.length) || 1;
         const sc = inter / ml;
-        
         if (sc >= 0.75 && sc > ms) {
             ms = sc;
             mm = { chave: k, resposta: v.resposta };
         }
     }
-    
     return mm ? mm.resposta : null;
 }
 
@@ -1605,21 +1591,13 @@ let perguntaPrimariaAtual = "";
 function logSearch(query, found) {
     const conversa = getConversaAtiva();
     if (!conversa) return;
-    
-    // SÓ CRIA LOG se for a PRIMEIRA pergunta da conversa
     const totalPerguntasUser = conversa.mensagens.filter(m => m.sender === 'user').length;
-    
     if (totalPerguntasUser === 1) {
         currentLogTimestamp = Date.now();
         perguntaPrimariaAtual = query;
         conversa.primeiraPergunta = query;
         conversa.logTimestamp = currentLogTimestamp;
         salvarConversas();
-        
-        
-        
-        console.log("📝 LOG CRIADO para pergunta primária:", query);
-        
         try { 
             fetch(SCRIPT_URL, { 
                 method:'POST', 
@@ -1649,7 +1627,6 @@ async function saveFeedback(logIndex, type, btn) {
     console.log("📝 Feedback associado à pergunta primária:", perguntaParaLog, "| timestamp:", timestampLog);
 
     if (type === 'positivo') {
-        // Atualiza o status na planilha para "Positivo"
         try {
             await fetch(SCRIPT_URL, { 
                 method: 'POST', 
@@ -1665,17 +1642,13 @@ async function saveFeedback(logIndex, type, btn) {
         } catch(e) {
             console.error("Erro ao enviar feedback positivo:", e);
         }
-        
-        // Fixa a resposta para todos os usuários
         if (card && card._dadosResposta && perguntaParaLog) {
             await salvarRespostaFixa(perguntaParaLog, card._dadosResposta);
             feedbackArea.innerHTML = "<span style='color:#166534;font-weight:700;'>✅ Obrigado! Resposta fixada para todos os usuários.</span>";
         } else {
             feedbackArea.innerHTML = "<span style='color:#166534;font-weight:700;'>👍 Obrigado pelo feedback positivo!</span>";
         }
-        
     } else {
-        // Feedback negativo
         try {
             await fetch(SCRIPT_URL, { 
                 method: 'POST', 
@@ -1691,7 +1664,6 @@ async function saveFeedback(logIndex, type, btn) {
         } catch(e) {
             console.error("Erro ao enviar feedback negativo:", e);
         }
-        
         feedbackArea.innerHTML = `<div class="reason-box" style="display:flex;">
             <textarea id="reason_${logIndex}" placeholder="O que faltou na resposta? Descreva o problema para melhorarmos."></textarea>
             <button onclick="sendDetailedFeedback(${logIndex}, this)">Enviar Feedback</button>
@@ -1758,7 +1730,7 @@ let ultimoConteudoCapturado = '', ultimoConteudoBlogCapturado = '', ultimoConteu
 const CENTRAL_BASE_URL = 'https://centraldeajuda.e-login.net/';
 const MANUAL_BASE_URL = 'https://manuaisbsoft.atlassian.net/wiki/spaces/BT/overview';
 
-function fecharTodosPaineis() { if (centralPanelOpen) toggleCentralPanel(); if (blogPanelOpen) toggleBlogPanel(); if (manualPanelOpen) toggleManualPanel(); if (repositorioPanelOpen) toggleRepositorioPanel(); }
+function fecharTodosPaineis() { if (centralPanelOpen) toggleCentralPanel(); if (blogPanelOpen) toggleBlogPanel(); if (manualPanelOpen) toggleManualPanel(); if (repositorioPanelOpen) toggleRepositorioPanel(); if (ciotPanelOpen) toggleCiotPanel(); }
 
 // Central de Ajuda
 function abrirCentralNovaAba(pagina) {
@@ -1802,13 +1774,10 @@ async function extrairTextoRepositorio(fileId) {
         const response = await fetch(`${SCRIPT_URL}?aba=Repositorio&action=extrairTexto&fileId=${fileId}`);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
-        
-        // Verifica se veio com erro
         if (data && data.erro) {
             console.warn("Erro da API:", data.erro);
             return null;
         }
-        
         return data;
     } catch(e) {
         console.error("Erro ao extrair texto:", e);
@@ -1825,32 +1794,24 @@ async function carregarDadosRepositorio() {
     try {
         console.log("📁 Iniciando carregamento FORÇADO do repositório...");
         await carregarRepositorio();
-        
         if (repositorioCache.length === 0) {
             console.log("📁 Repositório vazio.");
             return;
         }
-        
         console.log(`📁 ${repositorioCache.length} arquivos encontrados. Extraindo TODOS (ignorando cache)...`);
-        
-        const artigosCache = {}; // Começa sempre vazio para forçar extração
+        const artigosCache = {};
         let carregados = 0;
         let erros = 0;
-        
         for (const arquivo of repositorioCache) {
             const tipo = (arquivo.tipo || '').toLowerCase();
             const nome = arquivo.nome || 'Sem nome';
-            
-            // Só pula vídeos, áudios e imagens
             if (tipo.includes('video') || tipo.includes('audio') || tipo.includes('image/png') || tipo.includes('image/jpeg')) {
                 console.log(`📁 Pulando (mídia): ${nome}`);
                 continue;
             }
-            
             try {
                 console.log(`📁 Extraindo: ${nome} (${tipo})...`);
                 const resultado = await extrairTextoRepositorio(arquivo.id);
-                
                 if (resultado && resultado.texto && resultado.texto.length > 50) {
                     artigosCache[arquivo.id] = {
                         titulo: nome,
@@ -1863,28 +1824,17 @@ async function carregarDadosRepositorio() {
                     console.warn(`⚠️ Texto vazio/curto: ${nome} (${resultado?.texto?.length || 0} caracteres)`);
                     erros++;
                 }
-                
-                // Pausa para não sobrecarregar
                 await new Promise(r => setTimeout(r, 2000));
-                
             } catch(e) {
                 console.error(`❌ Erro: ${nome}:`, e);
                 erros++;
             }
         }
-        
-        // Salva o cache
         localStorage.setItem(REPO_ARTIGOS_KEY, JSON.stringify(artigosCache));
-        
         const totalCache = Object.keys(artigosCache).length;
         console.log(`📁 REPOSITÓRIO PRONTO: ${carregados} extraídos, ${erros} erros, ${totalCache} em cache`);
-        
-        // Adiciona os textos do repositório como conhecimento vetorizado
         if (totalCache > 0) {
-            // Remove entradas antigas do repositório
             manualVetorizado = manualVetorizado.filter(item => !item.isRepositorio);
-            
-            // Vetoriza cada arquivo do repositório
             for (const [id, artigo] of Object.entries(artigosCache)) {
                 if (artigo && artigo.conteudo && artigo.conteudo.length > 100) {
                     const textoCompleto = `REPOSITÓRIO: ${artigo.titulo} | CONTEÚDO: ${artigo.conteudo.substring(0, 2000)}`;
@@ -1908,10 +1858,8 @@ async function carregarDadosRepositorio() {
                     }
                 }
             }
-            
             console.log(`📁 Total vetorizado do repositório: ${manualVetorizado.filter(item => item.isRepositorio).length} itens`);
         }
-        
     } catch(e) {
         console.error("❌ Erro geral:", e);
     }
@@ -1919,25 +1867,16 @@ async function carregarDadosRepositorio() {
 
 async function forcarRecargaRepositorio() {
     appendMessage('system', '⚡ <strong>Forçando extração de todos os arquivos...</strong>');
-    
-    // Limpa TUDO
     localStorage.removeItem(REPO_ARTIGOS_KEY);
     repositorioCarregado = false;
     repositorioCache = [];
     manualVetorizado = manualVetorizado.filter(item => !item.isRepositorio);
-    
-    // Recarrega do zero
     await carregarDadosRepositorio();
-    
-    // Atualiza a lista visual
     if (repositorioPanelOpen) {
         renderizarListaRepositorio();
     }
-    
     const totalRepo = manualVetorizado.filter(item => item.isRepositorio).length;
     appendMessage('system', `✅ <strong>Repositório recarregado!</strong> ${totalRepo} documentos vetorizados.`);
-    
-    // Atualiza o badge
     const badge = document.getElementById('statusBadge');
     if (badge) {
         badge.innerText = `IA Pronta (${manualVetorizado.length} itens)`;
@@ -1962,6 +1901,7 @@ document.addEventListener('keydown', function(e) {
     if (e.ctrlKey && e.shiftKey && e.key === 'B') { e.preventDefault(); toggleBlogPanel(); }
     if (e.ctrlKey && e.shiftKey && e.key === 'M') { e.preventDefault(); toggleManualPanel(); }
     if (e.ctrlKey && e.shiftKey && e.key === 'R') { e.preventDefault(); toggleRepositorioPanel(); }
+    if (e.ctrlKey && e.shiftKey && e.key === 'G') { e.preventDefault(); toggleCiotPanel(); }
 });
 
 // Monitora Ctrl+V para colar nos painéis
@@ -1982,18 +1922,14 @@ function toggleYTPanel() {
     ytPanelOpen = !ytPanelOpen;
     document.getElementById('ytPanel').classList.toggle('open', ytPanelOpen);
     document.getElementById('ytTab').classList.toggle('open', ytPanelOpen);
-    
     if (ytPanelOpen) {
-        // Carrega o canal DIRETO no player (sem fetch)
         carregarCanalNoPlayer();
     }
 }
 
 function carregarCanalNoPlayer() {
     const playerDiv = document.getElementById('ytPlayer');
-    // Formato: UU + ID sem UC = playlist de uploads
     const uploadsPlaylist = 'UU' + YT_CHANNEL_ID.substring(2);
-    
     playerDiv.innerHTML = `
         <iframe 
             width="100%" height="100%" 
@@ -2002,11 +1938,8 @@ function carregarCanalNoPlayer() {
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
             allowfullscreen>
         </iframe>`;
-    
     document.getElementById('ytStatus').textContent = '🎬 Canal @bsoft carregado no player';
     document.getElementById('ytStatus').style.color = '#166534';
-    
-    // Lista de vídeos populares (links clicáveis)
     document.getElementById('ytVideoList').innerHTML = `
         <div style="padding:12px;">
             <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">
@@ -2031,13 +1964,10 @@ function carregarCanalNoPlayer() {
 
 function pesquisarNoYT() {
     const query = document.getElementById('ytSearchInput').value.trim();
-    
     if (!query) {
         carregarCanalNoPlayer();
         return;
     }
-    
-    // Pesquisa DIRETO no player via embed do YouTube
     const playerDiv = document.getElementById('ytPlayer');
     playerDiv.innerHTML = `
         <iframe 
@@ -2047,11 +1977,8 @@ function pesquisarNoYT() {
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
             allowfullscreen>
         </iframe>`;
-    
     document.getElementById('ytStatus').textContent = '🔍 Pesquisando: ' + query;
     document.getElementById('ytStatus').style.color = '#ff0000';
-    
-    // Links rápidos para pesquisa externa
     document.getElementById('ytVideoList').innerHTML = `
         <div style="padding:12px;">
             <p style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">
@@ -2068,11 +1995,8 @@ function reproduzirVideo(videoId, titulo) {
     if (videoId) {
         ytCurrentVideoId = videoId;
     }
-    
     const playerDiv = document.getElementById('ytPlayer');
-    
     if (videoId) {
-        // Reproduz vídeo específico
         playerDiv.innerHTML = `
             <iframe 
                 width="100%" height="100%" 
@@ -2082,7 +2006,6 @@ function reproduzirVideo(videoId, titulo) {
                 allowfullscreen>
             </iframe>`;
     } else {
-        // Pesquisa genérica
         playerDiv.innerHTML = `
             <iframe 
                 width="100%" height="100%" 
@@ -2092,10 +2015,8 @@ function reproduzirVideo(videoId, titulo) {
                 allowfullscreen>
             </iframe>`;
     }
-    
     document.getElementById('ytStatus').textContent = '▶️ ' + (titulo || 'Pesquisando...').substring(0, 50);
     document.getElementById('ytStatus').style.color = '#166534';
-    
     window._ytVideoId = videoId;
     window._ytVideoTitle = titulo;
 }
@@ -2105,17 +2026,13 @@ function abrirCanalYT() {
 }
 
 function obterTranscricaoYT() {
-    // Abre o vídeo atual no YouTube para pegar transcrição
     if (ytCurrentVideoId) {
         window.open(`https://www.youtube.com/watch?v=${ytCurrentVideoId}`, '_blank');
     } else {
         window.open(YT_CHANNEL_URL + '/videos', '_blank');
     }
-    
     document.getElementById('ytStatus').textContent = '📝 Abra o vídeo, copie a transcrição e cole abaixo';
     document.getElementById('ytStatus').style.color = '#b45309';
-    
-    // Cria/seleciona área de transcrição
     let area = document.getElementById('ytTranscriptArea');
     if (!area) {
         area = document.createElement('div');
@@ -2148,14 +2065,11 @@ function obterTranscricaoYT() {
 async function enviarTranscricaoManual() {
     const input = document.getElementById('ytTranscriptInput');
     const transcricao = input?.value?.trim();
-    
     if (!transcricao || transcricao.length < 20) {
         alert('Cole a transcrição do vídeo primeiro!');
         return;
     }
-    
     appendMessage('system', '🎬 <strong>Analisando transcrição do vídeo da Bsoft...</strong>');
-    
     const conversa = getConversaAtiva();
     if (conversa) {
         conversa.contexto.push({
@@ -2164,14 +2078,11 @@ async function enviarTranscricaoManual() {
         });
         salvarConversas();
     }
-    
     document.getElementById('searchInput').value = `Analise esta transcrição do vídeo da Bsoft e me explique os pontos principais`;
     document.getElementById('ytStatus').textContent = '✅ Transcrição enviada para IA';
     document.getElementById('ytStatus').style.color = '#166534';
-    
     const area = document.getElementById('ytTranscriptArea');
     if (area) area.remove();
-    
     await handleChat();
 }
 
@@ -2193,6 +2104,41 @@ document.addEventListener('keydown', function(e) {
         e.preventDefault();
         toggleYTPanel();
     }
+});
+
+// Inicialização
+window.addEventListener('DOMContentLoaded', async () => {
+    carregarConversas();
+    carregarMLKnowledge();
+    loadMCPConfig();
+    
+    const searchInput = document.getElementById('searchInput');
+    const sendBtn = document.getElementById('sendBtn');
+    searchInput.disabled = false;
+    searchInput.placeholder = "Carregando banco de dados... (digite sua pergunta enquanto carrega)";
+    sendBtn.disabled = true;
+    
+    console.log("🔄 Carregando banco de dados...");
+    await loadData();
+    console.log("✅ Banco de dados carregado! Chat liberado.");
+    
+    console.log("📁 Iniciando carregamento do repositório em segundo plano...");
+    carregarDadosRepositorio().then(() => {
+        console.log("✅ Repositório carregado e vetorizado!");
+        const badge = document.getElementById('statusBadge');
+        if (badge && !isVectorizing) {
+            const repoCount = manualVetorizado.filter(item => item.isRepositorio).length;
+            badge.innerText = `IA Pronta (${manualVetorizado.length}) [+${repoCount} repo]`;
+        }
+    }).catch(e => {
+        console.warn("⚠️ Repositório carregado com erros (não afeta o chat):", e);
+    });
+    
+    searchInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter" && !isVectorizing && !sendBtn.disabled) {
+            handleChat();
+        }
+    });
 });
 </script>
 </body>
