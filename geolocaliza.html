@@ -1150,41 +1150,35 @@
     }
     
     // ============================================================
-    // CIOT - PROCESSADOR COM API ROTA BRASIL (ATUALIZADO)
-    // ============================================================
+// CIOT - PROCESSADOR CORRIGIDO PARA O FORMATO DO ARQUIVO
+// ============================================================
+
+function extrairCoordenadasDoRequest(texto) {
+    const viagens = [];
+    const alertasCEP = [];
     
-    function extrairCoordenadasDoRequest(texto) {
-        const viagens = [];
-        const alertasCEP = [];
-        
-        const docPattern = /<adic:DocumentoViagem>(\d+)<\/adic:DocumentoViagem>/g;
-        const latOrigemPattern = /<adic:LatitudeOrigem>([^<]+)<\/adic:LatitudeOrigem>/g;
-        const lngOrigemPattern = /<adic:LongitudeOrigem>([^<]+)<\/adic:LongitudeOrigem>/g;
-        const latDestinoPattern = /<adic:LatitudeDestino>([^<]+)<\/adic:LatitudeDestino>/g;
-        const lngDestinoPattern = /<adic:LongitudeDestino>([^<]+)<\/adic:LongitudeDestino>/g;
-        
-        const cepOrigemPattern = /<adic:CepOrigem>([^<]+)<\/adic:CepOrigem>/g;
-        const cepDestinoPattern = /<adic:CepDestino>([^<]+)<\/adic:CepDestino>/g;
-        
-        const munOrigemPattern = /<adic:CodigoMunicipioOrigem>(\d+)<\/adic:CodigoMunicipioOrigem>/g;
-        const munDestinoPattern = /<adic:CodigoMunicipioDestino>(\d+)<\/adic:CodigoMunicipioDestino>/g;
-        const munOrigemNomePattern = /<adic:CodigoMunicipioOrigem_nome>([^<]+)<\/adic:CodigoMunicipioOrigem_nome>/g;
-        const munDestinoNomePattern = /<adic:CodigoMunicipioDestino_nome>([^<]+)<\/adic:CodigoMunicipioDestino_nome>/g;
-        
-        const distanciaPattern = /<adic:DistanciaPercorrida>([^<]+)<\/adic:DistanciaPercorrida>/g;
-        
-        const docs = [...texto.matchAll(docPattern)];
-        const latsO = [...texto.matchAll(latOrigemPattern)];
-        const lngsO = [...texto.matchAll(lngOrigemPattern)];
-        const latsD = [...texto.matchAll(latDestinoPattern)];
-        const lngsD = [...texto.matchAll(lngDestinoPattern)];
-        const cepsO = [...texto.matchAll(cepOrigemPattern)];
-        const cepsD = [...texto.matchAll(cepDestinoPattern)];
-        const munsO = [...texto.matchAll(munOrigemPattern)];
-        const munsD = [...texto.matchAll(munDestinoPattern)];
-        const munsONome = [...texto.matchAll(munOrigemNomePattern)];
-        const munsDNome = [...texto.matchAll(munDestinoNomePattern)];
-        const distancias = [...texto.matchAll(distanciaPattern)];
+    // Padrões para capturar cada bloco de Viagem individualmente
+    // Vamos extrair cada bloco <OPT:Viagens>...</OPT:Viagens>
+    const viagemBlocks = [];
+    const viagemStartPattern = /<OPT:Viagens>([\s\S]*?)<\/OPT:Viagens>/g;
+    let match;
+    while ((match = viagemStartPattern.exec(texto)) !== null) {
+        viagemBlocks.push(match[1]);
+    }
+    
+    // Se não encontrou blocos, tenta extrair por expressões individuais
+    if (viagemBlocks.length === 0) {
+        // Fallback: extrair arrays de cada campo
+        const docs = [...texto.matchAll(/<OPT:DocumentoViagem>([^<]+)<\/OPT:DocumentoViagem>/g)];
+        const latsO = [...texto.matchAll(/<OPT:LatitudeOrigem>([^<]+)<\/OPT:LatitudeOrigem>/g)];
+        const lngsO = [...texto.matchAll(/<OPT:LongitudeOrigem>([^<]+)<\/OPT:LongitudeOrigem>/g)];
+        const latsD = [...texto.matchAll(/<OPT:LatitudeDestino>([^<]+)<\/OPT:LatitudeDestino>/g)];
+        const lngsD = [...texto.matchAll(/<OPT:LongitudeDestino>([^<]+)<\/OPT:LongitudeDestino>/g)];
+        const cepsO = [...texto.matchAll(/<OPT:CepOrigem>([^<]+)<\/OPT:CepOrigem>/g)];
+        const cepsD = [...texto.matchAll(/<OPT:CepDestino>([^<]+)<\/OPT:CepDestino>/g)];
+        const munsO = [...texto.matchAll(/<OPT:CodigoMunicipioOrigem>([^<]+)<\/OPT:CodigoMunicipioOrigem>/g)];
+        const munsD = [...texto.matchAll(/<OPT:CodigoMunicipioDestino>([^<]+)<\/OPT:CodigoMunicipioDestino>/g)];
+        const distancias = [...texto.matchAll(/<OPT:DistanciaPercorrida>([^<]+)<\/OPT:DistanciaPercorrida>/g)];
         
         const quantidade = Math.max(docs.length, latsO.length, cepsO.length, munsO.length);
         
@@ -1195,39 +1189,45 @@
             let alerta = null;
             let tipoFonte = "desconhecido";
             
+            // Tentar coordenadas primeiro
             if (i < latsO.length && i < lngsO.length && i < latsD.length && i < lngsD.length) {
                 const latOrigem = parseFloat(latsO[i][1]);
                 const lngOrigem = parseFloat(lngsO[i][1]);
                 const latDestino = parseFloat(latsD[i][1]);
                 const lngDestino = parseFloat(lngsD[i][1]);
                 
-                if (!isNaN(latOrigem) && !isNaN(lngOrigem) && !isNaN(latDestino) && !isNaN(lngDestino)) {
+                if (!isNaN(latOrigem) && !isNaN(lngOrigem) && !isNaN(latDestino) && !isNaN(lngDestino) &&
+                    latOrigem !== 0 && lngOrigem !== 0 && latDestino !== 0 && lngDestino !== 0) {
                     origem = { lat: latOrigem, lng: lngOrigem, fonte: "coordenada" };
                     destino = { lat: latDestino, lng: lngDestino, fonte: "coordenada" };
                     tipoFonte = "coordenada";
                 }
             }
             
+            // Tentar CEP
             if (!origem && i < cepsO.length && i < cepsD.length) {
                 const cepOrigem = cepsO[i][1];
                 const cepDestino = cepsD[i][1];
-                alerta = { documento: documento, cepOrigem: cepOrigem, cepDestino: cepDestino, tipo: "CEP" };
-                alertasCEP.push(alerta);
-                origem = { cep: cepOrigem, isCEP: true, fonte: "cep" };
-                destino = { cep: cepDestino, isCEP: true, fonte: "cep" };
-                tipoFonte = "cep";
+                if (cepOrigem && cepDestino) {
+                    alerta = { documento: documento, cepOrigem: cepOrigem, cepDestino: cepDestino, tipo: "CEP" };
+                    alertasCEP.push(alerta);
+                    origem = { cep: cepOrigem, isCEP: true, fonte: "cep" };
+                    destino = { cep: cepDestino, isCEP: true, fonte: "cep" };
+                    tipoFonte = "cep";
+                }
             }
             
+            // Tentar Município
             if (!origem && i < munsO.length && i < munsD.length) {
                 const munOrigem = munsO[i][1];
                 const munDestino = munsD[i][1];
-                const nomeOrigem = munsONome[i] ? munsONome[i][1] : null;
-                const nomeDestino = munsDNome[i] ? munsDNome[i][1] : null;
-                alerta = { documento: documento, munOrigem: munOrigem, munDestino: munDestino, tipo: "MUNICIPIO" };
-                alertasCEP.push(alerta);
-                origem = { codigoMunicipio: munOrigem, nomeMunicipio: nomeOrigem, isMunicipio: true, fonte: "municipio" };
-                destino = { codigoMunicipio: munDestino, nomeMunicipio: nomeDestino, isMunicipio: true, fonte: "municipio" };
-                tipoFonte = "municipio";
+                if (munOrigem && munDestino) {
+                    alerta = { documento: documento, munOrigem: munOrigem, munDestino: munDestino, tipo: "MUNICIPIO" };
+                    alertasCEP.push(alerta);
+                    origem = { codigoMunicipio: munOrigem, isMunicipio: true, fonte: "municipio" };
+                    destino = { codigoMunicipio: munDestino, isMunicipio: true, fonte: "municipio" };
+                    tipoFonte = "municipio";
+                }
             }
             
             const distanciaInformada = distancias[i] ? parseFloat(distancias[i][1]) : null;
@@ -1245,271 +1245,712 @@
                 });
             }
         }
-        
-        return { viagens, alertasCEP };
-    }
-    
-    async function buscarCoordenadasPorCEPOuMunicipio(viagens) {
-        for (let viagem of viagens) {
-            if (viagem.origem.isCEP) {
-                const coordsOrigem = await geocodeByCEP(viagem.origem.cep);
-                if (coordsOrigem) {
-                    viagem.origem = { lat: coordsOrigem.lat, lng: coordsOrigem.lng, cep: viagem.origem.cep, fonte: "cep_convertido" };
-                }
-            }
-            if (viagem.destino.isCEP) {
-                const coordsDestino = await geocodeByCEP(viagem.destino.cep);
-                if (coordsDestino) {
-                    viagem.destino = { lat: coordsDestino.lat, lng: coordsDestino.lng, cep: viagem.destino.cep, fonte: "cep_convertido" };
-                }
-            }
-            if (viagem.origem.isMunicipio) {
-                const coordsOrigem = await buscarCoordenadaPorMunicipio(viagem.origem.codigoMunicipio, viagem.origem.nomeMunicipio);
-                if (coordsOrigem) {
-                    viagem.origem = { lat: coordsOrigem.lat, lng: coordsOrigem.lng, codigoMunicipio: viagem.origem.codigoMunicipio, fonte: "municipio_convertido" };
-                }
-            }
-            if (viagem.destino.isMunicipio) {
-                const coordsDestino = await buscarCoordenadaPorMunicipio(viagem.destino.codigoMunicipio, viagem.destino.nomeMunicipio);
-                if (coordsDestino) {
-                    viagem.destino = { lat: coordsDestino.lat, lng: coordsDestino.lng, codigoMunicipio: viagem.destino.codigoMunicipio, fonte: "municipio_convertido" };
-                }
-            }
-        }
-        return viagens;
-    }
-    
-    async function calcularDistanciasViagensRodoviario(viagens, onProgress) {
-        const total = viagens.filter(v => v.origem.lat !== undefined && v.destino.lat !== undefined).length;
-        let processed = 0;
-        
-        for (let viagem of viagens) {
-            if (viagem.origem.lat !== undefined && viagem.destino.lat !== undefined) {
-                const result = await calcularDistanciaRodoviaria(viagem.origem.lat, viagem.origem.lng, viagem.destino.lat, viagem.destino.lng);
-                viagem.distanciaCalculada = result.distancia;
-                viagem.fonteDistancia = result.source;
-                viagem.isFallback = result.isFallback || false;
-                processed++;
-                if (onProgress) onProgress(processed, total);
-                await new Promise(r => setTimeout(r, 200));
-            } else {
-                viagem.distanciaCalculada = null;
-                viagem.fonteDistancia = null;
-            }
-        }
-        return viagens;
-    }
-    
-    async function processarCiotRequest(texto, onProgress) {
-        const { viagens, alertasCEP } = extrairCoordenadasDoRequest(texto);
-        if (viagens.length === 0) return null;
-        
-        const viagensComCoordenadas = await buscarCoordenadasPorCEPOuMunicipio(viagens);
-        const viagensComDistancia = await calcularDistanciasViagensRodoviario(viagensComCoordenadas, onProgress);
-        
-        const viagensValidas = viagensComDistancia.filter(v => v.distanciaCalculada !== null);
-        if (viagensValidas.length === 0) return null;
-        
-        let origemMaisProxima = null;
-        let menorDistanciaOrigem = Infinity;
-        let destinoMaisLongo = null;
-        let maiorDistancia = 0;
-        
-        for (let v of viagensValidas) {
-            if (v.distanciaCalculada < menorDistanciaOrigem) {
-                menorDistanciaOrigem = v.distanciaCalculada;
-                origemMaisProxima = v;
-            }
-            if (v.distanciaCalculada > maiorDistancia) {
-                maiorDistancia = v.distanciaCalculada;
-                destinoMaisLongo = v;
-            }
-        }
-        
-        let distanciaRotaPlanejada = 0;
-        let rotaDescricao = "";
-        let fonteRota = "";
-        
-        if (origemMaisProxima && destinoMaisLongo) {
-            distanciaRotaPlanejada = origemMaisProxima.distanciaCalculada;
-            rotaDescricao = `📍 ${origemMaisProxima.documento}: ${origemMaisProxima.distanciaCalculada.toFixed(2)} km`;
-            fonteRota = origemMaisProxima.fonteDistancia || "desconhecida";
+    } else {
+        // Processar cada bloco de viagem individualmente
+        for (let i = 0; i < viagemBlocks.length; i++) {
+            const block = viagemBlocks[i];
             
-            if (origemMaisProxima.documento !== destinoMaisLongo.documento) {
-                if (origemMaisProxima.destino.lat && destinoMaisLongo.destino.lat) {
-                    const distEntreDestinos = await calcularDistanciaRodoviaria(
-                        origemMaisProxima.destino.lat, origemMaisProxima.destino.lng,
-                        destinoMaisLongo.destino.lat, destinoMaisLongo.destino.lng
-                    );
-                    distanciaRotaPlanejada += distEntreDestinos.distancia;
-                    rotaDescricao += ` + ${distEntreDestinos.distancia.toFixed(2)} km (${origemMaisProxima.documento} → ${destinoMaisLongo.documento})`;
-                    fonteRota += " + " + distEntreDestinos.source;
+            // Extrair dados do bloco
+            const docMatch = block.match(/<OPT:DocumentoViagem>([^<]+)<\/OPT:DocumentoViagem>/);
+            const documento = docMatch ? docMatch[1] : `Viagem ${i+1}`;
+            
+            // Coordenadas
+            const latOrigemMatch = block.match(/<OPT:LatitudeOrigem>([^<]+)<\/OPT:LatitudeOrigem>/);
+            const lngOrigemMatch = block.match(/<OPT:LongitudeOrigem>([^<]+)<\/OPT:LongitudeOrigem>/);
+            const latDestinoMatch = block.match(/<OPT:LatitudeDestino>([^<]+)<\/OPT:LatitudeDestino>/);
+            const lngDestinoMatch = block.match(/<OPT:LongitudeDestino>([^<]+)<\/OPT:LongitudeDestino>/);
+            
+            // CEPs
+            const cepOrigemMatch = block.match(/<OPT:CepOrigem>([^<]+)<\/OPT:CepOrigem>/);
+            const cepDestinoMatch = block.match(/<OPT:CepDestino>([^<]+)<\/OPT:CepDestino>/);
+            
+            // Municípios
+            const munOrigemMatch = block.match(/<OPT:CodigoMunicipioOrigem>([^<]+)<\/OPT:CodigoMunicipioOrigem>/);
+            const munDestinoMatch = block.match(/<OPT:CodigoMunicipioDestino>([^<]+)<\/OPT:CodigoMunicipioDestino>/);
+            
+            // Distância informada
+            const distanciaMatch = block.match(/<OPT:DistanciaPercorrida>([^<]+)<\/OPT:DistanciaPercorrida>/);
+            const distanciaInformada = distanciaMatch ? parseFloat(distanciaMatch[1]) : null;
+            
+            let origem = null;
+            let destino = null;
+            let alerta = null;
+            let tipoFonte = "desconhecido";
+            
+            // Tentar coordenadas primeiro
+            if (latOrigemMatch && lngOrigemMatch && latDestinoMatch && lngDestinoMatch) {
+                const latOrigem = parseFloat(latOrigemMatch[1]);
+                const lngOrigem = parseFloat(lngOrigemMatch[1]);
+                const latDestino = parseFloat(latDestinoMatch[1]);
+                const lngDestino = parseFloat(lngDestinoMatch[1]);
+                
+                if (!isNaN(latOrigem) && !isNaN(lngOrigem) && !isNaN(latDestino) && !isNaN(lngDestino) &&
+                    latOrigem !== 0 && lngOrigem !== 0 && latDestino !== 0 && lngDestino !== 0) {
+                    origem = { lat: latOrigem, lng: lngOrigem, fonte: "coordenada" };
+                    destino = { lat: latDestino, lng: lngDestino, fonte: "coordenada" };
+                    tipoFonte = "coordenada";
                 }
             }
+            
+            // Tentar CEP
+            if (!origem && cepOrigemMatch && cepDestinoMatch) {
+                const cepOrigem = cepOrigemMatch[1];
+                const cepDestino = cepDestinoMatch[1];
+                if (cepOrigem && cepDestino) {
+                    alerta = { documento: documento, cepOrigem: cepOrigem, cepDestino: cepDestino, tipo: "CEP" };
+                    alertasCEP.push(alerta);
+                    origem = { cep: cepOrigem, isCEP: true, fonte: "cep" };
+                    destino = { cep: cepDestino, isCEP: true, fonte: "cep" };
+                    tipoFonte = "cep";
+                }
+            }
+            
+            // Tentar Município
+            if (!origem && munOrigemMatch && munDestinoMatch) {
+                const munOrigem = munOrigemMatch[1];
+                const munDestino = munDestinoMatch[1];
+                if (munOrigem && munDestino) {
+                    alerta = { documento: documento, munOrigem: munOrigem, munDestino: munDestino, tipo: "MUNICIPIO" };
+                    alertasCEP.push(alerta);
+                    origem = { codigoMunicipio: munOrigem, isMunicipio: true, fonte: "municipio" };
+                    destino = { codigoMunicipio: munDestino, isMunicipio: true, fonte: "municipio" };
+                    tipoFonte = "municipio";
+                }
+            }
+            
+            if (origem && destino) {
+                viagens.push({
+                    documento: documento,
+                    origem: origem,
+                    destino: destino,
+                    distanciaInformada: distanciaInformada,
+                    distanciaCalculada: null,
+                    fonteDistancia: null,
+                    alerta: alerta,
+                    tipoFonte: tipoFonte
+                });
+            }
+        }
+    }
+    
+    // Log para debug
+    console.log(`Extraídas ${viagens.length} viagens do request`);
+    
+    return { viagens, alertasCEP };
+}
+
+// Função para buscar coordenadas por CEP (otimizada)
+async function geocodeByCEP(cep) {
+    if (!cep || cep.length < 8) return null;
+    try {
+        const cleanCep = cep.replace(/\D/g, '');
+        // Usar cache para evitar requisições repetidas
+        if (geocodeByCEP.cache && geocodeByCEP.cache[cleanCep]) {
+            return geocodeByCEP.cache[cleanCep];
         }
         
+        const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+        const data = await response.json();
+        if (!data.erro && data.logradouro) {
+            const address = `${data.logradouro}, ${data.bairro}, ${data.localidade} - ${data.uf}`;
+            const encoded = encodeURIComponent(address);
+            const geoResponse = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encoded}&limit=1`);
+            const geoData = await geoResponse.json();
+            if (geoData && geoData.length > 0) {
+                const result = { lat: parseFloat(geoData[0].lat), lng: parseFloat(geoData[0].lon) };
+                if (!geocodeByCEP.cache) geocodeByCEP.cache = {};
+                geocodeByCEP.cache[cleanCep] = result;
+                return result;
+            }
+        }
+        return null;
+    } catch(e) {
+        console.warn(`Erro ao geocodificar CEP ${cep}:`, e);
+        return null;
+    }
+}
+
+// Função para buscar coordenadas por município
+async function geocodeByMunicipio(codigoMunicipio, nomeMunicipio, uf) {
+    try {
+        let address = "";
+        if (nomeMunicipio) {
+            address = `${nomeMunicipio}, ${uf || 'BR'}, Brasil`;
+        } else if (codigoMunicipio) {
+            address = `Código IBGE ${codigoMunicipio}, Brasil`;
+        }
+        if (address) {
+            const encoded = encodeURIComponent(address);
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encoded}&limit=1`);
+            const data = await response.json();
+            if (data && data.length > 0) {
+                return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+            }
+        }
+    } catch(e) {}
+    return null;
+}
+
+// Cache para coordenadas de municípios
+const MUNICIPIOS_COORD_CACHE = {
+    "3548708": { lat: -23.766794, lng: -46.586068, nome: "São Bernardo do Campo" },  // Origem do arquivo
+    "3300456": { lat: -22.770866, lng: -43.403509, nome: "Belford Roxo" },
+    "3304557": { lat: -22.9589113, lng: -43.3435217, nome: "Rio de Janeiro" },
+    "3303302": { lat: -22.8824001, lng: -43.1104387, nome: "Niterói" },
+    "3301850": { lat: -22.5262949, lng: -42.9860531, nome: "Nova Friburgo" }
+};
+
+async function buscarCoordenadaPorMunicipio(codigo, nome) {
+    // Verificar cache local primeiro
+    if (MUNICIPIOS_COORD_CACHE[codigo]) {
+        const mun = MUNICIPIOS_COORD_CACHE[codigo];
+        return { lat: mun.lat, lng: mun.lng };
+    }
+    
+    // Tentar via API
+    const coords = await geocodeByMunicipio(codigo, nome, null);
+    if (coords) return coords;
+    
+    return null;
+}
+
+async function buscarCoordenadasPorCEPOuMunicipio(viagens) {
+    for (let viagem of viagens) {
+        if (viagem.origem.isCEP && viagem.origem.cep) {
+            const coordsOrigem = await geocodeByCEP(viagem.origem.cep);
+            if (coordsOrigem) {
+                viagem.origem = { lat: coordsOrigem.lat, lng: coordsOrigem.lng, cep: viagem.origem.cep, fonte: "cep_convertido" };
+            }
+        }
+        if (viagem.destino.isCEP && viagem.destino.cep) {
+            const coordsDestino = await geocodeByCEP(viagem.destino.cep);
+            if (coordsDestino) {
+                viagem.destino = { lat: coordsDestino.lat, lng: coordsDestino.lng, cep: viagem.destino.cep, fonte: "cep_convertido" };
+            }
+        }
+        if (viagem.origem.isMunicipio && viagem.origem.codigoMunicipio) {
+            const coordsOrigem = await buscarCoordenadaPorMunicipio(viagem.origem.codigoMunicipio, viagem.origem.nomeMunicipio);
+            if (coordsOrigem) {
+                viagem.origem = { lat: coordsOrigem.lat, lng: coordsOrigem.lng, codigoMunicipio: viagem.origem.codigoMunicipio, fonte: "municipio_convertido" };
+            }
+        }
+        if (viagem.destino.isMunicipio && viagem.destino.codigoMunicipio) {
+            const coordsDestino = await buscarCoordenadaPorMunicipio(viagem.destino.codigoMunicipio, viagem.destino.nomeMunicipio);
+            if (coordsDestino) {
+                viagem.destino = { lat: coordsDestino.lat, lng: coordsDestino.lng, codigoMunicipio: viagem.destino.codigoMunicipio, fonte: "municipio_convertido" };
+            }
+        }
+    }
+    return viagens;
+}
+
+async function calcularDistanciasViagensRodoviario(viagens, onProgress) {
+    const total = viagens.filter(v => v.origem.lat !== undefined && v.destino.lat !== undefined).length;
+    let processed = 0;
+    
+    for (let viagem of viagens) {
+        if (viagem.origem.lat !== undefined && viagem.destino.lat !== undefined) {
+            const result = await calcularDistanciaRodoviaria(viagem.origem.lat, viagem.origem.lng, viagem.destino.lat, viagem.destino.lng);
+            viagem.distanciaCalculada = result.distancia;
+            viagem.fonteDistancia = result.source;
+            viagem.isFallback = result.isFallback || false;
+            processed++;
+            if (onProgress) onProgress(processed, total);
+            // Pequeno delay para não sobrecarregar a API
+            await new Promise(r => setTimeout(r, 200));
+        } else {
+            viagem.distanciaCalculada = null;
+            viagem.fonteDistancia = null;
+        }
+    }
+    return viagens;
+}
+
+async function processarCiotRequest(texto, onProgress) {
+    const { viagens, alertasCEP } = extrairCoordenadasDoRequest(texto);
+    
+    if (viagens.length === 0) {
+        console.log("Nenhuma viagem encontrada no request");
+        return null;
+    }
+    
+    console.log(`Encontradas ${viagens.length} viagens, buscando coordenadas...`);
+    
+    const viagensComCoordenadas = await buscarCoordenadasPorCEPOuMunicipio(viagens);
+    
+    // Contar quantas têm coordenadas válidas
+    const comCoordenadas = viagensComCoordenadas.filter(v => v.origem.lat !== undefined && v.destino.lat !== undefined);
+    console.log(`${comCoordenadas.length} viagens com coordenadas válidas`);
+    
+    if (comCoordenadas.length === 0) {
+        return { viagens: viagensComCoordenadas, viagensValidas: [], alertasCEP, origemMaisProxima: null, destinoMaisLongo: null, distanciaRotaPlanejada: 0, rotaDescricao: "", fonteRota: "", maiorDistancia: 0, maiorViagem: null };
+    }
+    
+    const viagensComDistancia = await calcularDistanciasViagensRodoviario(viagensComCoordenadas, onProgress);
+    
+    const viagensValidas = viagensComDistancia.filter(v => v.distanciaCalculada !== null);
+    if (viagensValidas.length === 0) return null;
+    
+    // Encontrar ORIGEM MAIS PRÓXIMA (menor distância)
+    let origemMaisProxima = null;
+    let menorDistanciaOrigem = Infinity;
+    let destinoMaisLongo = null;
+    let maiorDistancia = 0;
+    
+    for (let v of viagensValidas) {
+        if (v.distanciaCalculada < menorDistanciaOrigem) {
+            menorDistanciaOrigem = v.distanciaCalculada;
+            origemMaisProxima = v;
+        }
+        if (v.distanciaCalculada > maiorDistancia) {
+            maiorDistancia = v.distanciaCalculada;
+            destinoMaisLongo = v;
+        }
+    }
+    
+    // Calcular rota planejada (origem mais próxima + destino mais longo)
+    let distanciaRotaPlanejada = 0;
+    let rotaDescricao = "";
+    let fonteRota = "";
+    
+    if (origemMaisProxima && destinoMaisLongo) {
+        distanciaRotaPlanejada = origemMaisProxima.distanciaCalculada;
+        rotaDescricao = `📍 CT-e ${origemMaisProxima.documento}: ${origemMaisProxima.distanciaCalculada.toFixed(2)} km`;
+        fonteRota = origemMaisProxima.fonteDistancia || "desconhecida";
+        
+        if (origemMaisProxima.documento !== destinoMaisLongo.documento) {
+            if (origemMaisProxima.destino.lat && destinoMaisLongo.destino.lat) {
+                const distEntreDestinos = await calcularDistanciaRodoviaria(
+                    origemMaisProxima.destino.lat, origemMaisProxima.destino.lng,
+                    destinoMaisLongo.destino.lat, destinoMaisLongo.destino.lng
+                );
+                distanciaRotaPlanejada += distEntreDestinos.distancia;
+                rotaDescricao += ` + ${distEntreDestinos.distancia.toFixed(2)} km (CT-e ${origemMaisProxima.documento} → CT-e ${destinoMaisLongo.documento})`;
+                fonteRota += " + " + distEntreDestinos.source;
+            }
+        }
+    }
+    
+    return {
+        viagens: viagensComDistancia,
+        viagensValidas: viagensValidas,
+        alertasCEP: alertasCEP,
+        origemMaisProxima: origemMaisProxima,
+        destinoMaisLongo: destinoMaisLongo,
+        distanciaRotaPlanejada: distanciaRotaPlanejada,
+        rotaDescricao: rotaDescricao,
+        fonteRota: fonteRota,
+        maiorDistancia: maiorDistancia,
+        maiorViagem: destinoMaisLongo
+    };
+}
+    
+    // ============================================================
+// FUNÇÕES PARA EXTRAIR INFORMAÇÕES ADICIONAIS DO REQUEST
+// ============================================================
+
+function extrairInformacoesAdicionais(texto, documentoViagem) {
+    // Encontrar o bloco da viagem específica
+    const viagemPattern = new RegExp(`<OPT:Viagens>([\\s\\S]*?<OPT:DocumentoViagem>${documentoViagem}<\\/OPT:DocumentoViagem>[\\s\\S]*?)<\\/OPT:Viagens>`, 'i');
+    const viagemMatch = texto.match(viagemPattern);
+    
+    let origemInfo = { nome: "", cnpj: "", endereco: "" };
+    let destinoInfo = { nome: "", cnpj: "", endereco: "" };
+    
+    if (viagemMatch) {
+        const bloco = viagemMatch[1];
+        
+        // Extrair dados do Destinatário (pode estar fora do bloco de viagem, no final do XML)
+        // Primeiro tentamos encontrar no bloco, depois no XML inteiro
+    }
+    
+    // Buscar informações do TomadorServico (origem) no XML
+    const tomadorMatch = texto.match(/<OPefV2:TomadorServico>([\s\S]*?)<\/OPefV2:TomadorServico>/);
+    if (tomadorMatch) {
+        const tomadorBloco = tomadorMatch[1];
+        const nomeMatch = tomadorBloco.match(/<OPT:NomeOuRazaoSocial>([^<]+)<\/OPT:NomeOuRazaoSocial>/);
+        const cnpjMatch = tomadorBloco.match(/<OPT:CpfOuCnpj>([^<]+)<\/OPT:CpfOuCnpj>/);
+        const enderecoMatch = tomadorBloco.match(/<OEfrete:Rua>([^<]+)<\/OEfrete:Rua>.*?<OEfrete:Numero>([^<]+)<\/OEfrete:Numero>.*?<OEfrete:Bairro>([^<]+)<\/OEfrete:Bairro>/s);
+        
+        origemInfo.nome = nomeMatch ? nomeMatch[1] : "N/D";
+        origemInfo.cnpj = cnpjMatch ? cnpjMatch[1] : "N/D";
+        if (enderecoMatch) {
+            origemInfo.endereco = `${enderecoMatch[1]}, ${enderecoMatch[2]} - ${enderecoMatch[3]}`;
+        }
+    }
+    
+    // Buscar informações do Destinatario (destino) no XML
+    const destinatarioMatch = texto.match(/<OPefV2:Destinatario>([\s\S]*?)<\/OPefV2:Destinatario>/);
+    if (destinatarioMatch) {
+        const destinatarioBloco = destinatarioMatch[1];
+        const nomeMatch = destinatarioBloco.match(/<OPT:NomeOuRazaoSocial>([^<]+)<\/OPT:NomeOuRazaoSocial>/);
+        const cnpjMatch = destinatarioBloco.match(/<OPT:CpfOuCnpj>([^<]+)<\/OPT:CpfOuCnpj>/);
+        const enderecoMatch = destinatarioBloco.match(/<OEfrete:Rua>([^<]+)<\/OEfrete:Rua>.*?<OEfrete:Numero>([^<]+)<\/OEfrete:Numero>.*?<OEfrete:Bairro>([^<]+)<\/OEfrete:Bairro>/s);
+        
+        destinoInfo.nome = nomeMatch ? nomeMatch[1] : "N/D";
+        destinoInfo.cnpj = cnpjMatch ? cnpjMatch[1] : "N/D";
+        if (enderecoMatch) {
+            destinoInfo.endereco = `${enderecoMatch[1]}, ${enderecoMatch[2]} - ${enderecoMatch[3]}`;
+        }
+    }
+    
+    return { origemInfo, destinoInfo };
+}
+
+function extrairContratadoInfo(texto) {
+    const contratadoMatch = texto.match(/<OPT:Contratado>([\s\S]*?)<\/OPT:Contratado>/);
+    if (contratadoMatch) {
+        const cnpjMatch = contratadoMatch[1].match(/<OPT:CpfOuCnpj>([^<]+)<\/OPT:CpfOuCnpj>/);
+        const rntrcMatch = contratadoMatch[1].match(/<OPT:RNTRC>([^<]+)<\/OPT:RNTRC>/);
         return {
-            viagens: viagensComDistancia,
-            viagensValidas: viagensValidas,
-            alertasCEP: alertasCEP,
-            origemMaisProxima: origemMaisProxima,
-            destinoMaisLongo: destinoMaisLongo,
-            distanciaRotaPlanejada: distanciaRotaPlanejada,
-            rotaDescricao: rotaDescricao,
-            fonteRota: fonteRota,
-            maiorDistancia: maiorDistancia,
-            maiorViagem: destinoMaisLongo
+            cnpj: cnpjMatch ? cnpjMatch[1] : "N/D",
+            rntrc: rntrcMatch ? rntrcMatch[1] : "N/D"
         };
     }
+    return { cnpj: "N/D", rntrc: "N/D" };
+}
+
+// ============================================================
+// FUNÇÃO RENDERIZAR RESULTADO CIOT ATUALIZADA
+// ============================================================
+
+function renderizarResultadoCiot(resultado, requestTexto = "") {
+    const container = document.getElementById('ciotResultadoContainer');
+    const alertContainer = document.getElementById('ciotAlertContainer');
+    const listaContainer = document.getElementById('ciotListaViagens');
+    const distanciaTotalSpan = document.getElementById('ciotDistanciaTotal');
+    const detalheRotaSpan = document.getElementById('ciotDetalheRota');
+    const fonteRotaSpan = document.getElementById('ciotFonteRota');
+    const maiorValor = document.getElementById('ciotMaiorDistanciaValor');
+    const maiorInfo = document.getElementById('ciotMaiorDistanciaInfo');
+    const btnValidar = document.getElementById('btnValidarRotaCiot');
     
-    function renderizarResultadoCiot(resultado) {
-        const container = document.getElementById('ciotResultadoContainer');
-        const alertContainer = document.getElementById('ciotAlertContainer');
-        const listaContainer = document.getElementById('ciotListaViagens');
-        const distanciaTotalSpan = document.getElementById('ciotDistanciaTotal');
-        const detalheRotaSpan = document.getElementById('ciotDetalheRota');
-        const fonteRotaSpan = document.getElementById('ciotFonteRota');
-        const maiorValor = document.getElementById('ciotMaiorDistanciaValor');
-        const maiorInfo = document.getElementById('ciotMaiorDistanciaInfo');
-        const btnValidar = document.getElementById('btnValidarRotaCiot');
+    if (!resultado || resultado.viagens.length === 0 || resultado.viagensValidas.length === 0) {
+        container.style.display = 'none';
+        return;
+    }
+    
+    container.style.display = 'block';
+    
+    // Extrair informações do contratado (transportadora)
+    const contratadoInfo = extrairContratadoInfo(requestTexto);
+    
+    if (resultado.alertasCEP && resultado.alertasCEP.length > 0) {
+        alertContainer.innerHTML = resultado.alertasCEP.map(alerta => {
+            if (alerta.tipo === "CEP") {
+                return `<div class="alert-warning">
+                    <strong>⚠️ ALERTA - CT-e ${alerta.documento}:</strong> Não constam coordenadas (latitude/longitude) no REQUEST.<br>
+                    Calculando distância pelos CEPs: ${alerta.cepOrigem} → ${alerta.cepDestino}
+                </div>`;
+            } else {
+                return `<div class="alert-warning">
+                    <strong>⚠️ ALERTA - CT-e ${alerta.documento}:</strong> Não constam coordenadas no REQUEST.<br>
+                    Calculando distância pelos municípios: ${alerta.munOrigem} → ${alerta.munDestino}
+                </div>`;
+            }
+        }).join('');
+    } else {
+        alertContainer.innerHTML = '';
+    }
+    
+    // Adicionar informações da transportadora
+    if (contratadoInfo.cnpj !== "N/D") {
+        alertContainer.innerHTML += `<div class="alert-info" style="background:#e0f2fe;">
+            <strong>🚛 TRANSPORTADORA:</strong> CNPJ: ${contratadoInfo.cnpj} | RNTRC: ${contratadoInfo.rntrc}
+        </div>`;
+    }
+    
+    if (resultado.distanciaRotaPlanejada > 0) {
+        distanciaTotalSpan.innerHTML = `${resultado.distanciaRotaPlanejada.toFixed(2)} KM`;
+        detalheRotaSpan.innerHTML = resultado.rotaDescricao;
+        fonteRotaSpan.innerHTML = `📡 Fonte: ${resultado.fonteRota}`;
+    } else {
+        distanciaTotalSpan.innerHTML = `--- KM`;
+        detalheRotaSpan.innerHTML = 'Não foi possível calcular a rota planejada';
+        fonteRotaSpan.innerHTML = '';
+    }
+    
+    maiorValor.innerHTML = `${resultado.maiorDistancia.toFixed(2)} KM`;
+    if (resultado.maiorViagem) {
+        const isFallbackMaior = resultado.maiorViagem.isFallback;
+        const fonteMsg = isFallbackMaior ? '⚠️ (linha reta - sem token API)' : '✅ (rota rodoviária)';
+        maiorInfo.innerHTML = `CT-e: ${resultado.maiorViagem.documento} | Distância: ${resultado.maiorViagem.distanciaCalculada.toFixed(2)} km | Fonte: ${resultado.maiorViagem.tipoFonte} ${fonteMsg}`;
+        
+        window.maiorViagemCiot = resultado.maiorViagem;
+        btnValidar.style.display = 'flex';
+        btnValidar.onclick = () => {
+            if (window.maiorViagemCiot) {
+                const url = `https://www.google.com/maps/dir/${window.maiorViagemCiot.origem.lat},${window.maiorViagemCiot.origem.lng}/${window.maiorViagemCiot.destino.lat},${window.maiorViagemCiot.destino.lng}`;
+                window.open(url, '_blank');
+                mostrarToast(`🗺️ Abrindo rota do CT-e ${window.maiorViagemCiot.documento} no Google Maps`);
+            }
+        };
+    } else {
+        btnValidar.style.display = 'none';
+    }
+    
+    // Verificar se o token da API Rota Brasil está configurado
+    const hasToken = ROTA_BRASIL_TOKEN && ROTA_BRASIL_TOKEN.length > 0;
+    
+    // Renderizar lista de viagens com informações detalhadas
+    listaContainer.innerHTML = resultado.viagens.map((v, idx) => {
+        // Determinar se a distância foi calculada em linha reta (fallback)
+        const isLineReta = v.isFallback === true;
+        const isRotaBrasil = v.fonteDistancia && v.fonteDistancia.includes('Rota Brasil');
+        const showLineRetaAlert = isLineReta || (!isRotaBrasil && !hasToken);
+        
+        const origemStr = v.origem.lat ? 
+            `<div class="coord-item-small">
+                <strong>🌐 Coordenada:</strong> ${v.origem.lat.toFixed(6)}, ${v.origem.lng.toFixed(6)}<br>
+                <strong>📌 Fonte:</strong> ${v.origem.fonte || v.tipoFonte}
+             </div>` : 
+            (v.origem.cep ? 
+                `<div class="coord-item-small">
+                    <strong>📮 CEP:</strong> ${v.origem.cep}<br>
+                    <strong>⚠️ Status:</strong> Aguardando geocodificação
+                 </div>` : 
+                (v.origem.codigoMunicipio ? 
+                    `<div class="coord-item-small">
+                        <strong>🏙️ Município IBGE:</strong> ${v.origem.codigoMunicipio}<br>
+                        <strong>⚠️ Status:</strong> Aguardando geocodificação
+                     </div>` : 'N/D'));
+        
+        const destinoStr = v.destino.lat ? 
+            `<div class="coord-item-small">
+                <strong>🌐 Coordenada:</strong> ${v.destino.lat.toFixed(6)}, ${v.destino.lng.toFixed(6)}<br>
+                <strong>📌 Fonte:</strong> ${v.destino.fonte || v.tipoFonte}
+             </div>` : 
+            (v.destino.cep ? 
+                `<div class="coord-item-small">
+                    <strong>📮 CEP:</strong> ${v.destino.cep}<br>
+                    <strong>⚠️ Status:</strong> Aguardando geocodificação
+                 </div>` : 
+                (v.destino.codigoMunicipio ? 
+                    `<div class="coord-item-small">
+                        <strong>🏙️ Município IBGE:</strong> ${v.destino.codigoMunicipio}<br>
+                        <strong>⚠️ Status:</strong> Aguardando geocodificação
+                     </div>` : 'N/D'));
+        
+        const distanceDisplay = v.distanciaCalculada !== null ? 
+            `<span class="status-badge" style="background:${showLineRetaAlert ? '#f59e0b' : '#10b981'}; color:white;">📏 ${v.distanciaCalculada.toFixed(2)} KM</span>` : 
+            '<span class="status-badge" style="background:#fef3c7;">📏 Não calculada</span>';
+        
+        const distanciaInformadaDisplay = v.distanciaInformada ? 
+            `<span style="font-size:0.6rem; color:#475569;">(Informada: ${v.distanciaInformada} km)</span>` : '';
+        
+        const isOrigemMaisProxima = resultado.origemMaisProxima && resultado.origemMaisProxima.documento === v.documento;
+        const isDestinoMaisLongo = resultado.destinoMaisLongo && resultado.destinoMaisLongo.documento === v.documento;
+        const highlightBadge = isOrigemMaisProxima && isDestinoMaisLongo ? '🏆 ORIGEM+ DESTINO' : 
+                              (isOrigemMaisProxima ? '📍 ORIGEM MAIS PRÓXIMA' : 
+                              (isDestinoMaisLongo ? '🎯 DESTINO MAIS LONGO' : ''));
+        
+        const fonteTag = `<span style="background:#e2e8f0; color:#475569; font-size:0.55rem; padding:2px 6px; border-radius:10px;">📡 Fonte: ${v.tipoFonte}</span>`;
+        
+        // Badge que indica o tipo de cálculo (com alerta para linha reta)
+        let tipoCalculoBadge = '';
+        if (isRotaBrasil) {
+            tipoCalculoBadge = `<span style="background:#dcfce7; color:#166534; font-size:0.55rem; padding:2px 6px; border-radius:10px;">✅ Rota rodoviária (API)</span>`;
+        } else if (isLineReta) {
+            tipoCalculoBadge = `<span style="background:#fef3c7; color:#92400e; font-size:0.55rem; padding:2px 6px; border-radius:10px;">⚠️ LINHA RETA (sem token API)</span>`;
+        } else if (!hasToken) {
+            tipoCalculoBadge = `<span style="background:#fef3c7; color:#92400e; font-size:0.55rem; padding:2px 6px; border-radius:10px;">⚠️ LINHA RETA (token não configurado)</span>`;
+        }
+        
+        // Alerta especial para linha reta
+        const lineRetaAlert = showLineRetaAlert ? `
+            <div style="background:#fef3c7; border-left: 4px solid #f59e0b; padding: 10px; border-radius: 8px; margin: 10px 0;">
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <span style="font-size: 20px;">⚠️⚠️⚠️</span>
+                    <div style="flex: 1;">
+                        <strong style="color: #92400e;">ATENÇÃO: Distância calculada em LINHA RETA!</strong><br>
+                        <span style="font-size: 0.7rem; color: #78350f;">Para verificar a KM real da rota rodoviária, clique no botão <strong>"Ver rota completa"</strong> abaixo e confira a distância no Google Maps.</span>
+                    </div>
+                </div>
+            </div>
+        ` : '';
+        
+        // Tentar extrair informações do destinatário para este CT-e específico
+        let destinoNome = "N/D";
+        let destinoCnpj = "N/D";
+        let origemNome = "N/D";
+        let origemCnpj = "N/D";
+        let origemEndereco = "N/D";
+        let destinoEndereco = "N/D";
+        
+        // Buscar no texto do request (se disponível)
+        if (requestTexto) {
+            // Buscar no bloco Destinatario
+            const destBlock = requestTexto.match(/<OPefV2:Destinatario>([\s\S]*?)<\/OPefV2:Destinatario>/);
+            if (destBlock) {
+                const nomeMatch = destBlock[1].match(/<OPT:NomeOuRazaoSocial>([^<]+)<\/OPT:NomeOuRazaoSocial>/);
+                const cnpjMatch = destBlock[1].match(/<OPT:CpfOuCnpj>([^<]+)<\/OPT:CpfOuCnpj>/);
+                const enderecoMatch = destBlock[1].match(/<OEfrete:Rua>([^<]+)<\/OEfrete:Rua>.*?<OEfrete:Numero>([^<]+)<\/OEfrete:Numero>.*?<OEfrete:Bairro>([^<]+)<\/OEfrete:Bairro>/s);
+                if (nomeMatch) destinoNome = nomeMatch[1];
+                if (cnpjMatch) destinoCnpj = cnpjMatch[1];
+                if (enderecoMatch) destinoEndereco = `${enderecoMatch[1]}, ${enderecoMatch[2]} - ${enderecoMatch[3]}`;
+            }
+            
+            // Buscar no bloco TomadorServico
+            const tomadorBlock = requestTexto.match(/<OPefV2:TomadorServico>([\s\S]*?)<\/OPefV2:TomadorServico>/);
+            if (tomadorBlock) {
+                const nomeMatch = tomadorBlock[1].match(/<OPT:NomeOuRazaoSocial>([^<]+)<\/OPT:NomeOuRazaoSocial>/);
+                const cnpjMatch = tomadorBlock[1].match(/<OPT:CpfOuCnpj>([^<]+)<\/OPT:CpfOuCnpj>/);
+                const enderecoMatch = tomadorBlock[1].match(/<OEfrete:Rua>([^<]+)<\/OEfrete:Rua>.*?<OEfrete:Numero>([^<]+)<\/OEfrete:Numero>.*?<OEfrete:Bairro>([^<]+)<\/OEfrete:Bairro>/s);
+                if (nomeMatch) origemNome = nomeMatch[1];
+                if (cnpjMatch) origemCnpj = cnpjMatch[1];
+                if (enderecoMatch) origemEndereco = `${enderecoMatch[1]}, ${enderecoMatch[2]} - ${enderecoMatch[3]}`;
+            }
+        }
+        
+        return `
+        <div class="viagem-item" style="border-left: 4px solid ${isDestinoMaisLongo ? '#dc2626' : (isOrigemMaisProxima ? '#10b981' : '#f97316')}; margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; flex-wrap: wrap; margin-bottom: 12px; align-items: center;">
+                <div>
+                    <strong style="font-size: 1rem;">📄 CT-e Nº ${v.documento}</strong>
+                    <div style="margin-top: 4px;">
+                        ${fonteTag}
+                        ${tipoCalculoBadge}
+                        ${highlightBadge ? `<span style="background:#10b981; color:white; font-size:0.6rem; padding:2px 6px; border-radius:10px; margin-left:4px;">${highlightBadge}</span>` : ''}
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    ${distanceDisplay}
+                    ${distanciaInformadaDisplay}
+                </div>
+            </div>
+            
+            ${lineRetaAlert}
+            
+            <!-- ORIGEM -->
+            <div style="background: #f0f9ff; padding: 12px; border-radius: 10px; margin-bottom: 12px;">
+                <div style="display: flex; justify-content: space-between; flex-wrap: wrap; margin-bottom: 8px;">
+                    <div>
+                        <strong>📍 ORIGEM (Tomador/Saída)</strong>
+                        <div style="font-size: 0.75rem; margin-top: 4px;">
+                            <strong>🏢 Nome:</strong> ${escapeHtml(origemNome)}<br>
+                            <strong>📄 CNPJ/CPF:</strong> ${origemCnpj}<br>
+                            <strong>📍 Endereço:</strong> ${escapeHtml(origemEndereco)}
+                        </div>
+                    </div>
+                    ${v.origem.lat ? `<button class="small" style="padding: 4px 12px; font-size: 0.65rem;" onclick="window.open('https://www.google.com/maps?q=${v.origem.lat},${v.origem.lng}', '_blank')">🗺️ Ver no Maps</button>` : ''}
+                </div>
+                ${origemStr}
+            </div>
+            
+            <!-- DESTINO -->
+            <div style="background: #dcfce7; padding: 12px; border-radius: 10px; margin-bottom: 12px;">
+                <div style="display: flex; justify-content: space-between; flex-wrap: wrap; margin-bottom: 8px;">
+                    <div>
+                        <strong>🎯 DESTINO (Destinatário/Chegada)</strong>
+                        <div style="font-size: 0.75rem; margin-top: 4px;">
+                            <strong>🏢 Nome:</strong> ${escapeHtml(destinoNome)}<br>
+                            <strong>📄 CNPJ/CPF:</strong> ${destinoCnpj}<br>
+                            <strong>📍 Endereço:</strong> ${escapeHtml(destinoEndereco)}
+                        </div>
+                    </div>
+                    ${v.destino.lat ? `<button class="small" style="padding: 4px 12px; font-size: 0.65rem;" onclick="window.open('https://www.google.com/maps?q=${v.destino.lat},${v.destino.lng}', '_blank')">🗺️ Ver no Maps</button>` : ''}
+                </div>
+                ${destinoStr}
+            </div>
+            
+            <!-- DISTÂNCIA E ROTA -->
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; padding-top: 8px; border-top: 1px solid #e2e8f0;">
+                <div>
+                    <strong>📏 Distância calculada:</strong> ${v.distanciaCalculada !== null ? `${v.distanciaCalculada.toFixed(2)} km` : 'Não disponível'}
+                    ${v.fonteDistancia ? `<br><span style="font-size: 0.6rem;">🔍 ${v.fonteDistancia}</span>` : ''}
+                    ${showLineRetaAlert ? `<br><span style="font-size: 0.6rem; color: #f59e0b;">⚠️ Valor estimado em linha reta - Clique no botão ao lado para ver a KM real</span>` : ''}
+                </div>
+                ${v.origem.lat && v.destino.lat ? 
+                    `<button class="small" style="background: linear-gradient(135deg, #10b981, #059669); padding: 8px 16px; font-weight: bold;" onclick="window.open('https://www.google.com/maps/dir/${v.origem.lat},${v.origem.lng}/${v.destino.lat},${v.destino.lng}', '_blank')">
+                        🗺️ Ver rota completa ${showLineRetaAlert ? '(KM real)' : ''}
+                     </button>` : 
+                    (v.origem.cep && v.destino.cep ? 
+                        `<button class="small" style="background: #f59e0b; padding: 6px 14px;" onclick="window.open('https://www.google.com/maps/search/${v.origem.cep}+a+${v.destino.cep}', '_blank')">🔍 Buscar rota por CEP</button>` : '')}
+            </div>
+        </div>
+    `}).join('');
+}
+
+// Atualizar a função processarArquivoCiot para passar o texto do request
+async function processarArquivoCiot(file) {
+    const previewDiv = document.getElementById('ciotFilePreview');
+    const progressContainer = document.getElementById('ciotProgressContainer');
+    const progressBar = document.getElementById('ciotProgressBar');
+    
+    previewDiv.style.display = 'block';
+    previewDiv.innerHTML = `📄 Processando ${file.name}... <span class="loading-spinner"></span>`;
+    
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        const texto = e.target.result;
+        const requestTexto = texto; // Salvar o texto original para extrair informações
+        
+        progressContainer.style.display = 'block';
+        progressBar.style.width = '0%';
+        
+        const onProgress = (processed, total) => {
+            const percent = (processed / total) * 100;
+            progressBar.style.width = `${percent}%`;
+            previewDiv.innerHTML = `📄 Processando ${file.name}... ${processed}/${total} CT-e(s) calculados (${percent.toFixed(0)}%)`;
+        };
+        
+        const resultado = await processarCiotRequest(texto, onProgress);
+        progressContainer.style.display = 'none';
         
         if (!resultado || resultado.viagens.length === 0 || resultado.viagensValidas.length === 0) {
-            container.style.display = 'none';
+            const tokenMsg = ROTA_BRASIL_TOKEN ? "Token configurado" : "Sem token (usando linha reta)";
+            previewDiv.innerHTML = `❌ Nenhuma coordenada encontrada no arquivo. Verifique se contém as tags necessárias. ${tokenMsg}`;
+            document.getElementById('ciotResultadoContainer').style.display = 'none';
             return;
         }
         
-        container.style.display = 'block';
+        const tokenStatus = ROTA_BRASIL_TOKEN ? "com token" : "sem token";
+        previewDiv.innerHTML = `✅ ${file.name} processado! ${resultado.viagensValidas.length} CT-e(s) válidos. (${tokenStatus})`;
+        document.getElementById('ciotXmlInput').value = texto.substring(0, 500) + (texto.length > 500 ? '\n... (conteúdo truncado)' : '');
         
-        if (resultado.alertasCEP && resultado.alertasCEP.length > 0) {
-            alertContainer.innerHTML = resultado.alertasCEP.map(alerta => {
-                if (alerta.tipo === "CEP") {
-                    return `<div class="alert-warning">
-                        <strong>⚠️ ALERTA - CT-e ${alerta.documento}:</strong> Não constam coordenadas (latitude/longitude) no REQUEST.<br>
-                        Calculando distância pelos CEPs: ${alerta.cepOrigem} → ${alerta.cepDestino}
-                    </div>`;
-                } else {
-                    return `<div class="alert-warning">
-                        <strong>⚠️ ALERTA - CT-e ${alerta.documento}:</strong> Não constam coordenadas no REQUEST.<br>
-                        Calculando distância pelos municípios: ${alerta.munOrigem} → ${alerta.munDestino}
-                    </div>`;
-                }
-            }).join('');
-        } else {
-            alertContainer.innerHTML = '';
-        }
+        // Passar o texto do request para a função de renderização
+        renderizarResultadoCiot(resultado, requestTexto);
         
-        if (resultado.distanciaRotaPlanejada > 0) {
-            distanciaTotalSpan.innerHTML = `${resultado.distanciaRotaPlanejada.toFixed(2)} KM`;
-            detalheRotaSpan.innerHTML = resultado.rotaDescricao;
-            fonteRotaSpan.innerHTML = `📡 Fonte: ${resultado.fonteRota}`;
-        } else {
-            distanciaTotalSpan.innerHTML = `--- KM`;
-            detalheRotaSpan.innerHTML = 'Não foi possível calcular a rota planejada';
-            fonteRotaSpan.innerHTML = '';
-        }
-        
-        maiorValor.innerHTML = `${resultado.maiorDistancia.toFixed(2)} KM`;
-        if (resultado.maiorViagem) {
-            const fonteMsg = resultado.maiorViagem.isFallback ? '⚠️ (linha reta - sem token API)' : '✅ (rota rodoviária)';
-            maiorInfo.innerHTML = `CT-e: ${resultado.maiorViagem.documento} | Origem → Destino: ${resultado.maiorViagem.distanciaCalculada.toFixed(2)} km | Fonte: ${resultado.maiorViagem.tipoFonte} ${fonteMsg}`;
-            
-            window.maiorViagemCiot = resultado.maiorViagem;
-            btnValidar.style.display = 'flex';
-            btnValidar.onclick = () => {
-                if (window.maiorViagemCiot) {
-                    const url = `https://www.google.com/maps/dir/${window.maiorViagemCiot.origem.lat},${window.maiorViagemCiot.origem.lng}/${window.maiorViagemCiot.destino.lat},${window.maiorViagemCiot.destino.lng}`;
-                    window.open(url, '_blank');
-                    mostrarToast(`🗺️ Abrindo rota do CT-e ${window.maiorViagemCiot.documento} no Google Maps`);
-                }
-            };
-        } else {
-            btnValidar.style.display = 'none';
-        }
-        
-        listaContainer.innerHTML = resultado.viagens.map((v, idx) => {
-            const origemStr = v.origem.lat ? `${v.origem.lat.toFixed(6)}, ${v.origem.lng.toFixed(6)}` : 
-                              (v.origem.cep ? `CEP: ${v.origem.cep}` : 
-                              (v.origem.codigoMunicipio ? `Município: ${v.origem.codigoMunicipio}` : 'N/D'));
-            const destinoStr = v.destino.lat ? `${v.destino.lat.toFixed(6)}, ${v.destino.lng.toFixed(6)}` : 
-                               (v.destino.cep ? `CEP: ${v.destino.cep}` : 
-                               (v.destino.codigoMunicipio ? `Município: ${v.destino.codigoMunicipio}` : 'N/D'));
-            const distanceDisplay = v.distanciaCalculada !== null ? `${v.distanciaCalculada.toFixed(2)} KM` : 'N/D';
-            const isOrigemMaisProxima = resultado.origemMaisProxima && resultado.origemMaisProxima.documento === v.documento;
-            const isDestinoMaisLongo = resultado.destinoMaisLongo && resultado.destinoMaisLongo.documento === v.documento;
-            const highlightBadge = isOrigemMaisProxima && isDestinoMaisLongo ? '🏆 ORIGEM+ DESTINO' : 
-                                  (isOrigemMaisProxima ? '📍 ORIGEM MAIS PRÓXIMA' : 
-                                  (isDestinoMaisLongo ? '🎯 DESTINO MAIS LONGO' : ''));
-            const fonteTag = `<span style="background:#e2e8f0; color:#475569; font-size:0.55rem; padding:2px 6px; border-radius:10px;">📡 ${v.tipoFonte}</span>`;
-            const fallbackWarning = v.isFallback ? `<span style="background:#fef3c7; color:#92400e; font-size:0.55rem; padding:2px 6px; border-radius:10px;">⚠️ linha reta</span>` : 
-                                      (v.fonteDistancia ? `<span style="background:#dcfce7; color:#166534; font-size:0.55rem; padding:2px 6px; border-radius:10px;">✅ rodoviário</span>` : '');
-            
-            return `
-            <div class="viagem-item">
-                <div style="display: flex; justify-content: space-between; flex-wrap: wrap; margin-bottom: 8px;">
-                    <div>
-                        <strong>📄 CT-e ${v.documento}</strong> ${fonteTag} ${fallbackWarning}
-                        ${v.alerta ? `<span style="background:#fef3c7; color:#92400e; font-size:0.6rem; padding:2px 6px; border-radius:10px;">⚠️ ${v.alerta.tipo === 'CEP' ? 'Calculado por CEP' : 'Calculado por Município'}</span>` : ''}
-                        ${highlightBadge ? `<span style="background:#10b981; color:white; font-size:0.6rem; padding:2px 6px; border-radius:10px;">${highlightBadge}</span>` : ''}
-                    </div>
-                    <span class="status-badge">📏 ${distanceDisplay}</span>
-                </div>
-                <div style="display: flex; flex-wrap: wrap; gap: 16px; margin-top: 8px;">
-                    <div>
-                        <div style="font-size: 0.65rem; color: #475569;">📍 ORIGEM</div>
-                        <div class="coord-item-small">${origemStr}</div>
-                    </div>
-                    <div>
-                        <div style="font-size: 0.65rem; color: #475569;">🎯 DESTINO</div>
-                        <div class="coord-item-small">${destinoStr}</div>
-                    </div>
-                </div>
-                ${v.origem.lat && v.destino.lat ? `<button class="small" style="margin-top: 8px; padding: 4px 12px;" onclick="window.open('https://www.google.com/maps/dir/${v.origem.lat},${v.origem.lng}/${v.destino.lat},${v.destino.lng}', '_blank')">🗺️ Ver rota</button>` : ''}
-            </div>
-        `}).join('');
+        mostrarToast(`✅ Processado: ${resultado.viagensValidas.length} CT-es | Rota planejada: ${resultado.distanciaRotaPlanejada.toFixed(2)} km | Maior CT-e: ${resultado.maiorDistancia.toFixed(2)} km`);
+    };
+    reader.onerror = () => {
+        progressContainer.style.display = 'none';
+        previewDiv.innerHTML = `❌ Erro ao ler o arquivo`;
+    };
+    reader.readAsText(file, 'UTF-8');
+}
+
+// Atualizar o event handler do botão Processar CIOT
+document.getElementById('btnProcessarCiot')?.addEventListener('click', async () => {
+    const texto = document.getElementById('ciotXmlInput').value;
+    if (!texto.trim()) {
+        mostrarToast('⚠️ Cole o conteúdo do request ou anexe um arquivo primeiro!');
+        return;
+    }
+    const progressContainer = document.getElementById('ciotProgressContainer');
+    const progressBar = document.getElementById('ciotProgressBar');
+    progressContainer.style.display = 'block';
+    progressBar.style.width = '0%';
+    
+    const onProgress = (processed, total) => {
+        const percent = (processed / total) * 100;
+        progressBar.style.width = `${percent}%`;
+    };
+    
+    const resultado = await processarCiotRequest(texto, onProgress);
+    progressContainer.style.display = 'none';
+    
+    if (!resultado || resultado.viagens.length === 0 || resultado.viagensValidas.length === 0) {
+        const tokenMsg = ROTA_BRASIL_TOKEN ? "Token configurado" : "Sem token (usando linha reta)";
+        mostrarToast(`❌ Nenhuma coordenada encontrada. Verifique o request. ${tokenMsg}`);
+        document.getElementById('ciotResultadoContainer').style.display = 'none';
+        return;
     }
     
-    async function processarArquivoCiot(file) {
-        const previewDiv = document.getElementById('ciotFilePreview');
-        const progressContainer = document.getElementById('ciotProgressContainer');
-        const progressBar = document.getElementById('ciotProgressBar');
-        
-        previewDiv.style.display = 'block';
-        previewDiv.innerHTML = `📄 Processando ${file.name}... <span class="loading-spinner"></span>`;
-        
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            const texto = e.target.result;
-            
-            progressContainer.style.display = 'block';
-            progressBar.style.width = '0%';
-            
-            const onProgress = (processed, total) => {
-                const percent = (processed / total) * 100;
-                progressBar.style.width = `${percent}%`;
-                previewDiv.innerHTML = `📄 Processando ${file.name}... ${processed}/${total} CT-e(s) calculados (${percent.toFixed(0)}%)`;
-            };
-            
-            const resultado = await processarCiotRequest(texto, onProgress);
-            progressContainer.style.display = 'none';
-            
-            if (!resultado || resultado.viagens.length === 0 || resultado.viagensValidas.length === 0) {
-                previewDiv.innerHTML = `❌ Nenhuma coordenada encontrada no arquivo. Verifique se contém as tags necessárias (Latitude/Longitude, CEP ou CódigoMunicipio).`;
-                document.getElementById('ciotResultadoContainer').style.display = 'none';
-                return;
-            }
-            
-            const tokenStatus = ROTA_BRASIL_TOKEN ? "com token" : "sem token";
-            previewDiv.innerHTML = `✅ ${file.name} processado! ${resultado.viagensValidas.length} CT-e(s) válidos. (${tokenStatus})`;
-            document.getElementById('ciotXmlInput').value = texto.substring(0, 500) + (texto.length > 500 ? '\n... (conteúdo truncado)' : '');
-            renderizarResultadoCiot(resultado);
-            mostrarToast(`✅ Rota planejada: ${resultado.distanciaRotaPlanejada.toFixed(2)} km | Maior CT-e: ${resultado.maiorDistancia.toFixed(2)} km`);
-        };
-        reader.onerror = () => {
-            progressContainer.style.display = 'none';
-            previewDiv.innerHTML = `❌ Erro ao ler o arquivo`;
-        };
-        reader.readAsText(file, 'UTF-8');
-    }
+    // Passar o texto do request para a função de renderização
+    renderizarResultadoCiot(resultado, texto);
+    mostrarToast(`✅ Processado: ${resultado.viagensValidas.length} CT-es | Rota planejada: ${resultado.distanciaRotaPlanejada.toFixed(2)} km | Maior CT-e: ${resultado.maiorDistancia.toFixed(2)} km`);
+});
     
     // ============================================================
     // ANALISADOR DE ERROS SOAP (mantido)
