@@ -547,13 +547,13 @@
             </div>
             <div class="card-body">
                 <div class="tabs">
-                    <button class="tab-btn active" data-tab="tab-xml">📄 XML (NF-e/CT-e)</button>
+                    <button class="tab-btn" data-tab="tab-xml">📄 XML (NF-e/CT-e)</button>
                     <button class="tab-btn" data-tab="tab-ciot">🚛 Validador Distância CIOT</button>
-                    <button class="tab-btn" data-tab="tab-error">🤖 Analisador de Erros (IA Livre)</button>
+                    <button class="tab-btn active" data-tab="tab-error">🤖 Analisador de Erros (IA Livre)</button>
                 </div>
 
                 <!-- ABA XML -->
-                <div id="tab-xml" class="tab-content active">
+                <div id="tab-xml" class="tab-content">
                     <div class="upload-area" id="uploadArea">
                         <div class="upload-icon">📄</div>
                         <div>Clique ou arraste o XML (NF-e | CT-e)</div>
@@ -642,36 +642,30 @@
                 </div>
 
                 <!-- ABA ANALISADOR DE ERROS 100% LIVRE -->
-                <div id="tab-error" class="tab-content">
-                    <div class="ciot-card" style="background: #fef2f2; border: 1px solid #dc2626; border-radius: 14px; padding: 16px; margin-bottom: 16px;">
-                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                <div id="tab-error" class="tab-content active">
+                    <div style="background: #fef2f2; border: 1px solid #dc2626; border-radius: 14px; padding: 16px; margin-bottom: 16px;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;">
                             <span style="font-size: 20px;">🤖</span>
-                            <strong>Analisador de Erros 100% Livre</strong>
-                            <span class="ai-analysis-badge">🧠 IA sem restrições</span>
+                            <strong>Analisador de Erros — Integração IPEF × Bsoft TMS</strong>
+                            <span class="ai-analysis-badge">🧠 IA Livre</span>
                         </div>
-                        <p style="font-size: 0.7rem; color: #475569; margin-bottom: 12px;">
-                            Cole ou anexe o <strong>RESPONSE</strong> (erro SOAP) e o <strong>REQUEST</strong>. A IA terá <strong>total liberdade</strong> para analisar e identificar exatamente o problema, como um especialista humano faria.
+                        <p style="font-size: 0.7rem; color: #475569; margin-bottom: 16px;">
+                            Arraste ou selecione os arquivos <strong>REQUEST</strong> e/ou <strong>RESPONSE</strong> da integração IPEF. Pode enviar múltiplos arquivos de uma vez. A IA analisa livremente como um especialista.
                         </p>
-                        
-                        <div class="error-upload-area" id="errorResponseUploadArea">
-                            <div class="upload-icon">📁</div>
-                            <div>📌 PASSO 1: RESPONSE (arquivo com erro SOAP)</div>
-                            <input type="file" id="errorResponseInput" accept=".log,.txt,.xml" style="display: none;">
+
+                        <div id="multiFileDropZone" class="error-upload-area" style="padding: 24px; margin-bottom: 8px;">
+                            <div style="font-size: 32px; margin-bottom: 8px;">📂</div>
+                            <div style="font-weight: 600; color: #dc2626;">Arraste os arquivos aqui ou clique para selecionar</div>
+                            <div style="font-size: 0.65rem; color: #718096; margin-top: 4px;">REQUEST, RESPONSE ou ambos — aceita múltiplos arquivos (.log, .xml, .txt)</div>
+                            <input type="file" id="multiFileInput" accept=".log,.txt,.xml" multiple style="display: none;">
                         </div>
-                        <div id="errorResponsePreview" class="file-preview" style="display: none; background:#fee2e2;"></div>
-                        
-                        <div class="error-upload-area" id="errorRequestUploadArea" style="margin-top: 12px;">
-                            <div class="upload-icon">📁</div>
-                            <div>📌 PASSO 2: REQUEST (arquivo enviado)</div>
-                            <input type="file" id="errorRequestInput" accept=".log,.txt,.xml" style="display: none;">
-                        </div>
-                        <div id="errorRequestPreview" class="file-preview" style="display: none;"></div>
-                        
-                        <textarea id="responseManualInput" rows="4" placeholder="Ou cole o conteúdo do RESPONSE aqui (XML do erro)..."></textarea>
-                        <textarea id="requestManualInput" rows="4" placeholder="Ou cole o conteúdo do REQUEST aqui (XML enviado)..." style="margin-top: 8px;"></textarea>
-                        
+
+                        <div id="uploadedFilesList" style="margin-bottom: 10px;"></div>
+
+                        <textarea id="combinedContentInput" rows="5" placeholder="Ou cole o conteúdo aqui (REQUEST, RESPONSE ou ambos juntos)..." style="width:100%; padding:12px; border:2px solid #fca5a5; border-radius:12px; font-size:0.78rem; margin-bottom:12px; font-family:'JetBrains Mono',monospace; background:#fff5f5; resize:vertical;"></textarea>
+
                         <!-- Configuração da IA -->
-                        <div class="config-section" style="margin-top: 12px; background: #f8fafc;">
+                        <div class="config-section" style="margin-top: 4px; background: #f8fafc;">
                             <div style="font-size: 0.7rem; font-weight: 600; margin-bottom: 8px;">⚙️ Configuração da IA</div>
                             <div class="config-row">
                                 <div class="config-field">
@@ -702,9 +696,9 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="btn-group" style="margin-top: 12px;">
-                            <button id="btnAnalisarErro" class="error-btn" style="flex:1;">🤖 Analisar Erro (IA Livre)</button>
+                            <button id="btnAnalisarErro" class="error-btn" style="flex:1;">🤖 Analisar com IA</button>
                             <button id="btnLimparErro" class="secondary" style="flex:1;">🗑️ Limpar</button>
                         </div>
                     </div>
@@ -1377,18 +1371,222 @@
         mostrarToast('✅ Configuração salva!');
     }
 
-    async function callAI(prompt, systemPrompt = `Você é um ESPECIALISTA SÊNIOR em análise de erros de integração de sistemas de transporte, CIOT, e APIs SOAP/XML.
+    // ============================================================
+    // BASE DE CONHECIMENTO: TUTORIAIS DE EMISSÃO DE CIOT
+    // ============================================================
+    const KB_CIOT_FROTA_PROPRIA = `
+=== BASE DE Conhecimento: CIOT FROTA PRÓPRIA ===
 
-VOCÊ TEM TOTAL LIBERDADE para analisar e responder. Não siga formatos fixos. Responda como um especialista humano faria: seja claro, direto, identifique a empresa, o campo, o problema, e a solução.
+DESCRIÇÃO:
+O CIOT Frota Própria registra Operações de Transporte realizadas com veículos da própria empresa (não terceiros).
+Obrigatório desde 24/05/2026 conforme Portaria SUROC nº 6/2026 e Resoluções ANTT nº 6.077/2026 e nº 6.078/2026.
 
-Analise o erro com atenção e diga EXATAMENTE:
-1. O que causou o erro
-2. Qual empresa/envolvido está com problema
-3. Qual campo específico está errado
-4. Qual o valor correto que deveria estar
-5. Como corrigir no sistema Bsoft TMS
+FORMAS DE EMISSÃO:
 
-Use exemplos concretos do XML fornecido. Seja PRÁTICO e ACIONÁVEL.`) {
+1. PELA TELA PRÓPRIA:
+   Caminho: Transporte | CIOT Frota Própria
+   - Clicar em "Adicionar"
+   - Preencher os quadros: Selecionador de Documentos, Dados Gerais e Motorista e Veículos
+   - Clicar em "Cadastrar"
+   - Na listagem: clicar em "Gerar CIOT Frota Própria" e selecionar a opção de envio
+
+2. PELO CT-e:
+   Caminho: Transporte | Conhecimento de Transporte ou Transporte | Documentos | CT-e
+   - CT-e deve estar preenchido e salvo
+   - Selecionar o(s) CT-e(s) desejados
+   - Clicar no botão "Gerar CIOT Frota Própria"
+   - Conferir dados pré-preenchidos e complementar se necessário
+   - Clicar em "Gerar CIOT"
+
+3. PELO MDF-e:
+   Caminho: Transporte | Manifesto de Carga ou Transporte | Documentos | MDF-e
+   - Mesmo processo que pelo CT-e acima
+
+CAMPOS OBRIGATÓRIOS NO FORMULÁRIO:
+
+Selecionador de Documentos:
+- Número do CT-e: CT-e que compõe a operação (possível adicionar múltiplos)
+
+Dados Gerais:
+- Agência: agência da empresa para emissão e seu respectivo Talão
+- Valor do Frete: valor a ser recebido pelo transporte
+- Tabela de Frete Mínimo:
+  * Tabela A: contratação do conjunto completo de veículos ou caminhão simples
+  * Tabela B: contratação apenas do cavalo mecânico, sem implemento/reboque
+  * Tabela C: igual à A, para operações de alto desempenho
+  * Tabela D: igual à B, para alto desempenho com apenas cavalo mecânico
+- Tipo de Carga: categoria da carga transportada
+- Kms Percorridos: quilometragem total do percurso (origem ao destino)
+- Retorno: se há pagamento de retorno (ida + retorno vazio do veículo)
+- Número de Eixos: quantidade de eixos do veículo
+
+Motorista e Veículos:
+- Motorista: motorista que realizará o transporte
+- Veículos: placa(s) do(s) veículo(s)
+
+REGRAS AUTOMÁTICAS:
+- Tipo de Operação é definido automaticamente na integração com a ANTT/Operadora:
+  * LOTAÇÃO: todos os documentos vinculados têm o mesmo Pagador do Frete
+  * CARGA FRACIONADA: documentos com Pagadores do Frete diferentes
+- Para Carga Fracionada: Tabela e Número de Eixos NÃO são obrigatórios (sem verificação de Frete Mínimo)
+
+RESTRIÇÕES IMPORTANTES:
+- ANTT e Operadora rejeitam CIOTs abaixo do Frete Mínimo
+- Se os CT-es vinculados pertencerem ao grupo Terceiros: sistema exibe mensagem informativa e o quadro de CIOT Frota Própria NÃO é aberto
+
+ONDE CORRIGIR CADA PROBLEMA (cadastros no Bsoft TMS):
+- Dados do veículo (placa, número de eixos): Transporte/Veículos
+- Dados do motorista (CPF, CNH, celular): Pessoas/Pessoas
+- Talão e configurações da Agência: Transporte/Configurações/Tipos de Talões
+- Contrato com Operadora de Crédito: Transporte/Configurações/Contratos com Operadoras de Crédito
+`.trim();
+
+    const KB_CIOT_TERCEIROS = `
+=== BASE DE CONHECIMENTO: CIOT +FÁCIL EFRETE (TERCEIROS / CONTRATO DE FRETE) ===
+
+DESCRIÇÃO:
+O CIOT +Fácil efrete é o módulo de integração para emissão de CIOT e compra de Vale-Pedágio
+para transporte com terceiros (motoristas e veículos não pertencentes à empresa).
+A integração ocorre com a Operadora de Crédito IPEF/eFrete via API SOAP (Request/Response).
+
+CADASTROS OBRIGATÓRIOS (devem estar corretos antes de emitir):
+- Motorista: Pessoas/Pessoas → CPF, número de CNH, DDD + número de celular
+- Proprietário do Veículo: Pessoas/Pessoas → CPF ou CNPJ, RNTRC
+- Veículo: Transporte/Veículos → placa, número de eixos, tipo de rodagem (Simples/Dupla)
+- Contrato com Operadora de Crédito: Transporte/Configurações/Contratos com Operadoras de Crédito
+
+FLUXO COMPLETO DE EMISSÃO DO CIOT (TERCEIROS):
+
+PASSO 1 — Criar o Contrato de Frete:
+  Caminho: Transporte | Contrato de Frete → criar novo contrato
+
+PASSO 2 — Preencher campos obrigatórios para integração do CIOT:
+  - Forma de Pagamento: selecionar "Depósito"
+  - Data Inicial da Viagem: data de início da viagem
+  - Data Final da Viagem: data de previsão de término da viagem
+    (CRÍTICO: define o prazo de cancelamento = tempo de viagem em horas + 20%)
+  - Via emissor gratuito?: selecionar "Sim"
+  - Operadora de Crédito: selecionar a opção correspondente ao CIOT +Fácil efrete
+  - Data Programada do Saldo: data estimada para pagamento do saldo do CFe
+  - Tipo Embalagem: categoria de embalagem da carga transportada
+  - Conta de Depósito (somente para pagamento Pix Contratado ou Pix Motorista):
+    obrigatório preencher dados bancários e chave Pix
+
+PASSO 3 — Salvar e enviar o CIOT:
+  - Salvar o Contrato de Frete
+  - Clicar em "Contrato de Frete Eletrônico"
+  - Selecionar a opção "Incluir"
+  - Clicar em "Executar"
+
+FLUXO DE EMISSÃO DO VALE-PEDÁGIO (+Fácil efrete):
+
+PASSO 1 — Durante o preenchimento do Contrato de Frete, no quadro Valores:
+  - Preencher Pontos Intermediários (opcional, para rota diferente da sugerida pela efrete)
+  - Localizar campo Pedágio e clicar em "Sugerir Pedágio"
+  - No quadro aberto: selecionar Operadora de Crédito, confirmar Número de Eixos,
+    selecionar Modo de Compra (TAG do veículo) e clicar em "Consultar"
+
+PASSO 2 — Campos na lateral direita do Contrato de Frete:
+  - Tipo de Pedágio: selecionar "Avulso"
+  - Operadora de Crédito: selecionar opção efrete
+  - Modo de Compra: TAG utilizada pelo veículo
+  - Nº de Eixos: sugerido pelo cadastro do veículo (editável pelo ícone de cadeado)
+
+PASSO 3 — Salvar e enviar o Vale-Pedágio:
+  - Salvar o Contrato de Frete
+  - Clicar em "Vale-Pedágio Avulso"
+  - Selecionar a opção "Incluir"
+  - Clicar em "Executar"
+
+CANCELAMENTOS:
+  - Cancelar CIOT: Transporte | Contrato de Frete → "Contrato de Frete Eletrônico" → Cancelar → Informar Motivo → Executar
+  - Cancelar Vale-Pedágio: Transporte | Contrato de Frete → "Vale-Pedágio Avulso" → Cancelar → Informar Motivo → Executar
+
+CAMPOS DO REQUEST SOAP QUE COMPÕEM A INTEGRAÇÃO (referência para diagnóstico de erros):
+
+Operação AdicionarOperacaoTransporte (CIOT):
+  - Motorista: CPF, número da CNH, DDD + número de celular
+  - Contratado (Transportadora): CNPJ, RNTRC
+  - Veículos: placa(s)
+  - Tomador do Serviço: razão social, CNPJ, endereço (rua, número, bairro, CEP, código IBGE do município)
+  - Destinatário: razão social, CNPJ, endereço completo
+  - Contratante: razão social, CNPJ, e-mail, endereço, telefone
+  - Datas: DataInicioViagem, DataFimViagem, DataDeLiberacao de cada pagamento
+  - Pagamentos: IdPagamentoCliente, Valor, Categoria (Adiantamento/Quitacao), TipoChavePix, chave Pix
+  - Notas Fiscais: número, série, NCM, quantidade, valor unitário, valor total, tipo de cálculo
+  - Viagem: código IBGE origem/destino, CEP origem/destino, coordenadas, distância percorrida
+
+Operação AdicionarValePedagioV2 (Vale-Pedágio):
+  - Placa do veículo
+  - Transportadora: CNPJ, RNTRC
+  - Número de eixos
+  - Tipo de veículo (ex: Caminhao)
+  - Tipo de Rodagem (Simples ou Dupla)
+  - Código do Contrato
+  - Praças de Pedágio: CodigoAntt, Sentido (N=Norte/O=Oeste etc.), Valor
+  - Data de Validade
+  - CPF/CNPJ do Cliente e do Embarcador
+
+ONDE CORRIGIR CADA PROBLEMA (cadastros no Bsoft TMS):
+  - Dados do motorista (CPF, CNH, DDD + celular): Pessoas/Pessoas
+  - Dados do proprietário/transportadora (CNPJ, RNTRC): Pessoas/Pessoas
+  - Dados do veículo (placa, eixos, tipo de rodagem): Transporte/Veículos
+  - Endereço do tomador/destinatário/contratante (CEP, código IBGE): Pessoas/Pessoas
+  - Contrato com Operadora de Crédito: Transporte/Configurações/Contratos com Operadoras de Crédito
+  - Chave Pix e dados bancários do motorista: Pessoas/Pessoas (cadastro do motorista)
+  - Tabela de preços e valores do contrato: Transporte/Configurações/Tabela de Preços
+`.trim();
+
+    async function callAI(prompt, systemPrompt = `IDIOMA: Você DEVE responder EXCLUSIVAMENTE em português brasileiro. Nunca responda em inglês ou qualquer outro idioma, independente do idioma dos arquivos analisados.
+
+Você é o Especialista de Suporte do Bsoft TMS, um sistema ERP para empresas de transporte de cargas. Tome muito cuidado para não confundir os documentos, cada um é uma coisa diferente:
+CT-e (Conhecimento de Transporte Eletrônico), NFS-e (Nota Fiscal de Serviço Eletrônica), NF-e (Nota Fiscal Eletrônica), MDF-e (Manifesto de Documento Fiscal Eletrônico), Minuta (Conhecimento não fiscal).
+
+CONTEXTO DA ANÁLISE DE ERROS DE INTEGRAÇÃO:
+Este analisador recebe arquivos REQUEST e RESPONSE da integração entre o Bsoft TMS e a Operadora de Crédito IPEF (eFrete/efrete.com.br). O REQUEST contém os dados enviados pelo Bsoft TMS via SOAP para a API IPEF (operações como AdicionarOperacaoTransporte, AdicionarValePedagioV2, emissão de CIOT, etc.). O RESPONSE contém a resposta da IPEF — que pode ser sucesso ou erro. Às vezes o erro retornado é genérico e a causa real está em algum dado incorreto dentro do REQUEST.
+
+REGRA FUNDAMENTAL SOBRE CORREÇÕES:
+O usuário NÃO pode editar os arquivos REQUEST ou RESPONSE diretamente. Esses arquivos são gerados automaticamente pelo Bsoft TMS com base nos cadastros do sistema. Portanto, toda correção deve ser orientada como um cadastro ou configuração a ser feita dentro do Bsoft TMS — o sistema irá regenerar o arquivo correto na próxima tentativa.
+
+REGRAS CRÍTICAS:
+1. Nunca oriente o usuário a editar manualmente um arquivo REQUEST ou RESPONSE.
+2. Sempre aponte o caminho do menu do Bsoft TMS onde o cadastro precisa ser corrigido.
+3. Seja claro, direto e prático. Não siga formatos fixos — responda o que for relevante para resolver o problema.
+4. Se o erro for genérico no RESPONSE, analise os dados do REQUEST para identificar o campo problemático.
+
+ESTRUTURA DO MENU DO BSOFT TMS:
+O sistema possui um menu lateral com pesquisa no topo e os seguintes menus principais:
+Opções do Sistema | Ambiente | Recursos | Financeiro | Transporte | Estoque | Pessoas | Ordens de Serviço | Manutenção | Configurações | eDoc | E-mail | Hub | Controle de Viagens | nsdocs
+
+PRIMEIROS PASSOS DO SISTEMA:
+- Instalar certificado digital: eDoc/Certificados Digitais
+- Criar talões dos documentos (CT-e, MDF-e, Ordem de Carregamento, Contrato de Frete, NFS-e, Pedidos): Transporte/Configurações/Tipos de Talões
+  Nos talões há diversas configurações e parâmetros que automatizam ações ou limitam/editam campos durante a emissão. Ex.: para gerar ocorrência automática no CT-e, edite o talão do CT-e e habilite a opção "Ocorrência Automática".
+
+CAMINHOS DAS ROTINAS DE EMISSÃO:
+- CT-e: Transporte/Documentos/CT-e ou Transporte/Conhecimentos
+- MDF-e: Transporte/Manifesto de Carga
+- NF-e, NFS-e ou Notas Fiscais: Financeiro/Notas Fiscais/Notas Fiscais
+- Ordem de Carregamento (OC): Transporte/Ordem de Carregamento Simplificada
+- Cancelar CT-e na SEFAZ: Transporte/Documentos/CT-e → seleciona o documento → ícone SEFAZ (CT-e) → Cancelar na SEFAZ
+- Cancelar MDF-e na SEFAZ: Transporte/Manifesto de Carga → seleciona o documento → ícone SEFAZ (MDF-e) → Cancelar na SEFAZ
+
+CAMINHOS DE CADASTROS E CONFIGURAÇÕES PARA ORIENTAR ONDE AJUSTAR (NÃO INVENTE CAMINHOS, USE APENAS ESSES ABAIXO PARA ORIENTAR USUÁRIO):
+- Cadastro dos Veículos: Transporte/Veículos
+- Cadastro de Motoristas, Clientes, Fornecedores, Seguradoras, Proprietários de Veículos, Transportadoras: Pessoas/Pessoas
+- Regras de cálculo de frete ou contrato de frete: Transporte/Configurações/Regras
+- Parâmetros de funcionamento do Sistema: Ambiente/Administração/Parâmetros
+- Funcionalidades do Sistema: Ambiente/Controle de Acesso/Funcionalidades
+- Gerar CIOT: Transporte/Documentos/CT-e → seleciona o CT-e → Contrato de Frete Eletrônico; ou Transporte/Contrato de Frete → seleciona → Contrato de Frete Eletrônico
+- Vale-Pedágio (VPO): Transporte/Documentos/CT-e → seleciona o CT-e → Vale-Pedágio Avulso; ou Transporte/Contrato de Frete → seleciona → Vale-Pedágio Avulso
+- Caminho para configurar Contratos com Operadoras de Crédito (IPEF): Transporte/Configurações/Contratos com Operadoras de Crédito
+
+
+Responda sempre em português brasileiro.
+
+${KB_CIOT_FROTA_PROPRIA}
+
+${KB_CIOT_TERCEIROS}`) {
         const config = mcpConfig;
         const provider = PROVIDER_PRESETS[config.provider] || PROVIDER_PRESETS.openrouter;
         
@@ -1429,182 +1627,60 @@ Use exemplos concretos do XML fornecido. Seja PRÁTICO e ACIONÁVEL.`) {
     }
 
     // ============================================================
-    // ANALISADOR DE ERROS 100% LIVRE - EXATAMENTE IGUAL AO SEU CÓDIGO
+    // ANALISADOR DE ERROS 100% LIVRE
     // ============================================================
-    let errorResponseContent = "";
-    let errorRequestContent = "";
-
-    function extrairContextoAmplo(xmlContent, linha, coluna) {
-        if (!xmlContent) return { contexto: xmlContent?.substring(0, 2000) || '', linhaPos: 0 };
-        
-        const linhas = xmlContent.split('\n');
-        if (!linha || linha < 1 || linha > linhas.length) {
-            return { contexto: xmlContent.substring(0, 2000), linhaPos: 0 };
-        }
-        
-        const linhaErro = linhas[linha - 1] || "";
-        const colunaAjustada = Math.min(coluna - 1, linhaErro.length);
-        const inicio = Math.max(0, colunaAjustada - 200);
-        const fim = Math.min(linhaErro.length, colunaAjustada + 200);
-        
-        const contextoLinha = linhaErro.substring(inicio, fim);
-        const posRelativa = colunaAjustada - inicio;
-        const marca = '👉 [ERRO AQUI] 👈';
-        const contextoComMarca = contextoLinha.substring(0, posRelativa) + marca + contextoLinha.substring(posRelativa);
-        
-        let contextoAmpliado = `=== LINHA ${linha} (COLUNA ${coluna}) ===\n${contextoComMarca}\n\n`;
-        contextoAmpliado += `=== LINHAS PRÓXIMAS (${Math.max(1, linha-3)} a ${Math.min(linhas.length, linha+3)}) ===\n`;
-        for (let i = Math.max(0, linha-4); i < Math.min(linhas.length, linha+3); i++) {
-            const prefixo = (i + 1) === linha ? '>>> ' : '    ';
-            contextoAmpliado += `${prefixo}L${i+1}: ${linhas[i]}\n`;
-        }
-        
-        return { contexto: contextoAmpliado, linhaPos: linha, colunaPos: coluna };
-    }
+    let uploadedFiles = {};
 
     async function analisarErroLivre() {
         const resultContainer = document.getElementById('analiseResultadoContainer');
         const alertContainer = document.getElementById('analiseAlertContainer');
         const correcaoContainer = document.getElementById('analiseCorrecaoContainer');
-        
-        // Pegar conteúdo dos textareas também
-        const responseManual = document.getElementById('responseManualInput')?.value.trim();
-        const requestManual = document.getElementById('requestManualInput')?.value.trim();
-        
-        if (responseManual) errorResponseContent = responseManual;
-        if (requestManual) errorRequestContent = requestManual;
-        
-        if (!errorResponseContent) { mostrarToast('❌ Cole ou anexe o RESPONSE (arquivo de erro)!'); return; }
-        if (!errorRequestContent) { mostrarToast('❌ Cole ou anexe o REQUEST correspondente!'); return; }
-        
+
+        const manualContent = document.getElementById('combinedContentInput')?.value.trim();
+        const fileNames = Object.keys(uploadedFiles);
+
+        if (!manualContent && !fileNames.length) {
+            mostrarToast('❌ Anexe arquivos ou cole o conteúdo para análise!');
+            return;
+        }
+
         resultContainer.style.display = 'block';
-        alertContainer.innerHTML = `<div class="alert-info"><span class="loading-spinner"></span> 🤖 IA está analisando o erro com total liberdade... Aguarde alguns segundos.</div>`;
+        alertContainer.innerHTML = `<div class="alert-info"><span class="loading-spinner"></span> 🤖 IA analisando os arquivos... Aguarde.</div>`;
         correcaoContainer.innerHTML = '';
-        
+
         try {
-            // Extrair posição do erro do RESPONSE
-            const posMatch = errorResponseContent.match(/\((\d+),\s*(\d+)\)/);
-            let linha = posMatch ? parseInt(posMatch[1]) : null;
-            let coluna = posMatch ? parseInt(posMatch[2]) : null;
-            
-            // Extrair faultstring
-            const faultMatch = errorResponseContent.match(/<faultstring>([^<]+)<\/faultstring>/);
-            let mensagemErro = faultMatch ? faultMatch[1] : "";
-            
-            // Se não achou faultstring, tentar outras tags comuns
-            if (!mensagemErro) {
-                const detailMatch = errorResponseContent.match(/<detail>([\s\S]*?)<\/detail>/);
-                if (detailMatch) mensagemErro = detailMatch[1].substring(0, 500);
+            let prompt = '';
+
+            for (const name of fileNames) {
+                prompt += `## ARQUIVO: ${name}\n\`\`\`\n${uploadedFiles[name]}\n\`\`\`\n\n`;
             }
-            
-            // Extrair inner exception
-            let innerException = "";
-            const innerMatch = errorResponseContent.match(/---&gt; ([^\n]+)/);
-            if (innerMatch) innerException = innerMatch[1];
-            
-            // Extrair contexto amplo do REQUEST
-            const contexto = extrairContextoAmplo(errorRequestContent, linha, coluna);
-            
-            // Extrair dados do REQUEST de forma mais abrangente
-            let empresaNome = "";
-            let empresaCNPJ = "";
-            let razaoSocial = "";
-            let telefones = [];
-            let endereco = "";
-            let cep = "";
-            let codigoMunicipio = "";
-            
-            const razaoMatch = errorRequestContent.match(/<RazaoSocial>([^<]+)<\/RazaoSocial>/);
-            if (razaoMatch) razaoSocial = razaoMatch[1];
-            empresaNome = razaoSocial;
-            
-            const cnpjMatch = errorRequestContent.match(/<CNPJ>([^<]+)<\/CNPJ>/);
-            if (cnpjMatch) empresaCNPJ = cnpjMatch[1];
-            
-            const celularMatch = errorRequestContent.match(/<o:Celular>[\s\S]*?<o:Numero>([^<]+)<\/o:Numero>[\s\S]*?<\/o:Celular>/);
-            if (celularMatch) telefones.push(`Celular: ${celularMatch[1]}`);
-            
-            const fixoMatch = errorRequestContent.match(/<o:Fixo>[\s\S]*?<o:Numero>([^<]+)<\/o:Numero>[\s\S]*?<\/o:Fixo>/);
-            if (fixoMatch) telefones.push(`Fixo: ${fixoMatch[1]}`);
-            
-            const cepMatch = errorRequestContent.match(/<o:CEP>([^<]+)<\/o:CEP>/);
-            if (cepMatch) cep = cepMatch[1];
-            
-            const munMatch = errorRequestContent.match(/<o:CodigoMunicipio>([^<]+)<\/o:CodigoMunicipio>/);
-            if (munMatch) codigoMunicipio = munMatch[1];
-            
-            // Construir prompt LIVRE para a IA
-            const prompt = `ANALISE O ERRO ABAIXO COMO UM ESPECIALISTA HUMANO:
 
-## MENSAGEM DE ERRO ORIGINAL:
-${mensagemErro || "Não foi possível extrair mensagem de erro específica"}
-
-## DETALHAMENTO DO ERRO:
-${innerException || mensagemErro || "N/A"}
-
-## LOCALIZAÇÃO NO XML:
-${linha && coluna ? `Linha ${linha}, Coluna ${coluna}` : "Posição não especificada"}
-
-## CONTEXTO DO ERRO NO REQUEST (com marcação):
-${contexto.contexto}
-
-## DADOS EXTRAÍDOS DO REQUEST:
-- Empresa/Razão Social: ${empresaNome || "N/D"}
-- CNPJ: ${empresaCNPJ || "N/D"}
-- Telefones: ${telefones.join(", ") || "N/D"}
-- CEP: ${cep || "N/D"}
-- Código Município: ${codigoMunicipio || "N/D"}
-
-## REQUEST COMPLETO (primeiros 3000 caracteres):
-${errorRequestContent.substring(0, 3000)}${errorRequestContent.length > 3000 ? "\n... (conteúdo truncado)" : ""}
-
-## RESPONSE COMPLETO (primeiros 2000 caracteres):
-${errorResponseContent.substring(0, 2000)}${errorResponseContent.length > 2000 ? "\n... (conteúdo truncado)" : ""}
-
-## TAREFA:
-Analise este erro como um especialista sênior. Identifique:
-1. QUAL é o problema específico (ex: telefone com número inválido, campo vazio, formato errado)
-2. QUAL empresa/envolvido está com o cadastro incorreto
-3. QUAL campo específico precisa ser corrigido
-4. QUAL o valor atual (errado) e QUAL o valor correto
-5. COMO corrigir no sistema Bsoft TMS (passo a passo simples)
-
-Seja CLARO, DIRETO e PRÁTICO. Use a mensagem de erro e o contexto para dar a resposta mais precisa possível.`;
+            if (manualContent) {
+                prompt += `## CONTEÚDO:\n\`\`\`\n${manualContent}\n\`\`\`\n\n`;
+            }
 
             const respostaIA = await callAI(prompt);
-            
-            // Mostrar a resposta da IA de forma limpa e legível
+
             alertContainer.innerHTML = `
-                <div class="alert-success" style="background: #1e1e2e; border-left-color: #8b5cf6;">
+                <div style="background: #1e1e2e; border-left: 4px solid #8b5cf6; padding: 16px; border-radius: 12px; margin-bottom: 12px;">
                     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
                         <span style="font-size: 24px;">🤖</span>
-                        <strong style="color: white;">ANÁLISE DA IA (Resposta Livre)</strong>
+                        <strong style="color: white; font-size: 0.9rem;">ANÁLISE DA IA</strong>
                     </div>
                     <div class="ia-response">
                         ${respostaIA.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}
                     </div>
                 </div>
             `;
-            
+
             correcaoContainer.innerHTML = `
-                <div style="margin-bottom: 12px;">
-                    <strong>🔧 COMO CORRIGIR O PROBLEMA</strong>
-                </div>
-                <div style="background: #dbeafe; padding: 12px; border-radius: 8px; margin-bottom: 12px;">
-                    <strong>✅ Ação necessária no sistema Bsoft TMS:</strong><br><br>
-                    Acesse o módulo de <strong>Cadastros → Transportadoras/Proprietários</strong>, localize a empresa <strong>${empresaNome || "mencionada no erro"}</strong> (CNPJ: ${empresaCNPJ || "N/D"}) e corrija o campo indicado na análise acima.
-                </div>
-                <div style="margin-top: 12px; padding: 8px; background: #fef3c7; border-radius: 8px; font-size: 0.7rem;">
-                    💡 <strong>Dica:</strong> Verifique os dados de contato (telefones celular e fixo), endereço e código do município. O sistema de CIOT é rigoroso com formatos de números e códigos.
-                </div>
-                <div style="display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;">
-                    <button id="btnCopiarAnaliseIA" class="btn-copiar" style="background: #3b82f6;" onclick="copiarAnaliseIA()">📋 Copiar análise</button>
+                <div style="display: flex; gap: 8px; margin-top: 4px; flex-wrap: wrap;">
+                    <button onclick="copiarAnaliseIA()" style="background: #3b82f6; padding:6px 16px; font-size:0.7rem; border-radius:20px;">📋 Copiar análise</button>
                 </div>
             `;
-            
+
         } catch (error) {
-            console.error("Erro na análise:", error);
-            alertContainer.innerHTML = `<div class="alert-error">❌ Erro na análise da IA: ${error.message}<br><br>Verifique sua conexão e a chave da API. Certifique-se de que o RESPONSE e REQUEST estão no formato correto.</div>`;
+            alertContainer.innerHTML = `<div class="alert-error">❌ Erro na análise: ${error.message}</div>`;
         }
     }
     
@@ -1619,36 +1695,36 @@ Seja CLARO, DIRETO e PRÁTICO. Use a mensagem de erro e o contexto para dar a re
         navigator.clipboard.writeText(texto);
         mostrarToast('✅ Análise copiada!');
     };
-    
-    function processarArquivoResponse(file) {
-        const previewDiv = document.getElementById('errorResponsePreview');
-        previewDiv.style.display = 'block';
-        previewDiv.innerHTML = `📄 Carregando ${file.name}...`;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            errorResponseContent = e.target.result;
-            document.getElementById('responseManualInput').value = errorResponseContent;
-            const posMatch = errorResponseContent.match(/\((\d+),\s*(\d+)\)/);
-            const posText = posMatch ? `linha ${posMatch[1]}, coluna ${posMatch[2]}` : "não detectada";
-            previewDiv.innerHTML = `✅ RESPONSE carregado! (${errorResponseContent.length} caracteres)<br>📌 Erro na posição: ${posText}`;
-            mostrarToast('✅ RESPONSE carregado! Agora anexe o REQUEST.');
-        };
-        reader.readAsText(file, 'UTF-8');
+
+    function processarMultiplosArquivos(files) {
+        for (const file of files) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                uploadedFiles[file.name] = e.target.result;
+                renderizarFilesLista();
+                mostrarToast(`✅ ${file.name} carregado!`);
+            };
+            reader.readAsText(file, 'UTF-8');
+        }
     }
-    
-    function processarArquivoRequest(file) {
-        const previewDiv = document.getElementById('errorRequestPreview');
-        previewDiv.style.display = 'block';
-        previewDiv.innerHTML = `📄 Carregando ${file.name}...`;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            errorRequestContent = e.target.result;
-            document.getElementById('requestManualInput').value = errorRequestContent;
-            previewDiv.innerHTML = `✅ REQUEST carregado! (${errorRequestContent.length} caracteres)`;
-            mostrarToast('✅ REQUEST carregado! Clique em "Analisar Erro".');
-        };
-        reader.readAsText(file, 'UTF-8');
+
+    function renderizarFilesLista() {
+        const container = document.getElementById('uploadedFilesList');
+        if (!container) return;
+        const fileNames = Object.keys(uploadedFiles);
+        if (!fileNames.length) { container.innerHTML = ''; return; }
+        container.innerHTML = fileNames.map(name => `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:#fee2e2; padding:8px 12px; border-radius:8px; margin-bottom:6px; font-size:0.75rem;">
+                <span>📄 <strong>${escapeHtml(name)}</strong> <span style="color:#9ca3af; font-size:0.65rem;">(${(uploadedFiles[name].length / 1024).toFixed(1)} KB)</span></span>
+                <button onclick="removerArquivo('${escapeHtml(name)}')" class="secondary" style="padding:2px 8px; font-size:0.6rem;">✕</button>
+            </div>
+        `).join('');
     }
+
+    window.removerArquivo = function(name) {
+        delete uploadedFiles[name];
+        renderizarFilesLista();
+    };
 
     // ============================================================
     // FUNÇÕES DE GEOLOCALIZAÇÃO DE PARTICIPANTES
@@ -1774,11 +1850,10 @@ Seja CLARO, DIRETO e PRÁTICO. Use a mensagem de erro e o contexto para dar a re
     document.getElementById('btnSalvarConfigAI')?.addEventListener('click', saveMCPConfig);
     document.getElementById('btnAnalisarErro')?.addEventListener('click', analisarErroLivre);
     document.getElementById('btnLimparErro')?.addEventListener('click', () => {
-        errorResponseContent = ""; errorRequestContent = "";
-        document.getElementById('errorResponsePreview').style.display = 'none';
-        document.getElementById('errorRequestPreview').style.display = 'none';
-        document.getElementById('responseManualInput').value = '';
-        document.getElementById('requestManualInput').value = '';
+        uploadedFiles = {};
+        renderizarFilesLista();
+        const combined = document.getElementById('combinedContentInput');
+        if (combined) combined.value = '';
         document.getElementById('analiseResultadoContainer').style.display = 'none';
         mostrarToast('🧹 Dados limpos!');
     });
@@ -1814,15 +1889,13 @@ Seja CLARO, DIRETO e PRÁTICO. Use a mensagem de erro e o contexto para dar a re
     ciotUploadArea?.addEventListener('click', () => ciotFileInput.click());
     ciotFileInput?.addEventListener('change', (e) => { if (e.target.files.length) processarArquivoCiot(e.target.files[0]); });
     
-    const errorResponseArea = document.getElementById('errorResponseUploadArea');
-    const errorResponseInput = document.getElementById('errorResponseInput');
-    errorResponseArea?.addEventListener('click', () => errorResponseInput.click());
-    errorResponseInput?.addEventListener('change', (e) => { if (e.target.files.length) processarArquivoResponse(e.target.files[0]); });
-    
-    const errorRequestArea = document.getElementById('errorRequestUploadArea');
-    const errorRequestInput = document.getElementById('errorRequestInput');
-    errorRequestArea?.addEventListener('click', () => errorRequestInput.click());
-    errorRequestInput?.addEventListener('change', (e) => { if (e.target.files.length) processarArquivoRequest(e.target.files[0]); });
+    const multiFileDropZone = document.getElementById('multiFileDropZone');
+    const multiFileInput = document.getElementById('multiFileInput');
+    multiFileDropZone?.addEventListener('click', (e) => { if (e.target.tagName !== 'BUTTON') multiFileInput.click(); });
+    multiFileDropZone?.addEventListener('dragover', (e) => { e.preventDefault(); multiFileDropZone.style.background = '#fee2e2'; multiFileDropZone.style.borderColor = '#991b1b'; });
+    multiFileDropZone?.addEventListener('dragleave', () => { multiFileDropZone.style.background = '#fef2f2'; multiFileDropZone.style.borderColor = '#dc2626'; });
+    multiFileDropZone?.addEventListener('drop', (e) => { e.preventDefault(); multiFileDropZone.style.background = '#fef2f2'; multiFileDropZone.style.borderColor = '#dc2626'; if (e.dataTransfer.files.length) processarMultiplosArquivos(e.dataTransfer.files); });
+    multiFileInput?.addEventListener('change', (e) => { if (e.target.files.length) { processarMultiplosArquivos(e.target.files); e.target.value = ''; } });
     
     document.getElementById('aiProviderSelect')?.addEventListener('change', function() {
         const provider = this.value;
