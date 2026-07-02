@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <title>Suporte Bsoft TMS - IA v20 - Com Geolocalizador CIOT</title>
+    <title>Suporte Bsoft TMS - IA v24 - Supabase Edition</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -172,6 +172,26 @@
         .admin-actions, .mcp-actions { display: flex; gap: 8px; justify-content: flex-end; }
         .admin-actions button, .mcp-actions button { padding: 6px 14px; border-radius: 7px; border: none; cursor: pointer; font-family: inherit; font-weight: 600; font-size: 13px; }
         .mcp-status { font-size: 11px; color: #0369a1; margin-top: 4px; }
+        #dbEditorPanel { display: none; flex-direction: column; gap: 6px; padding: 10px 16px; flex: 0 0 auto; background: #eff6ff; border-bottom: 2px solid #bfdbfe; }
+        .dbe-toolbar { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+        .dbe-toolbar select { padding: 5px 8px; border: 1px solid #bfdbfe; border-radius: 7px; font-size: 12px; font-family: inherit; background: white; outline: none; }
+        .dbe-toolbar input[type=text] { padding: 5px 8px; border: 1px solid #bfdbfe; border-radius: 7px; font-size: 12px; font-family: inherit; outline: none; flex: 1; min-width: 120px; }
+        .dbe-btn { padding: 5px 11px; border: none; border-radius: 7px; cursor: pointer; font-size: 12px; font-weight: 600; font-family: inherit; }
+        .dbe-status { font-size: 11px; color: #1e40af; min-height: 16px; }
+        .dbe-table-wrap { overflow: auto; max-height: 220px; border: 1px solid #bfdbfe; border-radius: 8px; }
+        .dbe-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        .dbe-th { background: #1e40af; color: white; padding: 6px 10px; text-align: left; white-space: nowrap; position: sticky; top: 0; z-index: 1; }
+        .dbe-td { padding: 5px 10px; border-bottom: 1px solid #e0e7ff; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: default; }
+        .dbe-tr:nth-child(even) { background: #f5f8ff; }
+        .dbe-tr:hover { background: #dbeafe; }
+        .dbe-tr.dbe-selected { background: #bfdbfe !important; }
+        .dbe-action-btn { padding: 2px 6px; border: none; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 700; }
+        .dbe-edit-form { display: none; flex-direction: column; gap: 0; border: 1px solid #bfdbfe; border-radius: 8px; padding: 10px 12px; background: white; }
+        .dbe-field-row { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 5px; }
+        .dbe-field-label { min-width: 100px; font-size: 11px; font-weight: 700; color: #1e40af; padding-top: 6px; flex-shrink: 0; }
+        .dbe-field-input { flex: 1; padding: 5px 8px; border: 1px solid #bfdbfe; border-radius: 6px; font-size: 12px; font-family: inherit; outline: none; background: #f8faff; }
+        .dbe-field-input:focus { border-color: #2563eb; background: white; box-shadow: 0 0 0 2px rgba(37,99,235,0.12); }
+        textarea.dbe-field-input { resize: vertical; min-height: 48px; }
 
         .suggestions {
             height: var(--suggestions-h); flex: 0 0 auto; padding: 0 14px;
@@ -481,6 +501,7 @@
 .btn-yt-enviar { background: var(--primary); color: white; }
 .btn-yt-enviar:hover { background: var(--primary-dark); }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -706,7 +727,10 @@
             <button class="btn-nova-conversa" onclick="novaConversa()">➕ Nova Conversa</button>
         </div>
         <div class="sidebar-conversas" id="listaConversas"></div>
-        <div class="sidebar-footer">Bsoft TMS Suporte IA v20</div>
+        <div class="sidebar-footer" style="display:flex;align-items:center;justify-content:space-between;">
+            <span>Bsoft TMS Suporte IA v20</span>
+            <button onclick="limparTodasConversas()" title="Limpar todas as conversas" style="background:none;border:none;cursor:pointer;color:#ef4444;font-size:11px;padding:2px 6px;border-radius:5px;opacity:0.65;transition:opacity .15s" onmouseover="this.style.opacity='1';this.style.background='#fee2e2'" onmouseout="this.style.opacity='0.65';this.style.background='none'">🗑️ Limpar tudo</button>
+        </div>
     </div>
 
     <div class="main-container">
@@ -720,6 +744,7 @@
             </div>
             <div class="header-actions">
                 <button class="btn-icon" onclick="openMCP()" title="Configurar API (MCP)">⚙️</button>
+                <button class="btn-icon" onclick="openDBEditor()" title="Editor de Banco de Dados">🗄️</button>
                 <button class="btn-icon" onclick="openAdmin()" title="Admin">🔑</button>
             </div>
         </header>
@@ -736,7 +761,7 @@
             <strong style="color:#0369a1;font-size:13px;">⚙️ Configuração MCP (Multi-Cloud Provider)</strong>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
                 <div style="flex:1;min-width:200px;"><label>Provedor:</label><select id="mcpProvider" onchange="onProviderChange()" style="width:100%;"><option value="openrouter">OpenRouter</option><option value="google">Google Gemini</option><option value="custom">Custom (OpenAI Compatible)</option></select></div>
-                <div style="flex:1;min-width:200px;"><label>Modelo:</label><select id="mcpModel" style="width:100%;"><option value="nvidia/nemotron-3-super-120b-a12b:free">nvidia/nemotron-3-super-120b-a12b:free (OpenRouter)</option><option value="nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free">Gemma 4 26B A4B (OpenRouter)</option><option value="gemma-4-26b-a4b-it">Gemma 4 26B A4B (Google)</option><option value="gemini-2.0-flash">Gemini 2.0 Flash (Google)</option></select></div>
+                <div style="flex:1;min-width:200px;"><label>Modelo:</label><select id="mcpModel" onchange="onModelChange()" style="width:100%;"><option value="nvidia/nemotron-3-super-120b-a12b:free">nvidia/nemotron-3-super-120b-a12b:free (OpenRouter)</option><option value="nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free">Gemma 4 26B A4B (OpenRouter)</option><option value="gemma-4-26b-a4b-it">Gemma 4 26B A4B (Google)</option><option value="gemini-2.0-flash">Gemini 2.0 Flash (Google)</option><option value="__custom__">✏️ Digite o modelo...</option></select><input type="text" id="mcpModelCustom" placeholder="Ex: openai/gpt-4o, anthropic/claude-3-5-sonnet, meta-llama/..." style="width:100%;display:none;margin-top:4px;box-sizing:border-box;"></div>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
                 <div style="flex:1;min-width:200px;"><label>API Key:</label><input type="password" id="mcpApiKey" placeholder="sk-or-v1-..." style="width:100%;"></div>
@@ -750,6 +775,42 @@
             </div>
         </div>
 
+        <div id="dbEditorPanel">
+            <div class="dbe-toolbar">
+                <strong style="color:#1e40af;font-size:13px;white-space:nowrap;">🗄️ Editor de Banco de Dados</strong>
+                <select id="dbeTable" onchange="dbeLoadTable()">
+                    <option value="BancoDados">BancoDados</option>
+                    <option value="Parametros">Parametros</option>
+                    <option value="Funcionalidades">Funcionalidades</option>
+                    <option value="RejeicoesSEFAZ">RejeicoesSEFAZ</option>
+                    <option value="respostas_fixas">respostas_fixas</option>
+                    <option value="machine_learning">machine_learning</option>
+                    <option value="logs">logs</option>
+                </select>
+                <input type="text" id="dbeSearch" placeholder="Filtrar registros..." oninput="dbeFilter()" style="max-width:180px;">
+                <button class="dbe-btn" onclick="dbeOpenNew()" style="background:#2563eb;color:white;">＋ Novo</button>
+                <button class="dbe-btn" onclick="dbeLoadTable()" style="background:#0891b2;color:white;">🔄</button>
+                <button class="dbe-btn" onclick="closeDBEditor()" style="background:var(--border);color:var(--text-muted);">✕ Fechar</button>
+            </div>
+            <div class="dbe-status" id="dbeStatus">Selecione uma tabela para carregar os dados.</div>
+            <div class="dbe-table-wrap">
+                <table class="dbe-table">
+                    <thead id="dbeHead"></thead>
+                    <tbody id="dbeBody"></tbody>
+                </table>
+            </div>
+            <div class="dbe-edit-form" id="dbeForm">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                    <strong id="dbeFormTitle" style="color:#1e40af;font-size:12px;">✏️ Editando Registro</strong>
+                    <div style="display:flex;gap:6px;">
+                        <button class="dbe-btn" onclick="dbeCancelEdit()" style="background:var(--border);color:var(--text-muted);">Cancelar</button>
+                        <button class="dbe-btn" onclick="dbeSaveRow()" style="background:#16a34a;color:white;">💾 Salvar</button>
+                    </div>
+                </div>
+                <div id="dbeFields"></div>
+            </div>
+        </div>
+
         <div id="adminPanel">
             <strong style="color:#92400e;font-size:13px;">🛠️ Painel Administrativo</strong>
             <div style="display:flex;align-items:center;gap:12px;padding:10px;background:#fef3c7;border-radius:8px;border:1px solid #fde68a;">
@@ -759,7 +820,14 @@
             <textarea id="newSolution" placeholder="Solução detalhada..." style="min-height:70px;resize:vertical;"></textarea>
             <div class="admin-actions">
                 <button onclick="closeAdmin()" style="background:var(--border);color:var(--text-muted);">Fechar</button>
-                <button onclick="saveToDatabase()" style="background:var(--primary);color:white;">Gravar na Planilha</button>
+                <button onclick="saveToDatabase()" style="background:var(--primary);color:white;">Gravar no Banco</button>
+            </div>
+            <div style="border-top:1px solid #fca5a5;padding-top:8px;margin-top:4px;display:flex;align-items:center;justify-content:space-between;background:#fff5f5;border-radius:0 0 8px 8px;padding:8px 10px;">
+                <div>
+                    <strong style="color:#991b1b;font-size:11px;">⚠️ Zona de Perigo</strong>
+                    <div style="font-size:10px;color:#b91c1c;margin-top:1px;">Apaga conversas, configurações e cache local.</div>
+                </div>
+                <button onclick="limparTudoERedefinir()" style="background:#dc2626;color:white;padding:6px 14px;border:none;border-radius:7px;cursor:pointer;font-size:12px;font-weight:700;white-space:nowrap;">🗑️ Limpar Tudo</button>
             </div>
         </div>
 
@@ -923,7 +991,7 @@ function marcarMLKnowledgeNegativo(id) {
     if (k) { k.feedbackNegativo = true; k.confirmado = false; salvarMLKnowledge(); removerDoBancoPlanilha(k.erro); }
 }
 async function removerDoBancoPlanilha(erro) {
-    try { await fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', body: JSON.stringify({ action:"removeMLKnowledge", aba:"machinelearning", erro }) }); } catch(e) {}
+    try { await sb.from('machine_learning').delete().eq('erro', erro); } catch(e) {}
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -964,6 +1032,14 @@ function carregarConversas() {
     } catch(e) { conversas = []; criarNovaConversa(); }
 }
 function salvarConversas() { try { localStorage.setItem(CONVERSAS_KEY, JSON.stringify(conversas)); if (conversaAtivaId) localStorage.setItem(CONVERSA_ATIVA_KEY, conversaAtivaId); } catch(e) {} }
+function limparTodasConversas() {
+    if (!confirm('⚠️ Limpar todas as conversas?\n\nTodo o histórico será apagado permanentemente.\nEsta ação não pode ser desfeita.')) return;
+    localStorage.removeItem(CONVERSAS_KEY);
+    localStorage.removeItem(CONVERSA_ATIVA_KEY);
+    conversas = [];
+    conversaAtivaId = null;
+    criarNovaConversa();
+}
 function criarNovaConversa(titulo = 'Nova Conversa') {
     const id = 'conv_' + Date.now();
     conversas.unshift({ id, titulo, data: new Date().toISOString(), mensagens: [], contexto: [], primeiraPergunta: "", logTimestamp: null, topicoAtual: null, documentoContexto: null, mlKnowledgeId: null });
@@ -1012,6 +1088,9 @@ document.addEventListener('click', function(e) { const s = document.getElementBy
 const MCP_CONFIG_KEY = 'bsoft_mcp_config_v2';
 const o1="sk-or-v1-4f5f373376",o2="08150b806689797fef2f32",o3="f4e7b62ba4eb967fc47f13850bb4decc";
 const p1="AIzaSyA3IOL",p2="jyyxIL3xlSD",p3="iEVvCu92JTgmD3vNQ";
+const gf1="AIzaSyChy",gf2="-QK5U1-KJJUNYD",gf3="rKakrOqi5JWf-aqo";
+const GEMINI_FALLBACK_KEY=gf1+gf2+gf3;
+const GEMINI_FALLBACK_MODEL="gemma-4-26b-a4b-it";
 const DEFAULT_MCP_CONFIG = { provider:'openrouter', model:'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free', apiKey:o1+o2+o3, baseUrl:'https://openrouter.ai/api/v1', embeddingProvider:'google', embeddingKey:p1+p2+p3, embeddingModel:'gemini-embedding-2-preview' };
 const PROVIDER_PRESETS = {
     openrouter: { baseUrl:'https://openrouter.ai/api/v1', models:['nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free','z-ai/glm-4.5-air:free','meta-llama/llama-3.3-70b-instruct'], defaultModel:'google/gemma-4-26b-a4b-it', chatEndpoint:'/chat/completions', headers:(k)=>({Authorization:`Bearer ${k}`,'Content-Type':'application/json','HTTP-Referer':window.location.origin,'X-Title':'Bsoft TMS Suporte'}), formatRequestBody:(m,msgs,c={})=>({model:m,messages:msgs,temperature:c.temperature||0.3,max_tokens:c.maxTokens||4096,...(c.responseFormat?{response_format:c.responseFormat}:{})}), parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro OpenRouter');return{text:d.choices?.[0]?.message?.content||'',full:d};} },
@@ -1020,15 +1099,46 @@ const PROVIDER_PRESETS = {
 };
 let mcpConfig = { ...DEFAULT_MCP_CONFIG };
 function loadMCPConfig() { try { const s = localStorage.getItem(MCP_CONFIG_KEY); if (s) mcpConfig = { ...DEFAULT_MCP_CONFIG, ...JSON.parse(s) }; applyMCPConfigToUI(); } catch(e) { applyMCPConfigToUI(); } }
-function applyMCPConfigToUI() { document.getElementById('mcpProvider').value=mcpConfig.provider; document.getElementById('mcpApiKey').value=mcpConfig.apiKey; document.getElementById('mcpBaseUrl').value=mcpConfig.baseUrl; onProviderChange(); setTimeout(()=>{document.getElementById('mcpModel').value=mcpConfig.model;},100); }
-function onProviderChange() { const p=document.getElementById('mcpProvider').value; const pr=PROVIDER_PRESETS[p]; const ms=document.getElementById('mcpModel'); const bu=document.getElementById('mcpBaseUrl'); ms.innerHTML=''; (pr.models||[]).forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;ms.appendChild(o);}); if(pr.models.length===0)ms.innerHTML='<option value="">Digite o modelo...</option>'; bu.value=pr.baseUrl||''; bu.placeholder=pr.baseUrl||'https://sua-api.com/v1'; }
+function applyMCPConfigToUI() { document.getElementById('mcpProvider').value=mcpConfig.provider; document.getElementById('mcpApiKey').value=mcpConfig.apiKey; document.getElementById('mcpBaseUrl').value=mcpConfig.baseUrl; onProviderChange(); setTimeout(()=>{ const ms=document.getElementById('mcpModel'); const ci=document.getElementById('mcpModelCustom'); const existe=Array.from(ms.options).some(o=>o.value===mcpConfig.model&&o.value!=='__custom__'); if(existe){ms.value=mcpConfig.model;ci.style.display='none';}else{ms.value='__custom__';ci.value=mcpConfig.model||'';ci.style.display='block';} },100); }
+function onProviderChange() { const p=document.getElementById('mcpProvider').value; const pr=PROVIDER_PRESETS[p]; const ms=document.getElementById('mcpModel'); const bu=document.getElementById('mcpBaseUrl'); ms.innerHTML=''; (pr.models||[]).forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;ms.appendChild(o);}); const oc=document.createElement('option');oc.value='__custom__';oc.textContent='✏️ Digite o modelo...';ms.appendChild(oc); document.getElementById('mcpModelCustom').style.display='none'; bu.value=pr.baseUrl||''; bu.placeholder=pr.baseUrl||'https://sua-api.com/v1'; }
+function onModelChange(){const ms=document.getElementById('mcpModel');const ci=document.getElementById('mcpModelCustom');if(ms.value==='__custom__'){ci.style.display='block';ci.focus();}else{ci.style.display='none';}}
 function openMCP() { const s=prompt("Senha Administrativa:"); if(s===CORRECT_PASSWORD){loadMCPConfig();document.getElementById('mcpPanel').style.display='flex';updateMCPStatus('Configuração carregada.');}else if(s!==null){alert("Senha incorreta!");} }
 function closeMCP(){document.getElementById('mcpPanel').style.display='none';}
 function updateMCPStatus(m,e=false){const s=document.getElementById('mcpStatus');s.textContent=m;s.style.color=e?'#dc2626':'#0369a1';}
-function saveMCPConfig(){mcpConfig.provider=document.getElementById('mcpProvider').value;mcpConfig.model=document.getElementById('mcpModel').value;mcpConfig.apiKey=document.getElementById('mcpApiKey').value.trim();mcpConfig.baseUrl=document.getElementById('mcpBaseUrl').value.trim();localStorage.setItem(MCP_CONFIG_KEY,JSON.stringify(mcpConfig));updateMCPStatus('✅ Salvo! Recarregando...');setTimeout(()=>{manualVetorizado=[];loadData();},500);}
-async function testMCPConnection(){const p=document.getElementById('mcpProvider').value;const m=document.getElementById('mcpModel').value;const k=document.getElementById('mcpApiKey').value.trim();const b=document.getElementById('mcpBaseUrl').value.trim();if(!k){updateMCPStatus('❌ API Key obrigatória',true);return;}updateMCPStatus('🔌 Testando...');try{const r=await callMCPAPI(p,m,k,b,[{role:'user',content:'Responda "OK"'}],{maxTokens:10,temperature:0});updateMCPStatus(`✅ OK: "${r.text.trim()}"`);}catch(e){updateMCPStatus(`❌ ${e.message}`,true);}}
-async function callMCPAPI(provider,model,apiKey,baseUrl,messages,config={}){const preset=PROVIDER_PRESETS[provider];if(!preset)throw new Error(`Provedor "${provider}" não suportado`);let url=baseUrl||preset.baseUrl;if(provider==='google'){url=preset.buildUrl(url,model,preset.chatEndpoint)+`?key=${apiKey}`;}else{url=url.replace(/\/+$/,'')+preset.chatEndpoint;}const headers=preset.headers(apiKey);const body=preset.formatRequestBody(model,messages,config);const response=await fetch(url,{method:'POST',headers,body:JSON.stringify(body)});const data=await response.json();if(!response.ok)throw new Error(`[${provider}] ${data.error?.message||data.error?.code||`HTTP ${response.status}`}`);return preset.parseResponse(data);}
-async function callCurrentMCP(messages,config={}){return callMCPAPI(mcpConfig.provider,mcpConfig.model,mcpConfig.apiKey,mcpConfig.baseUrl,messages,config);}
+function getModelFromUI(){const ms=document.getElementById('mcpModel');return ms.value==='__custom__'?document.getElementById('mcpModelCustom').value.trim():ms.value;}
+function saveMCPConfig(){mcpConfig.provider=document.getElementById('mcpProvider').value;mcpConfig.model=getModelFromUI();mcpConfig.apiKey=document.getElementById('mcpApiKey').value.trim();mcpConfig.baseUrl=document.getElementById('mcpBaseUrl').value.trim();if(!mcpConfig.model){updateMCPStatus('❌ Informe o nome do modelo',true);return;}localStorage.setItem(MCP_CONFIG_KEY,JSON.stringify(mcpConfig));updateMCPStatus('✅ Salvo! Recarregando...');setTimeout(()=>{manualVetorizado=[];loadData();},500);}
+async function testMCPConnection(){const p=document.getElementById('mcpProvider').value;const m=getModelFromUI();const k=document.getElementById('mcpApiKey').value.trim();const b=document.getElementById('mcpBaseUrl').value.trim();if(!k){updateMCPStatus('❌ API Key obrigatória',true);return;}if(!m){updateMCPStatus('❌ Informe o nome do modelo',true);return;}updateMCPStatus(`🔌 Testando "${m}"...`);try{const r=await callMCPAPI(p,m,k,b,[{role:'user',content:'Responda "OK"'}],{maxTokens:10,temperature:0});updateMCPStatus(`✅ OK com "${m}": "${r.text.trim()}"`);}catch(e){updateMCPStatus(`❌ ${e.message}`,true);}}
+async function callMCPAPI(provider,model,apiKey,baseUrl,messages,config={}){const preset=PROVIDER_PRESETS[provider];if(!preset)throw new Error(`Provedor "${provider}" não suportado`);let url=baseUrl||preset.baseUrl;if(provider==='google'){url=preset.buildUrl(url,model,preset.chatEndpoint)+`?key=${apiKey}`;}else{url=url.replace(/\/+$/,'')+preset.chatEndpoint;}const headers=preset.headers(apiKey);const body=preset.formatRequestBody(model,messages,config);const response=await fetch(url,{method:'POST',headers,body:JSON.stringify(body)});const data=await response.json();if(!response.ok){const err=new Error(`[${provider}] ${data.error?.message||data.error?.code||`HTTP ${response.status}`}`);err.status=response.status;throw err;}return preset.parseResponse(data);}
+
+async function callCurrentMCP(messages,config={}){
+    const retryavel=(e)=>e.status===400||e.status===429;
+
+    // ── OpenRouter: até 2 tentativas (400 ou 429 → retry) ──
+    for(let t=1;t<=2;t++){
+        try{
+            if(t>1){console.warn('[OpenRouter] retry...');await new Promise(r=>setTimeout(r,2500));}
+            const res=await callMCPAPI(mcpConfig.provider,mcpConfig.model,mcpConfig.apiKey,mcpConfig.baseUrl,messages,config);
+            return{...res,_iaUsada:'OpenRouter',_iaModelo:mcpConfig.model};
+        }catch(e){
+            console.warn(`[OpenRouter] tentativa ${t} falhou (${e.status||'?'}):`,e.message);
+            if(!retryavel(e)||t>=2)break;
+        }
+    }
+
+    // ── Gemini fallback: até 3 tentativas (400 ou 429 → retry) ──
+    console.warn('[Fallback] OpenRouter indisponível — ativando Gemini...');
+    for(let t=1;t<=3;t++){
+        try{
+            if(t>1){console.warn(`[Gemini] retry ${t}/3...`);await new Promise(r=>setTimeout(r,2500));}
+            const res=await callMCPAPI('google',GEMINI_FALLBACK_MODEL,GEMINI_FALLBACK_KEY,'',messages,config);
+            return{...res,_iaUsada:'Gemini',_iaModelo:GEMINI_FALLBACK_MODEL};
+        }catch(e){
+            console.warn(`[Gemini] tentativa ${t} falhou (${e.status||'?'}):`,e.message);
+            if(!retryavel(e)||t>=3)throw e;
+        }
+    }
+    throw new Error('Todos os provedores falharam.');
+}
 
 // ═══════════════════════════════════════════════════════════
 //  VARIÁVEIS GLOBAIS
@@ -1037,7 +1147,10 @@ let filaSolucoes=[],lastQuery="",attachedFileData=null,screenStream=null,isMinim
 window.currentAudio=null;
 let manualVetorizado=[],dadosParametros=[],dadosFuncionalidades=[],isVectorizing=true,bancoCompletoRaw=[];
 const SCRIPT_URL="https://script.google.com/macros/s/AKfycbyxuDqwFCdhkLSE59cSD5FrAaTS6gbNC6jpOvj8hWp-2oOGQF_w-UL2QjPm0E1VqwU/exec";
-const CORRECT_PASSWORD="camargo1994";
+const SUPABASE_URL = 'https://btikuvmypdugpfmusqsf.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ0aWt1dm15cGR1Z3BmbXVzcXNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1Mzk5MjgsImV4cCI6MjA5NzExNTkyOH0.Ai_qaiX_ft8IzpS0HsJsQO_6b5JS-x26A-5GM-MyYak';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
+const CORRECT_PASSWORD="camargo02";
 const recognition=new(window.SpeechRecognition||window.webkitSpeechRecognition)();recognition.lang='pt-BR';recognition.continuous=true;recognition.interimResults=false;
 
 // ═══════════════════════════════════════════════════════════
@@ -1235,17 +1348,17 @@ async function loadData() {
     try {
         b.innerText = `Carregando banco de dados...`;
         const [rB, rP, rF, rL, rM] = await Promise.allSettled([
-            fetch(SCRIPT_URL).then(r => r.json()),
-            fetch(SCRIPT_URL + "?aba=Parametros").then(r => r.json()),
-            fetch(SCRIPT_URL + "?aba=Funcionalidades").then(r => r.json()),
-            fetch(SCRIPT_URL + "?tipo=logs").then(r => r.json()),
-            fetch(SCRIPT_URL + "?aba=machinelearning").then(r => r.json())
+            sb.from('BancoDados').select('*'),
+            sb.from('Parametros').select('*'),
+            sb.from('Funcionalidades').select('*'),
+            sb.from('logs').select('*').order('created_at', {ascending: false}).limit(200),
+            sb.from('machine_learning').select('*')
         ]);
-        if (rP.status === 'fulfilled') dadosParametros = Array.isArray(rP.value) ? rP.value : (typeof rP.value === 'string' ? JSON.parse(rP.value) : []);
-        if (rF.status === 'fulfilled') dadosFuncionalidades = Array.isArray(rF.value) ? rF.value : (typeof rF.value === 'string' ? JSON.parse(rF.value) : []);
-        if (rL.status === 'fulfilled') popularBarraEmAlta(rL.value);
-        if (rM.status === 'fulfilled' && Array.isArray(rM.value)) {
-            rM.value.forEach(item => {
+        if (rP.status === 'fulfilled' && rP.value.data) dadosParametros = rP.value.data;
+        if (rF.status === 'fulfilled' && rF.value.data) dadosFuncionalidades = rF.value.data;
+        if (rL.status === 'fulfilled' && rL.value.data) popularBarraEmAlta(rL.value.data);
+        if (rM.status === 'fulfilled' && rM.value.data && Array.isArray(rM.value.data)) {
+            rM.value.data.forEach(item => {
                 const e = mlKnowledge.find(k => k.erro === item.erro);
                 if (!e && item.erro && item.solucao) {
                     mlKnowledge.push({
@@ -1259,10 +1372,16 @@ async function loadData() {
             });
             salvarMLKnowledge();
         }
-        if (rB.status !== 'fulfilled') throw new Error("Falha ao buscar BancoDados");
-        let dados = rB.value;
-        if (typeof dados === 'string') dados = JSON.parse(dados);
+        if (rB.status !== 'fulfilled' || rB.value.error) throw new Error("Falha ao buscar BancoDados");
+        let dados = rB.value.data;
         if (!Array.isArray(dados)) throw new Error("Formato inválido");
+        dados = dados.map(row => ({
+            ...row,
+            erro: row.titulo || '',
+            solucao: row.conteudo || '',
+            'como emitir': row.como_emitir || '',
+            vetor: row.embedding || null
+        }));
         bancoCompletoRaw = dados;
         b.innerText = "Vetorizando base...";
         const { linhasComVetor, linhasSemVetor, chaves } = carregarVetoresExistentes(dados);
@@ -1282,8 +1401,8 @@ async function loadData() {
     }
 }
 function popularBarraEmAlta(logsData){try{const isO=Array.isArray(logsData)&&logsData.length>0&&typeof logsData[0]==='object'&&!Array.isArray(logsData[0]);const rows=Array.isArray(logsData)?logsData:[];if(!rows.length)return;const cont={};const po=[];const agora=Date.now();const seteD=7*24*60*60*1000;rows.forEach((row)=>{let p="",ts=0;if(isO){p=(row.pergunta||row.Pergunta||"").toString().trim();if(row.data){const d=new Date(row.data);if(!isNaN(d.getTime()))ts=d.getTime();}}else{p=(row[1]||"").toString().trim();}if(!p||p.length<3||p.toUpperCase().startsWith("FEEDBACK")||p==="Pendente")return;if(!cont[p]){cont[p]={freq:0};po.push(p);}cont[p].freq++;if((agora-ts)<seteD&&ts>0)cont[p].recente=true;});if(Object.keys(cont).length===0)return;const u4=po.filter(p=>cont[p].recente).slice(0,4);const su4=new Set(u4);const rec=Object.entries(cont).filter(([k])=>!su4.has(k)&&cont[k].freq>=2).sort((a,b)=>b[1].freq-a[1].freq).map(([k])=>k);let lf=[...u4,...rec].filter((v,i,a)=>a.indexOf(v)===i).slice(0,8);const bar=document.getElementById('topTermsBar');if(!bar||!lf.length)return;bar.innerHTML='<span>Em alta:</span>';lf.forEach(t=>{const a=document.createElement('a');a.textContent=t.length>35?t.substring(0,33)+'…':t;a.title=t;a.onclick=()=>fillAndSend(t);bar.appendChild(a);});}catch(e){}}
-function carregarVetoresExistentes(dados){if(!dados.length)return{linhasComVetor:0,linhasSemVetor:[],chaves:[]};const chaves=Object.keys(dados[0]);const cv=chaves.find(k=>k.toLowerCase().trim()==='vetor');const ce=chaves.find(k=>k.toLowerCase().trim()==='erro');const cs=chaves.find(k=>k.toLowerCase().trim()==='solucao'||k.toLowerCase().trim()==='solução');const cc=chaves.find(k=>k.toLowerCase().trim()==='categoria');const cem=chaves.find(k=>{const kn=k.toLowerCase().trim();return kn==='como emitir'||kn==='como_emitir'||kn==='emissao'||kn==='emissão'||kn==='emitir';});if(!cv)return{linhasComVetor:0,linhasSemVetor:[],chaves};let lcv=0;const lsv=[];dados.forEach((linha,i)=>{const te=linha[ce]||"";const ts=linha[cs]||"";const tc=cc?(linha[cc]||""):"";const tem=cem?(linha[cem]||""):"";if(!te&&!ts)return;const tc2=`DÚVIDA: ${te} | PROCEDIMENTO: ${ts}${tem?' | COMO EMITIR: '+tem:''}${tc?' | CATEGORIA: '+tc:''}`;const ve=linha[cv];if(ve&&ve.toString().trim().startsWith('[')){try{manualVetorizado.push({texto:tc2,erro:te,solucao:ts,emitir:tem,categoria:tc,vetor:JSON.parse(ve)});lcv++;}catch(e){lsv.push({linha,textoCompleto:tc2,textoErro:te,textoSolucao:ts,textoEmitir:tem,textoCategoria:tc,indexPlanilha:i+2,chaveVetor:cv,chaves});}}else{lsv.push({linha,textoCompleto:tc2,textoErro:te,textoSolucao:ts,textoEmitir:tem,textoCategoria:tc,indexPlanilha:i+2,chaveVetor:cv,chaves});}});return{linhasComVetor:lcv,linhasSemVetor:lsv,chaves};}
-async function vetorizarEmBackground(lsv,chaves){const b=document.getElementById('statusBadge');let es=0;const ncv=chaves.indexOf(lsv[0]?.chaveVetor)+1;for(let i=0;i<lsv.length;i++){if(es>5){b.innerText='IA Pronta ⚠️';break;}const item=lsv[i];b.innerText=`Vet. ${i+1}/${lsv.length}`;await new Promise(r=>setTimeout(r,3500));const nv=await gerarEmbedding(item.textoCompleto);if(nv){manualVetorizado.push({texto:item.textoCompleto,erro:item.textoErro,solucao:item.textoSolucao,emitir:item.textoEmitir||"",categoria:item.textoCategoria,vetor:nv});salvarVetorNaPlanilha(item.indexPlanilha,ncv,JSON.stringify(nv));es=0;}else{es++;await new Promise(r=>setTimeout(r,10000));}}document.getElementById('statusBadge').innerText=`IA Pronta (${manualVetorizado.length})`;document.getElementById('statusBadge').className="badge";}
+function carregarVetoresExistentes(dados){if(!dados.length)return{linhasComVetor:0,linhasSemVetor:[],chaves:[]};const chaves=Object.keys(dados[0]);const cv=chaves.find(k=>k.toLowerCase().trim()==='vetor'||k.toLowerCase().trim()==='embedding');const ce=chaves.find(k=>k.toLowerCase().trim()==='erro'||k.toLowerCase().trim()==='titulo');const cs=chaves.find(k=>k.toLowerCase().trim()==='solucao'||k.toLowerCase().trim()==='solução'||k.toLowerCase().trim()==='conteudo');const cc=chaves.find(k=>k.toLowerCase().trim()==='categoria');const cem=chaves.find(k=>{const kn=k.toLowerCase().trim();return kn==='como emitir'||kn==='como_emitir'||kn==='emissao'||kn==='emissão'||kn==='emitir';});if(!cv)return{linhasComVetor:0,linhasSemVetor:[],chaves};let lcv=0;const lsv=[];dados.forEach((linha,i)=>{const te=linha[ce]||"";const ts=linha[cs]||"";const tc=cc?(linha[cc]||""):"";const tem=cem?(linha[cem]||""):"";if(!te&&!ts)return;const tc2=`DÚVIDA: ${te} | PROCEDIMENTO: ${ts}${tem?' | COMO EMITIR: '+tem:''}${tc?' | CATEGORIA: '+tc:''}`;const ve=linha[cv];let veArray=null;if(Array.isArray(ve)){veArray=ve;}else if(ve&&typeof ve==='string'&&ve.trim().startsWith('[')){try{veArray=JSON.parse(ve);}catch(e){veArray=null;}}if(veArray&&veArray.length>0){manualVetorizado.push({texto:tc2,erro:te,solucao:ts,emitir:tem,categoria:tc,vetor:veArray,idSupabase:linha.id});lcv++;}else{lsv.push({linha,textoCompleto:tc2,textoErro:te,textoSolucao:ts,textoEmitir:tem,textoCategoria:tc,indexPlanilha:i+2,chaveVetor:cv,chaves,idSupabase:linha.id});}});return{linhasComVetor:lcv,linhasSemVetor:lsv,chaves};}
+async function vetorizarEmBackground(lsv,chaves){const b=document.getElementById('statusBadge');let es=0;for(let i=0;i<lsv.length;i++){if(es>5){b.innerText='IA Pronta ⚠️';break;}const item=lsv[i];b.innerText=`Vet. ${i+1}/${lsv.length}`;await new Promise(r=>setTimeout(r,3500));const nv=await gerarEmbedding(item.textoCompleto);if(nv){manualVetorizado.push({texto:item.textoCompleto,erro:item.textoErro,solucao:item.textoSolucao,emitir:item.textoEmitir||"",categoria:item.textoCategoria,vetor:nv,idSupabase:item.idSupabase});salvarVetorNoSupabase(item.idSupabase,nv);es=0;}else{es++;await new Promise(r=>setTimeout(r,10000));}}document.getElementById('statusBadge').innerText=`IA Pronta (${manualVetorizado.length})`;document.getElementById('statusBadge').className="badge";}
 function liberarChat(modo="completo"){
     const b = document.getElementById('statusBadge');
     const w = document.getElementById('welcomeMsg');
@@ -1315,7 +1434,7 @@ function liberarChat(modo="completo"){
         if(w) w.innerHTML = '⚠️ Não consegui conectar ao banco de dados.<br>Posso tentar ajudar com conhecimento geral. Digite sua dúvida.<br><button class="retry-btn" onclick="location.reload()">🔄 Tentar Novamente</button>';
     }
 }
-function salvarVetorNaPlanilha(nl,nc,vs){fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',body:JSON.stringify({action:"updateVetor",linha:nl,coluna:nc,vetor:vs})}).catch(e=>console.error(e));}
+function salvarVetorNoSupabase(id,vetor){if(!id)return;sb.from('BancoDados').update({embedding:vetor}).eq('id',id).then(({error})=>{if(error)console.error('Erro ao salvar vetor:',error);});}
 
 // ═══════════════════════════════════════════════════════════
 //  PREPARAR CONTEXTO MANUAL (COM REPOSITÓRIO)
@@ -1448,6 +1567,11 @@ async function handleChat() {
         const result = await callCurrentMCP([{ role: 'user', content: ps }], { temperature: 0.4, maxTokens: 4096 });
         ld.remove();
         const rf2 = result.text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
+        const iaUsada = result._iaUsada || 'OpenRouter';
+        const iaModelo = (result._iaModelo || '').split('/').pop();
+        const iaBadge = iaUsada === 'Gemini'
+            ? `<span style="font-size:10px;color:#7c3aed;background:#f5f3ff;padding:2px 7px;border-radius:10px;border:1px solid #ddd6fe;font-weight:600;">🌐 Gemini (fallback)</span>`
+            : `<span style="font-size:10px;color:#0369a1;background:#f0f9ff;padding:2px 7px;border-radius:10px;border:1px solid #bae6fd;font-weight:600;">⚡ OpenRouter${iaModelo ? ' · '+iaModelo : ''}</span>`;
         const card = document.createElement('div'); card.className = 'answer-card';
         card.innerHTML = `<div class="answer-section"><div class="section-content">${rf2}</div></div>
             <div class="feedback-area">
@@ -1460,6 +1584,7 @@ async function handleChat() {
                 <button class="btn-pesquisa-avancada" style="background:linear-gradient(135deg, #ff0000, #cc0000);" onclick="toggleYTPanel();document.getElementById('ytSearchInput').value='${query.replace(/'/g, "\\'")}';pesquisarNoYT();">🎬 YouTube</button>
 				<button class="btn-pesquisa-avancada" style="background:linear-gradient(135deg, var(--central-color), var(--central-dark));" onclick="toggleCentralPanel();document.getElementById('centralSearchInput').value='${query.replace(/'/g, "\\'")}';pesquisarNaCentral();">📚 Central</button>
                 ${filaSolucoes.length > 0 ? `<button class="feedback-btn next" onclick="fillAndSend('Próximo')">➡️ Próxima</button>` : ''}
+                <span style="margin-left:auto;">${iaBadge}</span>
             </div>`;
         document.getElementById('chatStream').appendChild(card); scrollToBottom(true);
         adicionarMensagemNaConversa('ai', result.text.replace(/\*\*(.*?)\*\*/g, '$1'));
@@ -1478,7 +1603,7 @@ async function buscarConhecimentoInternet(query) {
     const p = `Você é um especialista em sistemas ERP para transportadoras (Bsoft TMS). Não invente caminhos no sistema ou informações que não encontrar. Pergunta NÃO encontrada no manual: "${query}". Responda JSON: {"erro":"título","solucao":"solução detalhada com menus","fonte":"site confiável","confianca":0.8}. Se não souber, confianca:0.`;
     try { const r = await callCurrentMCP([{ role: 'user', content: p }], { temperature: 0.3, maxTokens: 2048, responseFormat: { type: 'json_object' } }); let parsed = null; try { parsed = JSON.parse(r.text); } catch (e) { const c = r.text.replace(/```json\n?|\n?```/g, '').trim(); try { parsed = JSON.parse(c); } catch (e2) {} } return parsed; } catch (e) { return null; }
 }
-async function salvarMLNaPlanilha(erro, solucao, fonte) { try { await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "addToAba", aba: "machinelearning", erro, solucao, fonte, data: new Date().toISOString() }) }); } catch (e) {} }
+async function salvarMLNaPlanilha(erro, solucao, fonte) { try { await sb.from('machine_learning').insert({erro, solucao, fonte, data: new Date().toISOString()}); } catch (e) {} }
 
 async function ativarMachineLearning(query) {
     const conversa = getConversaAtiva();
@@ -1516,7 +1641,7 @@ async function processarProximaSolucao(po) {
 //  BANCO LOCAL DE REJEIÇÕES SEFAZ
 // ═══════════════════════════════════════════════════════════
 let bancoRejeicoes = [], bancoRejeicoesCarregado = false;
-async function carregarBancoRejeicoes() { if (bancoRejeicoesCarregado && bancoRejeicoes.length > 0) return bancoRejeicoes; try { const r = await fetch(SCRIPT_URL + "?aba=RejeicoesSEFAZ"); if (!r.ok) throw new Error("Erro"); const d = await r.json(); if (Array.isArray(d)) { bancoRejeicoes = d; bancoRejeicoesCarregado = true; } } catch (e) { bancoRejeicoes = []; } return bancoRejeicoes; }
+async function carregarBancoRejeicoes() { if (bancoRejeicoesCarregado && bancoRejeicoes.length > 0) return bancoRejeicoes; try { const {data, error} = await sb.from('RejeicoesSEFAZ').select('*'); if (error) throw error; if (Array.isArray(data)) { bancoRejeicoes = data; bancoRejeicoesCarregado = true; } } catch (e) { bancoRejeicoes = []; } return bancoRejeicoes; }
 function ehErroSefaz(query) {
     const q = normalizarSinonimos(query);
     const pr = [
@@ -1551,8 +1676,8 @@ function formatarTexto(texto) { return texto.replace(/\*\*(.*?)\*\*/g, '<b>$1</b
 //  APRENDIZADO ONLINE COMPARTILHADO
 // ═══════════════════════════════════════════════════════════
 let cachRespostasFixas = null, tsBancamentoFixas = 0;
-async function carregarRespostasFixas() { if (cachRespostasFixas && (Date.now() - tsBancamentoFixas) < 5 * 60 * 1000) return cachRespostasFixas; try { const r = await fetch(SCRIPT_URL + "?aba=RespostasFixas"); if (!r.ok) throw new Error("sem acesso"); const d = await r.json(); const m = {}; (Array.isArray(d) ? d : []).forEach(row => { if (row.chave && row.resposta) { try { m[row.chave] = { resposta: JSON.parse(row.resposta), confirmacoes: parseInt(row.confirmacoes) || 1 }; } catch (e) {} } }); cachRespostasFixas = m; tsBancamentoFixas = Date.now(); return m; } catch (e) { try { return JSON.parse(localStorage.getItem('bsoft_fixas_cache') || '{}'); } catch (e2) { return {}; } } }
-async function salvarRespostaFixa(pergunta, resposta) { const c = pergunta.toLowerCase().trim().substring(0, 120); cachRespostasFixas = null; fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "fixarResposta", chave: c, pergunta, resposta: JSON.stringify(resposta), ts: new Date().toISOString() }) }).catch(e => {}); try { const l = JSON.parse(localStorage.getItem('bsoft_fixas_cache') || '{}'); l[c] = { resposta, confirmacoes: (l[c]?.confirmacoes || 0) + 1 }; localStorage.setItem('bsoft_fixas_cache', JSON.stringify(l)); } catch (e) {} }
+async function carregarRespostasFixas() { if (cachRespostasFixas && (Date.now() - tsBancamentoFixas) < 5 * 60 * 1000) return cachRespostasFixas; try { const {data, error} = await sb.from('respostas_fixas').select('*'); if (error) throw error; const m = {}; (Array.isArray(data) ? data : []).forEach(row => { if (row.chave && row.resposta) { try { m[row.chave] = { resposta: JSON.parse(row.resposta), confirmacoes: parseInt(row.confirmacoes) || 1 }; } catch (e) {} } }); cachRespostasFixas = m; tsBancamentoFixas = Date.now(); return m; } catch (e) { try { return JSON.parse(localStorage.getItem('bsoft_fixas_cache') || '{}'); } catch (e2) { return {}; } } }
+async function salvarRespostaFixa(pergunta, resposta) { const c = pergunta.toLowerCase().trim().substring(0, 120); cachRespostasFixas = null; sb.from('respostas_fixas').upsert({chave: c, pergunta, resposta: JSON.stringify(resposta)}, {onConflict: 'chave'}).then(({error}) => { if(error) console.error('salvarRespostaFixa error:', error); }); try { const l = JSON.parse(localStorage.getItem('bsoft_fixas_cache') || '{}'); l[c] = { resposta, confirmacoes: (l[c]?.confirmacoes || 0) + 1 }; localStorage.setItem('bsoft_fixas_cache', JSON.stringify(l)); } catch (e) {} }
 async function buscarRespostaFixa(pergunta) {
     const f = await carregarRespostasFixas();
     const perguntaNormalizada = normalizarSinonimos(pergunta);
@@ -1598,18 +1723,13 @@ function logSearch(query, found) {
         conversa.primeiraPergunta = query;
         conversa.logTimestamp = currentLogTimestamp;
         salvarConversas();
-        try { 
-            fetch(SCRIPT_URL, { 
-                method:'POST', 
-                mode:'no-cors', 
-                body: JSON.stringify({ 
-                    action: "addLog",
-                    pergunta: query,
-                    encontrou: found ? "Sim" : "Não", 
-                    feedback: "Pendente",
-                    timestamp: currentLogTimestamp
-                }) 
-            }); 
+        try {
+            sb.from('logs').insert({
+                pergunta: query,
+                encontrou: found,
+                feedback: "Pendente",
+                timestamp: currentLogTimestamp
+            }).then(({error}) => { if(error) console.error('logSearch error:', error); });
         } catch(e) { console.error(e); }
     } else {
         console.log("⏭️ Log ignorado (não é a primeira pergunta):", query.substring(0, 50));
@@ -1628,17 +1748,8 @@ async function saveFeedback(logIndex, type, btn) {
 
     if (type === 'positivo') {
         try {
-            await fetch(SCRIPT_URL, { 
-                method: 'POST', 
-                mode: 'no-cors', 
-                body: JSON.stringify({ 
-                    action: "updateFeedback",
-                    timestamp: timestampLog,
-                    pergunta: perguntaParaLog,
-                    feedback: "Positivo"
-                }) 
-            });
-            console.log("✅ Feedback POSITIVO enviado para planilha");
+            await sb.from('logs').update({feedback: "Positivo", pergunta: perguntaParaLog}).eq('timestamp', timestampLog);
+            console.log("✅ Feedback POSITIVO enviado para Supabase");
         } catch(e) {
             console.error("Erro ao enviar feedback positivo:", e);
         }
@@ -1650,17 +1761,8 @@ async function saveFeedback(logIndex, type, btn) {
         }
     } else {
         try {
-            await fetch(SCRIPT_URL, { 
-                method: 'POST', 
-                mode: 'no-cors', 
-                body: JSON.stringify({ 
-                    action: "updateFeedback",
-                    timestamp: timestampLog,
-                    pergunta: perguntaParaLog,
-                    feedback: "Negativo"
-                }) 
-            });
-            console.log("⚠️ Feedback NEGATIVO enviado para planilha");
+            await sb.from('logs').update({feedback: "Negativo", pergunta: perguntaParaLog}).eq('timestamp', timestampLog);
+            console.log("⚠️ Feedback NEGATIVO enviado para Supabase");
         } catch(e) {
             console.error("Erro ao enviar feedback negativo:", e);
         }
@@ -1680,17 +1782,7 @@ async function sendDetailedFeedback(logIndex, btn) {
     const timestampLog = conversa?.logTimestamp || currentLogTimestamp;
     
     try {
-        await fetch(SCRIPT_URL, { 
-            method: 'POST', 
-            mode: 'no-cors', 
-            body: JSON.stringify({ 
-                action: "updateFeedbackDetalhado",
-                timestamp: timestampLog,
-                pergunta: perguntaParaLog,
-                feedback: "Negativo",
-                motivo: motivo
-            }) 
-        });
+        await sb.from('logs').update({feedback: "Negativo", pergunta: perguntaParaLog, motivo: motivo}).eq('timestamp', timestampLog);
         console.log("📝 Feedback detalhado enviado:", motivo);
         feedbackArea.innerHTML = "<span style='color:#dc2626;font-weight:700;'>⚠️ Feedback negativo registrado! Vamos melhorar.</span>";
     } catch(e) {
@@ -1704,7 +1796,202 @@ async function sendDetailedFeedback(logIndex, btn) {
 // ═══════════════════════════════════════════════════════════
 function openAdmin() { if (prompt("Senha Administrativa:") === CORRECT_PASSWORD) document.getElementById('adminPanel').style.display = 'flex'; }
 function closeAdmin() { document.getElementById('adminPanel').style.display = 'none'; }
-async function saveToDatabase() { const e = document.getElementById('newError').value.trim(); const s = document.getElementById('newSolution').value.trim(); if (!e || !s) return alert("Preencha!"); try { await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "addKnowledge", erro: e, solucao: s }) }); alert("Sucesso!"); closeAdmin(); loadData(); } catch (e) { alert("Erro."); } }
+function limparTudoERedefinir() {
+    const msg1 = [
+        '⚠️  AÇÃO IRREVERSÍVEL — LIMPEZA TOTAL',
+        '',
+        'Serão apagados permanentemente:',
+        '  • Todas as conversas e histórico',
+        '  • Configurações de API (provedor, modelo, chave)',
+        '  • Base de Machine Learning local',
+        '  • Cache de artigos, repositório e blog',
+        '  • Respostas fixas em cache local',
+        '',
+        'O sistema será restaurado aos padrões do código.',
+        'Esta ação NÃO pode ser desfeita.',
+        '',
+        'Deseja continuar?'
+    ].join('\n');
+    if (!confirm(msg1)) return;
+    if (!confirm('⚠️ Confirmar limpeza total?\n\nTodos os dados locais serão apagados permanentemente.')) return;
+    localStorage.clear();
+    location.reload();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  EDITOR DE BANCO DE DADOS (SUPABASE)
+// ═══════════════════════════════════════════════════════════
+let _dbeData = [], _dbeCols = [], _dbeEditIndex = null;
+const _DBE_SKIP_COLS = new Set(['embedding', 'vetor']);
+const _DBE_TEXTAREA_COLS = new Set(['solucao','conteudo','resposta','significado','causa','hint','descricao','Descrição','message']);
+
+function openDBEditor() {
+    const s = prompt("Senha Administrativa:");
+    if (s !== CORRECT_PASSWORD) { if (s !== null) alert("Senha incorreta!"); return; }
+    document.getElementById('dbEditorPanel').style.display = 'flex';
+    dbeLoadTable();
+}
+function closeDBEditor() { document.getElementById('dbEditorPanel').style.display = 'none'; dbeCancelEdit(); }
+
+async function dbeLoadTable() {
+    const table = document.getElementById('dbeTable').value;
+    const status = document.getElementById('dbeStatus');
+    dbeCancelEdit();
+    document.getElementById('dbeSearch').value = '';
+    status.textContent = `⏳ Carregando ${table}...`;
+    try {
+        const { data, error } = await sb.from(table).select('*').limit(300);
+        if (error) throw error;
+        _dbeData = data || [];
+        _dbeRender(_dbeData);
+        status.textContent = `✅ ${_dbeData.length} registros em "${table}"`;
+    } catch(e) { status.textContent = `❌ Erro: ${e.message}`; }
+}
+
+function dbeFilter() {
+    const q = document.getElementById('dbeSearch').value.toLowerCase().trim();
+    if (!q) { _dbeRender(_dbeData); return; }
+    const filtered = _dbeData.filter(row =>
+        Object.values(row).some(v => v !== null && String(v).toLowerCase().includes(q))
+    );
+    _dbeRender(filtered, true);
+    document.getElementById('dbeStatus').textContent = `🔍 ${filtered.length} de ${_dbeData.length} registros`;
+}
+
+function _dbeRender(data, isFiltered) {
+    const head = document.getElementById('dbeHead');
+    const body = document.getElementById('dbeBody');
+    head.innerHTML = ''; body.innerHTML = '';
+    if (!data.length) {
+        body.innerHTML = '<tr><td colspan="99" style="padding:14px;text-align:center;color:#6b7280;font-size:12px;">Nenhum registro.</td></tr>';
+        _dbeCols = []; return;
+    }
+    _dbeCols = Object.keys(data[0]).filter(c => !_DBE_SKIP_COLS.has(c));
+    // Header
+    const trh = document.createElement('tr');
+    _dbeCols.forEach(col => {
+        const th = document.createElement('th'); th.className = 'dbe-th'; th.textContent = col; trh.appendChild(th);
+    });
+    const thA = document.createElement('th'); thA.className = 'dbe-th'; thA.textContent = 'Ações'; trh.appendChild(thA);
+    head.appendChild(trh);
+    // Rows
+    data.forEach((row, i) => {
+        const realIndex = isFiltered ? _dbeData.indexOf(row) : i;
+        const tr = document.createElement('tr'); tr.className = 'dbe-tr'; tr.id = `dbe-row-${realIndex}`;
+        _dbeCols.forEach(col => {
+            const td = document.createElement('td'); td.className = 'dbe-td';
+            const v = row[col]; const s = v === null || v === undefined ? '' : String(v);
+            td.textContent = s.length > 60 ? s.substring(0, 58) + '…' : s;
+            td.title = s; tr.appendChild(td);
+        });
+        const tdA = document.createElement('td'); tdA.className = 'dbe-td';
+        tdA.innerHTML = `<button class="dbe-action-btn" style="background:#2563eb;color:white;" onclick="dbeOpenEdit(${realIndex})">✏️ Editar</button> <button class="dbe-action-btn" style="background:#dc2626;color:white;" onclick="dbeDeleteRow(${realIndex})">🗑️</button>`;
+        tr.appendChild(tdA); body.appendChild(tr);
+    });
+}
+
+function _dbePk(row) {
+    if ('id' in row) return { col: 'id', val: row.id };
+    if ('chave' in row) return { col: 'chave', val: row.chave };
+    if ('codigo' in row) return { col: 'codigo', val: row.codigo };
+    const k = Object.keys(row)[0]; return { col: k, val: row[k] };
+}
+
+function dbeOpenEdit(index) {
+    _dbeEditIndex = index;
+    const row = _dbeData[index];
+    document.getElementById('dbeFormTitle').textContent = '✏️ Editando Registro';
+    _dbePopulateForm(row, false);
+    // Highlight row
+    document.querySelectorAll('.dbe-tr').forEach(r => r.classList.remove('dbe-selected'));
+    const el = document.getElementById(`dbe-row-${index}`);
+    if (el) { el.classList.add('dbe-selected'); el.scrollIntoView({ block: 'nearest' }); }
+}
+
+function dbeOpenNew() {
+    _dbeEditIndex = null;
+    document.getElementById('dbeFormTitle').textContent = '➕ Novo Registro';
+    const emptyRow = {};
+    _dbeCols.filter(c => c !== 'id' && c !== 'created_at').forEach(c => emptyRow[c] = '');
+    _dbePopulateForm(emptyRow, true);
+}
+
+function _dbePopulateForm(row, isNew) {
+    const fields = document.getElementById('dbeFields');
+    fields.innerHTML = '';
+    const cols = isNew ? Object.keys(row) : _dbeCols;
+    cols.forEach(col => {
+        const wrap = document.createElement('div'); wrap.className = 'dbe-field-row';
+        const label = document.createElement('label'); label.className = 'dbe-field-label'; label.textContent = col;
+        const val = row[col] === null || row[col] === undefined ? '' : String(row[col]);
+        const isTA = _DBE_TEXTAREA_COLS.has(col) || val.length > 80;
+        const input = document.createElement(isTA ? 'textarea' : 'input');
+        input.className = 'dbe-field-input' + (isTA ? ' ' : '');
+        if (!isTA) input.type = 'text';
+        input.id = `dbe_f_${col}`; input.value = val;
+        if (col === 'id' || col === 'created_at') input.readOnly = true, input.style.opacity = '0.5';
+        wrap.appendChild(label); wrap.appendChild(input); fields.appendChild(wrap);
+    });
+    document.getElementById('dbeForm').style.display = 'flex';
+    document.getElementById('dbeForm').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+async function dbeSaveRow() {
+    const table = document.getElementById('dbeTable').value;
+    const status = document.getElementById('dbeStatus');
+    const isNew = _dbeEditIndex === null;
+    const payload = {};
+    const cols = isNew
+        ? _dbeCols.filter(c => c !== 'id' && c !== 'created_at')
+        : _dbeCols.filter(c => c !== 'id' && c !== 'created_at');
+    cols.forEach(col => {
+        const el = document.getElementById(`dbe_f_${col}`);
+        if (!el || el.readOnly) return;
+        const origRow = isNew ? null : _dbeData[_dbeEditIndex];
+        const origVal = origRow ? origRow[col] : null;
+        let v = el.value.trim() === '' ? null : el.value;
+        if (typeof origVal === 'boolean') v = (el.value === 'true' || el.value === '1' || el.value === 'sim');
+        else if (typeof origVal === 'number' && v !== null) v = Number(v) || null;
+        payload[col] = v;
+    });
+    try {
+        status.textContent = '💾 Salvando...';
+        if (isNew) {
+            const { error } = await sb.from(table).insert(payload);
+            if (error) throw error;
+            status.textContent = '✅ Registro criado com sucesso!';
+        } else {
+            const pk = _dbePk(_dbeData[_dbeEditIndex]);
+            const { error } = await sb.from(table).update(payload).eq(pk.col, pk.val);
+            if (error) throw error;
+            status.textContent = '✅ Registro atualizado com sucesso!';
+        }
+        dbeCancelEdit();
+        await dbeLoadTable();
+    } catch(e) { status.textContent = `❌ Erro ao salvar: ${e.message}`; }
+}
+
+async function dbeDeleteRow(index) {
+    const table = document.getElementById('dbeTable').value;
+    const row = _dbeData[index];
+    const preview = _dbeCols.map(c => row[c]).filter(Boolean).join(' | ').substring(0, 80);
+    if (!confirm(`Excluir este registro de "${table}"?\n\n${preview}`)) return;
+    try {
+        const pk = _dbePk(row);
+        const { error } = await sb.from(table).delete().eq(pk.col, pk.val);
+        if (error) throw error;
+        document.getElementById('dbeStatus').textContent = '✅ Registro excluído.';
+        await dbeLoadTable();
+    } catch(e) { document.getElementById('dbeStatus').textContent = `❌ Erro ao excluir: ${e.message}`; }
+}
+
+function dbeCancelEdit() {
+    document.getElementById('dbeForm').style.display = 'none';
+    document.getElementById('dbeFields').innerHTML = '';
+    _dbeEditIndex = null;
+    document.querySelectorAll('.dbe-tr').forEach(r => r.classList.remove('dbe-selected'));
+}
+async function saveToDatabase() { const e = document.getElementById('newError').value.trim(); const s = document.getElementById('newSolution').value.trim(); if (!e || !s) return alert("Preencha!"); try { const {error} = await sb.from('BancoDados').insert({titulo: e, conteudo: s}); if (error) throw error; alert("Sucesso!"); closeAdmin(); loadData(); } catch (e) { alert("Erro."); } }
 function openModal() { const b = document.getElementById('modalBody'); b.innerHTML = currentResults.map(r => `<div class="result-item"><strong>${(r.similaridade * 100).toFixed(0)}%</strong><br>${r.erro}<br>→ ${r.solucao}</div>`).join('') || '<em>Nenhum resultado.</em>'; document.getElementById('resultsModal').style.display = "block"; }
 function closeModal() { document.getElementById('resultsModal').style.display = "none"; }
 
