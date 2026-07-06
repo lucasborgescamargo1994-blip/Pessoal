@@ -1508,7 +1508,10 @@ async function handleChat() {
     const conversa = getConversaAtiva();
     if (conversa) { const dd = detectarDocumento(query.toLowerCase()); if (dd) { conversa.documentoContexto = dd; conversa.topicoAtual = query; salvarConversas(); } }
 
-    if (ehErroSefaz(query)) { await gerarRespostaSefaz(query); return; }
+    if (ehErroSefaz(query)) {
+        const escolha = await perguntarModoSefaz();
+        if (escolha === 'sefaz') { await gerarRespostaSefaz(query); return; }
+    }
 
     const lf = appendLoadingCard("⭐ Verificando base de conhecimento...");
     const rf = await buscarRespostaFixa(query);
@@ -1642,6 +1645,34 @@ async function processarProximaSolucao(po) {
 // ═══════════════════════════════════════════════════════════
 let bancoRejeicoes = [], bancoRejeicoesCarregado = false;
 async function carregarBancoRejeicoes() { if (bancoRejeicoesCarregado && bancoRejeicoes.length > 0) return bancoRejeicoes; try { const {data, error} = await sb.from('RejeicoesSEFAZ').select('*'); if (error) throw error; if (Array.isArray(data)) { bancoRejeicoes = data; bancoRejeicoesCarregado = true; } } catch (e) { bancoRejeicoes = []; } return bancoRejeicoes; }
+let _sefazEscolhaResolve = null;
+function _resolverEscolhaSefaz(escolha) {
+    const card = document.getElementById('sefazEscolhaCard');
+    if (card) card.remove();
+    if (_sefazEscolhaResolve) { _sefazEscolhaResolve(escolha); _sefazEscolhaResolve = null; }
+}
+function perguntarModoSefaz() {
+    return new Promise(resolve => {
+        _sefazEscolhaResolve = resolve;
+        const s = document.getElementById('chatStream');
+        const card = document.createElement('div');
+        card.id = 'sefazEscolhaCard';
+        card.className = 'answer-card';
+        card.innerHTML = `
+            <div style="background:#fef3c7;padding:8px 15px;border-bottom:1px solid #fde68a;font-size:11px;color:#92400e;font-weight:600;">🌐 Erro SEFAZ detectado</div>
+            <div class="answer-section">
+                <div class="section-content">
+                    <div style="font-size:13px;color:#374151;margin-bottom:10px;">Como deseja pesquisar?</div>
+                    <div style="display:flex;gap:10px;">
+                        <button onclick="_resolverEscolhaSefaz('banco')" style="flex:1;padding:10px 16px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;transition:opacity .15s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">🗄️ Banco de dados</button>
+                        <button onclick="_resolverEscolhaSefaz('sefaz')" style="flex:1;padding:10px 16px;background:#dc2626;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;transition:opacity .15s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">🌐 Erros SEFAZ</button>
+                    </div>
+                </div>
+            </div>`;
+        s.appendChild(card);
+        scrollToBottom(true);
+    });
+}
 function ehErroSefaz(query) {
     const q = normalizarSinonimos(query);
     const pr = [
