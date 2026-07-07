@@ -244,6 +244,17 @@
         .feedback-area { display: flex; gap: 7px; padding: 8px 15px; background: #f8fafc; border-top: 1px solid var(--border); align-items: center; font-size: 12px; color: var(--text-muted); flex-wrap: wrap; }
         .regra-code { background:#1e1e2e;color:#cdd6f4;padding:12px 16px;border-radius:8px;font-size:12px;font-family:'Courier New',monospace;overflow-x:auto;white-space:pre;margin:8px 0;border:1px solid #313244;line-height:1.6; }
         .regra-badge { display:inline-block;background:#16a34a;color:white;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-bottom:8px; }
+        .wizard-section { padding:12px 15px; border-bottom:1px solid #e5e7eb; }
+        .wizard-label { font-size:12px; font-weight:700; color:#374151; margin-bottom:8px; }
+        .wizard-subsection b { font-size:12px; color:#111827; display:block; margin-bottom:6px; }
+        .wizard-radio-label { display:flex; align-items:center; gap:6px; font-size:12px; color:#374151; padding:2px 0; cursor:pointer; }
+        .wizard-cbx-grid { display:grid; grid-template-columns:1fr 1fr; gap:2px; margin-top:6px; }
+        .wizard-textarea { width:100%; min-height:80px; border:1px solid #d1d5db; border-radius:6px; padding:8px; font-size:12px; resize:vertical; box-sizing:border-box; font-family:inherit; }
+        .wizard-img-zone { display:block; border:2px dashed #d1d5db; border-radius:8px; padding:12px; text-align:center; cursor:pointer; font-size:11px; color:#9ca3af; transition:border-color .2s; }
+        .wizard-img-zone:hover { border-color:#16a34a; }
+        .wizard-submit { width:100%; padding:12px; background:#16a34a; color:white; border:none; border-radius:8px; cursor:pointer; font-size:14px; font-weight:700; transition:background .15s; }
+        .wizard-submit:hover { background:#15803d; }
+        .wizard-submit:disabled { background:#9ca3af; cursor:not-allowed; }
         .feedback-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 5px; cursor: pointer; padding: 3px 9px; transition: all 0.2s; font-size: 13px; font-family: inherit; }
         .feedback-btn:hover { border-color: var(--primary); background: var(--primary-light); }
         .feedback-btn.next { margin-left: auto; font-size: 11px; padding: 4px 11px; color: var(--primary-dark); border-color: var(--primary-border); background: var(--primary-light); font-weight: 600; }
@@ -1527,7 +1538,11 @@ async function handleChat() {
     const conversa = getConversaAtiva();
     if (conversa) { const dd = detectarDocumento(query.toLowerCase()); if (dd) { conversa.documentoContexto = dd; conversa.topicoAtual = query; salvarConversas(); } }
 
-    if (ehCriacaoRegra(query)) { await gerarRespostaCriacaoRegra(query); return; }
+    if (ehCriacaoRegra(query)) {
+        const _rr = await perguntarAuxilioRegra();
+        if (_rr === 'sim') { mostrarWizardRegra(query); return; }
+        // 'nao' → continua busca normal no banco
+    }
 
     if (ehErroSefaz(query)) {
         const escolha = await perguntarModoSefaz();
@@ -1697,10 +1712,11 @@ Tarifa Final: tarifaDigitada | Tarifa Real: tarifaCalculada | Frete Valor: valor
 Base Cálculo ICMS: baseCalculo | Alíquota ICMS: aliquota | Valor ICMS: valorICMS
 Outros: valoresOutros | Pedágio: valorPedagioConhecimento | Gris: Gris | Diária: diaria
 Seguro: valorSeguro | Total Serviço: totalServico | Total Prestação: totalPrestacao
-Valor total das notas fiscais: merc_valor[] | Peso total das notas fiscais: merc_quantKg[]
+Valor total das notas fiscais: merc_valor[] | Peso total das notas fiscais: merc_quantKg[] | Quantidade total das notas fiscais: merc_quant[]
 CAMPOS PERSONALIZADOS CT-e: criar em Transporte > Configurações > Tipos Valores Outros. Pede nome interno e descrição. Na regra usar: obt("nomeinterno") (ex: obt("advalorem")). ATENÇÃO: campos personalizados do CT-e SEMPRE usam obt().
 
 CAMPO INVISÍVEL (não visível no DACTE): usar $SV("dados_CST", '40');
+ATENÇÃO — USO DO $SV(): Use a função $SV() SOMENTE se o usuário solicitar explicitamente (exemplo: "quero definir o CST sempre como 40" ou "defina o CST"). NUNCA inclua $SV() por iniciativa própria sem que o usuário peça. Se o usuário não mencionar CST ou campos invisíveis, não use $SV() na regra gerada.
 
 CAMPOS OCULTOS NO DACTE (padrão coluna esquerda):
 tarifaImpressa, diaria, Gris, valorFrete, valorICMS, valoresOutros, valorPedagioConhecimento, valorSeguro, valorSeguroAduaneiro
@@ -1752,6 +1768,180 @@ def("totalPrestacao", (obt("valorFrete") + obt("valoresOutros") + obt("valorSegu
 
 INCLUIR PEDÁGIO NA BASE ICMS: def("baseCalculo", (obt("valorFrete") + obt("valoresOutros") + obt("valorPedagioConhecimento")));
 `;
+
+// ─── WIZARD DE CRIAÇÃO DE REGRAS ───────────────────────────
+let _regraWizardResolve=null,_wizardQueryOriginal='',_wizardCteBase64=null,_wizardTabelaBase64=null;
+function _resolverEscolhaRegra(e){const c=document.getElementById('regraEscolhaCard');if(c)c.remove();if(_regraWizardResolve){_regraWizardResolve(e);_regraWizardResolve=null;}}
+function perguntarAuxilioRegra(){return new Promise(resolve=>{_regraWizardResolve=resolve;const s=document.getElementById('chatStream');const card=document.createElement('div');card.id='regraEscolhaCard';card.className='answer-card';card.innerHTML=`<div style="background:#f0fdf4;padding:8px 15px;border-bottom:1px solid #bbf7d0;font-size:11px;color:#166534;font-weight:600;">⚙️ Criação de Regras</div><div class="answer-section"><div class="section-content"><div style="font-size:13px;color:#374151;margin-bottom:10px;">Precisa de auxílio para criar/editar a regra?</div><div style="display:flex;gap:10px;"><button onclick="_resolverEscolhaRegra('sim')" style="flex:1;padding:10px 16px;background:#16a34a;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">✅ Sim — abrir assistente</button><button onclick="_resolverEscolhaRegra('nao')" style="flex:1;padding:10px 16px;background:#6b7280;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">🔍 Não — buscar no banco</button></div></div></div>`;s.appendChild(card);scrollToBottom(true);});}
+
+const REGRAS_PREDEFINIDAS_CODE={
+    icms_demo:`def("tarifaCalculada",0);\nif ( obt("tarifaDigitada") > 0)\n   def("valorFrete", (obt("merc_quantKg[]")) * obt("tarifaDigitada")/1000);\nif ( obt("aliquota") > 0)\n   def("baseCalculo", (obt("valorFrete") + obt("valoresOutros")));\nif ( obt("aliquota") < 1)\n   def("baseCalculo",0);\nvalor = obt("baseCalculo") * (obt("aliquota")/100);\ndef("valorICMS",valor);\ndef("totalPrestacao", (obt("valorFrete") + obt("valoresOutros") + obt("valorSeguro") + obt("diaria")));`,
+    simples:`def("tarifaCalculada",0);\nif ( obt("tarifaDigitada") > 0)\n   def("valorFrete", (obt("merc_quantKg[]")) * obt("tarifaDigitada"));\ndef("totalPrestacao", (obt("valorFrete") + obt("valoresOutros") + obt("valorSeguro") + obt("diaria")));`,
+    inverso:`def("tarifaCalculada",0);\nif ( obt("tarifaDigitada") > 0)\n   def("valorFrete", (obt("merc_quantKg[]")) * obt("tarifaDigitada"));\nvar inverso = ((100 - obt("aliquota")) /100)\nif ( obt("aliquota") > 0)\n   def("baseCalculo", ((obt("valorFrete") + obt("valoresOutros")) / inverso));\nif ( obt("aliquota") < 1)\n   def("baseCalculo", 0);\nvalor = obt("baseCalculo") * (obt("aliquota")/100);\ndef("valorICMS",valor);\ndef("totalPrestacao", (obt("valorFrete") + obt("valoresOutros") + obt("valorICMS") + obt("valorSeguro") + obt("diaria")));`,
+    soma_icms:`def("tarifaCalculada",0);\nif ( obt("tarifaDigitada") > 0)\n   def("valorFrete", (obt("merc_quantKg[]")) * obt("tarifaDigitada"));\nif ( obt("aliquota") > 0)\n   def("baseCalculo", (obt("valorFrete") + obt("valoresOutros")));\nif ( obt("aliquota") < 1)\n   def("baseCalculo", 0);\nvalor = obt("baseCalculo") * (obt("aliquota")/100);\ndef("valorICMS",valor);\ndef("totalPrestacao", (obt("valorFrete") + obt("valorICMS") + obt("valoresOutros") + obt("valorSeguro") + obt("diaria")));`
+};
+const CALC_FRETE_MAP={
+    nenhum:'Nao especificado',
+    nao_calcular:'Nao calcular (def("tarifaCalculada",0))',
+    tf_pt:'Tarifa final x peso total → def("valorFrete", obt("tarifaDigitada") * obt("merc_quantKg[]"))',
+    tr_pt:'Tarifa real x peso total → def("valorFrete", obt("tarifaCalculada") * obt("merc_quantKg[]"))',
+    tf_pt_1000:'Tarifa final x peso total / 1000 → def("valorFrete", obt("tarifaDigitada") * obt("merc_quantKg[]") / 1000)',
+    tr_pt_1000:'Tarifa real x peso total / 1000 → def("valorFrete", obt("tarifaCalculada") * obt("merc_quantKg[]") / 1000)',
+    tf_qt:'Tarifa final x quantidade total → def("valorFrete", obt("tarifaDigitada") * obt("merc_quant[]"))',
+    tf_vt_doc:'Tarifa final x valor total (Valor do documento) → def("valorFrete", obt("tarifaDigitada") * obt("merc_valor[]"))',
+    tf_vt_prod:'Tarifa final x valor total (Valor do produto) → def("valorFrete", obt("tarifaDigitada") * obt("merc_valor[]"))',
+    prest_icms:'Total da prestacao - valor do ICMS (totalPrestacao inclui ICMS embutido)'
+};
+
+function mostrarWizardRegra(queryOriginal){
+    _wizardQueryOriginal=queryOriginal; _wizardCteBase64=null; _wizardTabelaBase64=null;
+    const s=document.getElementById('chatStream');
+    const card=document.createElement('div');
+    card.id='wizardRegraCard'; card.className='answer-card';
+    card.style.cssText='max-height:680px;overflow-y:auto;';
+    card.innerHTML=`
+<div style="background:#f0fdf4;padding:10px 15px;border-bottom:1px solid #bbf7d0;font-size:12px;color:#166534;font-weight:700;position:sticky;top:0;z-index:2;border-radius:12px 12px 0 0;">⚙️ Assistente de Criação de Regras — Bsoft TMS</div>
+<div class="wizard-section">
+  <div class="wizard-label">📄 Regra base</div>
+  <textarea id="wRegraCola" class="wizard-textarea" placeholder="Cole aqui a regra existente que deseja editar (opcional)..."></textarea>
+  <div style="font-size:11px;color:#6b7280;margin:8px 0 4px;">Ou selecione uma predefinida como base:</div>
+  <div style="display:flex;flex-direction:column;gap:3px;">
+    <label class="wizard-radio-label"><input type="radio" name="wRegraPre" value="" checked onchange="wOnRegraPreChange(this.value)"> Nenhuma (criar do zero)</label>
+    <label class="wizard-radio-label"><input type="radio" name="wRegraPre" value="icms_demo" onchange="wOnRegraPreChange(this.value)"> ICMS Demonstrativo</label>
+    <label class="wizard-radio-label"><input type="radio" name="wRegraPre" value="simples" onchange="wOnRegraPreChange(this.value)"> Simples Nacional</label>
+    <label class="wizard-radio-label"><input type="radio" name="wRegraPre" value="inverso" onchange="wOnRegraPreChange(this.value)"> Cálculo Inverso (ICMS por dentro)</label>
+    <label class="wizard-radio-label"><input type="radio" name="wRegraPre" value="soma_icms" onchange="wOnRegraPreChange(this.value)"> Somar ICMS no Total</label>
+  </div>
+</div>
+<div class="wizard-section">
+  <div class="wizard-label">📎 Campos personalizados <span style="font-size:10px;color:#9ca3af;font-weight:400;">(opcional — a IA identifica os campos do print)</span></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+    <div>
+      <div style="font-size:11px;color:#374151;font-weight:600;margin-bottom:4px;">CT-e / Conhecimento</div>
+      <div class="wizard-img-zone" id="wCteZone" onclick="document.getElementById('wizardImgCte').click()">📁 Clique para anexar print<input type="file" id="wizardImgCte" accept="image/*" style="display:none" onchange="wCarregarImagem('cte',this)"></div>
+      <div id="wCtePreview"></div>
+    </div>
+    <div>
+      <div style="font-size:11px;color:#374151;font-weight:600;margin-bottom:4px;">Tabela de Preços</div>
+      <div class="wizard-img-zone" id="wTabelaZone" onclick="document.getElementById('wizardImgTabela').click()">📁 Clique para anexar print<input type="file" id="wizardImgTabela" accept="image/*" style="display:none" onchange="wCarregarImagem('tabela',this)"></div>
+      <div id="wTabelaPreview"></div>
+    </div>
+  </div>
+</div>
+<div class="wizard-section">
+  <div class="wizard-label">⚙️ Configuração da Regra</div>
+  <div class="wizard-subsection">
+    <b>Cálculo do frete</b>
+    <div style="display:flex;flex-direction:column;gap:2px;margin-top:4px;">
+      <label class="wizard-radio-label"><input type="radio" name="wCalcFrete" value="nenhum" checked> Nenhum</label>
+      <label class="wizard-radio-label"><input type="radio" name="wCalcFrete" value="nao_calcular"> Não calcular</label>
+      <label class="wizard-radio-label"><input type="radio" name="wCalcFrete" value="tf_pt"> Tarifa final × peso total</label>
+      <label class="wizard-radio-label"><input type="radio" name="wCalcFrete" value="tr_pt"> Tarifa real × peso total</label>
+      <label class="wizard-radio-label"><input type="radio" name="wCalcFrete" value="tf_pt_1000"> Tarifa final × peso total / 1000</label>
+      <label class="wizard-radio-label"><input type="radio" name="wCalcFrete" value="tr_pt_1000"> Tarifa real × peso total / 1000</label>
+      <label class="wizard-radio-label"><input type="radio" name="wCalcFrete" value="tf_qt"> Tarifa final × quantidade total</label>
+      <label class="wizard-radio-label"><input type="radio" name="wCalcFrete" value="tf_vt_doc"> Tarifa final × valor total <small style="color:#6b7280;">(campo Valor do documento)</small></label>
+      <label class="wizard-radio-label"><input type="radio" name="wCalcFrete" value="tf_vt_prod"> Tarifa final × valor total <small style="color:#6b7280;">(campo Valor do produto)</small></label>
+      <label class="wizard-radio-label"><input type="radio" name="wCalcFrete" value="prest_icms"> Total da prestação - valor do ICMS</label>
+    </div>
+  </div>
+  <div class="wizard-subsection" style="margin-top:14px;">
+    <b>Calcular total da prestação</b>
+    <div style="display:flex;gap:16px;margin:4px 0 6px;">
+      <label class="wizard-radio-label"><input type="radio" name="wCalcPrest" value="sim" checked onchange="wToggleChecks('prest',this.value)"> Sim</label>
+      <label class="wizard-radio-label"><input type="radio" name="wCalcPrest" value="nao" onchange="wToggleChecks('prest',this.value)"> Não</label>
+    </div>
+    <div id="wPrestChecks" class="wizard-cbx-grid">
+      <label class="wizard-radio-label"><input type="checkbox" name="wPrest" value="valorFrete" checked> Soma Frete</label>
+      <label class="wizard-radio-label"><input type="checkbox" name="wPrest" value="valorICMS"> Soma ICMS</label>
+      <label class="wizard-radio-label"><input type="checkbox" name="wPrest" value="valorPedagioConhecimento"> Soma Pedágio</label>
+      <label class="wizard-radio-label"><input type="checkbox" name="wPrest" value="valoresOutros" checked> Soma Outros</label>
+      <label class="wizard-radio-label"><input type="checkbox" name="wPrest" value="diaria"> Soma Diária</label>
+      <label class="wizard-radio-label"><input type="checkbox" name="wPrest" value="valorSeguro" checked> Soma Seguro</label>
+      <label class="wizard-radio-label"><input type="checkbox" name="wPrest" value="Gris"> Soma Gris</label>
+    </div>
+  </div>
+  <div class="wizard-subsection" style="margin-top:14px;">
+    <b>Calcular total do serviço</b>
+    <div style="display:flex;gap:16px;margin:4px 0 6px;">
+      <label class="wizard-radio-label"><input type="radio" name="wCalcServ" value="sim" onchange="wToggleChecks('serv',this.value)"> Sim</label>
+      <label class="wizard-radio-label"><input type="radio" name="wCalcServ" value="nao" checked onchange="wToggleChecks('serv',this.value)"> Não</label>
+    </div>
+    <div id="wServChecks" class="wizard-cbx-grid" style="display:none;">
+      <label class="wizard-radio-label"><input type="checkbox" name="wServ" value="valorFrete" checked> Soma Frete</label>
+      <label class="wizard-radio-label"><input type="checkbox" name="wServ" value="valorICMS"> Soma ICMS</label>
+      <label class="wizard-radio-label"><input type="checkbox" name="wServ" value="valorPedagioConhecimento"> Soma Pedágio</label>
+      <label class="wizard-radio-label"><input type="checkbox" name="wServ" value="valoresOutros" checked> Soma Outros</label>
+      <label class="wizard-radio-label"><input type="checkbox" name="wServ" value="diaria"> Soma Diária</label>
+      <label class="wizard-radio-label"><input type="checkbox" name="wServ" value="valorSeguro" checked> Soma Seguro</label>
+      <label class="wizard-radio-label"><input type="checkbox" name="wServ" value="Gris"> Soma Gris</label>
+    </div>
+  </div>
+</div>
+<div class="wizard-section" style="border:none;">
+  <div class="wizard-label">📝 O que precisa criar/alterar na regra?</div>
+  <textarea id="wDescricao" class="wizard-textarea" placeholder="Descreva o que necessita que crie ou modifique na regra..." style="min-height:100px;"></textarea>
+</div>
+<div style="padding:12px 15px 20px;">
+  <button id="wBtnEnviar" class="wizard-submit" onclick="enviarWizardRegra()">🚀 Gerar Regra com IA</button>
+</div>`;
+    s.appendChild(card); scrollToBottom(true);
+}
+
+function wToggleChecks(tipo,valor){const el=document.getElementById(tipo==='prest'?'wPrestChecks':'wServChecks');if(el)el.style.display=valor==='sim'?'grid':'none';}
+function wOnRegraPreChange(val){const icms=document.querySelector('input[name="wPrest"][value="valorICMS"]');if(icms)icms.checked=(val==='soma_icms');}
+
+function wCarregarImagem(tipo,input){
+    if(!input.files||!input.files[0])return;
+    const reader=new FileReader();
+    reader.onload=(e)=>{
+        const b64=e.target.result;
+        if(tipo==='cte')_wizardCteBase64=b64;else _wizardTabelaBase64=b64;
+        const zone=document.getElementById(tipo==='cte'?'wCteZone':'wTabelaZone');
+        const prev=document.getElementById(tipo==='cte'?'wCtePreview':'wTabelaPreview');
+        if(zone)zone.style.borderColor='#16a34a';
+        if(prev)prev.innerHTML=`<img src="${b64}" style="max-width:100%;max-height:130px;border-radius:6px;margin-top:6px;">`;
+    };
+    reader.readAsDataURL(input.files[0]);
+}
+
+async function enviarWizardRegra(){
+    const btn=document.getElementById('wBtnEnviar');
+    if(btn){btn.disabled=true;btn.textContent='⏳ Gerando...';}
+    const regraCola=(document.getElementById('wRegraCola')?.value||'').trim();
+    const regraPre=document.querySelector('input[name="wRegraPre"]:checked')?.value||'';
+    const calcFrete=document.querySelector('input[name="wCalcFrete"]:checked')?.value||'nenhum';
+    const calcPrest=document.querySelector('input[name="wCalcPrest"]:checked')?.value||'sim';
+    const calcServ=document.querySelector('input[name="wCalcServ"]:checked')?.value||'sim';
+    const prestCbs=[...document.querySelectorAll('input[name="wPrest"]:checked')].map(c=>c.value);
+    const servCbs=[...document.querySelectorAll('input[name="wServ"]:checked')].map(c=>c.value);
+    const descricao=(document.getElementById('wDescricao')?.value||'').trim();
+    let regraBase='';
+    if(regraCola)regraBase='REGRA EXISTENTE PARA EDITAR:\n'+regraCola;
+    else if(regraPre&&REGRAS_PREDEFINIDAS_CODE[regraPre])regraBase='REGRA BASE ('+regraPre+'):\n'+REGRAS_PREDEFINIDAS_CODE[regraPre];
+    const pCfg=calcPrest==='sim'?'Sim — somar: '+(prestCbs.join(', ')||'nenhum'):'Nao calcular';
+    const sCfg=calcServ==='sim'?'Sim — somar: '+(servCbs.join(', ')||'nenhum'):'Nao calcular';
+    const configTxt=['CONFIGURACAO DO USUARIO:','- Calculo frete: '+(CALC_FRETE_MAP[calcFrete]||calcFrete),'- totalPrestacao: '+pCfg,'- totalServico: '+sCfg,regraBase?'\n'+regraBase:'',descricao?'\nSOLICITACAO: '+descricao:'',_wizardQueryOriginal?'\nCONTEXTO: '+_wizardQueryOriginal:''].filter(Boolean).join('\n');
+    const sysMsg='Voce e um especialista em regras de frete do Bsoft TMS. Gere APENAS o codigo da regra pronto para uso, entre triple backticks. Use def(), obt() e $SV() conforme documentacao.\n\nDOCUMENTACAO:\n'+CONTEXTO_REGRAS;
+    let userContent;
+    if(_wizardCteBase64||_wizardTabelaBase64){
+        userContent=[{type:'text',text:'Monte a regra conforme as configuracoes. Se houver imagens, identifique os campos personalizados visiveis e inclua-os conforme solicitado.\n'+configTxt}];
+        if(_wizardCteBase64)userContent.push({type:'image_url',image_url:{url:_wizardCteBase64}});
+        if(_wizardTabelaBase64)userContent.push({type:'image_url',image_url:{url:_wizardTabelaBase64}});
+    }else{
+        userContent='Monte a regra conforme as configuracoes abaixo.\n'+configTxt;
+    }
+    const wCard=document.getElementById('wizardRegraCard');if(wCard)wCard.remove();
+    appendMessage('system','⚙️ <strong>Gerando regra personalizada...</strong>');
+    const ld=appendLoadingCard('⚙️ Elaborando regra de frete...');
+    const li=Date.now();
+    try{
+        const result=await callMCPSemPensamento([{role:'system',content:sysMsg},{role:'user',content:userContent}],{temperature:0.15,maxTokens:3000});
+        ld.remove();
+        renderizarCardRegra(result.text,li,result._iaUsada,result._iaModelo);
+        adicionarMensagemNaConversa('ai',result.text);
+    }catch(e){ld.remove();appendMessage('ai','❌ Erro ao gerar regra. Tente novamente.');}
+}
 
 function ehCriacaoRegra(query) {
     const q = query.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
