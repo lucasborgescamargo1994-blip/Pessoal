@@ -1680,93 +1680,99 @@ async function processarProximaSolucao(po) {
 //  ASSISTENTE DE CRIAÇÃO DE REGRAS
 // ═══════════════════════════════════════════════════════════
 const CONTEXTO_REGRAS = `
-NAVEGAÇÃO: Transporte > Configurações > Regras
-DICA IMPORTANTE: Sempre clone a regra base antes de editar. Teste na clonada primeiro, depois edite a original.
+Para definir um campo não visível como por exemplo o CST (definir apenas se o usuário solicitar), pode usar a função $SV colocando como no exemplo abaixo:
+$SV("dados_CST", '40');
+obs. Caso precisar adicionar algo em algum calculo, por exemplo o pedágio na base de cálculo do ICMS, ela ficaria def("baseCalculo", (obt("valorFrete") + obt("valoresOutros") + obt("valorPedagioConhecimento") ));
+Campos que não vão aparecer no bloco de componentes do valor da prestação de serviço do DACTE: (Padrão todos os itens abaixo na coluna esquerda)
+tarifaImpressa
+diaria
+Gris
+valorFrete
+valorICMS
+valoresOutros
+valorPedagioConhecimento
+valorSeguro
+valorSeguroAduaneiro
+Tabela de preço - campos disponíveis para usar para fazer a regra, da esquerda nome real da direita nome que deve usar na regra, exemplo obt("valorFreteMinimo"):
+L. max: limiteMaximo
+L. min: limiteMinimo
+Tarifa real: tarifaReal
+Tarifa final: tarifaFinal
+Outros: outros
+Frete Mínimo: valorFreteMinimo
+Diaria: diaria
+Frete valor: freteValor
+Total Prestação: totalPrestacao
+Pedágio: pedagio
+Fração pedágio: percPedagio
+Seguro: seguro
+%Seguro: percSeguro
+Seg. aduaneiro: valorSeguroAduaneiro
+Gris: gris
+%Gris: percGris
+Excesso: valorExcesso
+Podem ser criados campos personalizados para a Tabela de preço, para criar é em Transporte > Configurações > Tabelas de Preços > Tabela de preços Valores Outros. Para criar pede um nome interno e uma descrição. O nome interno é o que deve ser usado na regra. Exemplo: Nome Interno: advalorem, Descrição: Valor Advalorem, na regra colocar sem obt e nem nada, apenas tabelaPrecos.nomeinterno, que ficaria tabelaPrecos.advalorem. Obs. todos os campos da tabela preço devem ser sem o obt("").
+Ct-e(Conhecimento) - campos disponíveis para usar para fazer a regra, da esquerda nome real da direita nome que deve usar na regra, exemplo obt("tarifaDigitada"):
+Tarifa Final: tarifaDigitada
+Tarifa Real: tarifaCalculada
+Frete Valor: valorFrete
+Base Cálculo ICMS: baseCalculo
+Alíquota ICMS: aliquota
+Valor ICMS: valorICMS
+Outros: valoresOutros
+Pedágio: valorPedagioConhecimento
+Gris: Gris
+Diária: diaria
+Seguro: valorSeguro
+Total Serviço: totalServico
+Total Prestação: totalPrestacao
+Valor total das notas fiscais: merc_valor[]
+Valor total do peso das Notas fiscais: merc_quantKg[]
+Quantidade total das Notas fiscais: merc_quant[]
+Podem ser criados campos personalizados para o Ct-e (conhecimento), para criar é em Transporte > Configurações > Tipos Valores Outros. Para criar pede um nome interno e uma descrição. O nome interno é o que deve ser usado na regra. Exemplo: Nome Interno: advalorem, Descrição: Valor Advalorem, na regra colocar obt("advalorem"). Obs: Para os campos personalizados do Ct-e, devem ser sempre chamados com a função obt.
 
-CAMPOS DE CONFIGURAÇÃO DA REGRA:
-Tipo *: Regra Empresa / Negociação com Cliente
-Descrição *: (ex: ICMS Demonstrativo)
-Nome interno, Regra pag. motorista
-Liberado na cotação de frete? ()Sim (x)Não
-Regra ativa?: (x)Sim ()Não
-Restrito?: ()Sim (x)Não
-Tipo Faturamento *: (x)Total prestação ()Composição frete
-Base Margem Bruta: (x)Total prestação ()Base Resultado ()Composição Frete
-
-CAMPOS DISPONÍVEIS NOS CÁLCULOS:
-tarifaDigitada, tarifaCalculada, valorFrete, baseCalculo, aliquota, valorICMS, valoresOutros, valorPedagioConhecimento, totalPrestacao, Gris, valorSeguro, diaria, valorSeguroAduaneiro, baseResultadoCT, totalServico
-
-CAMPOS EDITÁVEIS (padrão):
-tarifaDigitada, valorFrete, baseCalculo, aliquota, valorICMS, valoresOutros, valorPedagioConhecimento, totalPrestacao, Gris, valorSeguro, diaria, valorSeguroAduaneiro, baseResultadoCT, totalServico
-
-TABELA DE PREÇO - nome real: nome na regra (NÃO usar obt() — usar direto sem função, ex: tabelaPrecos.advalorem):
-L. max: limiteMaximo | L. min: limiteMinimo | Tarifa real: tarifaReal | Tarifa final: tarifaFinal
-Outros: outros | Frete Mínimo: valorFreteMinimo | Diaria: diaria | Frete valor: freteValor
-Total Prestação: totalPrestacao | Pedágio: pedagio | Fração pedágio: percPedagio
-Seguro: seguro | %Seguro: percSeguro | Seg. aduaneiro: valorSeguroAduaneiro
-Gris: gris | %Gris: percGris | Excesso: valorExcesso
-CAMPOS PERSONALIZADOS TABELA PREÇO: criar em Transporte > Configurações > Tabelas de Preços > Tabela de preços Valores Outros. Pede nome interno e descrição. Na regra usar: tabelaPrecos.nomeinterno (ex: tabelaPrecos.advalorem). ATENÇÃO: campos da tabela de preço NÃO usam obt().
-
-CT-e (Conhecimento) - nome real: nome na regra (usar com obt(), ex: obt("tarifaDigitada")):
-Tarifa Final: tarifaDigitada | Tarifa Real: tarifaCalculada | Frete Valor: valorFrete
-Base Cálculo ICMS: baseCalculo | Alíquota ICMS: aliquota | Valor ICMS: valorICMS
-Outros: valoresOutros | Pedágio: valorPedagioConhecimento | Gris: Gris | Diária: diaria
-Seguro: valorSeguro | Total Serviço: totalServico | Total Prestação: totalPrestacao
-Valor total das notas fiscais: merc_valor[] | Peso total das notas fiscais: merc_quantKg[] | Quantidade total das notas fiscais: merc_quant[]
-CAMPOS PERSONALIZADOS CT-e: criar em Transporte > Configurações > Tipos Valores Outros. Pede nome interno e descrição. Na regra usar: obt("nomeinterno") (ex: obt("advalorem")). ATENÇÃO: campos personalizados do CT-e SEMPRE usam obt().
-
-CAMPO INVISÍVEL (não visível no DACTE): usar $SV("dados_CST", '40');
-ATENÇÃO — USO DO $SV(): Use a função $SV() SOMENTE se o usuário solicitar explicitamente (exemplo: "quero definir o CST sempre como 40" ou "defina o CST"). NUNCA inclua $SV() por iniciativa própria sem que o usuário peça. Se o usuário não mencionar CST ou campos invisíveis, não use $SV() na regra gerada.
-
-CAMPOS OCULTOS NO DACTE (padrão coluna esquerda):
-tarifaImpressa, diaria, Gris, valorFrete, valorICMS, valoresOutros, valorPedagioConhecimento, valorSeguro, valorSeguroAduaneiro
-
-EXEMPLOS DE REGRAS:
-
---- ICMS Demonstrativo ---
-def("tarifaCalculada",0);
-if ( obt("tarifaDigitada") > 0)
-   def("valorFrete", (obt("merc_quantKg[]")) * obt("tarifaDigitada")/1000);
-if ( obt("aliquota") > 0)
-   def("baseCalculo", (obt("valorFrete") + obt("valoresOutros")));
-if ( obt("aliquota") < 1)
-   def("baseCalculo",0);
-valor = obt("baseCalculo") * (obt("aliquota")/100);
-def("valorICMS",valor);
-def("totalPrestacao", (obt("valorFrete") + obt("valoresOutros") + obt("valorSeguro") + obt("diaria")));
-
---- Cálculo Inverso (ICMS por dentro) ---
+Exemplo regra cálculo inverso:
 def("tarifaCalculada",0);
 if ( obt("tarifaDigitada") > 0)
    def("valorFrete", (obt("merc_quantKg[]")) * obt("tarifaDigitada"));
 var inverso = ((100 - obt("aliquota")) /100)
 if ( obt("aliquota") > 0)
-   def("baseCalculo", ((obt("valorFrete") + obt("valoresOutros")) / inverso));
+def("baseCalculo", ((obt("valorFrete") + obt("valoresOutros")) / inverso));
 if ( obt("aliquota") < 1)
-   def("baseCalculo", 0);
+def("baseCalculo", 0);
 valor = obt("baseCalculo") * (obt("aliquota")/100);
 def("valorICMS",valor);
-def("totalPrestacao", (obt("valorFrete") + obt("valoresOutros") + obt("valorICMS") + obt("valorSeguro") + obt("diaria")));
+def("totalPrestacao",  (obt("valorFrete") + obt("valorICMS")));
 
---- Somar ICMS no Total Prestação ---
+Exemplo regra ICMS Demonstrativo:
+def("tarifaCalculada",0);
+if ( obt("tarifaDigitada") > 0)
+   def("valorFrete", (obt("merc_quantKg[]")) * obt("tarifaDigitada")/1000);
+if ( obt("aliquota") > 0)
+def("baseCalculo", (obt("valorFrete")));
+if ( obt("aliquota") < 1)
+def("baseCalculo",0);
+valor = obt("baseCalculo") * (obt("aliquota")/100);
+def("valorICMS",valor);
+def("totalPrestacao",  (obt("valorFrete")));
+
+Exemplo regra Somar ICMS:
 def("tarifaCalculada",0);
 if ( obt("tarifaDigitada") > 0)
    def("valorFrete", (obt("merc_quantKg[]")) * obt("tarifaDigitada"));
 if ( obt("aliquota") > 0)
-   def("baseCalculo", (obt("valorFrete") + obt("valoresOutros")));
+def("baseCalculo", (obt("valorFrete")));
 if ( obt("aliquota") < 1)
-   def("baseCalculo", 0);
+def("baseCalculo", 0);
 valor = obt("baseCalculo") * (obt("aliquota")/100);
 def("valorICMS",valor);
-def("totalPrestacao", (obt("valorFrete") + obt("valorICMS") + obt("valoresOutros") + obt("valorSeguro") + obt("diaria")));
+def("totalPrestacao",  (obt("valorFrete") + obt("valorICMS")));
 
---- Simples Nacional ---
+Exemplo regra Simples Nacional:
 def("tarifaCalculada",0);
 if ( obt("tarifaDigitada") > 0)
    def("valorFrete", (obt("merc_quantKg[]")) * obt("tarifaDigitada"));
-def("totalPrestacao", (obt("valorFrete") + obt("valoresOutros") + obt("valorSeguro") + obt("diaria")));
-
-INCLUIR PEDÁGIO NA BASE ICMS: def("baseCalculo", (obt("valorFrete") + obt("valoresOutros") + obt("valorPedagioConhecimento")));
+def("totalPrestacao",  (obt("valorFrete")));
 `;
 
 // ─── WIZARD DE CRIAÇÃO DE REGRAS ───────────────────────────
@@ -1775,13 +1781,13 @@ function _resolverEscolhaRegra(e){const c=document.getElementById('regraEscolhaC
 function perguntarAuxilioRegra(){return new Promise(resolve=>{_regraWizardResolve=resolve;const s=document.getElementById('chatStream');const card=document.createElement('div');card.id='regraEscolhaCard';card.className='answer-card';card.innerHTML=`<div style="background:#f0fdf4;padding:8px 15px;border-bottom:1px solid #bbf7d0;font-size:11px;color:#166534;font-weight:600;">⚙️ Criação de Regras</div><div class="answer-section"><div class="section-content"><div style="font-size:13px;color:#374151;margin-bottom:10px;">Precisa de auxílio para criar/editar a regra?</div><div style="display:flex;gap:10px;"><button onclick="_resolverEscolhaRegra('sim')" style="flex:1;padding:10px 16px;background:#16a34a;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">✅ Sim — abrir assistente</button><button onclick="_resolverEscolhaRegra('nao')" style="flex:1;padding:10px 16px;background:#6b7280;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">🔍 Não — buscar no banco</button></div></div></div>`;s.appendChild(card);scrollToBottom(true);});}
 
 const REGRAS_PREDEFINIDAS_CODE={
-    icms_demo:`def("tarifaCalculada",0);\nif ( obt("tarifaDigitada") > 0)\n   def("valorFrete", (obt("merc_quantKg[]")) * obt("tarifaDigitada")/1000);\nif ( obt("aliquota") > 0)\n   def("baseCalculo", (obt("valorFrete") + obt("valoresOutros")));\nif ( obt("aliquota") < 1)\n   def("baseCalculo",0);\nvalor = obt("baseCalculo") * (obt("aliquota")/100);\ndef("valorICMS",valor);\ndef("totalPrestacao", (obt("valorFrete") + obt("valoresOutros") + obt("valorSeguro") + obt("diaria")));`,
-    simples:`def("tarifaCalculada",0);\nif ( obt("tarifaDigitada") > 0)\n   def("valorFrete", (obt("merc_quantKg[]")) * obt("tarifaDigitada"));\ndef("totalPrestacao", (obt("valorFrete") + obt("valoresOutros") + obt("valorSeguro") + obt("diaria")));`,
-    inverso:`def("tarifaCalculada",0);\nif ( obt("tarifaDigitada") > 0)\n   def("valorFrete", (obt("merc_quantKg[]")) * obt("tarifaDigitada"));\nvar inverso = ((100 - obt("aliquota")) /100)\nif ( obt("aliquota") > 0)\n   def("baseCalculo", ((obt("valorFrete") + obt("valoresOutros")) / inverso));\nif ( obt("aliquota") < 1)\n   def("baseCalculo", 0);\nvalor = obt("baseCalculo") * (obt("aliquota")/100);\ndef("valorICMS",valor);\ndef("totalPrestacao", (obt("valorFrete") + obt("valoresOutros") + obt("valorICMS") + obt("valorSeguro") + obt("diaria")));`,
-    soma_icms:`def("tarifaCalculada",0);\nif ( obt("tarifaDigitada") > 0)\n   def("valorFrete", (obt("merc_quantKg[]")) * obt("tarifaDigitada"));\nif ( obt("aliquota") > 0)\n   def("baseCalculo", (obt("valorFrete") + obt("valoresOutros")));\nif ( obt("aliquota") < 1)\n   def("baseCalculo", 0);\nvalor = obt("baseCalculo") * (obt("aliquota")/100);\ndef("valorICMS",valor);\ndef("totalPrestacao", (obt("valorFrete") + obt("valorICMS") + obt("valoresOutros") + obt("valorSeguro") + obt("diaria")));`
+    icms_demo:`def("tarifaCalculada",0);\nif ( obt("tarifaDigitada") > 0)\n   def("valorFrete", (obt("merc_quantKg[]")) * obt("tarifaDigitada")/1000);\nif ( obt("aliquota") > 0)\n   def("baseCalculo", (obt("valorFrete")));\nif ( obt("aliquota") < 1)\n   def("baseCalculo",0);\nvalor = obt("baseCalculo") * (obt("aliquota")/100);\ndef("valorICMS",valor);\ndef("totalPrestacao",  (obt("valorFrete")));`,
+    simples:`def("tarifaCalculada",0);\nif ( obt("tarifaDigitada") > 0)\n   def("valorFrete", (obt("merc_quantKg[]")) * obt("tarifaDigitada"));\ndef("totalPrestacao",  (obt("valorFrete")));`,
+    inverso:`def("tarifaCalculada",0);\nif ( obt("tarifaDigitada") > 0)\n   def("valorFrete", (obt("merc_quantKg[]")) * obt("tarifaDigitada"));\nvar inverso = ((100 - obt("aliquota")) /100)\nif ( obt("aliquota") > 0)\n   def("baseCalculo", ((obt("valorFrete") + obt("valoresOutros")) / inverso));\nif ( obt("aliquota") < 1)\n   def("baseCalculo", 0);\nvalor = obt("baseCalculo") * (obt("aliquota")/100);\ndef("valorICMS",valor);\ndef("totalPrestacao",  (obt("valorFrete") + obt("valorICMS")));`,
+    soma_icms:`def("tarifaCalculada",0);\nif ( obt("tarifaDigitada") > 0)\n   def("valorFrete", (obt("merc_quantKg[]")) * obt("tarifaDigitada"));\nif ( obt("aliquota") > 0)\n   def("baseCalculo", (obt("valorFrete")));\nif ( obt("aliquota") < 1)\n   def("baseCalculo", 0);\nvalor = obt("baseCalculo") * (obt("aliquota")/100);\ndef("valorICMS",valor);\ndef("totalPrestacao",  (obt("valorFrete") + obt("valorICMS")));`
 };
 const CALC_FRETE_MAP={
-    nenhum:'Nao especificado',
+    nenhum:'Usuario digitara o valorFrete manualmente — NAO gere def("valorFrete") nem def("tarifaCalculada")',
     nao_calcular:'Nao calcular (def("tarifaCalculada",0))',
     tf_pt:'Tarifa final x peso total → def("valorFrete", obt("tarifaDigitada") * obt("merc_quantKg[]"))',
     tr_pt:'Tarifa real x peso total → def("valorFrete", obt("tarifaCalculada") * obt("merc_quantKg[]"))',
@@ -1846,19 +1852,47 @@ function mostrarWizardRegra(queryOriginal){
     </div>
   </div>
   <div class="wizard-subsection" style="margin-top:14px;">
+    <b>Base de cálculo do ICMS</b>
+    <div style="display:flex;flex-direction:column;gap:2px;margin-top:4px;">
+      <label class="wizard-radio-label"><input type="radio" name="wBaseCalc" value="nenhum" checked onchange="wToggleBaseCalc(this.value)"> Nenhum</label>
+      <label class="wizard-radio-label"><input type="radio" name="wBaseCalc" value="valorFrete" onchange="wToggleBaseCalc(this.value)"> Valor frete</label>
+      <label class="wizard-radio-label"><input type="radio" name="wBaseCalc" value="totalPrestacao" onchange="wToggleBaseCalc(this.value)"> Total Prestação</label>
+    </div>
+    <div id="wBaseCalcChecks" style="display:none;margin-top:8px;">
+      <div style="font-size:11px;color:#6b7280;margin-bottom:4px;">Somar ao valor base:</div>
+      <div class="wizard-cbx-grid">
+        <label class="wizard-radio-label"><input type="checkbox" name="wBaseExtra" value="valorFrete"> Soma Frete</label>
+        <label class="wizard-radio-label"><input type="checkbox" name="wBaseExtra" value="valorICMS"> Soma ICMS</label>
+        <label class="wizard-radio-label"><input type="checkbox" name="wBaseExtra" value="valorPedagioConhecimento"> Soma Pedágio</label>
+        <label class="wizard-radio-label"><input type="checkbox" name="wBaseExtra" value="valoresOutros"> Soma Outros</label>
+        <label class="wizard-radio-label"><input type="checkbox" name="wBaseExtra" value="diaria"> Soma Diária</label>
+        <label class="wizard-radio-label"><input type="checkbox" name="wBaseExtra" value="valorSeguro"> Soma Seguro</label>
+        <label class="wizard-radio-label"><input type="checkbox" name="wBaseExtra" value="Gris"> Soma Gris</label>
+      </div>
+      <label class="wizard-radio-label" style="margin-top:6px;"><input type="checkbox" id="wBaseTodosOutros"> Somar todos campos outros do print (conhecimento)</label>
+      <label class="wizard-radio-label" style="margin-top:2px;"><input type="checkbox" id="wBaseEspecificar" onchange="wToggleEspecificar(this.checked)"> Somar campos outros — especificar quais:</label>
+      <textarea id="wBaseEspecificarTxt" class="wizard-textarea" style="display:none;margin-top:6px;min-height:50px;" placeholder="Ex: advalorem, taxa1, taxa2..."></textarea>
+    </div>
+  </div>
+  <div class="wizard-subsection" style="margin-top:14px;">
     <b>Calcular total da prestação</b>
     <div style="display:flex;gap:16px;margin:4px 0 6px;">
       <label class="wizard-radio-label"><input type="radio" name="wCalcPrest" value="sim" checked onchange="wToggleChecks('prest',this.value)"> Sim</label>
       <label class="wizard-radio-label"><input type="radio" name="wCalcPrest" value="nao" onchange="wToggleChecks('prest',this.value)"> Não</label>
     </div>
-    <div id="wPrestChecks" class="wizard-cbx-grid">
-      <label class="wizard-radio-label"><input type="checkbox" name="wPrest" value="valorFrete" checked> Soma Frete</label>
-      <label class="wizard-radio-label"><input type="checkbox" name="wPrest" value="valorICMS"> Soma ICMS</label>
-      <label class="wizard-radio-label"><input type="checkbox" name="wPrest" value="valorPedagioConhecimento"> Soma Pedágio</label>
-      <label class="wizard-radio-label"><input type="checkbox" name="wPrest" value="valoresOutros" checked> Soma Outros</label>
-      <label class="wizard-radio-label"><input type="checkbox" name="wPrest" value="diaria"> Soma Diária</label>
-      <label class="wizard-radio-label"><input type="checkbox" name="wPrest" value="valorSeguro" checked> Soma Seguro</label>
-      <label class="wizard-radio-label"><input type="checkbox" name="wPrest" value="Gris"> Soma Gris</label>
+    <div id="wPrestChecks">
+      <div class="wizard-cbx-grid">
+        <label class="wizard-radio-label"><input type="checkbox" name="wPrest" value="valorFrete" checked> Soma Frete</label>
+        <label class="wizard-radio-label"><input type="checkbox" name="wPrest" value="valorICMS"> Soma ICMS</label>
+        <label class="wizard-radio-label"><input type="checkbox" name="wPrest" value="valorPedagioConhecimento"> Soma Pedágio</label>
+        <label class="wizard-radio-label"><input type="checkbox" name="wPrest" value="valoresOutros"> Soma Outros</label>
+        <label class="wizard-radio-label"><input type="checkbox" name="wPrest" value="diaria"> Soma Diária</label>
+        <label class="wizard-radio-label"><input type="checkbox" name="wPrest" value="valorSeguro"> Soma Seguro</label>
+        <label class="wizard-radio-label"><input type="checkbox" name="wPrest" value="Gris"> Soma Gris</label>
+      </div>
+      <label class="wizard-radio-label" style="margin-top:6px;"><input type="checkbox" id="wPrestTodosOutros"> Somar todos campos outros do print (conhecimento)</label>
+      <label class="wizard-radio-label" style="margin-top:2px;"><input type="checkbox" id="wPrestEspecificar" onchange="wTogglePrestEspecificar(this.checked)"> Somar campos outros — especificar quais:</label>
+      <textarea id="wPrestEspecificarTxt" class="wizard-textarea" style="display:none;margin-top:6px;min-height:50px;" placeholder="Ex: advalorem, taxa1, taxa2..."></textarea>
     </div>
   </div>
   <div class="wizard-subsection" style="margin-top:14px;">
@@ -1888,8 +1922,11 @@ function mostrarWizardRegra(queryOriginal){
     s.appendChild(card); scrollToBottom(true);
 }
 
-function wToggleChecks(tipo,valor){const el=document.getElementById(tipo==='prest'?'wPrestChecks':'wServChecks');if(el)el.style.display=valor==='sim'?'grid':'none';}
+function wToggleChecks(tipo,valor){const id=tipo==='prest'?'wPrestChecks':'wServChecks';const el=document.getElementById(id);if(el)el.style.display=valor==='sim'?(tipo==='prest'?'block':'grid'):'none';}
 function wOnRegraPreChange(val){const icms=document.querySelector('input[name="wPrest"][value="valorICMS"]');if(icms)icms.checked=(val==='soma_icms');}
+function wToggleBaseCalc(val){const el=document.getElementById('wBaseCalcChecks');if(el)el.style.display=val==='nenhum'?'none':'block';}
+function wToggleEspecificar(checked){const el=document.getElementById('wBaseEspecificarTxt');if(el)el.style.display=checked?'block':'none';}
+function wTogglePrestEspecificar(checked){const el=document.getElementById('wPrestEspecificarTxt');if(el)el.style.display=checked?'block':'none';}
 
 function wCarregarImagem(tipo,input){
     if(!input.files||!input.files[0])return;
@@ -1914,15 +1951,67 @@ async function enviarWizardRegra(){
     const calcPrest=document.querySelector('input[name="wCalcPrest"]:checked')?.value||'sim';
     const calcServ=document.querySelector('input[name="wCalcServ"]:checked')?.value||'sim';
     const prestCbs=[...document.querySelectorAll('input[name="wPrest"]:checked')].map(c=>c.value);
+    const prestTodosOutros=document.getElementById('wPrestTodosOutros')?.checked||false;
+    const prestEspecificar=document.getElementById('wPrestEspecificar')?.checked||false;
+    const prestEspecificarTxt=(document.getElementById('wPrestEspecificarTxt')?.value||'').trim();
     const servCbs=[...document.querySelectorAll('input[name="wServ"]:checked')].map(c=>c.value);
+    const baseCalc=document.querySelector('input[name="wBaseCalc"]:checked')?.value||'nenhum';
+    const baseExtras=[...document.querySelectorAll('input[name="wBaseExtra"]:checked')].map(c=>c.value);
+    const baseTodosOutros=document.getElementById('wBaseTodosOutros')?.checked||false;
+    const baseEspecificar=document.getElementById('wBaseEspecificar')?.checked||false;
+    const baseEspecificarTxt=(document.getElementById('wBaseEspecificarTxt')?.value||'').trim();
     const descricao=(document.getElementById('wDescricao')?.value||'').trim();
     let regraBase='';
     if(regraCola)regraBase='REGRA EXISTENTE PARA EDITAR:\n'+regraCola;
     else if(regraPre&&REGRAS_PREDEFINIDAS_CODE[regraPre])regraBase='REGRA BASE ('+regraPre+'):\n'+REGRAS_PREDEFINIDAS_CODE[regraPre];
-    const pCfg=calcPrest==='sim'?'Sim — somar: '+(prestCbs.join(', ')||'nenhum'):'Nao calcular';
-    const sCfg=calcServ==='sim'?'Sim — somar: '+(servCbs.join(', ')||'nenhum'):'Nao calcular';
-    const configTxt=['CONFIGURACAO DO USUARIO:','- Calculo frete: '+(CALC_FRETE_MAP[calcFrete]||calcFrete),'- totalPrestacao: '+pCfg,'- totalServico: '+sCfg,regraBase?'\n'+regraBase:'',descricao?'\nSOLICITACAO: '+descricao:'',_wizardQueryOriginal?'\nCONTEXTO: '+_wizardQueryOriginal:''].filter(Boolean).join('\n');
-    const sysMsg='Voce e um especialista em regras de frete do Bsoft TMS. Gere APENAS o codigo da regra pronto para uso, entre triple backticks. Use def(), obt() e $SV() conforme documentacao.\n\nDOCUMENTACAO:\n'+CONTEXTO_REGRAS;
+    // Bug fix: gerar fórmula real em vez de descrição para que a IA copie exatamente
+    const pParts=[...prestCbs.map(f=>'obt("'+f+'")')];
+    if(prestTodosOutros)pParts.push('[identificar no print do CT-e TODOS os campos personalizados outros visíveis e incluir obt("nomeinterno") de cada um]');
+    if(prestEspecificar&&prestEspecificarTxt)prestEspecificarTxt.split(',').forEach(s=>{s=s.trim();if(s)pParts.push('obt("'+s+'")')});
+    const pCfg=calcPrest==='nao'?'NAO calcular (omitir def("totalPrestacao"))':(pParts.length?'FORMULA OBRIGATORIA — copiar exatamente: def("totalPrestacao", ('+pParts.join(' + ')+'))':'NAO calcular totalPrestacao');
+    const sParts=[...servCbs.map(f=>'obt("'+f+'")')];
+    const sCfg=calcServ==='nao'?'NAO calcular (omitir def("totalServico"))':(sParts.length?'FORMULA OBRIGATORIA — copiar exatamente: def("totalServico", ('+sParts.join(' + ')+'))':'NAO calcular totalServico');
+    // Construir formula da base de calculo a partir das selecoes do wizard
+    let bFormulaPartes=null;
+    if(baseCalc!=='nenhum'){
+        bFormulaPartes=['obt("'+baseCalc+'")'];
+        baseExtras.forEach(f=>bFormulaPartes.push('obt("'+f+'")'));
+        if(baseTodosOutros)bFormulaPartes.push('[identificar no print do CT-e TODOS os campos personalizados outros visíveis e incluir obt("nomeinterno") de cada um]');
+        if(baseEspecificar&&baseEspecificarTxt)baseEspecificarTxt.split(',').forEach(s=>{s=s.trim();if(s)bFormulaPartes.push('obt("'+s+'")')});
+    }
+    // Bloco ICMS especifico por tipo de regra
+    const useInverso=regraPre==='inverso'||calcFrete==='prest_icms';
+    const semIcms=regraPre==='simples';
+    let icmsBloco='';
+    if(!semIcms){
+        const bF=bFormulaPartes?bFormulaPartes.join(' + '):'obt("valorFrete")';
+        if(useInverso){
+            icmsBloco='var inverso = ((100 - obt("aliquota")) /100)\n'
+                +'if ( obt("aliquota") > 0)\n'
+                +'   def("baseCalculo", (('+bF+') / inverso));\n'
+                +'if ( obt("aliquota") < 1)\n'
+                +'   def("baseCalculo", 0);\n'
+                +'valor = obt("baseCalculo") * (obt("aliquota")/100);\n'
+                +'def("valorICMS",valor);';
+        }else{
+            icmsBloco='if ( obt("aliquota") > 0)\n'
+                +'   def("baseCalculo", ('+bF+'));\n'
+                +'if ( obt("aliquota") < 1)\n'
+                +'   def("baseCalculo",0);\n'
+                +'valor = obt("baseCalculo") * (obt("aliquota")/100);\n'
+                +'def("valorICMS",valor);';
+        }
+    }
+    const configTxt=['CONFIGURACAO DO USUARIO:',
+        '- Calculo frete: '+(CALC_FRETE_MAP[calcFrete]||calcFrete),
+        icmsBloco?'- Bloco ICMS OBRIGATORIO — copiar exatamente:\n'+icmsBloco:'- ICMS: nao incluir calculo de ICMS',
+        '- totalPrestacao: '+pCfg,
+        '- totalServico: '+sCfg,
+        regraBase?'\n'+regraBase:'',
+        descricao?'\nSOLICITACAO: '+descricao:'',
+        _wizardQueryOriginal?'\nCONTEXTO: '+_wizardQueryOriginal:''
+    ].filter(Boolean).join('\n');
+    const sysMsg='Voce e um especialista em regras de frete do Bsoft TMS.\nREGRA CRITICA: As linhas marcadas como FORMULA OBRIGATORIA e BLOCO ICMS OBRIGATORIO devem ser copiadas EXATAMENTE como estao na regra gerada. NAO adicione campos extras nao listados. NAO remova campos listados. Os campos entre colchetes [] indicam que voce deve identificar os campos no print enviado pelo usuario e substituir pela formula correta com obt().\nGere APENAS o codigo da regra pronto para uso, entre triple backticks.\n\nDOCUMENTACAO:\n'+CONTEXTO_REGRAS;
     let userContent;
     if(_wizardCteBase64||_wizardTabelaBase64){
         userContent=[{type:'text',text:'Monte a regra conforme as configuracoes. Se houver imagens, identifique os campos personalizados visiveis e inclua-os conforme solicitado.\n'+configTxt}];
