@@ -242,6 +242,8 @@
         .retry-btn { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; background: var(--primary); color: white; border: none; padding: 9px 18px; border-radius: 9px; cursor: pointer; font-family: inherit; font-weight: 700; font-size: 13px; transition: all 0.2s; }
         .retry-btn:hover { background: var(--primary-dark); transform: scale(1.03); }
         .feedback-area { display: flex; gap: 7px; padding: 8px 15px; background: #f8fafc; border-top: 1px solid var(--border); align-items: center; font-size: 12px; color: var(--text-muted); flex-wrap: wrap; }
+        .regra-code { background:#1e1e2e;color:#cdd6f4;padding:12px 16px;border-radius:8px;font-size:12px;font-family:'Courier New',monospace;overflow-x:auto;white-space:pre;margin:8px 0;border:1px solid #313244;line-height:1.6; }
+        .regra-badge { display:inline-block;background:#16a34a;color:white;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-bottom:8px; }
         .feedback-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 5px; cursor: pointer; padding: 3px 9px; transition: all 0.2s; font-size: 13px; font-family: inherit; }
         .feedback-btn:hover { border-color: var(--primary); background: var(--primary-light); }
         .feedback-btn.next { margin-left: auto; font-size: 11px; padding: 4px 11px; color: var(--primary-dark); border-color: var(--primary-border); background: var(--primary-light); font-weight: 600; }
@@ -950,8 +952,6 @@ const SISTEMA_BSOFT_TMS = {
     ],
 
     regras_gerais: [
-        "SEMPRE verifique se o certificado digital está instalado e válido (eDoc > Certificados Digitais)",
-        "SEMPRE verifique se os talões estão configurados corretamente antes de emitir documentos",
         "Para problemas de SEFAZ, verifique a conexão com a internet e o status da SEFAZ",
         "Para erros de validação, revise todos os campos obrigatórios do documento",
         "O sistema possui busca rápida no menu lateral (campo de pesquisa no topo)"
@@ -1140,8 +1140,27 @@ async function callCurrentMCP(messages,config={}){
     throw new Error('Todos os provedores falharam.');
 }
 
-// ═══════════════════════════════════════════════════════════
-//  VARIÁVEIS GLOBAIS
+function filtrarPensamentoAlto(texto) {
+    if (!texto) return { texto: '', eraPensamento: false };
+    const abre = '<' + 'thinking' + '>';
+    const fecha = '</' + 'thinking' + '>';
+    const rBloco = new RegExp(abre + '[\\s\\S]*?' + fecha, 'gi');
+    let limpo = texto.replace(rBloco, '').trim();
+    const teveBlocos = limpo.length !== texto.trim().length;
+    if (teveBlocos && limpo.length >= 30) return { texto: limpo, eraPensamento: false };
+    if (teveBlocos && limpo.length < 30) return { texto: '', eraPensamento: true };
+    return { texto: texto.trim(), eraPensamento: false };
+}
+async function callMCPSemPensamento(messages, config = {}, maxTentativas = 3) {
+    for (let t = 1; t <= maxTentativas; t++) {
+        const result = await callCurrentMCP(messages, config);
+        const { texto, eraPensamento } = filtrarPensamentoAlto(result.text);
+        if (!eraPensamento) return { ...result, text: texto };
+        console.warn('[AntiPensamento] tentativa ' + t + '/' + maxTentativas + ' — reprocessando...');
+        if (t < maxTentativas) await new Promise(r => setTimeout(r, 1200));
+    }
+    throw new Error('Resposta nao obtida apos ' + maxTentativas + ' tentativas.');
+}
 // ═══════════════════════════════════════════════════════════
 let filaSolucoes=[],lastQuery="",attachedFileData=null,screenStream=null,isMinimized=false,isCallActive=false,silenceTimer,currentResults=[];
 window.currentAudio=null;
@@ -1508,6 +1527,8 @@ async function handleChat() {
     const conversa = getConversaAtiva();
     if (conversa) { const dd = detectarDocumento(query.toLowerCase()); if (dd) { conversa.documentoContexto = dd; conversa.topicoAtual = query; salvarConversas(); } }
 
+    if (ehCriacaoRegra(query)) { await gerarRespostaCriacaoRegra(query); return; }
+
     if (ehErroSefaz(query)) {
         const escolha = await perguntarModoSefaz();
         if (escolha === 'sefaz') { await gerarRespostaSefaz(query); return; }
@@ -1567,7 +1588,7 @@ async function handleChat() {
 	Use **negrito** para destacar.${vum ? ' Se não encontrou, DIGA que vai ativar ML.' : ''}`;
 
     try {
-        const result = await callCurrentMCP([{ role: 'user', content: ps }], { temperature: 0.4, maxTokens: 4096 });
+        const result = await callMCPSemPensamento([{ role: 'user', content: ps }], { temperature: 0.4, maxTokens: 4096 });
         ld.remove();
         const rf2 = result.text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
         const iaUsada = result._iaUsada || 'OpenRouter';
@@ -1604,7 +1625,7 @@ async function handleChat() {
 async function buscarConhecimentoInternet(query) {
     appendMessage('ml', '🧠 <strong>Machine Learning Ativado</strong> — Buscando conhecimento em fontes confiáveis...');
     const p = `Você é um especialista em sistemas ERP para transportadoras (Bsoft TMS). Não invente caminhos no sistema ou informações que não encontrar. Pergunta NÃO encontrada no manual: "${query}". Responda JSON: {"erro":"título","solucao":"solução detalhada com menus","fonte":"site confiável","confianca":0.8}. Se não souber, confianca:0.`;
-    try { const r = await callCurrentMCP([{ role: 'user', content: p }], { temperature: 0.3, maxTokens: 2048, responseFormat: { type: 'json_object' } }); let parsed = null; try { parsed = JSON.parse(r.text); } catch (e) { const c = r.text.replace(/```json\n?|\n?```/g, '').trim(); try { parsed = JSON.parse(c); } catch (e2) {} } return parsed; } catch (e) { return null; }
+    try { const r = await callMCPSemPensamento([{ role: 'user', content: p }], { temperature: 0.3, maxTokens: 2048, responseFormat: { type: 'json_object' } }); let parsed = null; try { parsed = JSON.parse(r.text); } catch (e) { const c = r.text.replace(/```json\n?|\n?```/g, '').trim(); try { parsed = JSON.parse(c); } catch (e2) {} } return parsed; } catch (e) { return null; }
 }
 async function salvarMLNaPlanilha(erro, solucao, fonte) { try { await sb.from('machine_learning').insert({erro, solucao, fonte, data: new Date().toISOString()}); } catch (e) {} }
 
@@ -1638,6 +1659,172 @@ async function processarProximaSolucao(po) {
     if (filaSolucoes.length === 0) { appendMessage('ai', '😕 Sem mais soluções. Ativando <b>Machine Learning</b>...'); setTimeout(async () => { await ativarMachineLearning(po); }, 1000); return; }
     const sa = filaSolucoes.shift(); appendMessage('system', '🔍 Outra solução do manual...');
     document.getElementById('searchInput').value = `Solução alternativa: ${sa.erro}`; await handleChat();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ASSISTENTE DE CRIAÇÃO DE REGRAS
+// ═══════════════════════════════════════════════════════════
+const CONTEXTO_REGRAS = `
+NAVEGAÇÃO: Transporte > Configurações > Regras
+DICA IMPORTANTE: Sempre clone a regra base antes de editar. Teste na clonada primeiro, depois edite a original.
+
+CAMPOS DE CONFIGURAÇÃO DA REGRA:
+Tipo *: Regra Empresa / Negociação com Cliente
+Descrição *: (ex: ICMS Demonstrativo)
+Nome interno, Regra pag. motorista
+Liberado na cotação de frete? ()Sim (x)Não
+Regra ativa?: (x)Sim ()Não
+Restrito?: ()Sim (x)Não
+Tipo Faturamento *: (x)Total prestação ()Composição frete
+Base Margem Bruta: (x)Total prestação ()Base Resultado ()Composição Frete
+
+CAMPOS DISPONÍVEIS NOS CÁLCULOS:
+tarifaDigitada, tarifaCalculada, valorFrete, baseCalculo, aliquota, valorICMS, valoresOutros, valorPedagioConhecimento, totalPrestacao, Gris, valorSeguro, diaria, valorSeguroAduaneiro, baseResultadoCT, totalServico
+
+CAMPOS EDITÁVEIS (padrão):
+tarifaDigitada, valorFrete, baseCalculo, aliquota, valorICMS, valoresOutros, valorPedagioConhecimento, totalPrestacao, Gris, valorSeguro, diaria, valorSeguroAduaneiro, baseResultadoCT, totalServico
+
+TABELA DE PREÇO - nome real: nome na regra (NÃO usar obt() — usar direto sem função, ex: tabelaPrecos.advalorem):
+L. max: limiteMaximo | L. min: limiteMinimo | Tarifa real: tarifaReal | Tarifa final: tarifaFinal
+Outros: outros | Frete Mínimo: valorFreteMinimo | Diaria: diaria | Frete valor: freteValor
+Total Prestação: totalPrestacao | Pedágio: pedagio | Fração pedágio: percPedagio
+Seguro: seguro | %Seguro: percSeguro | Seg. aduaneiro: valorSeguroAduaneiro
+Gris: gris | %Gris: percGris | Excesso: valorExcesso
+CAMPOS PERSONALIZADOS TABELA PREÇO: criar em Transporte > Configurações > Tabelas de Preços > Tabela de preços Valores Outros. Pede nome interno e descrição. Na regra usar: tabelaPrecos.nomeinterno (ex: tabelaPrecos.advalorem). ATENÇÃO: campos da tabela de preço NÃO usam obt().
+
+CT-e (Conhecimento) - nome real: nome na regra (usar com obt(), ex: obt("tarifaDigitada")):
+Tarifa Final: tarifaDigitada | Tarifa Real: tarifaCalculada | Frete Valor: valorFrete
+Base Cálculo ICMS: baseCalculo | Alíquota ICMS: aliquota | Valor ICMS: valorICMS
+Outros: valoresOutros | Pedágio: valorPedagioConhecimento | Gris: Gris | Diária: diaria
+Seguro: valorSeguro | Total Serviço: totalServico | Total Prestação: totalPrestacao
+Valor total das notas fiscais: merc_valor[] | Peso total das notas fiscais: merc_quantKg[]
+CAMPOS PERSONALIZADOS CT-e: criar em Transporte > Configurações > Tipos Valores Outros. Pede nome interno e descrição. Na regra usar: obt("nomeinterno") (ex: obt("advalorem")). ATENÇÃO: campos personalizados do CT-e SEMPRE usam obt().
+
+CAMPO INVISÍVEL (não visível no DACTE): usar $SV("dados_CST", '40');
+
+CAMPOS OCULTOS NO DACTE (padrão coluna esquerda):
+tarifaImpressa, diaria, Gris, valorFrete, valorICMS, valoresOutros, valorPedagioConhecimento, valorSeguro, valorSeguroAduaneiro
+
+EXEMPLOS DE REGRAS:
+
+--- ICMS Demonstrativo ---
+def("tarifaCalculada",0);
+if ( obt("tarifaDigitada") > 0)
+   def("valorFrete", (obt("merc_quantKg[]")) * obt("tarifaDigitada")/1000);
+if ( obt("aliquota") > 0)
+   def("baseCalculo", (obt("valorFrete") + obt("valoresOutros")));
+if ( obt("aliquota") < 1)
+   def("baseCalculo",0);
+valor = obt("baseCalculo") * (obt("aliquota")/100);
+def("valorICMS",valor);
+def("totalPrestacao", (obt("valorFrete") + obt("valoresOutros") + obt("valorSeguro") + obt("diaria")));
+
+--- Cálculo Inverso (ICMS por dentro) ---
+def("tarifaCalculada",0);
+if ( obt("tarifaDigitada") > 0)
+   def("valorFrete", (obt("merc_quantKg[]")) * obt("tarifaDigitada"));
+var inverso = ((100 - obt("aliquota")) /100)
+if ( obt("aliquota") > 0)
+   def("baseCalculo", ((obt("valorFrete") + obt("valoresOutros")) / inverso));
+if ( obt("aliquota") < 1)
+   def("baseCalculo", 0);
+valor = obt("baseCalculo") * (obt("aliquota")/100);
+def("valorICMS",valor);
+def("totalPrestacao", (obt("valorFrete") + obt("valoresOutros") + obt("valorICMS") + obt("valorSeguro") + obt("diaria")));
+
+--- Somar ICMS no Total Prestação ---
+def("tarifaCalculada",0);
+if ( obt("tarifaDigitada") > 0)
+   def("valorFrete", (obt("merc_quantKg[]")) * obt("tarifaDigitada"));
+if ( obt("aliquota") > 0)
+   def("baseCalculo", (obt("valorFrete") + obt("valoresOutros")));
+if ( obt("aliquota") < 1)
+   def("baseCalculo", 0);
+valor = obt("baseCalculo") * (obt("aliquota")/100);
+def("valorICMS",valor);
+def("totalPrestacao", (obt("valorFrete") + obt("valorICMS") + obt("valoresOutros") + obt("valorSeguro") + obt("diaria")));
+
+--- Simples Nacional ---
+def("tarifaCalculada",0);
+if ( obt("tarifaDigitada") > 0)
+   def("valorFrete", (obt("merc_quantKg[]")) * obt("tarifaDigitada"));
+def("totalPrestacao", (obt("valorFrete") + obt("valoresOutros") + obt("valorSeguro") + obt("diaria")));
+
+INCLUIR PEDÁGIO NA BASE ICMS: def("baseCalculo", (obt("valorFrete") + obt("valoresOutros") + obt("valorPedagioConhecimento")));
+`;
+
+function ehCriacaoRegra(query) {
+    const q = query.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+    const padroes = [
+        'criar regra','criacao de regra','nova regra','regra de calculo',
+        'regra de frete','regra empresa','configurar regra','fazer regra',
+        'montar regra','regra calculo','como fazer regra','preciso de regra',
+        'preciso criar','quero criar regra','regra icms','regra transporte',
+        'calculo de frete regra','calculo inverso icms','simples nacional regra'
+    ];
+    return padroes.some(p => q.includes(p)) ||
+           /criar.{0,20}regra|regra.{0,20}criar|nova.{0,10}regra/.test(q);
+}
+
+async function gerarRespostaCriacaoRegra(pergunta) {
+    appendMessage('system', '⚙️ <strong>Assistente de Criação de Regras</strong>');
+    adicionarMensagemNaConversa('system', '⚙️ Assistente de Criação de Regras ativado');
+    const ld = appendLoadingCard("⚙️ Elaborando configuração de regra...");
+    const li = Date.now();
+    const systemMsg = `Você é um especialista em configuração de regras de frete do sistema Bsoft TMS. Responda de forma clara e objetiva, gerando o código de cálculo pronto para uso quando necessário. Use APENAS as funções def(), obt() e $SV() documentadas abaixo. Formate o código entre triple backticks.\n\nDOCUMENTAÇÃO DO SISTEMA:\n${CONTEXTO_REGRAS}`;
+    try {
+        const result = await callMCPSemPensamento(
+            [{ role: 'system', content: systemMsg }, { role: 'user', content: pergunta }],
+            { temperature: 0.2, maxTokens: 3000 }
+        );
+        ld.remove();
+        renderizarCardRegra(result.text, li, result._iaUsada, result._iaModelo);
+        adicionarMensagemNaConversa('ai', result.text);
+    } catch(e) {
+        ld.remove();
+        appendMessage('ai', '❌ Erro ao gerar resposta. Tente novamente.');
+        adicionarMensagemNaConversa('ai', '❌ Erro no assistente de regras.');
+    }
+}
+
+function renderizarCardRegra(texto, li, iaUsada, iaModelo) {
+    const s = document.getElementById('chatStream');
+    const c = document.createElement('div');
+    c.className = 'answer-card';
+    const formatado = texto
+        .replace(/```[\w]*\n?([\s\S]*?)```/g, (_,code) => {
+            const escaped = code.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            return `<div style="position:relative;margin:8px 0;"><pre class="regra-code">${escaped}</pre><button onclick="copiarRegra(this)" style="position:absolute;top:8px;right:8px;background:#313244;color:#a6e3a1;border:none;border-radius:5px;padding:3px 10px;font-size:11px;cursor:pointer;font-weight:600;transition:all .15s;">📋 Copiar</button></div>`;
+        })
+        .replace(/\*\*(.*?)\*\*/g,'<b>$1</b>')
+        .replace(/\n/g,'<br>');
+    const modelo = (iaModelo||'').split('/').pop();
+    const badge = (iaUsada||'OpenRouter') === 'Gemini'
+        ? `<span style="font-size:10px;color:#7c3aed;background:#f5f3ff;padding:2px 7px;border-radius:10px;border:1px solid #ddd6fe;font-weight:600;">🌐 Gemini (fallback)</span>`
+        : `<span style="font-size:10px;color:#0369a1;background:#f0f9ff;padding:2px 7px;border-radius:10px;border:1px solid #bae6fd;font-weight:600;">⚡ OpenRouter${modelo?' · '+modelo:''}</span>`;
+    let h = `<div style="background:#f0fdf4;padding:8px 15px;border-bottom:1px solid #bbf7d0;font-size:11px;color:#166534;font-weight:600;">⚙️ Assistente de Criação de Regras — Bsoft TMS</div>`;
+    h += `<div class="answer-section"><div class="section-content">${formatado}</div></div>`;
+    h += `<div class="feedback-area"><span>Ajudou?</span><button class="feedback-btn" onclick="saveFeedback(${li},'positivo',this)">👍</button><button class="feedback-btn" onclick="saveFeedback(${li},'negativo',this)">👎</button><span style="margin-left:auto;">${badge}</span></div>`;
+    c.innerHTML = h;
+    s.appendChild(c);
+    scrollToBottom(true);
+}
+
+function copiarRegra(btn) {
+    const pre = btn.previousElementSibling;
+    navigator.clipboard.writeText(pre.innerText).then(() => {
+        btn.textContent = '✅ Copiado!';
+        btn.style.background = '#166534';
+        btn.style.color = 'white';
+        setTimeout(() => { btn.textContent = '📋 Copiar'; btn.style.background = '#313244'; btn.style.color = '#a6e3a1'; }, 2200);
+    }).catch(() => {
+        const sel = window.getSelection(); const r = document.createRange();
+        r.selectNodeContents(pre); sel.removeAllRanges(); sel.addRange(r);
+        document.execCommand('copy');
+        sel.removeAllRanges();
+        btn.textContent = '✅ Copiado!'; btn.style.background = '#166534';
+        setTimeout(() => { btn.textContent = '📋 Copiar'; btn.style.background = '#313244'; }, 2200);
+    });
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1695,7 +1882,7 @@ async function gerarRespostaSefaz(pergunta) {
     if (re) { ld.remove(); const da = re.dicas ? re.dicas.split('|').map(d => d.trim()).filter(Boolean) : []; renderizarCardRejeicaoLocal(re, da, li); adicionarMensagemNaConversa('ai', `Rejeição ${re.codigo}: ${re.significado}`); return; }
     ld.querySelector('span').textContent = "🔍 Consultando IA...";
     const ps = `Especialista SEFAZ. Erro: "${pergunta}". Código: ${cr}. Tipo: ${td}. JSON: {"codigo":"${cr}","significado":"...","causa":"...","solucao":"...","dicas":["..."]}`;
-    try { let r; try { r = await callMCPAPI('openrouter', 'google/gemma-4-26b-a4b-it', mcpConfig.apiKey, mcpConfig.baseUrl, [{ role: 'user', content: ps }], { temperature: 0.1, maxTokens: 2048 }); } catch (e) { r = await callMCPAPI('openrouter', 'meta-llama/llama-3.3-70b-instruct', mcpConfig.apiKey, mcpConfig.baseUrl, [{ role: 'user', content: ps }], { temperature: 0.1, maxTokens: 2048 }); } ld.remove(); let parsed = null; try { parsed = JSON.parse(r.text); } catch (e) { try { parsed = JSON.parse(r.text.replace(/```json|```/g, '').trim()); } catch (e2) {} } renderizarCardRejeicaoIA(parsed, r.text, li); const rt = parsed ? `Rejeição ${parsed.codigo}: ${parsed.significado}` : r.text; adicionarMensagemNaConversa('ai', rt); } catch (e) { ld.remove(); appendMessage('ai', '❌ Erro na consulta. Pesquise em: https://atendimento.tecnospeed.com.br'); adicionarMensagemNaConversa('ai', '❌ Erro SEFAZ.'); }
+    try { let r; try { r = await callMCPAPI('openrouter', 'google/gemma-4-26b-a4b-it', mcpConfig.apiKey, mcpConfig.baseUrl, [{ role: 'user', content: ps }], { temperature: 0.1, maxTokens: 2048 }); } catch (e) { r = await callMCPAPI('openrouter', 'meta-llama/llama-3.3-70b-instruct', mcpConfig.apiKey, mcpConfig.baseUrl, [{ role: 'user', content: ps }], { temperature: 0.1, maxTokens: 2048 }); } const txSefaz = filtrarPensamentoAlto(r.text).texto || r.text; ld.remove(); let parsed = null; try { parsed = JSON.parse(txSefaz); } catch (e) { try { parsed = JSON.parse(txSefaz.replace(/```json|```/g, '').trim()); } catch (e2) {} } renderizarCardRejeicaoIA(parsed, txSefaz, li); const rt = parsed ? `Rejeição ${parsed.codigo}: ${parsed.significado}` : txSefaz; adicionarMensagemNaConversa('ai', rt); } catch (e) { ld.remove(); appendMessage('ai', '❌ Erro na consulta. Pesquise em: https://atendimento.tecnospeed.com.br'); adicionarMensagemNaConversa('ai', '❌ Erro SEFAZ.'); }
 }
 
 function renderizarCardRejeicaoLocal(re, dicas, li) { const s = document.getElementById('chatStream'); const c = document.createElement('div'); c.className = 'answer-card'; let h = `<div style="background:#f0fdf4;padding:8px 15px;border-bottom:1px solid #bbf7d0;font-size:11px;color:#166534;">📚 Banco Local • ${re.fonte || 'Tecnospeed'}</div>`; h += `<div class="answer-section"><div class="section-label path">🔢 Código</div><div style="font-size:28px;font-weight:800;color:#dc2626;">${re.codigo}</div></div>`; if (re.tipo_doc) h += `<div class="answer-section"><div class="section-label path">📄 Tipo</div><div class="section-content"><b>${re.tipo_doc}</b></div></div>`; if (re.significado) h += `<div class="answer-section"><div class="section-label how">📋 Significado</div><div class="section-content">${formatarTexto(re.significado)}</div></div>`; if (re.causa) h += `<div class="answer-section"><div class="section-label path">🔍 Causa</div><div class="section-content">${formatarTexto(re.causa)}</div></div>`; if (re.solucao) h += `<div class="answer-section"><div class="section-label how">✅ Solução</div><div class="section-content">${formatarTexto(re.solucao)}</div></div>`; h += `<div class="feedback-area"><span>Ajudou?</span><button class="feedback-btn" onclick="saveFeedback(${li},'positivo',this)">👍</button><button class="feedback-btn" onclick="saveFeedback(${li},'negativo',this)">👎</button></div>`; c.innerHTML = h; s.appendChild(c); scrollToBottom(true); }
