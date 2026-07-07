@@ -1897,18 +1897,24 @@ function mostrarWizardRegra(queryOriginal){
   </div>
   <div class="wizard-subsection" style="margin-top:14px;">
     <b>Calcular total do serviço</b>
-    <div style="display:flex;gap:16px;margin:4px 0 6px;">
-      <label class="wizard-radio-label"><input type="radio" name="wCalcServ" value="sim" onchange="wToggleChecks('serv',this.value)"> Sim</label>
-      <label class="wizard-radio-label"><input type="radio" name="wCalcServ" value="nao" checked onchange="wToggleChecks('serv',this.value)"> Não</label>
+    <div style="display:flex;flex-direction:column;gap:2px;margin-top:4px;">
+      <label class="wizard-radio-label"><input type="radio" name="wCalcServ" value="nao" checked onchange="wToggleServCalc(this.value)"> Nenhum</label>
+      <label class="wizard-radio-label"><input type="radio" name="wCalcServ" value="valorFrete" onchange="wToggleServCalc(this.value)"> Valor frete</label>
+      <label class="wizard-radio-label"><input type="radio" name="wCalcServ" value="totalPrestacao" onchange="wToggleServCalc(this.value)"> Total Prestação</label>
     </div>
-    <div id="wServChecks" class="wizard-cbx-grid" style="display:none;">
-      <label class="wizard-radio-label"><input type="checkbox" name="wServ" value="valorFrete" checked> Soma Frete</label>
-      <label class="wizard-radio-label"><input type="checkbox" name="wServ" value="valorICMS"> Soma ICMS</label>
-      <label class="wizard-radio-label"><input type="checkbox" name="wServ" value="valorPedagioConhecimento"> Soma Pedágio</label>
-      <label class="wizard-radio-label"><input type="checkbox" name="wServ" value="valoresOutros" checked> Soma Outros</label>
-      <label class="wizard-radio-label"><input type="checkbox" name="wServ" value="diaria"> Soma Diária</label>
-      <label class="wizard-radio-label"><input type="checkbox" name="wServ" value="valorSeguro" checked> Soma Seguro</label>
-      <label class="wizard-radio-label"><input type="checkbox" name="wServ" value="Gris"> Soma Gris</label>
+    <div id="wServChecks" style="display:none;margin-top:8px;">
+      <div class="wizard-cbx-grid">
+        <label class="wizard-radio-label"><input type="checkbox" name="wServ" value="valorFrete" checked> Soma Frete</label>
+        <label class="wizard-radio-label"><input type="checkbox" name="wServ" value="valorICMS"> Soma ICMS</label>
+        <label class="wizard-radio-label"><input type="checkbox" name="wServ" value="valorPedagioConhecimento"> Soma Pedágio</label>
+        <label class="wizard-radio-label"><input type="checkbox" name="wServ" value="valoresOutros"> Soma Outros</label>
+        <label class="wizard-radio-label"><input type="checkbox" name="wServ" value="diaria"> Soma Diária</label>
+        <label class="wizard-radio-label"><input type="checkbox" name="wServ" value="valorSeguro"> Soma Seguro</label>
+        <label class="wizard-radio-label"><input type="checkbox" name="wServ" value="Gris"> Soma Gris</label>
+      </div>
+      <label class="wizard-radio-label" style="margin-top:6px;"><input type="checkbox" id="wServTodosOutros"> Somar todos campos outros do print (conhecimento)</label>
+      <label class="wizard-radio-label" style="margin-top:2px;"><input type="checkbox" id="wServEspecificar" onchange="wToggleServEspecificar(this.checked)"> Somar campos outros — especificar quais:</label>
+      <textarea id="wServEspecificarTxt" class="wizard-textarea" style="display:none;margin-top:6px;min-height:50px;" placeholder="Ex: advalorem, taxa1, taxa2..."></textarea>
     </div>
   </div>
 </div>
@@ -1927,6 +1933,8 @@ function wOnRegraPreChange(val){const icms=document.querySelector('input[name="w
 function wToggleBaseCalc(val){const el=document.getElementById('wBaseCalcChecks');if(el)el.style.display=val==='nenhum'?'none':'block';}
 function wToggleEspecificar(checked){const el=document.getElementById('wBaseEspecificarTxt');if(el)el.style.display=checked?'block':'none';}
 function wTogglePrestEspecificar(checked){const el=document.getElementById('wPrestEspecificarTxt');if(el)el.style.display=checked?'block':'none';}
+function wToggleServCalc(val){const el=document.getElementById('wServChecks');if(el)el.style.display=val==='nao'?'none':'block';}
+function wToggleServEspecificar(checked){const el=document.getElementById('wServEspecificarTxt');if(el)el.style.display=checked?'block':'none';}
 
 function wCarregarImagem(tipo,input){
     if(!input.files||!input.files[0])return;
@@ -1949,12 +1957,15 @@ async function enviarWizardRegra(){
     const regraPre=document.querySelector('input[name="wRegraPre"]:checked')?.value||'';
     const calcFrete=document.querySelector('input[name="wCalcFrete"]:checked')?.value||'nenhum';
     const calcPrest=document.querySelector('input[name="wCalcPrest"]:checked')?.value||'sim';
-    const calcServ=document.querySelector('input[name="wCalcServ"]:checked')?.value||'sim';
+    const calcServ=document.querySelector('input[name="wCalcServ"]:checked')?.value||'nao';
     const prestCbs=[...document.querySelectorAll('input[name="wPrest"]:checked')].map(c=>c.value);
     const prestTodosOutros=document.getElementById('wPrestTodosOutros')?.checked||false;
     const prestEspecificar=document.getElementById('wPrestEspecificar')?.checked||false;
     const prestEspecificarTxt=(document.getElementById('wPrestEspecificarTxt')?.value||'').trim();
     const servCbs=[...document.querySelectorAll('input[name="wServ"]:checked')].map(c=>c.value);
+    const servTodosOutros=document.getElementById('wServTodosOutros')?.checked||false;
+    const servEspecificar=document.getElementById('wServEspecificar')?.checked||false;
+    const servEspecificarTxt=(document.getElementById('wServEspecificarTxt')?.value||'').trim();
     const baseCalc=document.querySelector('input[name="wBaseCalc"]:checked')?.value||'nenhum';
     const baseExtras=[...document.querySelectorAll('input[name="wBaseExtra"]:checked')].map(c=>c.value);
     const baseTodosOutros=document.getElementById('wBaseTodosOutros')?.checked||false;
@@ -1969,7 +1980,10 @@ async function enviarWizardRegra(){
     if(prestTodosOutros)pParts.push('[identificar no print do CT-e TODOS os campos personalizados outros visíveis e incluir obt("nomeinterno") de cada um]');
     if(prestEspecificar&&prestEspecificarTxt)prestEspecificarTxt.split(',').forEach(s=>{s=s.trim();if(s)pParts.push('obt("'+s+'")')});
     const pCfg=calcPrest==='nao'?'NAO calcular (omitir def("totalPrestacao"))':(pParts.length?'FORMULA OBRIGATORIA — copiar exatamente: def("totalPrestacao", ('+pParts.join(' + ')+'))':'NAO calcular totalPrestacao');
-    const sParts=[...servCbs.map(f=>'obt("'+f+'")')];
+    const sExtra=[...servCbs.map(f=>'obt("'+f+'")')];
+    if(servTodosOutros)sExtra.push('[identificar no print do CT-e TODOS os campos personalizados outros visíveis e incluir obt("nomeinterno") de cada um]');
+    if(servEspecificar&&servEspecificarTxt)servEspecificarTxt.split(',').forEach(s=>{s=s.trim();if(s)sExtra.push('obt("'+s+'")')});
+    const sParts=calcServ!=='nao'?['obt("'+calcServ+'")',...sExtra]:[];
     const sCfg=calcServ==='nao'?'NAO calcular (omitir def("totalServico"))':(sParts.length?'FORMULA OBRIGATORIA — copiar exatamente: def("totalServico", ('+sParts.join(' + ')+'))':'NAO calcular totalServico');
     // Construir formula da base de calculo a partir das selecoes do wizard
     let bFormulaPartes=null;
