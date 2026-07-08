@@ -1540,7 +1540,12 @@ async function handleChat() {
 
     if (ehCriacaoRegra(query)) {
         const _rr = await perguntarAuxilioRegra();
-        if (_rr === 'sim') { mostrarWizardRegra(query); return; }
+        if (_rr === 'sim') {
+            const _tipo = await perguntarTipoRegra();
+            if (_tipo === 'cte') { mostrarWizardRegra(query); return; }
+            if (_tipo === 'contrato') { mostrarWizardContrato(query); return; }
+            return;
+        }
         // 'nao' → continua busca normal no banco
     }
 
@@ -1775,10 +1780,45 @@ if ( obt("tarifaDigitada") > 0)
 def("totalPrestacao",  (obt("valorFrete")));
 `;
 
+// ─── PROMPT CONTRATO DE FRETE ──────────────────────────────
+const CONTEXTO_CONTRATO_FRETE = `
+Para puxar dados totais do Ct-e vinculado para o contrato de frete, pode ser usada a expressão COM_RF.
+Exemplo: valorTotalPrestacao = COM_RF.composicaoFrete("totalPrestacao"); def("valorTotalOrigem", valorTotalPrestacao);
+Campos do Contrato de Frete (nome real: variável na regra):
+Tolerância: tolerancia | Tarifa do Motorista: tarifaMotoristaCalculada | Peso de Coleta: pesoColeta
+Tarifa (kg): tarifaMotoristaDigitada | Valor do Contrato: valorTotalOrigem | Diária: diariaFrete
+Outros Descontos: outrosDescontos | Outros Acréscimos: outrosAcrescimos | Valor Tonelada: outrosValoresCF[valorTon]
+Desconto INSS (%): descontoINSS | Valor Desconto INSS: totalDescontoINSS
+Desconto SEST (%): descontoSEST | Desconto SEST/SENAT (Valor): totalDescontoSEST
+Base Cálculo IR: baseCalculoIRRF | Desconto IRRF: descontoIRRF | Desconto Seguro: descontoSeguro
+Pedágio: valorPedagio | Frete Líquido: freteLiquido | Adiantamento: valorAdiantamento
+Nro. parcelas: nroParcelas | Combustível: valorCombustivel | Peso Chegada: pesoChegada
+Desconto Quebra Peso: descontoQuebraPeso | Saldo: saldo | Saldo Combustível: saldoCombustivel
+Complemento: valorComplemento | Resultado: resultado
+
+Exemplo regra COMBINADO MOTORISTA:
+def("tarifaMotoristaCalculada", 0);
+valor = (obt("valorTotalOrigem") * 0.2) * (obt("descontoINSS") / 100)
+def("totalDescontoINSS", valor);
+valor = (obt("valorTotalOrigem") * 0.2) * (obt("descontoSEST") / 100)
+def("totalDescontoSEST", valor);
+valorBase = (((obt("valorTotalOrigem"))*0.10)- obt("totalDescontoINSS"));
+def("baseCalculoIRRF", valorBase);
+IRRF.defineDescontoIRRF();
+valor =  obt("valorTotalOrigem")  + obt("outrosAcrescimos") - obt("outrosDescontos") - obt("totalDescontoINSS") - obt("totalDescontoSEST")  - obt("descontoIRRF");
+def("freteLiquido", valor);
+valor = obt("freteLiquido")  - obt("descontoQuebraPeso");
+def("saldo", valor - obt("valorAdiantamento"));
+def("resultado", obt("totalPrestacaoTerceiraAba") - obt("valorTotalOrigem") );
+`;
+
 // ─── WIZARD DE CRIAÇÃO DE REGRAS ───────────────────────────
 let _regraWizardResolve=null,_wizardQueryOriginal='',_wizardCteBase64=null,_wizardTabelaBase64=null;
 function _resolverEscolhaRegra(e){const c=document.getElementById('regraEscolhaCard');if(c)c.remove();if(_regraWizardResolve){_regraWizardResolve(e);_regraWizardResolve=null;}}
 function perguntarAuxilioRegra(){return new Promise(resolve=>{_regraWizardResolve=resolve;const s=document.getElementById('chatStream');const card=document.createElement('div');card.id='regraEscolhaCard';card.className='answer-card';card.innerHTML=`<div style="background:#f0fdf4;padding:8px 15px;border-bottom:1px solid #bbf7d0;font-size:11px;color:#166534;font-weight:600;">⚙️ Criação de Regras</div><div class="answer-section"><div class="section-content"><div style="font-size:13px;color:#374151;margin-bottom:10px;">Precisa de auxílio para criar/editar a regra?</div><div style="display:flex;gap:10px;"><button onclick="_resolverEscolhaRegra('sim')" style="flex:1;padding:10px 16px;background:#16a34a;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">✅ Sim — abrir assistente</button><button onclick="_resolverEscolhaRegra('nao')" style="flex:1;padding:10px 16px;background:#6b7280;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">🔍 Não — buscar no banco</button></div></div></div>`;s.appendChild(card);scrollToBottom(true);});}
+let _tipoRegraResolve=null,_wizardContratoQuery='';
+function _resolverTipoRegra(tipo){const c=document.getElementById('tipoRegraCard');if(c)c.remove();if(_tipoRegraResolve){_tipoRegraResolve(tipo);_tipoRegraResolve=null;}}
+function perguntarTipoRegra(){return new Promise(resolve=>{_tipoRegraResolve=resolve;const s=document.getElementById('chatStream');const card=document.createElement('div');card.id='tipoRegraCard';card.className='answer-card';card.innerHTML=`<div style="background:#f5f3ff;padding:8px 15px;border-bottom:1px solid #ddd6fe;font-size:11px;color:#5b21b6;font-weight:600;">⚙️ Tipo de Regra</div><div class="answer-section"><div class="section-content"><div style="font-size:13px;color:#374151;margin-bottom:10px;">Para qual tipo de regra precisa de auxílio?</div><div style="display:flex;gap:10px;"><button onclick="_resolverTipoRegra('cte')" style="flex:1;padding:10px 16px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">📄 Ct-e / Conhecimento</button><button onclick="_resolverTipoRegra('contrato')" style="flex:1;padding:10px 16px;background:#7c3aed;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">🚛 Contrato de Frete</button></div></div></div>`;s.appendChild(card);scrollToBottom(true);});}
 
 const REGRAS_PREDEFINIDAS_CODE={
     icms_demo:`def("tarifaCalculada",0);\nif ( obt("tarifaDigitada") > 0)\n   def("valorFrete", (obt("merc_quantKg[]")) * obt("tarifaDigitada")/1000);\nif ( obt("aliquota") > 0)\n   def("baseCalculo", (obt("valorFrete")));\nif ( obt("aliquota") < 1)\n   def("baseCalculo",0);\nvalor = obt("baseCalculo") * (obt("aliquota")/100);\ndef("valorICMS",valor);\ndef("totalPrestacao",  (obt("valorFrete")));`,
@@ -1797,6 +1837,10 @@ const CALC_FRETE_MAP={
     tf_vt_doc:'Tarifa final x valor total (Valor do documento) → def("valorFrete", obt("tarifaDigitada") * obt("merc_valor[]"))',
     tf_vt_prod:'Tarifa final x valor total (Valor do produto) → def("valorFrete", obt("tarifaDigitada") * obt("merc_valor[]"))',
     prest_icms:'Total da prestacao - valor do ICMS (totalPrestacao inclui ICMS embutido)'
+};
+
+const REGRAS_PREDEFINIDAS_CONTRATO={
+    combinado_motorista:`def("tarifaMotoristaCalculada", 0);\nvalor = (obt("valorTotalOrigem") * 0.2) * (obt("descontoINSS") / 100)\ndef("totalDescontoINSS", valor);\nvalor = (obt("valorTotalOrigem") * 0.2) * (obt("descontoSEST") / 100)\ndef("totalDescontoSEST", valor);\nvalorBase = (((obt("valorTotalOrigem"))*0.10)- obt("totalDescontoINSS"));\ndef("baseCalculoIRRF", valorBase);\nIRRF.defineDescontoIRRF();\nvalor =  obt("valorTotalOrigem")  + obt("outrosAcrescimos") - obt("outrosDescontos") - obt("totalDescontoINSS") - obt("totalDescontoSEST")  - obt("descontoIRRF");\ndef("freteLiquido", valor);\nvalor = obt("freteLiquido")  - obt("descontoQuebraPeso");\ndef("saldo", valor - obt("valorAdiantamento"));\ndef("resultado", obt("totalPrestacaoTerceiraAba") - obt("valorTotalOrigem") );`
 };
 
 function mostrarWizardRegra(queryOriginal){
@@ -1935,6 +1979,7 @@ function wToggleEspecificar(checked){const el=document.getElementById('wBaseEspe
 function wTogglePrestEspecificar(checked){const el=document.getElementById('wPrestEspecificarTxt');if(el)el.style.display=checked?'block':'none';}
 function wToggleServCalc(val){const el=document.getElementById('wServChecks');if(el)el.style.display=val==='nao'?'none':'block';}
 function wToggleServEspecificar(checked){const el=document.getElementById('wServEspecificarTxt');if(el)el.style.display=checked?'block':'none';}
+function wToggleDescontos(val){const el=document.getElementById('wDescontoChecks');if(el)el.style.display=val==='com_desconto'?'block':'none';}
 
 function wCarregarImagem(tipo,input){
     if(!input.files||!input.files[0])return;
@@ -2057,6 +2102,85 @@ function ehCriacaoRegra(query) {
     ];
     return padroes.some(p => q.includes(p)) ||
            /criar.{0,20}regra|regra.{0,20}criar|nova.{0,10}regra/.test(q);
+}
+
+function mostrarWizardContrato(queryOriginal){
+    _wizardContratoQuery=queryOriginal;
+    const s=document.getElementById('chatStream');
+    const wCard=document.getElementById('wizardContratoCard');if(wCard)wCard.remove();
+    const card=document.createElement('div');
+    card.id='wizardContratoCard';
+    card.className='answer-card';
+    card.innerHTML=`<div style="background:#f5f3ff;padding:8px 15px;border-bottom:1px solid #ddd6fe;font-size:11px;color:#5b21b6;font-weight:600;">🚛 Assistente — Contrato de Frete</div><div style="padding:12px 15px 4px;"><div class="wizard-section"><div class="wizard-label">📋 Regra existente (opcional)</div><textarea id="wCfRegraCola" class="wizard-textarea" placeholder="Cole aqui a regra existente que deseja editar/modificar..." style="min-height:70px;"></textarea><div style="font-size:11px;color:#6b7280;margin:8px 0 4px;">Ou selecione uma predefinida como base:</div><div style="display:flex;flex-direction:column;gap:3px;"><label class="wizard-radio-label"><input type="radio" name="wCfRegraPre" value="" checked> Nenhuma (criar do zero)</label><label class="wizard-radio-label"><input type="radio" name="wCfRegraPre" value="combinado_motorista"> Combinado Motorista</label></div></div><div class="wizard-section"><div class="wizard-label">⚙️ Configurações da Regra</div><div class="wizard-subsection"><b>Valor total origem, selecionar descontos:</b><div id="wDescontoChecks" style="margin-top:8px;"><div class="wizard-cbx-grid"><label class="wizard-radio-label"><input type="checkbox" name="wCfDesconto" value="outrosDescontos"> Outros Descontos</label><label class="wizard-radio-label"><input type="checkbox" name="wCfDesconto" value="totalDescontoINSS" checked> Valor Desconto INSS</label><label class="wizard-radio-label"><input type="checkbox" name="wCfDesconto" value="totalDescontoSEST" checked> Desconto SEST/SENAT (Valor)</label><label class="wizard-radio-label"><input type="checkbox" name="wCfDesconto" value="descontoIRRF" checked> Desconto IRRF</label><label class="wizard-radio-label"><input type="checkbox" name="wCfDesconto" value="descontoSeguro"> Desconto de Seguro</label><label class="wizard-radio-label"><input type="checkbox" name="wCfDesconto" value="valorPedagio"> Valor de Pedágio</label><label class="wizard-radio-label"><input type="checkbox" name="wCfDesconto" value="valorCombustivel"> Combustível</label></div></div></div></div><div class="wizard-section" style="border:none;"><div class="wizard-label">📝 O que precisa criar/alterar na regra?</div><textarea id="wCfDescricao" class="wizard-textarea" placeholder="Descreva o que necessita que crie ou modifique na regra..." style="min-height:100px;"></textarea></div><div style="padding:12px 15px 20px;"><button id="wCfBtnEnviar" class="wizard-submit" onclick="enviarWizardContrato()">🚀 Gerar Regra com IA</button></div></div>`;
+    s.appendChild(card);
+    scrollToBottom(true);
+}
+
+async function enviarWizardContrato(){
+    const btn=document.getElementById('wCfBtnEnviar');
+    if(btn){btn.disabled=true;btn.textContent='⏳ Gerando...';}
+    const regraCola=(document.getElementById('wCfRegraCola')?.value||'').trim();
+    const regraPre=document.querySelector('input[name="wCfRegraPre"]:checked')?.value||'';
+    const descontos=[...document.querySelectorAll('input[name="wCfDesconto"]:checked')].map(c=>c.value);
+    const descricao=(document.getElementById('wCfDescricao')?.value||'').trim();
+    // Build the valor= line that goes before def("freteLiquido", valor)
+    let vFreteLiq='valor =  obt("valorTotalOrigem")  + obt("outrosAcrescimos")';
+    descontos.forEach(d=>{vFreteLiq+=' - obt("'+d+'")';});
+    vFreteLiq+=';';
+    let configTxt='';
+    let sysMsg='';
+    if(regraPre==='combinado_motorista'&&!regraCola){
+        // Build the complete rule in JS — eliminates AI ambiguity
+        const regraCompleta=[
+            'def("tarifaMotoristaCalculada", 0);',
+            'valor = (obt("valorTotalOrigem") * 0.2) * (obt("descontoINSS") / 100)',
+            'def("totalDescontoINSS", valor);',
+            'valor = (obt("valorTotalOrigem") * 0.2) * (obt("descontoSEST") / 100)',
+            'def("totalDescontoSEST", valor);',
+            'valorBase = (((obt("valorTotalOrigem"))*0.10)- obt("totalDescontoINSS"));',
+            'def("baseCalculoIRRF", valorBase);',
+            'IRRF.defineDescontoIRRF();',
+            vFreteLiq,
+            'def("freteLiquido", valor);',
+            'valor = obt("freteLiquido")  - obt("descontoQuebraPeso");',
+            'def("saldo", valor - obt("valorAdiantamento"));',
+            'def("resultado", obt("totalPrestacaoTerceiraAba") - obt("valorTotalOrigem"));'
+        ].join('\n');
+        configTxt=[
+            'CONFIGURACAO (Contrato de Frete — Combinado Motorista):',
+            'REGRA COMPLETA OBRIGATORIA — copiar EXATAMENTE linha por linha, sem alterar, adicionar ou remover nada:\n'+regraCompleta,
+            descricao?'\nAPLIQUE ALEM DISSO: '+descricao:'',
+            _wizardContratoQuery?'\nCONTEXTO: '+_wizardContratoQuery:''
+        ].filter(Boolean).join('\n');
+        sysMsg='Voce e um especialista em regras de Contrato de Frete do Bsoft TMS.\nREGRA CRITICA: A REGRA COMPLETA OBRIGATORIA deve ser copiada linha por linha EXATAMENTE como esta. Nao altere, adicione nem remova nada. Se houver APLIQUE ALEM DISSO, incorpore as modificacoes mantendo o restante intacto.\nGere APENAS o codigo da regra pronto para uso, entre triple backticks.\n\nDOCUMENTACAO:\n'+CONTEXTO_CONTRATO_FRETE;
+    }else{
+        // Generic path: paste existing rule or criar do zero
+        const linhas=[];
+        if(descontos.includes('totalDescontoINSS')){linhas.push('valor = (obt("valorTotalOrigem") * 0.2) * (obt("descontoINSS") / 100)');linhas.push('def("totalDescontoINSS", valor);');}
+        if(descontos.includes('totalDescontoSEST')){linhas.push('valor = (obt("valorTotalOrigem") * 0.2) * (obt("descontoSEST") / 100)');linhas.push('def("totalDescontoSEST", valor);');}
+        if(descontos.includes('descontoIRRF')){const inssB=descontos.includes('totalDescontoINSS')?' - obt("totalDescontoINSS")':'';linhas.push('valorBase = (((obt("valorTotalOrigem"))*0.10)'+inssB+');');linhas.push('def("baseCalculoIRRF", valorBase);');linhas.push('IRRF.defineDescontoIRRF();');}
+        linhas.push(vFreteLiq);
+        linhas.push('def("freteLiquido", valor);');
+        const freteLiqBloco=linhas.join('\n');
+        configTxt=[
+            'CONFIGURACAO DO USUARIO (Contrato de Frete):',
+            '- BLOCO FRETE LIQUIDO OBRIGATORIO — incluir EXATAMENTE nessa posicao na regra:\n'+freteLiqBloco,
+            regraCola?'\nREGRA EXISTENTE PARA EDITAR:\n'+regraCola:'',
+            descricao?'\nSOLICITACAO: '+descricao:'',
+            _wizardContratoQuery?'\nCONTEXTO: '+_wizardContratoQuery:''
+        ].filter(Boolean).join('\n');
+        sysMsg='Voce e um especialista em regras de Contrato de Frete do Bsoft TMS.\nREGRA CRITICA: O BLOCO FRETE LIQUIDO OBRIGATORIO deve ser copiado EXATAMENTE no lugar correto da regra. Nao altere, adicione nem remova linhas desse bloco.\nGere APENAS o codigo da regra pronto para uso, entre triple backticks.\n\nDOCUMENTACAO:\n'+CONTEXTO_CONTRATO_FRETE;
+    }
+    const wCard=document.getElementById('wizardContratoCard');if(wCard)wCard.remove();
+    appendMessage('system','🚛 <strong>Gerando regra de Contrato de Frete...</strong>');
+    const ld=appendLoadingCard('🚛 Elaborando regra de contrato...');
+    const li=Date.now();
+    try{
+        const result=await callMCPSemPensamento([{role:'system',content:sysMsg},{role:'user',content:'Monte a regra conforme as configuracoes abaixo.\n'+configTxt}],{temperature:0.15,maxTokens:3000});
+        ld.remove();
+        renderizarCardRegra(result.text,li,result._iaUsada,result._iaModelo);
+        adicionarMensagemNaConversa('ai',result.text);
+    }catch(e){ld.remove();appendMessage('ai','❌ Erro ao gerar regra. Tente novamente.');}
 }
 
 async function gerarRespostaCriacaoRegra(pergunta) {
