@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <title>Suporte Bsoft TMS - IA v24 - Supabase Edition</title>
+    <title>Suporte Bsoft TMS - IA v25 - Editor de regras</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -756,7 +756,7 @@
         </div>
         <div class="sidebar-conversas" id="listaConversas"></div>
         <div class="sidebar-footer" style="display:flex;align-items:center;justify-content:space-between;">
-            <span>Bsoft TMS Suporte IA v24</span>
+            <span>Bsoft TMS Suporte IA v25</span>
             <button onclick="limparTodasConversas()" title="Limpar todas as conversas" style="background:none;border:none;cursor:pointer;color:#ef4444;font-size:11px;padding:2px 6px;border-radius:5px;opacity:0.65;transition:opacity .15s" onmouseover="this.style.opacity='1';this.style.background='#fee2e2'" onmouseout="this.style.opacity='0.65';this.style.background='none'">🗑️ Limpar tudo</button>
         </div>
     </div>
@@ -843,6 +843,11 @@
         <div id="adminPanel">
             <strong style="color:#92400e;font-size:13px;">🛠️ Painel Administrativo</strong>
             <div style="display:flex;align-items:center;gap:12px;padding:10px;background:#fef3c7;border-radius:8px;border:1px solid #fde68a;">
+                <div style="flex:1;">
+                    <div style="font-size:11px;color:#92400e;font-weight:600;">👤 Usuário identificado nos logs</div>
+                    <div id="adminNomeUsuario" style="font-size:13px;color:#374151;margin-top:2px;font-weight:500;">—</div>
+                </div>
+                <button onclick="registrarNomeUsuario();document.getElementById('adminNomeUsuario').textContent=localStorage.getItem('bsoft_usuario_nome')||'—'" style="background:#d97706;color:white;border:none;border-radius:7px;padding:5px 12px;cursor:pointer;font-size:12px;font-weight:600;">✏️ Alterar Nome</button>
             </div>
             <div style="border-top:1px solid var(--primary-border);padding-top:8px;margin-top:4px;"><strong style="color:#92400e;font-size:13px;">📝 Adicionar Conhecimento</strong></div>
             <input type="text" id="newError" placeholder="Título do Erro / Dúvida">
@@ -2397,14 +2402,24 @@ function logSearch(query, found) {
         conversa.primeiraPergunta = query;
         conversa.logTimestamp = currentLogTimestamp;
         salvarConversas();
+        verificarNomeUsuario();
         try {
-            sb.from('logs').insert({
+            const _logPayload = {
                 pergunta: query,
                 encontrou: found,
                 feedback: "Pendente",
                 timestamp: currentLogTimestamp,
                 usuario_windows: getWindowsUser()
-            }).then(({error}) => { if(error) console.error('logSearch error:', error); });
+            };
+            sb.from('logs').insert(_logPayload).then(({error}) => {
+                if (error) {
+                    // Coluna usuario_windows pode não existir ainda — tenta sem ela
+                    const { usuario_windows, ..._logSemUser } = _logPayload;
+                    sb.from('logs').insert(_logSemUser).then(({error: e2}) => {
+                        if (e2) console.error('logSearch error:', e2);
+                    });
+                }
+            });
         } catch(e) { console.error(e); }
     } else {
         console.log("⏭️ Log ignorado (não é a primeira pergunta):", query.substring(0, 50));
@@ -2469,15 +2484,25 @@ async function sendDetailedFeedback(logIndex, btn) {
 // ═══════════════════════════════════════════════════════════
 //  ADMIN
 // ═══════════════════════════════════════════════════════════
-function openAdmin() { if (prompt("Senha Administrativa:") === CORRECT_PASSWORD) document.getElementById('adminPanel').style.display = 'flex'; }
+function openAdmin() { if (prompt("Senha Administrativa:") === CORRECT_PASSWORD) { document.getElementById('adminPanel').style.display = 'flex'; const el=document.getElementById('adminNomeUsuario'); if(el) el.textContent=localStorage.getItem('bsoft_usuario_nome')||'(não definido)'; } }
 function closeAdmin() { document.getElementById('adminPanel').style.display = 'none'; }
 
 function getWindowsUser() {
-    try {
-        const m = window.location.href.match(/[Uu]sers\/([^\/]+)/);
-        if (m) return decodeURIComponent(m[1]);
-    } catch(e) {}
-    return 'Desconhecido';
+    return localStorage.getItem('bsoft_usuario_nome') || 'Desconhecido';
+}
+function registrarNomeUsuario() {
+    const atual = localStorage.getItem('bsoft_usuario_nome') || '';
+    const nome = prompt('Seu nome (aparecerá nos logs do sistema):', atual);
+    if (nome && nome.trim()) {
+        localStorage.setItem('bsoft_usuario_nome', nome.trim());
+        alert('✅ Nome registrado: ' + nome.trim());
+    }
+}
+function verificarNomeUsuario() {
+    if (!localStorage.getItem('bsoft_usuario_nome')) {
+        const nome = prompt('👋 Olá! Antes de continuar, informe seu nome para identificação nos logs do sistema:');
+        if (nome && nome.trim()) localStorage.setItem('bsoft_usuario_nome', nome.trim());
+    }
 }
 async function openLogPanel() {
     const s = prompt("Senha Administrativa:");
