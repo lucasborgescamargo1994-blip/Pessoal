@@ -158,7 +158,22 @@
         .btn-icon:hover { background: var(--primary-light); border-color: var(--primary-border); color: var(--primary); }
         .btn-toggle-sidebar { display: none; width: 32px; height: 32px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); cursor: pointer; font-size: 16px; transition: all 0.2s; color: var(--text-muted); align-items: center; justify-content: center; }
 
-        #adminPanel, #mcpPanel { display: none; flex-direction: column; gap: 8px; padding: 12px 16px; flex: 0 0 auto; }
+        #adminPanel, #mcpPanel, #logPanel { display: none; flex-direction: column; gap: 8px; padding: 12px 16px; flex: 0 0 auto; }
+        #logPanel { background: #f0f9ff; border-bottom: 2px solid #7dd3fc; }
+        .log-table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+        .log-table th { background: #0ea5e9; color: white; padding: 6px 8px; text-align: left; position: sticky; top: 0; z-index: 1; white-space: nowrap; }
+        .log-table td { padding: 5px 8px; border-bottom: 1px solid #e0f2fe; vertical-align: top; }
+        .log-table tbody tr:hover td { background: #e0f2fe; }
+        .log-badge-pendente { color: #92400e; background: #fef3c7; padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 700; white-space: nowrap; }
+        .log-badge-positivo { color: #166534; background: #dcfce7; padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 700; white-space: nowrap; }
+        .log-badge-negativo { color: #991b1b; background: #fee2e2; padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 700; white-space: nowrap; }
+        .log-th-sort { cursor: pointer; user-select: none; }
+        .log-th-sort:hover { background: #0284c7; }
+        .log-btn-edit { background: #3b82f6; color: white; border: none; border-radius: 4px; padding: 2px 7px; cursor: pointer; font-size: 11px; font-weight: 600; }
+        .log-btn-del { background: #ef4444; color: white; border: none; border-radius: 4px; padding: 2px 7px; cursor: pointer; font-size: 11px; font-weight: 600; margin-left: 3px; }
+        .log-btn-save { background: #16a34a; color: white; border: none; border-radius: 4px; padding: 3px 9px; cursor: pointer; font-size: 11px; font-weight: 600; }
+        .log-btn-cancel { background: #6b7280; color: white; border: none; border-radius: 4px; padding: 3px 7px; cursor: pointer; font-size: 11px; font-weight: 600; margin-left: 3px; }
+        .log-edit-inp { padding: 4px 7px; border: 1px solid #bae6fd; border-radius: 5px; font-size: 11px; font-family: inherit; width: 100%; box-sizing: border-box; outline: none; }
         #adminPanel { background: #fff7ed; border-bottom: 2px solid var(--primary-border); }
         #mcpPanel { background: #f0f9ff; border-bottom: 2px solid #bae6fd; }
         #mcpPanel label { font-size: 12px; font-weight: 600; color: #0369a1; }
@@ -758,6 +773,7 @@
             <div class="header-actions">
                 <button class="btn-icon" onclick="openMCP()" title="Configurar API (MCP)">⚙️</button>
                 <button class="btn-icon" onclick="openDBEditor()" title="Editor de Banco de Dados">🗄️</button>
+                <button class="btn-icon" onclick="openLogPanel()" title="Gestor de Log">📋</button>
                 <button class="btn-icon" onclick="openAdmin()" title="Admin">🔑</button>
             </div>
         </header>
@@ -841,6 +857,28 @@
                     <div style="font-size:10px;color:#b91c1c;margin-top:1px;">Apaga conversas, configurações e cache local.</div>
                 </div>
                 <button onclick="limparTudoERedefinir()" style="background:#dc2626;color:white;padding:6px 14px;border:none;border-radius:7px;cursor:pointer;font-size:12px;font-weight:700;white-space:nowrap;">🗑️ Limpar Tudo</button>
+            </div>
+        </div>
+
+        <div id="logPanel">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                <strong style="color:#0369a1;font-size:13px;">📋 Gestor de Log</strong>
+                <div style="display:flex;gap:6px;">
+                    <button onclick="carregarLogs()" style="background:#0ea5e9;color:white;border:none;border-radius:7px;padding:5px 12px;cursor:pointer;font-size:12px;font-weight:600;">🔄 Atualizar</button>
+                    <button onclick="closeLogPanel()" style="background:var(--border);color:var(--text-muted);border:none;border-radius:7px;padding:5px 12px;cursor:pointer;font-size:12px;font-weight:600;">✕ Fechar</button>
+                </div>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px;">
+                <input id="logBusca" type="text" placeholder="🔍 Pesquisar por texto em todos os campos..." oninput="renderLogs()" style="flex:1;padding:6px 10px;border:1px solid #bae6fd;border-radius:7px;font-size:12px;font-family:inherit;outline:none;">
+                <select id="logFiltroFeedback" onchange="renderLogs()" style="padding:6px 10px;border:1px solid #bae6fd;border-radius:7px;font-size:12px;font-family:inherit;outline:none;background:white;cursor:pointer;">
+                    <option value="">Todos os feedbacks</option>
+                    <option value="Pendente">⏳ Pendente</option>
+                    <option value="Positivo">👍 Positivo</option>
+                    <option value="Negativo">👎 Negativo</option>
+                </select>
+            </div>
+            <div id="logContainer" style="overflow-y:auto;max-height:380px;border:1px solid #bae6fd;border-radius:8px;background:white;">
+                <div style="text-align:center;color:#6b7280;padding:24px;font-size:13px;">Clique em 🔄 Atualizar para carregar os logs.</div>
             </div>
         </div>
 
@@ -1598,14 +1636,14 @@ async function handleChat() {
 
     const ps = `🏢 VOCÊ É UM AGENTE DE SUPORTE DA BSOFT TMS\n\n${ch}\n\n🎯 Atenda o cliente de forma PROFISSIONAL e DIDÁTICA.\n\n📋 
 	
-	REGRAS:\n1. Use APENAS informações do manual ou fontes oficiais.\n2. NUNCA invente. 
-	Se não souber, diga que vai ativar o Machine Learning.\n3. 
-	Mantenha o contexto da conversa.\n4. Seja conversacional e humano.\n5. 
-	Explique passo a passo com caminhos do menu.\n6. 
-	Diferencie: CT-e, MDF-e, NF-e, NFS-e, Minuta, OC, CIOT, VPO.\n\n${mi}\n📚 
-	CONHECIMENTO:\n${es}\n${ido}${ar}${conhecimentoRepositorio}${hc}\n\n🗣️ 
-	PERGUNTA: "${query}"\n\n📝 Responda como um agente humano. 
-	Use **negrito** para destacar.${vum ? ' Se não encontrou, DIGA que vai ativar ML.' : ''}`;
+	REGRAS:\n1. Use APENAS informações do manual ou fontes oficiais.\n2. NUNCA invente.
+	Se não encontrar no manual, informe educadamente que não encontrou a informação no manual e peça para reformular a pergunta ou perguntar sobre outro assunto.\n3.
+	Mantenha o contexto da conversa.\n4. Seja conversacional e humano.\n5.
+	Explique passo a passo com caminhos do menu.\n6.
+	Diferencie: CT-e, MDF-e, NF-e, NFS-e, Minuta, OC, CIOT, VPO.\n\n${mi}\n📚
+	CONHECIMENTO:\n${es}\n${ido}${ar}${conhecimentoRepositorio}${hc}\n\n🗣️
+	PERGUNTA: "${query}"\n\n📝 Responda como um agente humano.
+	Use **negrito** para destacar.${vum ? ' Não encontrou no manual — peça gentilmente para reformular a pergunta ou perguntar sobre outro assunto do Bsoft TMS.' : ''}`;
 
     try {
         const result = await callMCPSemPensamento([{ role: 'user', content: ps }], { temperature: 0.4, maxTokens: 4096 });
@@ -1632,10 +1670,10 @@ async function handleChat() {
             </div>`;
         document.getElementById('chatStream').appendChild(card); scrollToBottom(true);
         adicionarMensagemNaConversa('ai', result.text.replace(/\*\*(.*?)\*\*/g, '$1'));
-        if (vum || result.text.toLowerCase().includes('não encontrei') || result.text.toLowerCase().includes('machine learning')) { setTimeout(async () => { await ativarMachineLearning(query); }, 1500); }
     } catch (e) {
-        ld.remove(); appendMessage('ai', '❌ Não encontrei esta informação. Vou ativar o <b>Machine Learning</b>...'); adicionarMensagemNaConversa('ai', '❌ Ativando ML...');
-        setTimeout(async () => { await ativarMachineLearning(query); }, 1000);
+        ld.remove();
+        appendMessage('ai', '😕 <b>Não encontrei</b> esta informação no manual. Por favor, tente <b>reformular a pergunta</b> ou pergunte sobre outro assunto do Bsoft TMS.');
+        adicionarMensagemNaConversa('ai', 'Não encontrei esta informação no manual. Por favor, reformule a pergunta ou pergunte sobre outro assunto.');
     }
 }
 
@@ -1676,7 +1714,7 @@ async function saveMLFeedback(id, tipo, btn) {
 }
 
 async function processarProximaSolucao(po) {
-    if (filaSolucoes.length === 0) { appendMessage('ai', '😕 Sem mais soluções. Ativando <b>Machine Learning</b>...'); setTimeout(async () => { await ativarMachineLearning(po); }, 1000); return; }
+    if (filaSolucoes.length === 0) { appendMessage('ai', '😕 <b>Não encontrei mais soluções</b> no manual para essa pergunta. Tente <b>reformular</b> ou pergunte sobre outro assunto do Bsoft TMS.'); adicionarMensagemNaConversa('ai', 'Não encontrei mais soluções no manual. Reformule a pergunta ou pergunte sobre outro assunto.'); return; }
     const sa = filaSolucoes.shift(); appendMessage('system', '🔍 Outra solução do manual...');
     document.getElementById('searchInput').value = `Solução alternativa: ${sa.erro}`; await handleChat();
 }
@@ -2101,7 +2139,8 @@ function ehCriacaoRegra(query) {
         'calculo de frete regra','calculo inverso icms','simples nacional regra'
     ];
     return padroes.some(p => q.includes(p)) ||
-           /criar.{0,20}regra|regra.{0,20}criar|nova.{0,10}regra/.test(q);
+           /criar.{0,20}regra|regra.{0,20}criar|nova.{0,10}regra/.test(q) ||
+           /\bregras?\b/.test(q);
 }
 
 function mostrarWizardContrato(queryOriginal){
@@ -2363,7 +2402,8 @@ function logSearch(query, found) {
                 pergunta: query,
                 encontrou: found,
                 feedback: "Pendente",
-                timestamp: currentLogTimestamp
+                timestamp: currentLogTimestamp,
+                usuario_windows: getWindowsUser()
             }).then(({error}) => { if(error) console.error('logSearch error:', error); });
         } catch(e) { console.error(e); }
     } else {
@@ -2431,6 +2471,102 @@ async function sendDetailedFeedback(logIndex, btn) {
 // ═══════════════════════════════════════════════════════════
 function openAdmin() { if (prompt("Senha Administrativa:") === CORRECT_PASSWORD) document.getElementById('adminPanel').style.display = 'flex'; }
 function closeAdmin() { document.getElementById('adminPanel').style.display = 'none'; }
+
+function getWindowsUser() {
+    try {
+        const m = window.location.href.match(/[Uu]sers\/([^\/]+)/);
+        if (m) return decodeURIComponent(m[1]);
+    } catch(e) {}
+    return 'Desconhecido';
+}
+async function openLogPanel() {
+    const s = prompt("Senha Administrativa:");
+    if (s === CORRECT_PASSWORD) { document.getElementById('logPanel').style.display = 'flex'; await carregarLogs(); }
+    else if (s !== null) alert("Senha incorreta!");
+}
+function closeLogPanel() { document.getElementById('logPanel').style.display = 'none'; }
+let _logsData=[],_logsSortCol='created_at',_logsSortDir=-1;
+function renderLogs(){
+    const container=document.getElementById('logContainer');
+    if(!container)return;
+    const busca=(document.getElementById('logBusca')?.value||'').toLowerCase().trim();
+    const filtroFb=document.getElementById('logFiltroFeedback')?.value||'';
+    let dados=[..._logsData];
+    if(busca)dados=dados.filter(l=>(l.pergunta||'').toLowerCase().includes(busca)||(l.usuario_windows||'').toLowerCase().includes(busca)||(l.feedback||'').toLowerCase().includes(busca)||(l.motivo||'').toLowerCase().includes(busca));
+    if(filtroFb)dados=dados.filter(l=>l.feedback===filtroFb);
+    dados.sort((a,b)=>{let va=a[_logsSortCol]??'',vb=b[_logsSortCol]??'';if(typeof va==='boolean')va=va?1:0;if(typeof vb==='boolean')vb=vb?1:0;return va<vb?-_logsSortDir:va>vb?_logsSortDir:0;});
+    if(dados.length===0){container.innerHTML='<div style="text-align:center;color:#6b7280;padding:24px;">Nenhum registro encontrado.</div>';return;}
+    const si=col=>_logsSortCol===col?(_logsSortDir===-1?' ▼':' ▲'):' ⇅';
+    let html=`<table class="log-table"><thead><tr>
+        <th class="log-th-sort" onclick="sortLogs('created_at')">Data/Hora${si('created_at')}</th>
+        <th class="log-th-sort" onclick="sortLogs('usuario_windows')">Usuário Windows${si('usuario_windows')}</th>
+        <th class="log-th-sort" onclick="sortLogs('pergunta')">Pergunta${si('pergunta')}</th>
+        <th class="log-th-sort" onclick="sortLogs('encontrou')">Encontrou${si('encontrou')}</th>
+        <th class="log-th-sort" onclick="sortLogs('feedback')">Feedback${si('feedback')}</th>
+        <th>Motivo</th><th style="min-width:60px;">Ações</th></tr></thead><tbody>`;
+    dados.forEach(log=>{
+        const id=log.id;
+        const dt=log.created_at?new Date(log.created_at).toLocaleString('pt-BR'):(log.timestamp?new Date(log.timestamp).toLocaleString('pt-BR'):'-');
+        const usuario=log.usuario_windows||'—';
+        const pergFull=log.pergunta||'';
+        const pergTrunc=pergFull.length>80?pergFull.substring(0,80)+'…':pergFull;
+        const encontrou=log.encontrou===true||log.encontrou==='true'?'✅ Sim':(log.encontrou===false||log.encontrou==='false'?'❌ Não':'—');
+        let badge='';
+        if(log.feedback==='Positivo')badge='<span class="log-badge-positivo">👍 Positivo</span>';
+        else if(log.feedback==='Negativo')badge='<span class="log-badge-negativo">👎 Negativo</span>';
+        else badge='<span class="log-badge-pendente">⏳ Pendente</span>';
+        const motivo=log.motivo?`<span title="${log.motivo.replace(/"/g,'&quot;')}" style="cursor:help;">${log.motivo.substring(0,50)}${log.motivo.length>50?'…':''}</span>`:'<span style="color:#d1d5db;">—</span>';
+        html+=`<tr id="log-row-${id}"><td style="white-space:nowrap;color:#374151;">${dt}</td><td style="white-space:nowrap;font-weight:600;color:#0369a1;">${usuario}</td><td title="${pergFull.replace(/"/g,'&quot;')}">${pergTrunc}</td><td style="text-align:center;">${encontrou}</td><td>${badge}</td><td style="font-size:11px;color:#6b7280;">${motivo}</td><td style="white-space:nowrap;"><button class="log-btn-edit" onclick="editarLog('${id}')">✏️</button><button class="log-btn-del" onclick="excluirLog('${id}')">🗑️</button></td></tr>`;
+    });
+    html+='</tbody></table>';
+    container.innerHTML=html;
+}
+function sortLogs(col){if(_logsSortCol===col)_logsSortDir*=-1;else{_logsSortCol=col;_logsSortDir=-1;}renderLogs();}
+async function carregarLogs(){
+    const container=document.getElementById('logContainer');
+    container.innerHTML='<div style="text-align:center;padding:24px;color:#6b7280;">⏳ Carregando...</div>';
+    try{
+        const{data,error}=await sb.from('logs').select('*').order('created_at',{ascending:false}).limit(1000);
+        if(error)throw error;
+        _logsData=data||[];
+        renderLogs();
+    }catch(e){container.innerHTML=`<div style="text-align:center;color:#dc2626;padding:24px;">Erro ao carregar logs: ${e.message}</div>`;}
+}
+function editarLog(id){
+    const log=_logsData.find(l=>String(l.id)===String(id));
+    if(!log)return;
+    const row=document.getElementById('log-row-'+id);
+    if(!row)return;
+    const perg=(log.pergunta||'').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    const mot=(log.motivo||'').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    row.innerHTML=`<td colspan="6" style="padding:8px 10px;"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
+        <div style="flex:2;min-width:180px;"><div style="font-size:10px;color:#6b7280;font-weight:700;margin-bottom:3px;">PERGUNTA</div><input id="elog-p-${id}" class="log-edit-inp" value="${perg}"></div>
+        <div style="min-width:130px;"><div style="font-size:10px;color:#6b7280;font-weight:700;margin-bottom:3px;">FEEDBACK</div><select id="elog-f-${id}" class="log-edit-inp" style="width:auto;cursor:pointer;"><option value="Pendente" ${log.feedback==='Pendente'?'selected':''}>⏳ Pendente</option><option value="Positivo" ${log.feedback==='Positivo'?'selected':''}>👍 Positivo</option><option value="Negativo" ${log.feedback==='Negativo'?'selected':''}>👎 Negativo</option></select></div>
+        <div style="flex:2;min-width:150px;"><div style="font-size:10px;color:#6b7280;font-weight:700;margin-bottom:3px;">MOTIVO</div><input id="elog-m-${id}" class="log-edit-inp" value="${mot}"></div>
+    </div></td>
+    <td style="white-space:nowrap;padding:8px;"><button class="log-btn-save" onclick="salvarLog('${id}')">💾 Salvar</button><button class="log-btn-cancel" onclick="renderLogs()">✕</button></td>`;
+}
+async function salvarLog(id){
+    const pergunta=document.getElementById('elog-p-'+id)?.value||'';
+    const feedback=document.getElementById('elog-f-'+id)?.value||'';
+    const motivo=document.getElementById('elog-m-'+id)?.value||'';
+    try{
+        const{error}=await sb.from('logs').update({pergunta,feedback,motivo}).eq('id',id);
+        if(error)throw error;
+        const log=_logsData.find(l=>String(l.id)===String(id));
+        if(log){log.pergunta=pergunta;log.feedback=feedback;log.motivo=motivo;}
+        renderLogs();
+    }catch(e){alert('Erro ao salvar: '+e.message);}
+}
+async function excluirLog(id){
+    if(!confirm('Remover este registro de log permanentemente?'))return;
+    try{
+        const{error}=await sb.from('logs').delete().eq('id',id);
+        if(error)throw error;
+        _logsData=_logsData.filter(l=>String(l.id)!==String(id));
+        renderLogs();
+    }catch(e){alert('Erro ao remover: '+e.message);}
+}
 function limparTudoERedefinir() {
     const msg1 = [
         '⚠️  AÇÃO IRREVERSÍVEL — LIMPEZA TOTAL',
