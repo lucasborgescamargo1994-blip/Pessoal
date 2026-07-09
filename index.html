@@ -1196,14 +1196,30 @@ async function callCurrentMCP(messages,config={}){
 
 function filtrarPensamentoAlto(texto) {
     if (!texto) return { texto: '', eraPensamento: false };
-    const abre = '<' + 'thinking' + '>';
-    const fecha = '</' + 'thinking' + '>';
-    const rBloco = new RegExp(abre + '[\\s\\S]*?' + fecha, 'gi');
+    // Remove blocos completos <thinking>...</thinking>
+    const rBloco = new RegExp('<thinking>[\\s\\S]*?</thinking>', 'gi');
     let limpo = texto.replace(rBloco, '').trim();
-    const teveBlocos = limpo.length !== texto.trim().length;
+    // Remove bloco aberto sem fechamento (resposta truncada mid-thinking)
+    const idxAberto = limpo.toLowerCase().indexOf('<thinking>');
+    if (idxAberto !== -1) limpo = limpo.substring(0, idxAberto).trim();
+    const teveBlocos = limpo.length < texto.trim().length;
     if (teveBlocos && limpo.length >= 30) return { texto: limpo, eraPensamento: false };
     if (teveBlocos && limpo.length < 30) return { texto: '', eraPensamento: true };
     return { texto: texto.trim(), eraPensamento: false };
+}
+function renderMd(txt) {
+    if (!txt) return '';
+    let h = txt
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+        .replace(/\*(.*?)\*/g, '<i>$1</i>');
+    h = h.replace(/^[ \t]*[-*] (.+)$/gm, '<li>$1</li>');
+    h = h.replace(/^[ \t]*\d+\. (.+)$/gm, '<li>$1</li>');
+    h = h.replace(/((?:<li>.+<\/li>\n?)+)/g, '<ul style="margin:6px 0 6px 18px;padding:0;">$1</ul>');
+    h = h.replace(/\n/g, '<br>');
+    return h;
 }
 async function callMCPSemPensamento(messages, config = {}, maxTentativas = 3) {
     for (let t = 1; t <= maxTentativas; t++) {
@@ -1647,13 +1663,12 @@ async function handleChat() {
 	Explique passo a passo com caminhos do menu.\n6.
 	Diferencie: CT-e, MDF-e, NF-e, NFS-e, Minuta, OC, CIOT, VPO.\n\n${mi}\n📚
 	CONHECIMENTO:\n${es}\n${ido}${ar}${conhecimentoRepositorio}${hc}\n\n🗣️
-	PERGUNTA: "${query}"\n\n📝 Responda como um agente humano.
-	Use **negrito** para destacar.${vum ? ' Não encontrou no manual — peça gentilmente para reformular a pergunta ou perguntar sobre outro assunto do Bsoft TMS.' : ''}`;
+	PERGUNTA: "${query}"\n\n📝 FORMATO DE RESPOSTA OBRIGATÓRIO:\n- Responda SEMPRE em Markdown limpo.\n- NUNCA responda em JSON ou formato estruturado.\n- Use **negrito** para termos importantes.\n- Use listas com - para passos sequenciais.\n- Responda como um agente humano, de forma conversacional.${vum ? '\n- Não encontrou no manual — peça gentilmente para reformular a pergunta ou perguntar sobre outro assunto do Bsoft TMS.' : ''}`;
 
     try {
         const result = await callMCPSemPensamento([{ role: 'user', content: ps }], { temperature: 0.4, maxTokens: 4096 });
         ld.remove();
-        const rf2 = result.text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
+        const rf2 = renderMd(result.text);
         const iaUsada = result._iaUsada || 'OpenRouter';
         const iaModelo = (result._iaModelo || '').split('/').pop();
         const iaBadge = iaUsada === 'Gemini'
