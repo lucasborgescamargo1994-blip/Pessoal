@@ -1952,6 +1952,7 @@ function mostrarWizardRegra(queryOriginal){
       <label class="wizard-radio-label"><input type="radio" name="wCalcFrete" value="tf_vt_doc"> Tarifa final × valor total <small style="color:#6b7280;">(campo Valor do documento)</small></label>
       <label class="wizard-radio-label"><input type="radio" name="wCalcFrete" value="tf_vt_prod"> Tarifa final × valor total <small style="color:#6b7280;">(campo Valor do produto)</small></label>
       <label class="wizard-radio-label"><input type="radio" name="wCalcFrete" value="prest_icms"> Total da prestação - valor do ICMS</label>
+      <label class="wizard-radio-label"><input type="radio" name="wCalcFrete" value="manter"> Manter da regra existente</label>
     </div>
   </div>
   <div class="wizard-subsection" style="margin-top:14px;">
@@ -1960,6 +1961,7 @@ function mostrarWizardRegra(queryOriginal){
       <label class="wizard-radio-label"><input type="radio" name="wBaseCalc" value="nenhum" checked onchange="wToggleBaseCalc(this.value)"> Nenhum</label>
       <label class="wizard-radio-label"><input type="radio" name="wBaseCalc" value="valorFrete" onchange="wToggleBaseCalc(this.value)"> Valor frete</label>
       <label class="wizard-radio-label"><input type="radio" name="wBaseCalc" value="totalPrestacao" onchange="wToggleBaseCalc(this.value)"> Total Prestação</label>
+      <label class="wizard-radio-label"><input type="radio" name="wBaseCalc" value="manter" onchange="wToggleBaseCalc(this.value)"> Manter da regra existente</label>
     </div>
     <div id="wBaseCalcChecks" style="display:none;margin-top:8px;">
       <div style="font-size:11px;color:#6b7280;margin-bottom:4px;">Somar ao valor base:</div>
@@ -1982,6 +1984,7 @@ function mostrarWizardRegra(queryOriginal){
     <div style="display:flex;gap:16px;margin:4px 0 6px;">
       <label class="wizard-radio-label"><input type="radio" name="wCalcPrest" value="sim" checked onchange="wToggleChecks('prest',this.value)"> Sim</label>
       <label class="wizard-radio-label"><input type="radio" name="wCalcPrest" value="nao" onchange="wToggleChecks('prest',this.value)"> Não</label>
+      <label class="wizard-radio-label"><input type="radio" name="wCalcPrest" value="manter" onchange="wToggleChecks('prest',this.value)"> Manter da regra existente</label>
     </div>
     <div id="wPrestChecks">
       <div class="wizard-cbx-grid">
@@ -2004,6 +2007,7 @@ function mostrarWizardRegra(queryOriginal){
       <label class="wizard-radio-label"><input type="radio" name="wCalcServ" value="nao" checked onchange="wToggleServCalc(this.value)"> Nenhum</label>
       <label class="wizard-radio-label"><input type="radio" name="wCalcServ" value="valorFrete" onchange="wToggleServCalc(this.value)"> Valor frete</label>
       <label class="wizard-radio-label"><input type="radio" name="wCalcServ" value="totalPrestacao" onchange="wToggleServCalc(this.value)"> Total Prestação</label>
+      <label class="wizard-radio-label"><input type="radio" name="wCalcServ" value="manter" onchange="wToggleServCalc(this.value)"> Manter da regra existente</label>
     </div>
     <div id="wServChecks" style="display:none;margin-top:8px;">
       <div class="wizard-cbx-grid">
@@ -2033,10 +2037,11 @@ function mostrarWizardRegra(queryOriginal){
 
 function wToggleChecks(tipo,valor){const id=tipo==='prest'?'wPrestChecks':'wServChecks';const el=document.getElementById(id);if(el)el.style.display=valor==='sim'?(tipo==='prest'?'block':'grid'):'none';}
 function wOnRegraPreChange(val){const icms=document.querySelector('input[name="wPrest"][value="valorICMS"]');if(icms)icms.checked=(val==='soma_icms');}
-function wToggleBaseCalc(val){const el=document.getElementById('wBaseCalcChecks');if(el)el.style.display=val==='nenhum'?'none':'block';}
+function wToggleBaseCalc(val){const el=document.getElementById('wBaseCalcChecks');if(el)el.style.display=(val==='nenhum'||val==='manter')?'none':'block';}
 function wToggleEspecificar(checked){const el=document.getElementById('wBaseEspecificarTxt');if(el)el.style.display=checked?'block':'none';}
 function wTogglePrestEspecificar(checked){const el=document.getElementById('wPrestEspecificarTxt');if(el)el.style.display=checked?'block':'none';}
-function wToggleServCalc(val){const el=document.getElementById('wServChecks');if(el)el.style.display=val==='nao'?'none':'block';}
+function wToggleServCalc(val){const el=document.getElementById('wServChecks');if(el)el.style.display=(val==='nao'||val==='manter')?'none':'block';}
+function wCfToggleFrete(val){const el=document.getElementById('wDescontoChecks');if(el)el.style.display=val==='manter'?'none':'block';}
 function wToggleServEspecificar(checked){const el=document.getElementById('wServEspecificarTxt');if(el)el.style.display=checked?'block':'none';}
 function wToggleDescontos(val){const el=document.getElementById('wDescontoChecks');if(el)el.style.display=val==='com_desconto'?'block':'none';}
 
@@ -2083,12 +2088,12 @@ async function enviarWizardRegra(){
     const pParts=[...prestCbs.map(f=>'obt("'+f+'")')];
     if(prestTodosOutros)pParts.push('[identificar no print do CT-e TODOS os campos personalizados outros visíveis e incluir obt("nomeinterno") de cada um]');
     if(prestEspecificar&&prestEspecificarTxt)prestEspecificarTxt.split(',').forEach(s=>{s=s.trim();if(s)pParts.push('obt("'+s+'")')});
-    const pCfg=calcPrest==='nao'?'NAO calcular (omitir def("totalPrestacao"))':(pParts.length?'FORMULA OBRIGATORIA — copiar exatamente: def("totalPrestacao", ('+pParts.join(' + ')+'))':'NAO calcular totalPrestacao');
+    const pCfg=calcPrest==='manter'?'MANTER DA REGRA BASE — nao alterar totalPrestacao':calcPrest==='nao'?'NAO calcular (omitir def("totalPrestacao"))':(pParts.length?'FORMULA OBRIGATORIA — copiar exatamente: def("totalPrestacao", ('+pParts.join(' + ')+'))':'NAO calcular totalPrestacao');
     const sExtra=[...servCbs.map(f=>'obt("'+f+'")')];
     if(servTodosOutros)sExtra.push('[identificar no print do CT-e TODOS os campos personalizados outros visíveis e incluir obt("nomeinterno") de cada um]');
     if(servEspecificar&&servEspecificarTxt)servEspecificarTxt.split(',').forEach(s=>{s=s.trim();if(s)sExtra.push('obt("'+s+'")')});
-    const sParts=calcServ!=='nao'?['obt("'+calcServ+'")',...sExtra]:[];
-    const sCfg=calcServ==='nao'?'NAO calcular (omitir def("totalServico"))':(sParts.length?'FORMULA OBRIGATORIA — copiar exatamente: def("totalServico", ('+sParts.join(' + ')+'))':'NAO calcular totalServico');
+    const sParts=(calcServ!=='nao'&&calcServ!=='manter')?['obt("'+calcServ+'")',...sExtra]:[];
+    const sCfg=calcServ==='manter'?'MANTER DA REGRA BASE — nao alterar totalServico':calcServ==='nao'?'NAO calcular (omitir def("totalServico"))':(sParts.length?'FORMULA OBRIGATORIA — copiar exatamente: def("totalServico", ('+sParts.join(' + ')+'))':'NAO calcular totalServico');
     // Construir formula da base de calculo a partir das selecoes do wizard
     let bFormulaPartes=null;
     if(baseCalc!=='nenhum'){
@@ -2101,7 +2106,9 @@ async function enviarWizardRegra(){
     const useInverso=regraPre==='inverso'||calcFrete==='prest_icms';
     const semIcms=regraPre==='simples';
     let icmsBloco='';
-    if(!semIcms){
+    if(baseCalc==='manter'){
+        icmsBloco='__MANTER__';
+    }else if(!semIcms){
         const bF=bFormulaPartes?bFormulaPartes.join(' + '):'obt("valorFrete")';
         if(useInverso){
             icmsBloco='var inverso = ((100 - obt("aliquota")) /100)\n'
@@ -2121,15 +2128,15 @@ async function enviarWizardRegra(){
         }
     }
     const configTxt=['CONFIGURACAO DO USUARIO:',
-        '- Calculo frete: '+(CALC_FRETE_MAP[calcFrete]||calcFrete),
-        icmsBloco?'- Bloco ICMS OBRIGATORIO — copiar exatamente:\n'+icmsBloco:'- ICMS: nao incluir calculo de ICMS',
+        '- Calculo frete: '+(calcFrete==='manter'?'MANTER DA REGRA BASE — nao alterar calculo de valorFrete/tarifaCalculada existente':CALC_FRETE_MAP[calcFrete]||calcFrete),
+        icmsBloco==='__MANTER__'?'- Base de calculo ICMS: MANTER DA REGRA BASE — nao alterar bloco ICMS existente':(icmsBloco?'- Bloco ICMS OBRIGATORIO — copiar exatamente:\n'+icmsBloco:'- ICMS: nao incluir calculo de ICMS'),
         '- totalPrestacao: '+pCfg,
         '- totalServico: '+sCfg,
         regraBase?'\n'+regraBase:'',
         descricao?'\nSOLICITACAO: '+descricao:'',
         _wizardQueryOriginal?'\nCONTEXTO: '+_wizardQueryOriginal:''
     ].filter(Boolean).join('\n');
-    const sysMsg='Voce e um especialista em regras de frete do Bsoft TMS.\nREGRA CRITICA: As linhas marcadas como FORMULA OBRIGATORIA e BLOCO ICMS OBRIGATORIO devem ser copiadas EXATAMENTE como estao na regra gerada. NAO adicione campos extras nao listados. NAO remova campos listados. Os campos entre colchetes [] indicam que voce deve identificar os campos no print enviado pelo usuario e substituir pela formula correta com obt().\nGere APENAS o codigo da regra pronto para uso, entre triple backticks.\n\nDOCUMENTACAO:\n'+CONTEXTO_REGRAS;
+    const sysMsg='Voce e um especialista em regras de frete do Bsoft TMS.\nREGRA CRITICA: As linhas marcadas como FORMULA OBRIGATORIA e BLOCO ICMS OBRIGATORIO devem ser copiadas EXATAMENTE como estao na regra gerada. NAO adicione campos extras nao listados. NAO remova campos listados. Os campos entre colchetes [] indicam que voce deve identificar os campos no print enviado pelo usuario e substituir pela formula correta com obt().\nGere APENAS o codigo da regra pronto para uso, entre triple backticks.\n\nEXEMPLO DE CONDICAO POR UF E OBSERVACAO:\nPara verificar UFIni e UFFim use $V(\'dados_UFIni\') e $V(\'dados_UFFim\').\nPara montar observacao cadastrada no sistema use montaObsChave(\'chave\', true); para observacao livre use montaObs(true).\nExemplo — quando UFIni for RS e UFFim for diferente de RS, montar observacao com chave 11:\nif ( $V(\'dados_UFIni\') == \'RS\' && $V(\'dados_UFFim\') != \'RS\' ) {\n   montaObsChave(\'11\', true);\n} else {\n   montaObs(true);\n}\n\nDOCUMENTACAO:\n'+CONTEXTO_REGRAS;
     let userContent;
     if(_wizardCteBase64||_wizardTabelaBase64){
         userContent=[{type:'text',text:'Monte a regra conforme as configuracoes. Se houver imagens, identifique os campos personalizados visiveis e inclua-os conforme solicitado.\n'+configTxt}];
@@ -2171,7 +2178,7 @@ function mostrarWizardContrato(queryOriginal){
     const card=document.createElement('div');
     card.id='wizardContratoCard';
     card.className='answer-card';
-    card.innerHTML=`<div style="background:#f5f3ff;padding:8px 15px;border-bottom:1px solid #ddd6fe;font-size:11px;color:#5b21b6;font-weight:600;">🚛 Assistente — Contrato de Frete</div><div style="padding:12px 15px 4px;"><div class="wizard-section"><div class="wizard-label">📋 Regra existente (opcional)</div><textarea id="wCfRegraCola" class="wizard-textarea" placeholder="Cole aqui a regra existente que deseja editar/modificar..." style="min-height:70px;"></textarea><div style="font-size:11px;color:#6b7280;margin:8px 0 4px;">Ou selecione uma predefinida como base:</div><div style="display:flex;flex-direction:column;gap:3px;"><label class="wizard-radio-label"><input type="radio" name="wCfRegraPre" value="" checked> Nenhuma (criar do zero)</label><label class="wizard-radio-label"><input type="radio" name="wCfRegraPre" value="combinado_motorista"> Combinado Motorista</label></div></div><div class="wizard-section"><div class="wizard-label">⚙️ Configurações da Regra</div><div class="wizard-subsection"><b>Valor total origem, selecionar descontos:</b><div id="wDescontoChecks" style="margin-top:8px;"><div class="wizard-cbx-grid"><label class="wizard-radio-label"><input type="checkbox" name="wCfDesconto" value="outrosDescontos"> Outros Descontos</label><label class="wizard-radio-label"><input type="checkbox" name="wCfDesconto" value="totalDescontoINSS" checked> Valor Desconto INSS</label><label class="wizard-radio-label"><input type="checkbox" name="wCfDesconto" value="totalDescontoSEST" checked> Desconto SEST/SENAT (Valor)</label><label class="wizard-radio-label"><input type="checkbox" name="wCfDesconto" value="descontoIRRF" checked> Desconto IRRF</label><label class="wizard-radio-label"><input type="checkbox" name="wCfDesconto" value="descontoSeguro"> Desconto de Seguro</label><label class="wizard-radio-label"><input type="checkbox" name="wCfDesconto" value="valorPedagio"> Valor de Pedágio</label><label class="wizard-radio-label"><input type="checkbox" name="wCfDesconto" value="valorCombustivel"> Combustível</label></div></div></div></div><div class="wizard-section" style="border:none;"><div class="wizard-label">📝 O que precisa criar/alterar na regra?</div><textarea id="wCfDescricao" class="wizard-textarea" placeholder="Descreva o que necessita que crie ou modifique na regra..." style="min-height:100px;"></textarea></div><div style="padding:12px 15px 20px;"><button id="wCfBtnEnviar" class="wizard-submit" onclick="enviarWizardContrato()">🚀 Gerar Regra com IA</button></div></div>`;
+    card.innerHTML=`<div style="background:#f5f3ff;padding:8px 15px;border-bottom:1px solid #ddd6fe;font-size:11px;color:#5b21b6;font-weight:600;">🚛 Assistente — Contrato de Frete</div><div style="padding:12px 15px 4px;"><div class="wizard-section"><div class="wizard-label">📋 Regra existente (opcional)</div><textarea id="wCfRegraCola" class="wizard-textarea" placeholder="Cole aqui a regra existente que deseja editar/modificar..." style="min-height:70px;"></textarea><div style="font-size:11px;color:#6b7280;margin:8px 0 4px;">Ou selecione uma predefinida como base:</div><div style="display:flex;flex-direction:column;gap:3px;"><label class="wizard-radio-label"><input type="radio" name="wCfRegraPre" value="" checked> Nenhuma (criar do zero)</label><label class="wizard-radio-label"><input type="radio" name="wCfRegraPre" value="combinado_motorista"> Combinado Motorista</label></div></div><div class="wizard-section"><div class="wizard-label">⚙️ Configurações da Regra</div><div class="wizard-subsection"><b>Frete líquido</b><div style="display:flex;flex-direction:column;gap:3px;margin:6px 0 8px;"><label class="wizard-radio-label"><input type="radio" name="wCfFreteOpcao" value="personalizar" checked onchange="wCfToggleFrete(this.value)"> Personalizar descontos</label><label class="wizard-radio-label"><input type="radio" name="wCfFreteOpcao" value="manter" onchange="wCfToggleFrete(this.value)"> Manter da regra existente</label></div><b style="font-size:11px;color:#374151;">Valor total origem, selecionar descontos:</b><div id="wDescontoChecks" style="margin-top:8px;"><div class="wizard-cbx-grid"><label class="wizard-radio-label"><input type="checkbox" name="wCfDesconto" value="outrosDescontos"> Outros Descontos</label><label class="wizard-radio-label"><input type="checkbox" name="wCfDesconto" value="totalDescontoINSS" checked> Valor Desconto INSS</label><label class="wizard-radio-label"><input type="checkbox" name="wCfDesconto" value="totalDescontoSEST" checked> Desconto SEST/SENAT (Valor)</label><label class="wizard-radio-label"><input type="checkbox" name="wCfDesconto" value="descontoIRRF" checked> Desconto IRRF</label><label class="wizard-radio-label"><input type="checkbox" name="wCfDesconto" value="descontoSeguro"> Desconto de Seguro</label><label class="wizard-radio-label"><input type="checkbox" name="wCfDesconto" value="valorPedagio"> Valor de Pedágio</label><label class="wizard-radio-label"><input type="checkbox" name="wCfDesconto" value="valorCombustivel"> Combustível</label></div></div></div></div><div class="wizard-section" style="border:none;"><div class="wizard-label">📝 O que precisa criar/alterar na regra?</div><textarea id="wCfDescricao" class="wizard-textarea" placeholder="Descreva o que necessita que crie ou modifique na regra..." style="min-height:100px;"></textarea></div><div style="padding:12px 15px 20px;"><button id="wCfBtnEnviar" class="wizard-submit" onclick="enviarWizardContrato()">🚀 Gerar Regra com IA</button></div></div>`;
     s.appendChild(card);
     scrollToBottom(true);
 }
@@ -2181,12 +2188,16 @@ async function enviarWizardContrato(){
     if(btn){btn.disabled=true;btn.textContent='⏳ Gerando...';}
     const regraCola=(document.getElementById('wCfRegraCola')?.value||'').trim();
     const regraPre=document.querySelector('input[name="wCfRegraPre"]:checked')?.value||'';
+    const freteOpcao=document.querySelector('input[name="wCfFreteOpcao"]:checked')?.value||'personalizar';
     const descontos=[...document.querySelectorAll('input[name="wCfDesconto"]:checked')].map(c=>c.value);
     const descricao=(document.getElementById('wCfDescricao')?.value||'').trim();
     // Build the valor= line that goes before def("freteLiquido", valor)
+    // Se "manter", usa a linha original do predefinido sem aplicar os checkboxes
+    const vFreteLiqOriginal='valor =  obt("valorTotalOrigem")  + obt("outrosAcrescimos") - obt("outrosDescontos") - obt("totalDescontoINSS") - obt("totalDescontoSEST")  - obt("descontoIRRF");';
     let vFreteLiq='valor =  obt("valorTotalOrigem")  + obt("outrosAcrescimos")';
     descontos.forEach(d=>{vFreteLiq+=' - obt("'+d+'")';});
     vFreteLiq+=';';
+    const vFreteLiqEfetivo=freteOpcao==='manter'?vFreteLiqOriginal:vFreteLiq;
     let configTxt='';
     let sysMsg='';
     if(regraPre==='combinado_motorista'&&!regraCola){
@@ -2200,7 +2211,7 @@ async function enviarWizardContrato(){
             'valorBase = (((obt("valorTotalOrigem"))*0.10)- obt("totalDescontoINSS"));',
             'def("baseCalculoIRRF", valorBase);',
             'IRRF.defineDescontoIRRF();',
-            vFreteLiq,
+            vFreteLiqEfetivo,
             'def("freteLiquido", valor);',
             'valor = obt("freteLiquido")  - obt("descontoQuebraPeso");',
             'def("saldo", valor - obt("valorAdiantamento"));',
@@ -2215,20 +2226,30 @@ async function enviarWizardContrato(){
         sysMsg='Voce e um especialista em regras de Contrato de Frete do Bsoft TMS.\nREGRA CRITICA: A REGRA COMPLETA OBRIGATORIA deve ser copiada linha por linha EXATAMENTE como esta. Nao altere, adicione nem remova nada. Se houver APLIQUE ALEM DISSO, incorpore as modificacoes mantendo o restante intacto.\nGere APENAS o codigo da regra pronto para uso, entre triple backticks.\n\nDOCUMENTACAO:\n'+CONTEXTO_CONTRATO_FRETE;
     }else{
         // Generic path: paste existing rule or criar do zero
-        const linhas=[];
-        if(descontos.includes('totalDescontoINSS')){linhas.push('valor = (obt("valorTotalOrigem") * 0.2) * (obt("descontoINSS") / 100)');linhas.push('def("totalDescontoINSS", valor);');}
-        if(descontos.includes('totalDescontoSEST')){linhas.push('valor = (obt("valorTotalOrigem") * 0.2) * (obt("descontoSEST") / 100)');linhas.push('def("totalDescontoSEST", valor);');}
-        if(descontos.includes('descontoIRRF')){const inssB=descontos.includes('totalDescontoINSS')?' - obt("totalDescontoINSS")':'';linhas.push('valorBase = (((obt("valorTotalOrigem"))*0.10)'+inssB+');');linhas.push('def("baseCalculoIRRF", valorBase);');linhas.push('IRRF.defineDescontoIRRF();');}
-        linhas.push(vFreteLiq);
-        linhas.push('def("freteLiquido", valor);');
-        const freteLiqBloco=linhas.join('\n');
-        configTxt=[
-            'CONFIGURACAO DO USUARIO (Contrato de Frete):',
-            '- BLOCO FRETE LIQUIDO OBRIGATORIO — incluir EXATAMENTE nessa posicao na regra:\n'+freteLiqBloco,
-            regraCola?'\nREGRA EXISTENTE PARA EDITAR:\n'+regraCola:'',
-            descricao?'\nSOLICITACAO: '+descricao:'',
-            _wizardContratoQuery?'\nCONTEXTO: '+_wizardContratoQuery:''
-        ].filter(Boolean).join('\n');
+        if(freteOpcao==='manter'){
+            configTxt=[
+                'CONFIGURACAO DO USUARIO (Contrato de Frete):',
+                '- Frete liquido: MANTER DA REGRA BASE — nao alterar o calculo de freteLiquido existente',
+                regraCola?'\nREGRA EXISTENTE PARA EDITAR:\n'+regraCola:'',
+                descricao?'\nSOLICITACAO: '+descricao:'',
+                _wizardContratoQuery?'\nCONTEXTO: '+_wizardContratoQuery:''
+            ].filter(Boolean).join('\n');
+        }else{
+            const linhas=[];
+            if(descontos.includes('totalDescontoINSS')){linhas.push('valor = (obt("valorTotalOrigem") * 0.2) * (obt("descontoINSS") / 100)');linhas.push('def("totalDescontoINSS", valor);');}
+            if(descontos.includes('totalDescontoSEST')){linhas.push('valor = (obt("valorTotalOrigem") * 0.2) * (obt("descontoSEST") / 100)');linhas.push('def("totalDescontoSEST", valor);');}
+            if(descontos.includes('descontoIRRF')){const inssB=descontos.includes('totalDescontoINSS')?' - obt("totalDescontoINSS")':'';linhas.push('valorBase = (((obt("valorTotalOrigem"))*0.10)'+inssB+');');linhas.push('def("baseCalculoIRRF", valorBase);');linhas.push('IRRF.defineDescontoIRRF();');}
+            linhas.push(vFreteLiq);
+            linhas.push('def("freteLiquido", valor);');
+            const freteLiqBloco=linhas.join('\n');
+            configTxt=[
+                'CONFIGURACAO DO USUARIO (Contrato de Frete):',
+                '- BLOCO FRETE LIQUIDO OBRIGATORIO — incluir EXATAMENTE nessa posicao na regra:\n'+freteLiqBloco,
+                regraCola?'\nREGRA EXISTENTE PARA EDITAR:\n'+regraCola:'',
+                descricao?'\nSOLICITACAO: '+descricao:'',
+                _wizardContratoQuery?'\nCONTEXTO: '+_wizardContratoQuery:''
+            ].filter(Boolean).join('\n');
+        }
         sysMsg='Voce e um especialista em regras de Contrato de Frete do Bsoft TMS.\nREGRA CRITICA: O BLOCO FRETE LIQUIDO OBRIGATORIO deve ser copiado EXATAMENTE no lugar correto da regra. Nao altere, adicione nem remova linhas desse bloco.\nGere APENAS o codigo da regra pronto para uso, entre triple backticks.\n\nDOCUMENTACAO:\n'+CONTEXTO_CONTRATO_FRETE;
     }
     const wCard=document.getElementById('wizardContratoCard');if(wCard)wCard.remove();
