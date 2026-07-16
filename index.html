@@ -1140,7 +1140,8 @@ function _menuBtnsHtml() {
     const s = 'display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;background:var(--surface);cursor:pointer;font-size:14px;font-weight:500;color:var(--text);text-align:left;transition:all .2s;width:100%;';
     const ho = "this.style.borderColor='var(--primary)';this.style.background='var(--primary-light)'";
     const ho2 = "this.style.borderColor='var(--border)';this.style.background='var(--surface)'";
-    return `<div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;"><button onclick="btnWelcomeSefaz()" style="${s}" onmouseover="${ho}" onmouseout="${ho2}"><span style="font-size:18px">🔍</span> <span>Erros Sefaz</span> <span style="margin-left:auto;font-size:12px;color:var(--text-muted);font-weight:400">Abre o assistente de erros SEFAZ</span></button><button onclick="btnWelcomeRegra()" style="${s}" onmouseover="${ho}" onmouseout="${ho2}"><span style="font-size:18px">📋</span> <span>Criar Regra</span> <span style="margin-left:auto;font-size:12px;color:var(--text-muted);font-weight:400">Abre o assistente de criar regra</span></button><button onclick="btnWelcomeAnalisarTela()" style="${s}" onmouseover="${ho}" onmouseout="${ho2}"><span style="font-size:18px">🖥️</span> <span>Analisar tela</span> <span style="margin-left:auto;font-size:12px;color:var(--text-muted);font-weight:400">Compartilha a tela e a IA analisa</span></button></div>`;
+    const isPiP = window.self !== window.top;
+    return `<div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;"><button onclick="btnWelcomeSefaz()" style="${s}" onmouseover="${ho}" onmouseout="${ho2}"><span style="font-size:18px">🔍</span> <span>Erros Sefaz</span> <span style="margin-left:auto;font-size:12px;color:var(--text-muted);font-weight:400">Abre o assistente de erros SEFAZ</span></button><button onclick="btnWelcomeRegra()" style="${s}" onmouseover="${ho}" onmouseout="${ho2}"><span style="font-size:18px">📋</span> <span>Criar Regra</span> <span style="margin-left:auto;font-size:12px;color:var(--text-muted);font-weight:400">Abre o assistente de criar regra</span></button><button onclick="btnWelcomeAnalisarTela()" style="${s}" onmouseover="${ho}" onmouseout="${ho2}"><span style="font-size:18px">🖥️</span> <span>Analisar tela</span> <span style="margin-left:auto;font-size:12px;color:var(--text-muted);font-weight:400">Compartilha a tela e a IA analisa</span></button>${isPiP ? '' : `<button onclick="abrirCopilot()" style="${s}" onmouseover="${ho}" onmouseout="${ho2}"><span style="font-size:18px">🤖</span> <span>Abrir modo Copilot</span> <span style="margin-left:auto;font-size:12px;color:var(--text-muted);font-weight:400">Abre o assistente em janela flutuante</span></button>`}</div>`;
 }
 function _criarWelcomeMsg() {
     const w = document.createElement('div');
@@ -1165,72 +1166,99 @@ function btnWelcomeRegra() {
     mostrarWizardRegra('');
 }
 async function _executarAnaliseTela() {
+    const btnStyle = 'display:flex;align-items:center;gap:6px;padding:6px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);cursor:pointer;font-size:13px;font-weight:500;color:var(--text);transition:all .2s;';
+    const btnHo = `onmouseover="this.style.borderColor='var(--primary)';this.style.background='var(--primary-light)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface)'"`;
+    const _renderCard = (texto) => {
+        const card = document.createElement('div'); card.className = 'answer-card';
+        card.innerHTML = `<div class="answer-section"><div class="section-content">${renderMd(texto)}</div></div>
+            <div class="feedback-area">
+                <button onclick="analisarTelaNovaCaptura()" style="${btnStyle}" ${btnHo}>🖥️ Analisar tela novamente</button>
+                <button onclick="novaConversa()" style="${btnStyle}" ${btnHo}>➕ Nova conversa</button>
+            </div>`;
+        document.getElementById('chatStream').appendChild(card); scrollToBottom(true);
+        adicionarMensagemNaConversa('ai', texto.replace(/\*\*(.*?)\*\*/g, '$1'));
+    };
+
+    // ETAPA 1: Captura da tela
     const ldShare = appendLoadingCard('🖥️ Selecione a tela que deseja compartilhar...');
     let stream;
     try {
         stream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: 'always' }, audio: false });
-    } catch(e) {
-        ldShare.remove();
-        appendMessage('ai', '❌ Compartilhamento de tela cancelado.');
-        return;
-    }
+    } catch(e) { ldShare.remove(); appendMessage('ai', '❌ Compartilhamento de tela cancelado.'); return; }
     ldShare.remove();
-
-    const video = document.createElement('video');
-    video.srcObject = stream;
-    video.muted = true;
+    const video = document.createElement('video'); video.srcObject = stream; video.muted = true;
     await new Promise(resolve => { video.onloadedmetadata = () => { video.play(); resolve(); }; });
     await new Promise(r => setTimeout(r, 300));
     const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth || 1280;
-    canvas.height = video.videoHeight || 720;
+    canvas.width = video.videoWidth || 1280; canvas.height = video.videoHeight || 720;
     canvas.getContext('2d').drawImage(video, 0, 0);
     const base64Url = canvas.toDataURL('image/jpeg', 0.85);
-    stream.getTracks().forEach(t => t.stop());
-    video.srcObject = null;
+    stream.getTracks().forEach(t => t.stop()); video.srcObject = null;
 
-    const ld = appendLoadingCard('🤖 Analisando a tela com IA...');
-    const es = JSON.stringify(SISTEMA_BSOFT_TMS, null, 2);
-    const ctx = prepararContextoManualCompleto().substring(0, 8000);
-    const prompt = `Você é um agente de suporte da Bsoft TMS. O usuário compartilhou uma captura de tela para análise.
-
-Analise a imagem e:
-1. Identifique o que está sendo exibido (módulo, tela, erro, mensagem, etc.)
-2. Baseado no manual de suporte Bsoft TMS abaixo, forneça informações relevantes sobre o que aparece na tela
-3. Se identificar um erro ou problema, informe a solução
-4. Seja objetivo e direto
-
-📚 CONHECIMENTO BSOFT TMS:
-${es}
-
-${ctx}
-
-📝 FORMATO:
-- Responda em Markdown limpo
-- Use **negrito** para termos importantes
-- No final, SEMPRE inclua exatamente esta frase em nova linha: "Se não era isso que eu queria que analise na tela, pode perguntar no chat o que necessita exatamente."`;
-
+    // ETAPA 2: IA descreve o que está na tela (chamada curta e focada)
+    const ld1 = appendLoadingCard('🔍 Identificando o que está na tela...');
+    let descricaoTela = '';
     try {
-        const result = await callMCPSemPensamento(
+        const r1 = await callMCPSemPensamento(
             [{ role: 'user', content: [
-                { type: 'text', text: prompt },
+                { type: 'text', text: 'Descreva de forma concisa o que aparece nesta tela do sistema Bsoft TMS: nome do módulo, funcionalidade, campos visíveis e qualquer mensagem de erro. Responda em português, em até 3 linhas, sem inventar nada que não esteja visível na imagem.' },
                 { type: 'image_url', image_url: { url: base64Url } }
             ]}],
-            { temperature: 0.3, maxTokens: 2048 }
+            { temperature: 0.1, maxTokens: 300 }
         );
-        ld.remove();
-        const card = document.createElement('div');
-        card.className = 'answer-card';
-        card.innerHTML = `<div class="answer-section"><div class="section-content">${renderMd(result.text)}</div></div>
-            <div class="feedback-area">
-                <button onclick="analisarTelaNovaCaptura()" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);cursor:pointer;font-size:13px;font-weight:500;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='var(--primary)';this.style.background='var(--primary-light)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface)'">🖥️ Analisar tela novamente</button>
-            </div>`;
-        document.getElementById('chatStream').appendChild(card);
-        scrollToBottom(true);
-        adicionarMensagemNaConversa('ai', result.text.replace(/\*\*(.*?)\*\*/g, '$1'));
+        descricaoTela = r1.text;
+    } catch(e) { ld1.remove(); appendMessage('ai', '❌ Não foi possível ler a tela. Tente novamente.'); return; }
+    ld1.remove();
+
+    // ETAPA 3: Busca vetorial no manual com a descrição identificada
+    const ld2 = appendLoadingCard('🧠 Buscando no manual...');
+    const vp = await gerarEmbedding(normalizarSinonimos(descricaoTela));
+    let rr = [];
+    if (vp) {
+        rr = manualVetorizado
+            .map(item => ({ ...item, similaridade: calcularSimilaridade(vp, item.vetor) }))
+            .sort((a, b) => b.similaridade - a.similaridade).slice(0, 15);
+    }
+    const trb = rr.length > 0 && rr[0].similaridade > 0.65;
+    let ar = '';
+    if (rr.length > 0) {
+        ar = '\n=== ARTIGOS RELEVANTES DO MANUAL ===\n';
+        rr.forEach((r, i) => { ar += `[${i+1} - ${(r.similaridade*100).toFixed(0)}%] ${r.erro}\nSolução: ${r.solucao}\n${r.emitir ? 'Emissão: '+r.emitir+'\n' : ''}---\n`; });
+    }
+    const semResultado = !trb && rr.every(r => r.similaridade < 0.5);
+    const mi = semResultado ? '\n⚠️ ATENÇÃO: Nenhum artigo relevante encontrado no manual para esta tela. Informe claramente ao usuário que não encontrou e peça para descrever a dúvida no chat.' : '';
+    ld2.remove();
+
+    // ETAPA 4: Resposta final usando APENAS os artigos encontrados
+    const ch = obterContextoHorario();
+    const prompt = `🏢 VOCÊ É UM AGENTE DE SUPORTE DA BSOFT TMS\n\n${ch}\n\nO usuário compartilhou uma captura de tela para análise.\n\nTELA IDENTIFICADA: ${descricaoTela}\n\n🎯 REGRAS OBRIGATÓRIAS:\n1. Use APENAS as informações dos artigos do manual abaixo. NUNCA invente.\n2. Se não encontrar no manual, diga claramente que não encontrou e peça para descrever a dúvida no chat.\n3. Relacione o que está visível na tela com o que o manual diz.${mi}\n\n📚 MANUAL BSOFT TMS:\n${ar || 'Nenhum artigo relevante encontrado para esta tela.'}\n\n📝 FORMATO:\n- Responda em Markdown limpo\n- Use **negrito** para termos importantes\n- No final, SEMPRE inclua: "Se não era isso que eu queria que analise na tela, pode perguntar no chat o que necessita exatamente."`;
+
+    const ld3 = appendLoadingCard('🤖 Analisando com base no manual...');
+    try {
+        const result = await callMCPSemPensamento(
+            [{ role: 'user', content: [{ type: 'text', text: prompt }, { type: 'image_url', image_url: { url: base64Url } }]}],
+            { temperature: 0.2, maxTokens: 2048 }
+        );
+        ld3.remove(); _renderCard(result.text);
     } catch(e) {
-        ld.remove();
-        appendMessage('ai', '❌ Não foi possível analisar a tela. Tente novamente ou descreva sua dúvida no chat.');
+        ld3.remove();
+        const retryMsg = appendMessage('ai', '⚠️ Erro na análise. Tentando novamente em <strong>5</strong> segundos...');
+        for (let i = 4; i >= 1; i--) {
+            await new Promise(r => setTimeout(r, 1000));
+            retryMsg.innerHTML = `⚠️ Erro na análise. Tentando novamente em <strong>${i}</strong> segundo${i !== 1 ? 's' : ''}...`;
+        }
+        await new Promise(r => setTimeout(r, 1000)); retryMsg.remove();
+        const ld4 = appendLoadingCard('🤖 Analisando com base no manual (2ª tentativa)...');
+        try {
+            const result2 = await callMCPSemPensamento(
+                [{ role: 'user', content: [{ type: 'text', text: prompt }, { type: 'image_url', image_url: { url: base64Url } }]}],
+                { temperature: 0.2, maxTokens: 2048 }
+            );
+            ld4.remove(); _renderCard(result2.text);
+        } catch(e2) {
+            ld4.remove();
+            appendMessage('ai', `❌ Não foi possível analisar a tela. Descreva sua dúvida no chat ou tente novamente.<br><button onclick="analisarTelaNovaCaptura()" style="${btnStyle};margin-top:10px;" ${btnHo}>🖥️ Analisar tela novamente</button>`);
+        }
     }
 }
 async function btnWelcomeAnalisarTela() {
@@ -1817,6 +1845,7 @@ async function handleChat() {
                 <span>Esta resposta foi útil?</span>
                 <button class="feedback-btn" onclick="saveFeedback(${Date.now()},'positivo',this)">👍</button>
                 <button class="feedback-btn" onclick="saveFeedback(${Date.now()},'negativo',this)">👎</button>
+                <button onclick="novaConversa()" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);cursor:pointer;font-size:13px;font-weight:500;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='var(--primary)';this.style.background='var(--primary-light)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface)'">➕ Nova conversa</button>
                 <button class="btn-pesquisa-avancada" style="background:linear-gradient(135deg, #10b981, #059669);" onclick="toggleCiotPanel()">🗺️ CIOT</button>
                 <button class="btn-pesquisa-avancada" style="background:linear-gradient(135deg, #dc2626, #991b1b);" onclick="toggleBlogPanel();document.getElementById('blogSearchInput').value='${query.replace(/'/g, "\\'")}';pesquisarNoBlog();">📝 Blog</button>
                 <button class="btn-pesquisa-avancada" style="background:linear-gradient(135deg, #2563eb, #1d4ed8);" onclick="toggleManualPanel();">📘 Manual</button>
@@ -1858,7 +1887,7 @@ async function ativarMachineLearning(query) {
     const nv = await gerarEmbedding(txc);
     if (nv) { manualVetorizado.push({ texto: txc, erro: rml.erro, solucao: rml.solucao, emitir: '', categoria: 'Machine Learning', vetor: nv, isML: true, mlId: novo.id }); }
     const card = document.createElement('div'); card.className = 'answer-card ml-card'; card._mlKnowledgeId = novo.id;
-    card.innerHTML = `<div style="background:var(--ml-light);padding:8px 15px;border-bottom:1px solid var(--ml-border);font-size:11px;color:var(--ml-color);display:flex;align-items:center;gap:8px;">🧠 <strong>Machine Learning</strong><span class="ml-badge">NOVO CONHECIMENTO</span></div><div class="answer-section"><div class="section-label ml"><div class="section-icon ml">🔍</div>Pergunta</div><div class="section-content"><b>${escapeHtml(rml.erro)}</b></div></div><div class="answer-section"><div class="section-label how"><div class="section-icon how">✅</div>Resposta</div><div class="section-content">${formatarTexto(rml.solucao)}</div></div><div class="answer-section"><div class="section-label tip"><div class="section-icon tip">🌐</div>Fonte</div><div class="section-content">${escapeHtml(rml.fonte || 'Internet')}<span class="ml-source-tag">🤖 Adquirido automaticamente</span></div></div><div class="feedback-area"><span>Útil? <small style="color:var(--ml-color);">(Negativo = remove)</small></span><button class="feedback-btn" onclick="saveMLFeedback('${novo.id}','positivo',this)">👍 Confirmar</button><button class="feedback-btn" onclick="saveMLFeedback('${novo.id}','negativo',this)">👎 Descartar</button></div>`;
+    card.innerHTML = `<div style="background:var(--ml-light);padding:8px 15px;border-bottom:1px solid var(--ml-border);font-size:11px;color:var(--ml-color);display:flex;align-items:center;gap:8px;">🧠 <strong>Machine Learning</strong><span class="ml-badge">NOVO CONHECIMENTO</span></div><div class="answer-section"><div class="section-label ml"><div class="section-icon ml">🔍</div>Pergunta</div><div class="section-content"><b>${escapeHtml(rml.erro)}</b></div></div><div class="answer-section"><div class="section-label how"><div class="section-icon how">✅</div>Resposta</div><div class="section-content">${formatarTexto(rml.solucao)}</div></div><div class="answer-section"><div class="section-label tip"><div class="section-icon tip">🌐</div>Fonte</div><div class="section-content">${escapeHtml(rml.fonte || 'Internet')}<span class="ml-source-tag">🤖 Adquirido automaticamente</span></div></div><div class="feedback-area"><span>Útil? <small style="color:var(--ml-color);">(Negativo = remove)</small></span><button class="feedback-btn" onclick="saveMLFeedback('${novo.id}','positivo',this)">👍 Confirmar</button><button class="feedback-btn" onclick="saveMLFeedback('${novo.id}','negativo',this)">👎 Descartar</button><button onclick="novaConversa()" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);cursor:pointer;font-size:13px;font-weight:500;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='var(--primary)';this.style.background='var(--primary-light)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface)'">➕ Nova conversa</button></div>`;
     document.getElementById('chatStream').appendChild(card); scrollToBottom(true);
     const rt = rml.solucao.replace(/\*\*(.*?)\*\*/g, '$1'); adicionarMensagemNaConversa('ml', `[ML] ${rml.erro}: ${rt}`);
     appendMessage('ml', '✅ <strong>Conhecimento salvo!</strong> Disponível para futuras consultas.');
@@ -2438,7 +2467,7 @@ function renderizarCardRegra(texto, li, iaUsada, iaModelo) {
         : `<span style="font-size:10px;color:#0369a1;background:#f0f9ff;padding:2px 7px;border-radius:10px;border:1px solid #bae6fd;font-weight:600;">⚡ OpenRouter${modelo?' · '+modelo:''}</span>`;
     let h = `<div style="background:#f0fdf4;padding:8px 15px;border-bottom:1px solid #bbf7d0;font-size:11px;color:#166534;font-weight:600;">⚙️ Assistente de Criação de Regras — Bsoft TMS</div>`;
     h += `<div class="answer-section"><div class="section-content">${formatado}</div></div>`;
-    h += `<div class="feedback-area"><span>Ajudou?</span><button class="feedback-btn" onclick="saveFeedback(${li},'positivo',this)">👍</button><button class="feedback-btn" onclick="saveFeedback(${li},'negativo',this)">👎</button><span style="margin-left:auto;">${badge}</span></div>`;
+    h += `<div class="feedback-area"><span>Ajudou?</span><button class="feedback-btn" onclick="saveFeedback(${li},'positivo',this)">👍</button><button class="feedback-btn" onclick="saveFeedback(${li},'negativo',this)">👎</button><button onclick="novaConversa()" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);cursor:pointer;font-size:13px;font-weight:500;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='var(--primary)';this.style.background='var(--primary-light)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface)'">➕ Nova conversa</button><span style="margin-left:auto;">${badge}</span></div>`;
     c.innerHTML = h;
     s.appendChild(c);
     scrollToBottom(true);
@@ -2556,8 +2585,8 @@ async function gerarRespostaSefaz(codigo, tipoDoc) {
     }
 }
 
-function renderizarCardRejeicaoLocal(re, dicas, li) { const s = document.getElementById('chatStream'); const c = document.createElement('div'); c.className = 'answer-card'; let h = `<div style="background:#f0fdf4;padding:8px 15px;border-bottom:1px solid #bbf7d0;font-size:11px;color:#166534;">📚 Banco Local • ${re['Fonte'] || 'Tecnospeed'}</div>`; h += `<div class="answer-section"><div class="section-label path">🔢 Código</div><div style="font-size:28px;font-weight:800;color:#dc2626;">${re['Código']}</div></div>`; if (re['Tipo Doc']) h += `<div class="answer-section"><div class="section-label path">📄 Tipo</div><div class="section-content"><b>${re['Tipo Doc']}</b></div></div>`; if (re['Significado']) h += `<div class="answer-section"><div class="section-label how">📋 Significado</div><div class="section-content">${formatarTexto(re['Significado'])}</div></div>`; if (re['Causa']) h += `<div class="answer-section"><div class="section-label path">🔍 Causa</div><div class="section-content">${formatarTexto(re['Causa'])}</div></div>`; if (re['Solução']) h += `<div class="answer-section"><div class="section-label how">✅ Solução</div><div class="section-content">${formatarTexto(re['Solução'])}</div></div>`; if (dicas && dicas.length > 0) h += `<div class="answer-section"><div class="section-label how">💡 Dicas</div><div class="section-content">${dicas.map(d => `• ${d}`).join('<br>')}</div></div>`; h += `<div class="feedback-area"><span>Ajudou?</span><button class="feedback-btn" onclick="saveFeedback(${li},'positivo',this)">👍</button><button class="feedback-btn" onclick="saveFeedback(${li},'negativo',this)">👎</button></div>`; c.innerHTML = h; s.appendChild(c); scrollToBottom(true); }
-function renderizarCardRejeicaoIA(parsed, tr, li) { const s = document.getElementById('chatStream'); const c = document.createElement('div'); c.className = 'answer-card'; let h = `<div style="background:#fef3c7;padding:8px 15px;border-bottom:1px solid #fde68a;font-size:11px;color:#92400e;">🤖 Resposta IA</div>`; if (parsed) { if (parsed.codigo) h += `<div class="answer-section"><div class="section-label path">🔢 Código</div><div style="font-size:28px;font-weight:800;color:#dc2626;">${parsed.codigo}</div></div>`; if (parsed.significado) h += `<div class="answer-section"><div class="section-label how">📋 Significado</div><div class="section-content">${formatarTexto(parsed.significado)}</div></div>`; if (parsed.causa) h += `<div class="answer-section"><div class="section-label path">🔍 Causa</div><div class="section-content">${formatarTexto(parsed.causa)}</div></div>`; if (parsed.solucao) h += `<div class="answer-section"><div class="section-label how">✅ Solução</div><div class="section-content">${formatarTexto(parsed.solucao)}</div></div>`; } else { h += `<div class="answer-section"><div class="section-content">${formatarTexto(tr)}</div></div>`; } h += `<div class="feedback-area"><span>Ajudou?</span><button class="feedback-btn" onclick="saveFeedback(${li},'positivo',this)">👍</button><button class="feedback-btn" onclick="saveFeedback(${li},'negativo',this)">👎</button></div>`; c.innerHTML = h; s.appendChild(c); scrollToBottom(true); }
+function renderizarCardRejeicaoLocal(re, dicas, li) { const s = document.getElementById('chatStream'); const c = document.createElement('div'); c.className = 'answer-card'; let h = `<div style="background:#f0fdf4;padding:8px 15px;border-bottom:1px solid #bbf7d0;font-size:11px;color:#166534;">📚 Banco Local • ${re['Fonte'] || 'Tecnospeed'}</div>`; h += `<div class="answer-section"><div class="section-label path">🔢 Código</div><div style="font-size:28px;font-weight:800;color:#dc2626;">${re['Código']}</div></div>`; if (re['Tipo Doc']) h += `<div class="answer-section"><div class="section-label path">📄 Tipo</div><div class="section-content"><b>${re['Tipo Doc']}</b></div></div>`; if (re['Significado']) h += `<div class="answer-section"><div class="section-label how">📋 Significado</div><div class="section-content">${formatarTexto(re['Significado'])}</div></div>`; if (re['Causa']) h += `<div class="answer-section"><div class="section-label path">🔍 Causa</div><div class="section-content">${formatarTexto(re['Causa'])}</div></div>`; if (re['Solução']) h += `<div class="answer-section"><div class="section-label how">✅ Solução</div><div class="section-content">${formatarTexto(re['Solução'])}</div></div>`; if (dicas && dicas.length > 0) h += `<div class="answer-section"><div class="section-label how">💡 Dicas</div><div class="section-content">${dicas.map(d => `• ${d}`).join('<br>')}</div></div>`; h += `<div class="feedback-area"><span>Ajudou?</span><button class="feedback-btn" onclick="saveFeedback(${li},'positivo',this)">👍</button><button class="feedback-btn" onclick="saveFeedback(${li},'negativo',this)">👎</button><button onclick="novaConversa()" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);cursor:pointer;font-size:13px;font-weight:500;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='var(--primary)';this.style.background='var(--primary-light)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface)'">➕ Nova conversa</button></div>`; c.innerHTML = h; s.appendChild(c); scrollToBottom(true); }
+function renderizarCardRejeicaoIA(parsed, tr, li) { const s = document.getElementById('chatStream'); const c = document.createElement('div'); c.className = 'answer-card'; let h = `<div style="background:#fef3c7;padding:8px 15px;border-bottom:1px solid #fde68a;font-size:11px;color:#92400e;">🤖 Resposta IA</div>`; if (parsed) { if (parsed.codigo) h += `<div class="answer-section"><div class="section-label path">🔢 Código</div><div style="font-size:28px;font-weight:800;color:#dc2626;">${parsed.codigo}</div></div>`; if (parsed.significado) h += `<div class="answer-section"><div class="section-label how">📋 Significado</div><div class="section-content">${formatarTexto(parsed.significado)}</div></div>`; if (parsed.causa) h += `<div class="answer-section"><div class="section-label path">🔍 Causa</div><div class="section-content">${formatarTexto(parsed.causa)}</div></div>`; if (parsed.solucao) h += `<div class="answer-section"><div class="section-label how">✅ Solução</div><div class="section-content">${formatarTexto(parsed.solucao)}</div></div>`; } else { h += `<div class="answer-section"><div class="section-content">${formatarTexto(tr)}</div></div>`; } h += `<div class="feedback-area"><span>Ajudou?</span><button class="feedback-btn" onclick="saveFeedback(${li},'positivo',this)">👍</button><button class="feedback-btn" onclick="saveFeedback(${li},'negativo',this)">👎</button><button onclick="novaConversa()" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);cursor:pointer;font-size:13px;font-weight:500;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='var(--primary)';this.style.background='var(--primary-light)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface)'">➕ Nova conversa</button></div>`; c.innerHTML = h; s.appendChild(c); scrollToBottom(true); }
 
 function formatarTexto(texto) { return texto.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>'); }
 
