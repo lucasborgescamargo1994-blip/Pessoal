@@ -157,6 +157,7 @@
         }
         .btn-icon:hover { background: var(--primary-light); border-color: var(--primary-border); color: var(--primary); }
         .btn-toggle-sidebar { display: none; width: 32px; height: 32px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); cursor: pointer; font-size: 16px; transition: all 0.2s; color: var(--text-muted); align-items: center; justify-content: center; }
+        .sidebar.collapsed { width: 0 !important; overflow: hidden; border: none; box-shadow: none; padding: 0; min-width: 0; }
 
         #adminPanel, #mcpPanel, #logPanel { display: none; flex-direction: column; gap: 8px; padding: 12px 16px; flex: 0 0 auto; }
         #logPanel { background: #f0f9ff; border-bottom: 2px solid #7dd3fc; }
@@ -751,7 +752,10 @@
 <div class="app-layout">
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <h3>💬 Conversas</h3>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                <h3 style="margin-bottom:0">💬 Conversas</h3>
+                <button onclick="toggleSidebar()" title="Recolher conversas" style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--text-muted);padding:4px 6px;border-radius:6px;line-height:1;" onmouseover="this.style.background='var(--primary-light)'" onmouseout="this.style.background='none'">←</button>
+            </div>
             <button class="btn-nova-conversa" onclick="novaConversa()">➕ Nova Conversa</button>
         </div>
         <div class="sidebar-conversas" id="listaConversas"></div>
@@ -771,9 +775,10 @@
                 <span id="horarioBadge" style="font-size:10px;color:var(--text-muted);margin-left:8px;"></span>
             </div>
             <div class="header-actions">
-                <button class="btn-icon" onclick="openMCP()" title="Configurar API (MCP)">⚙️</button>
-                <button class="btn-icon" onclick="openDBEditor()" title="Editor de Banco de Dados">🗄️</button>
-                <button class="btn-icon" onclick="openLogPanel()" title="Gestor de Log">📋</button>
+                <button id="btnCopilotHeader" class="btn-icon" onclick="abrirCopilot()" title="Copilot — janela flutuante sobre o navegador" style="background:linear-gradient(135deg,#1f6feb22,#7c3aed22);border:1px solid #7c3aed55;color:#a371f7;font-weight:700;font-size:12px;padding:5px 10px;border-radius:8px;letter-spacing:.3px;">🤖 Copilot</button>
+                <button id="btnMCPHeader" class="btn-icon" onclick="openMCP()" title="Configurar API (MCP)">⚙️</button>
+                <button id="btnDBEditorHeader" class="btn-icon" onclick="openDBEditor()" title="Editor de Banco de Dados">🗄️</button>
+                <button id="btnLogHeader" class="btn-icon" onclick="openLogPanel()" title="Gestor de Log">📋</button>
                 <button class="btn-icon" onclick="openAdmin()" title="Admin">🔑</button>
             </div>
         </header>
@@ -1074,6 +1079,17 @@ function obterContextoHorario() { const info = obterSaudacao(); return `📅 Hoj
 function atualizarBadgeHorario() { const badge = document.getElementById('horarioBadge'); if (badge) { const info = obterSaudacao(); badge.textContent = `${info.emoji} Brasília • ${info.dataCompleta}`; } }
 atualizarBadgeHorario(); setInterval(atualizarBadgeHorario, 60000);
 
+// Oculta botões desnecessários quando rodando dentro do Copilot (iframe PiP)
+if (window.self !== window.top) {
+    document.addEventListener('DOMContentLoaded', function() {
+        ['btnCopilotHeader','btnMCPHeader','btnDBEditorHeader','btnLogHeader','statusBadge'].forEach(function(id) {
+            var el = document.getElementById(id); if (el) el.style.display = 'none';
+        });
+        var menuBtn = document.querySelector('.btn-toggle-sidebar');
+        if (menuBtn) menuBtn.style.display = 'none';
+    });
+}
+
 // ═══════════════════════════════════════════════════════════
 //  SISTEMA DE CONVERSAS
 // ═══════════════════════════════════════════════════════════
@@ -1120,11 +1136,112 @@ function adicionarMensagemNaConversa(sender, text) {
     if (conversa.mensagens.length > 500) conversa.mensagens = conversa.mensagens.slice(-500);
     salvarConversas(); renderizarListaConversas();
 }
-function limparChatStream() { const stream = document.getElementById('chatStream'); stream.innerHTML = ''; const w = document.createElement('div'); w.className='message ai-msg'; w.id='welcomeMsg'; w.innerHTML='👋 Olá! Sou o assistente IA <strong>Bsoft TMS</strong>.<br>Como posso ajudar?'; stream.appendChild(w); }
+function _menuBtnsHtml() {
+    const s = 'display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;background:var(--surface);cursor:pointer;font-size:14px;font-weight:500;color:var(--text);text-align:left;transition:all .2s;width:100%;';
+    const ho = "this.style.borderColor='var(--primary)';this.style.background='var(--primary-light)'";
+    const ho2 = "this.style.borderColor='var(--border)';this.style.background='var(--surface)'";
+    return `<div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;"><button onclick="btnWelcomeSefaz()" style="${s}" onmouseover="${ho}" onmouseout="${ho2}"><span style="font-size:18px">🔍</span> <span>Erros Sefaz</span> <span style="margin-left:auto;font-size:12px;color:var(--text-muted);font-weight:400">Abre o assistente de erros SEFAZ</span></button><button onclick="btnWelcomeRegra()" style="${s}" onmouseover="${ho}" onmouseout="${ho2}"><span style="font-size:18px">📋</span> <span>Criar Regra</span> <span style="margin-left:auto;font-size:12px;color:var(--text-muted);font-weight:400">Abre o assistente de criar regra</span></button><button onclick="btnWelcomeAnalisarTela()" style="${s}" onmouseover="${ho}" onmouseout="${ho2}"><span style="font-size:18px">🖥️</span> <span>Analisar tela</span> <span style="margin-left:auto;font-size:12px;color:var(--text-muted);font-weight:400">Compartilha a tela e a IA analisa</span></button></div>`;
+}
+function _criarWelcomeMsg() {
+    const w = document.createElement('div');
+    w.className = 'message ai-msg';
+    w.id = 'welcomeMsg';
+    w.innerHTML = `👋 Olá! Sou o assistente IA <strong>Bsoft TMS</strong>.<br>Selecione uma das opções abaixo ou digite exatamente o que precisa.${_menuBtnsHtml()}`;
+    return w;
+}
+function btnWelcomeSefaz() {
+    const welcome = document.getElementById('welcomeMsg');
+    if (welcome) welcome.remove();
+    appendMessage('user', '🔍 Erros Sefaz');
+    adicionarMensagemNaConversa('user', 'Erros Sefaz');
+    wizardRejeicaoSefaz().then(r => { if (r) { logSearch('Erros Sefaz', true); gerarRespostaSefaz(r.codigo, r.tipo); } });
+}
+function btnWelcomeRegra() {
+    const welcome = document.getElementById('welcomeMsg');
+    if (welcome) welcome.remove();
+    appendMessage('user', '📋 Criar Regra');
+    adicionarMensagemNaConversa('user', 'Criar Regra');
+    logSearch('Criar Regra', true);
+    mostrarWizardRegra('');
+}
+async function btnWelcomeAnalisarTela() {
+    const welcome = document.getElementById('welcomeMsg');
+    if (welcome) welcome.remove();
+    appendMessage('user', '🖥️ Analisar tela');
+    adicionarMensagemNaConversa('user', 'Analisar tela');
+
+    const ldShare = appendLoadingCard('🖥️ Selecione a tela que deseja compartilhar...');
+    let stream;
+    try {
+        stream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: 'always' }, audio: false });
+    } catch(e) {
+        ldShare.remove();
+        appendMessage('ai', '❌ Compartilhamento de tela cancelado.');
+        return;
+    }
+    ldShare.remove();
+
+    // Captura um frame do stream via canvas
+    const video = document.createElement('video');
+    video.srcObject = stream;
+    video.muted = true;
+    await new Promise(resolve => { video.onloadedmetadata = () => { video.play(); resolve(); }; });
+    await new Promise(r => setTimeout(r, 300));
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 1280;
+    canvas.height = video.videoHeight || 720;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    const base64Url = canvas.toDataURL('image/jpeg', 0.85);
+    stream.getTracks().forEach(t => t.stop());
+    video.srcObject = null;
+
+    const ld = appendLoadingCard('🤖 Analisando a tela com IA...');
+    const es = JSON.stringify(SISTEMA_BSOFT_TMS, null, 2);
+    const ctx = prepararContextoManualCompleto().substring(0, 8000);
+
+    const prompt = `Você é um agente de suporte da Bsoft TMS. O usuário compartilhou uma captura de tela para análise.
+
+Analise a imagem e:
+1. Identifique o que está sendo exibido (módulo, tela, erro, mensagem, etc.)
+2. Baseado no manual de suporte Bsoft TMS abaixo, forneça informações relevantes sobre o que aparece na tela
+3. Se identificar um erro ou problema, informe a solução
+4. Seja objetivo e direto
+
+📚 CONHECIMENTO BSOFT TMS:
+${es}
+
+${ctx}
+
+📝 FORMATO:
+- Responda em Markdown limpo
+- Use **negrito** para termos importantes
+- No final, SEMPRE inclua exatamente esta frase em nova linha: "Se não era isso que eu queria que analise na tela, pode perguntar no chat o que necessita exatamente."`;
+
+    try {
+        const result = await callMCPSemPensamento(
+            [{ role: 'user', content: [
+                { type: 'text', text: prompt },
+                { type: 'image_url', image_url: { url: base64Url } }
+            ]}],
+            { temperature: 0.3, maxTokens: 2048 }
+        );
+        ld.remove();
+        const card = document.createElement('div');
+        card.className = 'answer-card';
+        card.innerHTML = `<div class="answer-section"><div class="section-content">${renderMd(result.text)}</div></div>`;
+        document.getElementById('chatStream').appendChild(card);
+        scrollToBottom(true);
+        adicionarMensagemNaConversa('ai', result.text.replace(/\*\*(.*?)\*\*/g, '$1'));
+    } catch(e) {
+        ld.remove();
+        appendMessage('ai', '❌ Não foi possível analisar a tela. Tente novamente ou descreva sua dúvida no chat.');
+    }
+}
+function limparChatStream() { const stream = document.getElementById('chatStream'); stream.innerHTML = ''; stream.appendChild(_criarWelcomeMsg()); }
 function restaurarConversa(id) {
     const conversa = conversas.find(c => c.id === id); if (!conversa) return;
     const stream = document.getElementById('chatStream'); stream.innerHTML = '';
-    if (conversa.mensagens.length === 0) { const w = document.createElement('div'); w.className='message ai-msg'; w.id='welcomeMsg'; w.innerHTML = !isVectorizing && manualVetorizado.length > 0 ? `👋 Olá! Sou o assistente IA <strong>Bsoft TMS</strong>.<br>Pronto! Base com <strong>${manualVetorizado.length} artigos</strong> carregada.` : '👋 Olá! Sou o assistente IA <strong>Bsoft TMS</strong>.<br>Aguarde, carregando... ⏳'; stream.appendChild(w); return; }
+    if (conversa.mensagens.length === 0) { stream.appendChild(_criarWelcomeMsg()); return; }
     conversa.mensagens.forEach(msg => { const d = document.createElement('div'); d.className = msg.sender === 'system' ? 'message system-msg' : msg.sender === 'ml' ? 'message ml-msg' : `message ${msg.sender==='user'?'user-msg':'ai-msg'}`; d.innerHTML = msg.text; stream.appendChild(d); });
     scrollToBottom(true);
 }
@@ -1134,7 +1251,17 @@ function renderizarListaConversas() {
     lista.innerHTML = conversas.map(c => { const d = new Date(c.data); const ds = d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}); const ia = c.id===conversaAtivaId; const ml = c.mlKnowledgeId?' 🧠':''; return `<div class="conversa-item${ia?' active':''}" onclick="selecionarConversa('${c.id}')"><div class="conversa-titulo">${escapeHtml(c.titulo)}${ml}</div><div class="conversa-data">${ds} • ${c.mensagens.length} msgs</div><button class="btn-excluir-conversa" onclick="excluirConversa('${c.id}', event)" title="Excluir">🗑️</button></div>`; }).join('');
 }
 function escapeHtml(text) { const d = document.createElement('div'); d.textContent = text; return d.innerHTML; }
-function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+function toggleSidebar() {
+    const s = document.getElementById('sidebar');
+    const expandBtn = document.querySelector('.btn-toggle-sidebar');
+    if (window.innerWidth <= 768) {
+        s.classList.toggle('open');
+    } else {
+        const willCollapse = !s.classList.contains('collapsed');
+        s.classList.toggle('collapsed');
+        if (expandBtn) expandBtn.style.display = willCollapse ? 'flex' : 'none';
+    }
+}
 document.addEventListener('click', function(e) { const s = document.getElementById('sidebar'); const t = document.querySelector('.btn-toggle-sidebar'); if (s.classList.contains('open') && !s.contains(e.target) && e.target !== t && !t.contains(e.target)) s.classList.remove('open'); });
 
 // ═══════════════════════════════════════════════════════════
@@ -1506,22 +1633,22 @@ function liberarChat(modo="completo"){
     if(modo === "completo"){
         b.innerText = `IA Pronta (${manualVetorizado.length})${pi}`;
         b.className = "badge";
-        if(w) w.innerHTML = `${si.emoji} <strong>${si.saudacao}!</strong> Sou o assistente IA <strong>Bsoft TMS</strong>.<br>Pronto! Base com <strong>${manualVetorizado.length} artigos</strong> carregada.<br><small style="color:var(--text-muted);">${si.diaSemana}, ${si.dataCompleta} | IA: ${mcpConfig.model} via ${mcpConfig.provider}</small>`;
+        if(w) w.innerHTML = `${si.emoji} <strong>${si.saudacao}!</strong> Sou o assistente IA <strong>Bsoft TMS</strong>.<br>Pronto! Base com <strong>${manualVetorizado.length} artigos</strong> carregada.<br>Seleciona uma das opções abaixo ou digita exatamente qual sua dúvida no chat.<br><small style="color:var(--text-muted);">${si.diaSemana}, ${si.dataCompleta} | IA: ${mcpConfig.model} via ${mcpConfig.provider}</small>${_menuBtnsHtml()}`;
     }
     else if(modo === "parcial"){
         b.innerText = `IA Pronta (${manualVetorizado.length} +)${pi}`;
         b.className = "badge";
-        if(w) w.innerHTML = `${si.emoji} <strong>${si.saudacao}!</strong> Sou o assistente IA <strong>Bsoft TMS</strong>.<br>Já posso ajudar! <strong>${manualVetorizado.length} artigos</strong> disponíveis.<br><small style="color:#b45309;">⏳ Novos artigos sendo vetorizados... | IA: ${mcpConfig.provider}</small>`;
+        if(w) w.innerHTML = `${si.emoji} <strong>${si.saudacao}!</strong> Sou o assistente IA <strong>Bsoft TMS</strong>.<br>Já posso ajudar! <strong>${manualVetorizado.length} artigos</strong> disponíveis.<br><small style="color:#b45309;">⏳ Novos artigos sendo vetorizados... | IA: ${mcpConfig.provider}</small>${_menuBtnsHtml()}`;
     }
     else if(modo === "vazio"){
         b.innerText = "Banco vazio";
         b.className = "badge-loading";
-        if(w) w.innerHTML = `${si.emoji} <strong>${si.saudacao}!</strong> Nenhum dado encontrado no banco, mas posso tentar ajudar com conhecimento geral.<br><small style="color:var(--text-muted);">IA: ${mcpConfig.model} via ${mcpConfig.provider}</small>`;
+        if(w) w.innerHTML = `${si.emoji} <strong>${si.saudacao}!</strong> Nenhum dado encontrado no banco, mas posso tentar ajudar com conhecimento geral.<br><small style="color:var(--text-muted);">IA: ${mcpConfig.model} via ${mcpConfig.provider}</small>${_menuBtnsHtml()}`;
     }
     else{
         b.innerText = "Modo Offline";
         b.className = "badge-loading";
-        if(w) w.innerHTML = '⚠️ Não consegui conectar ao banco de dados.<br>Posso tentar ajudar com conhecimento geral. Digite sua dúvida.<br><button class="retry-btn" onclick="location.reload()">🔄 Tentar Novamente</button>';
+        if(w) w.innerHTML = `⚠️ Não consegui conectar ao banco de dados.<br>Posso tentar ajudar com conhecimento geral. Digite sua dúvida.<br><button class="retry-btn" onclick="location.reload()">🔄 Tentar Novamente</button>${_menuBtnsHtml()}`;
     }
 }
 function salvarVetorNoSupabase(id,vetor){if(!id)return;sb.from('BancoDados').update({embedding:vetor}).eq('id',id).then(({error})=>{if(error)console.error('Erro ao salvar vetor:',error);});}
@@ -1602,16 +1729,17 @@ async function handleChat() {
         const _rr = await perguntarAuxilioRegra();
         if (_rr === 'sim') {
             const _tipo = await perguntarTipoRegra();
-            if (_tipo === 'cte') { mostrarWizardRegra(query); return; }
-            if (_tipo === 'contrato') { mostrarWizardContrato(query); return; }
+            if (_tipo === 'cte') { logSearch(query, true); mostrarWizardRegra(query); return; }
+            if (_tipo === 'contrato') { logSearch(query, true); mostrarWizardContrato(query); return; }
             return;
         }
         // 'nao' → continua busca normal no banco
     }
 
     if (ehErroSefaz(query)) {
-        const escolha = await perguntarModoSefaz();
-        if (escolha === 'sefaz') { await gerarRespostaSefaz(query); return; }
+        const r = await wizardRejeicaoSefaz();
+        if (r) { logSearch(query, true); await gerarRespostaSefaz(r.codigo, r.tipo); }
+        return;
     }
 
     const lf = appendLoadingCard("⭐ Verificando base de conhecimento...");
@@ -2330,32 +2458,59 @@ function copiarRegra(btn) {
 // ═══════════════════════════════════════════════════════════
 let bancoRejeicoes = [], bancoRejeicoesCarregado = false;
 async function carregarBancoRejeicoes() { if (bancoRejeicoesCarregado && bancoRejeicoes.length > 0) return bancoRejeicoes; try { const {data, error} = await sb.from('RejeicoesSEFAZ').select('*'); if (error) throw error; if (Array.isArray(data)) { bancoRejeicoes = data; bancoRejeicoesCarregado = true; } } catch (e) { bancoRejeicoes = []; } return bancoRejeicoes; }
-let _sefazEscolhaResolve = null;
-function _resolverEscolhaSefaz(escolha) {
-    const card = document.getElementById('sefazEscolhaCard');
-    if (card) card.remove();
-    if (_sefazEscolhaResolve) { _sefazEscolhaResolve(escolha); _sefazEscolhaResolve = null; }
-}
-function perguntarModoSefaz() {
+function wizardRejeicaoSefaz() {
     return new Promise(resolve => {
-        _sefazEscolhaResolve = resolve;
         const s = document.getElementById('chatStream');
         const card = document.createElement('div');
-        card.id = 'sefazEscolhaCard';
+        card.id = 'sefazWizardCard';
         card.className = 'answer-card';
         card.innerHTML = `
-            <div style="background:#fef3c7;padding:8px 15px;border-bottom:1px solid #fde68a;font-size:11px;color:#92400e;font-weight:600;">🌐 Erro SEFAZ detectado</div>
-            <div class="answer-section">
-                <div class="section-content">
-                    <div style="font-size:13px;color:#374151;margin-bottom:10px;">Como deseja pesquisar?</div>
-                    <div style="display:flex;gap:10px;">
-                        <button onclick="_resolverEscolhaSefaz('banco')" style="flex:1;padding:10px 16px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;transition:opacity .15s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">🗄️ Banco de dados</button>
-                        <button onclick="_resolverEscolhaSefaz('sefaz')" style="flex:1;padding:10px 16px;background:#dc2626;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;transition:opacity .15s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">🌐 Erros SEFAZ</button>
-                    </div>
-                </div>
-            </div>`;
+<div style="background:linear-gradient(135deg,#fef3c7,#fff7ed);padding:10px 15px;border-bottom:1px solid #fde68a;font-size:12px;color:#92400e;font-weight:700;border-radius:12px 12px 0 0;">🌐 Consulta de Rejeição SEFAZ</div>
+<div class="answer-section">
+    <div class="section-label path" style="margin-bottom:10px;">📄 Tipo de documento</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button onclick="_sefazWizTipo('CT-e',this)" class="_sefaz-tipo-btn" style="padding:10px 22px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;transition:all .15s;">CT-e</button>
+        <button onclick="_sefazWizTipo('MDF-e',this)" class="_sefaz-tipo-btn" style="padding:10px 22px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;transition:all .15s;">MDF-e</button>
+        <button onclick="_sefazWizTipo('NF-e',this)" class="_sefaz-tipo-btn" style="padding:10px 22px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;transition:all .15s;">NF-e</button>
+        <button onclick="_sefazWizTipo('NFS-e',this)" class="_sefaz-tipo-btn" style="padding:10px 22px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;transition:all .15s;">NFS-e</button>
+    </div>
+</div>
+<div id="sefazWizStep2" style="display:none;" class="answer-section">
+    <div class="section-label path" style="margin-bottom:10px;">🔢 Código da rejeição</div>
+    <div style="display:flex;gap:8px;align-items:center;">
+        <input id="sefazWizCodigo" type="number" min="1" placeholder="Ex: 203"
+            style="padding:10px 14px;border:2px solid var(--border);border-radius:8px;font-size:15px;font-family:inherit;outline:none;width:140px;transition:border-color .2s;"
+            onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'"
+            onkeydown="if(event.key==='Enter')_sefazWizBuscar()">
+        <button onclick="_sefazWizBuscar()"
+            style="padding:10px 22px;background:var(--primary);color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;transition:opacity .15s;"
+            onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">🔍 Buscar</button>
+    </div>
+</div>`;
         s.appendChild(card);
         scrollToBottom(true);
+
+        window._sefazWizTipoSel = null;
+        window._sefazWizTipo = (tipo, btn) => {
+            window._sefazWizTipoSel = tipo;
+            document.querySelectorAll('._sefaz-tipo-btn').forEach(b => {
+                b.style.background = '#f3f4f6'; b.style.color = '#374151'; b.style.borderColor = '#e5e7eb';
+            });
+            btn.style.background = 'var(--primary)'; btn.style.color = 'white'; btn.style.borderColor = 'var(--primary)';
+            document.getElementById('sefazWizStep2').style.display = 'block';
+            setTimeout(() => { const inp = document.getElementById('sefazWizCodigo'); if (inp) inp.focus(); }, 80);
+            scrollToBottom(true);
+        };
+        window._sefazWizBuscar = () => {
+            const tipo = window._sefazWizTipoSel;
+            const inp = document.getElementById('sefazWizCodigo');
+            const codigo = inp ? inp.value.trim() : '';
+            if (!tipo) return;
+            if (!codigo) { if (inp) { inp.style.borderColor = '#ef4444'; inp.focus(); } return; }
+            card.remove();
+            window._sefazWizTipo = null; window._sefazWizBuscar = null;
+            resolve({ tipo, codigo });
+        };
     });
 }
 function ehErroSefaz(query) {
@@ -2370,20 +2525,30 @@ function ehErroSefaz(query) {
     return pr.some(p => q.includes(p)) || /rejei[cç][aã]o\s+\d{3,4}/.test(q);
 }
 
-async function gerarRespostaSefaz(pergunta) {
-    appendMessage('system', '🌐 <strong>Erro SEFAZ detectado</strong>'); adicionarMensagemNaConversa('system', '🌐 Consultando SEFAZ...');
-    const ld = appendLoadingCard("🔍 Buscando rejeições SEFAZ..."); const li = Date.now();
-    const cm = pergunta.match(/\b(\d{3,4})\b/); const cr = cm ? cm[1] : ''; const pl = pergunta.toLowerCase(); let td = '';
-    if (pl.includes('ct-e') || pl.includes('cte')) td = 'CT-e'; else if (pl.includes('mdf-e') || pl.includes('mdfe')) td = 'MDF-e'; else if (pl.includes('nf-e') || pl.includes('nfe')) td = 'NF-e';
-    await carregarBancoRejeicoes(); let re = null;
-    if (cr && bancoRejeicoes.length > 0) { if (td) re = bancoRejeicoes.find(r => r.codigo === cr && r.tipo_doc && r.tipo_doc.toLowerCase().includes(td.toLowerCase())); if (!re) re = bancoRejeicoes.find(r => r.codigo === cr); }
-    if (re) { ld.remove(); const da = re.dicas ? re.dicas.split('|').map(d => d.trim()).filter(Boolean) : []; renderizarCardRejeicaoLocal(re, da, li); adicionarMensagemNaConversa('ai', `Rejeição ${re.codigo}: ${re.significado}`); return; }
-    ld.querySelector('span').textContent = "🔍 Consultando IA...";
-    const ps = `Especialista SEFAZ. Erro: "${pergunta}". Código: ${cr}. Tipo: ${td}. JSON: {"codigo":"${cr}","significado":"...","causa":"...","solucao":"...","dicas":["..."]}`;
-    try { let r; try { r = await callMCPAPI('openrouter', 'google/gemma-4-26b-a4b-it', mcpConfig.apiKey, mcpConfig.baseUrl, [{ role: 'user', content: ps }], { temperature: 0.1, maxTokens: 2048 }); } catch (e) { r = await callMCPAPI('openrouter', 'meta-llama/llama-3.3-70b-instruct', mcpConfig.apiKey, mcpConfig.baseUrl, [{ role: 'user', content: ps }], { temperature: 0.1, maxTokens: 2048 }); } const txSefaz = filtrarPensamentoAlto(r.text).texto || r.text; ld.remove(); let parsed = null; try { parsed = JSON.parse(txSefaz); } catch (e) { try { parsed = JSON.parse(txSefaz.replace(/```json|```/g, '').trim()); } catch (e2) {} } renderizarCardRejeicaoIA(parsed, txSefaz, li); const rt = parsed ? `Rejeição ${parsed.codigo}: ${parsed.significado}` : txSefaz; adicionarMensagemNaConversa('ai', rt); } catch (e) { ld.remove(); appendMessage('ai', '❌ Erro na consulta. Pesquise em: https://atendimento.tecnospeed.com.br'); adicionarMensagemNaConversa('ai', '❌ Erro SEFAZ.'); }
+async function gerarRespostaSefaz(codigo, tipoDoc) {
+    const ld = appendLoadingCard(`🔍 Buscando rejeição ${codigo} (${tipoDoc})...`);
+    const li = Date.now();
+    await carregarBancoRejeicoes();
+    let re = null;
+    if (bancoRejeicoes.length > 0) {
+        re = bancoRejeicoes.find(r =>
+            String(r['Código']) === String(codigo) &&
+            r['Tipo Doc'] && r['Tipo Doc'].toLowerCase() === tipoDoc.toLowerCase()
+        );
+        if (!re) re = bancoRejeicoes.find(r => String(r['Código']) === String(codigo));
+    }
+    ld.remove();
+    if (re) {
+        const da = re['Dicas'] ? re['Dicas'].split('|').map(d => d.trim()).filter(Boolean) : [];
+        renderizarCardRejeicaoLocal(re, da, li);
+        adicionarMensagemNaConversa('ai', `Rejeição ${re['Código']} (${re['Tipo Doc']}): ${re['Significado']}`);
+    } else {
+        appendMessage('ai', `❌ Rejeição <b>${codigo}</b> (${tipoDoc}) não encontrada no manual interno. Verifique diretamente no portal SEFAZ ou entre em contato com o suporte Tecnospeed.`);
+        adicionarMensagemNaConversa('ai', `Rejeição ${codigo} (${tipoDoc}) não encontrada no manual.`);
+    }
 }
 
-function renderizarCardRejeicaoLocal(re, dicas, li) { const s = document.getElementById('chatStream'); const c = document.createElement('div'); c.className = 'answer-card'; let h = `<div style="background:#f0fdf4;padding:8px 15px;border-bottom:1px solid #bbf7d0;font-size:11px;color:#166534;">📚 Banco Local • ${re.fonte || 'Tecnospeed'}</div>`; h += `<div class="answer-section"><div class="section-label path">🔢 Código</div><div style="font-size:28px;font-weight:800;color:#dc2626;">${re.codigo}</div></div>`; if (re.tipo_doc) h += `<div class="answer-section"><div class="section-label path">📄 Tipo</div><div class="section-content"><b>${re.tipo_doc}</b></div></div>`; if (re.significado) h += `<div class="answer-section"><div class="section-label how">📋 Significado</div><div class="section-content">${formatarTexto(re.significado)}</div></div>`; if (re.causa) h += `<div class="answer-section"><div class="section-label path">🔍 Causa</div><div class="section-content">${formatarTexto(re.causa)}</div></div>`; if (re.solucao) h += `<div class="answer-section"><div class="section-label how">✅ Solução</div><div class="section-content">${formatarTexto(re.solucao)}</div></div>`; h += `<div class="feedback-area"><span>Ajudou?</span><button class="feedback-btn" onclick="saveFeedback(${li},'positivo',this)">👍</button><button class="feedback-btn" onclick="saveFeedback(${li},'negativo',this)">👎</button></div>`; c.innerHTML = h; s.appendChild(c); scrollToBottom(true); }
+function renderizarCardRejeicaoLocal(re, dicas, li) { const s = document.getElementById('chatStream'); const c = document.createElement('div'); c.className = 'answer-card'; let h = `<div style="background:#f0fdf4;padding:8px 15px;border-bottom:1px solid #bbf7d0;font-size:11px;color:#166534;">📚 Banco Local • ${re['Fonte'] || 'Tecnospeed'}</div>`; h += `<div class="answer-section"><div class="section-label path">🔢 Código</div><div style="font-size:28px;font-weight:800;color:#dc2626;">${re['Código']}</div></div>`; if (re['Tipo Doc']) h += `<div class="answer-section"><div class="section-label path">📄 Tipo</div><div class="section-content"><b>${re['Tipo Doc']}</b></div></div>`; if (re['Significado']) h += `<div class="answer-section"><div class="section-label how">📋 Significado</div><div class="section-content">${formatarTexto(re['Significado'])}</div></div>`; if (re['Causa']) h += `<div class="answer-section"><div class="section-label path">🔍 Causa</div><div class="section-content">${formatarTexto(re['Causa'])}</div></div>`; if (re['Solução']) h += `<div class="answer-section"><div class="section-label how">✅ Solução</div><div class="section-content">${formatarTexto(re['Solução'])}</div></div>`; if (dicas && dicas.length > 0) h += `<div class="answer-section"><div class="section-label how">💡 Dicas</div><div class="section-content">${dicas.map(d => `• ${d}`).join('<br>')}</div></div>`; h += `<div class="feedback-area"><span>Ajudou?</span><button class="feedback-btn" onclick="saveFeedback(${li},'positivo',this)">👍</button><button class="feedback-btn" onclick="saveFeedback(${li},'negativo',this)">👎</button></div>`; c.innerHTML = h; s.appendChild(c); scrollToBottom(true); }
 function renderizarCardRejeicaoIA(parsed, tr, li) { const s = document.getElementById('chatStream'); const c = document.createElement('div'); c.className = 'answer-card'; let h = `<div style="background:#fef3c7;padding:8px 15px;border-bottom:1px solid #fde68a;font-size:11px;color:#92400e;">🤖 Resposta IA</div>`; if (parsed) { if (parsed.codigo) h += `<div class="answer-section"><div class="section-label path">🔢 Código</div><div style="font-size:28px;font-weight:800;color:#dc2626;">${parsed.codigo}</div></div>`; if (parsed.significado) h += `<div class="answer-section"><div class="section-label how">📋 Significado</div><div class="section-content">${formatarTexto(parsed.significado)}</div></div>`; if (parsed.causa) h += `<div class="answer-section"><div class="section-label path">🔍 Causa</div><div class="section-content">${formatarTexto(parsed.causa)}</div></div>`; if (parsed.solucao) h += `<div class="answer-section"><div class="section-label how">✅ Solução</div><div class="section-content">${formatarTexto(parsed.solucao)}</div></div>`; } else { h += `<div class="answer-section"><div class="section-content">${formatarTexto(tr)}</div></div>`; } h += `<div class="feedback-area"><span>Ajudou?</span><button class="feedback-btn" onclick="saveFeedback(${li},'positivo',this)">👍</button><button class="feedback-btn" onclick="saveFeedback(${li},'negativo',this)">👎</button></div>`; c.innerHTML = h; s.appendChild(c); scrollToBottom(true); }
 
 function formatarTexto(texto) { return texto.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>'); }
@@ -2656,7 +2821,7 @@ function limparTudoERedefinir() {
 // ═══════════════════════════════════════════════════════════
 let _dbeData = [], _dbeCols = [], _dbeEditIndex = null;
 const _DBE_SKIP_COLS = new Set(['embedding', 'vetor']);
-const _DBE_TEXTAREA_COLS = new Set(['solucao','conteudo','resposta','significado','causa','hint','descricao','Descrição','message']);
+const _DBE_TEXTAREA_COLS = new Set(['solucao','conteudo','resposta','significado','causa','hint','descricao','Descrição','message','Solução','Significado','Causa','Dicas']);
 
 function openDBEditor() {
     const s = prompt("Senha Administrativa:");
@@ -3233,6 +3398,104 @@ document.addEventListener('keydown', function(e) {
         toggleYTPanel();
     }
 });
+
+// ═══════════════════════════════════════════════════════════
+//  COPILOT — Document Picture-in-Picture
+// ═══════════════════════════════════════════════════════════
+async function abrirCopilot() {
+    if (!('documentPictureInPicture' in window)) {
+        alert('O Copilot requer Chrome 116+ com suporte a Document Picture-in-Picture.');
+        return;
+    }
+    const PIP_W = 620, PIP_H = 700;
+    let pipWin;
+    try {
+        pipWin = await window.documentPictureInPicture.requestWindow({ width: PIP_W, height: PIP_H });
+    } catch(e) {
+        alert('Não foi possível abrir o Copilot: ' + e.message);
+        return;
+    }
+
+    pipWin.document.head.innerHTML = `<meta charset="UTF-8"><title>Bsoft Copilot</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}html,body{height:100%;overflow:hidden}iframe{width:100%;height:100%;border:none}</style>`;
+
+    // Injeta funções de mover/redimensionar NO contexto do pipWin
+    // (necessário: quando executadas ali, window === pipWin e moveTo/resizeTo têm permissão)
+    const pipScript = pipWin.document.createElement('script');
+    pipScript.textContent = `
+function pipMinimize() {
+    window.resizeTo(80, 80);
+    setTimeout(function() {
+        window.moveTo(screen.availWidth - 100, screen.availHeight - 100);
+    }, 60);
+}
+function pipRestore(w, h, x, y) {
+    window.resizeTo(w, h);
+    setTimeout(function() { window.moveTo(x, y); }, 60);
+}
+`;
+    pipWin.document.head.appendChild(pipScript);
+
+    const frame = pipWin.document.createElement('iframe');
+    frame.src = window.location.href;
+    frame.style.cssText = 'width:100%;height:100%;border:none;visibility:hidden;';
+    pipWin.document.body.appendChild(frame);
+
+    frame.addEventListener('load', () => {
+        try {
+            const doc = frame.contentDocument;
+
+            // Colapsa sidebar sem animação
+            const sidebar = doc.getElementById('sidebar');
+            if (sidebar) {
+                sidebar.style.transition = 'none';
+                sidebar.classList.add('collapsed');
+                requestAnimationFrame(() => { sidebar.style.transition = ''; });
+            }
+
+            // Bolinha de restore (cobre a tela inteira do PiP minimizado)
+            const ball = doc.createElement('div');
+            ball.style.cssText = 'display:none;position:fixed;inset:0;background:white;z-index:999999;align-items:center;justify-content:center;cursor:pointer;';
+            ball.innerHTML = '<div style="width:60px;height:60px;background:linear-gradient(135deg,#f97316,#ea580c);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;box-shadow:0 4px 20px rgba(249,115,22,0.6);">🤖</div>';
+            doc.body.appendChild(ball);
+
+            // Botão minimizar no header, no lugar do botão Menu
+            const headerLeft = doc.querySelector('.header-left');
+            const logoMark = doc.querySelector('.logo-mark');
+            const minBtn = doc.createElement('button');
+            minBtn.title = 'Minimizar Copilot';
+            minBtn.textContent = '−';
+            minBtn.style.cssText = 'flex-shrink:0;width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:20px;font-weight:700;color:var(--text-muted);display:flex;align-items:center;justify-content:center;line-height:1;padding:0;transition:all 0.2s;';
+            minBtn.onmouseover = () => { minBtn.style.background='var(--primary-light)'; minBtn.style.borderColor='var(--primary-border)'; minBtn.style.color='var(--primary)'; };
+            minBtn.onmouseout  = () => { minBtn.style.background='var(--surface)';       minBtn.style.borderColor='var(--border)';         minBtn.style.color='var(--text-muted)'; };
+            if (headerLeft && logoMark) {
+                headerLeft.insertBefore(minBtn, logoMark);
+            } else if (headerLeft) {
+                headerLeft.prepend(minBtn);
+            } else {
+                doc.body.appendChild(minBtn);
+            }
+
+            let savedX, savedY;
+
+            minBtn.onclick = () => {
+                savedX = pipWin.screenX;
+                savedY = pipWin.screenY;
+                ball.style.display = 'flex';
+                minBtn.style.display = 'none';
+                try { pipWin.pipMinimize(); } catch(e) {}
+            };
+            ball.onclick = () => {
+                ball.style.display = 'none';
+                minBtn.style.display = '';
+                try { pipWin.pipRestore(PIP_W, PIP_H, savedX ?? 100, savedY ?? 100); } catch(e) {}
+            };
+        } catch(e) {
+            console.warn('[Copilot] Erro ao inicializar:', e.message);
+        }
+        frame.style.visibility = 'visible';
+    });
+}
 
 // Inicialização
 window.addEventListener('DOMContentLoaded', async () => {
