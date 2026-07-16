@@ -1164,12 +1164,7 @@ function btnWelcomeRegra() {
     logSearch('Criar Regra', true);
     mostrarWizardRegra('');
 }
-async function btnWelcomeAnalisarTela() {
-    const welcome = document.getElementById('welcomeMsg');
-    if (welcome) welcome.remove();
-    appendMessage('user', '🖥️ Analisar tela');
-    adicionarMensagemNaConversa('user', 'Analisar tela');
-
+async function _executarAnaliseTela() {
     const ldShare = appendLoadingCard('🖥️ Selecione a tela que deseja compartilhar...');
     let stream;
     try {
@@ -1181,7 +1176,6 @@ async function btnWelcomeAnalisarTela() {
     }
     ldShare.remove();
 
-    // Captura um frame do stream via canvas
     const video = document.createElement('video');
     video.srcObject = stream;
     video.muted = true;
@@ -1198,7 +1192,6 @@ async function btnWelcomeAnalisarTela() {
     const ld = appendLoadingCard('🤖 Analisando a tela com IA...');
     const es = JSON.stringify(SISTEMA_BSOFT_TMS, null, 2);
     const ctx = prepararContextoManualCompleto().substring(0, 8000);
-
     const prompt = `Você é um agente de suporte da Bsoft TMS. O usuário compartilhou uma captura de tela para análise.
 
 Analise a imagem e:
@@ -1228,7 +1221,10 @@ ${ctx}
         ld.remove();
         const card = document.createElement('div');
         card.className = 'answer-card';
-        card.innerHTML = `<div class="answer-section"><div class="section-content">${renderMd(result.text)}</div></div>`;
+        card.innerHTML = `<div class="answer-section"><div class="section-content">${renderMd(result.text)}</div></div>
+            <div class="feedback-area">
+                <button onclick="analisarTelaNovaCaptura()" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);cursor:pointer;font-size:13px;font-weight:500;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='var(--primary)';this.style.background='var(--primary-light)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface)'">🖥️ Analisar tela novamente</button>
+            </div>`;
         document.getElementById('chatStream').appendChild(card);
         scrollToBottom(true);
         adicionarMensagemNaConversa('ai', result.text.replace(/\*\*(.*?)\*\*/g, '$1'));
@@ -1236,6 +1232,18 @@ ${ctx}
         ld.remove();
         appendMessage('ai', '❌ Não foi possível analisar a tela. Tente novamente ou descreva sua dúvida no chat.');
     }
+}
+async function btnWelcomeAnalisarTela() {
+    const welcome = document.getElementById('welcomeMsg');
+    if (welcome) welcome.remove();
+    appendMessage('user', '🖥️ Analisar tela');
+    adicionarMensagemNaConversa('user', 'Analisar tela');
+    await _executarAnaliseTela();
+}
+async function analisarTelaNovaCaptura() {
+    appendMessage('user', '🖥️ Analisar tela novamente');
+    adicionarMensagemNaConversa('user', 'Analisar tela novamente');
+    await _executarAnaliseTela();
 }
 function limparChatStream() { const stream = document.getElementById('chatStream'); stream.innerHTML = ''; stream.appendChild(_criarWelcomeMsg()); }
 function restaurarConversa(id) {
