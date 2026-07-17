@@ -1273,6 +1273,81 @@ async function analisarTelaNovaCaptura() {
     adicionarMensagemNaConversa('user', 'Analisar tela novamente');
     await _executarAnaliseTela();
 }
+async function _executarAnaliseImagem(base64Url, fileName) {
+    const btnStyle = 'display:flex;align-items:center;gap:6px;padding:6px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);cursor:pointer;font-size:13px;font-weight:500;color:var(--text);transition:all .2s;';
+    const btnHo = `onmouseover="this.style.borderColor='var(--primary)';this.style.background='var(--primary-light)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface)'"`;
+    const _renderCard = (texto) => {
+        const card = document.createElement('div'); card.className = 'answer-card';
+        card.innerHTML = `<div class="answer-section"><div class="section-content">${renderMd(texto)}</div></div>
+            <div class="feedback-area">
+                <button onclick="document.getElementById('fileInput').click()" style="${btnStyle}" ${btnHo}>📎 Analisar outra imagem</button>
+                <button onclick="novaConversa()" style="${btnStyle}" ${btnHo}>➕ Nova conversa</button>
+            </div>`;
+        document.getElementById('chatStream').appendChild(card); scrollToBottom(true);
+        adicionarMensagemNaConversa('ai', texto.replace(/\*\*(.*?)\*\*/g, '$1'));
+    };
+    // ETAPA 1: IA descreve o que está na imagem
+    const ld1 = appendLoadingCard('🔍 Identificando o que está na imagem...');
+    let descricaoTela = '';
+    try {
+        const r1 = await callMCPSemPensamento(
+            [{ role: 'user', content: [
+                { type: 'text', text: 'Descreva de forma concisa o que aparece nesta imagem do sistema Bsoft TMS: nome do módulo, funcionalidade, campos visíveis e qualquer mensagem de erro. Responda em português, em até 3 linhas, sem inventar nada que não esteja visível na imagem.' },
+                { type: 'image_url', image_url: { url: base64Url } }
+            ]}],
+            { temperature: 0.1, maxTokens: 300 }
+        );
+        descricaoTela = r1.text;
+    } catch(e) { ld1.remove(); appendMessage('ai', '❌ Não foi possível ler a imagem. Tente novamente.'); return; }
+    ld1.remove();
+    // ETAPA 2: Busca vetorial com a descrição identificada
+    const ld2 = appendLoadingCard('🧠 Buscando no manual...');
+    const vp = await gerarEmbedding(normalizarSinonimos(descricaoTela));
+    let rr = [];
+    if (vp) {
+        rr = manualVetorizado
+            .map(item => ({ ...item, similaridade: calcularSimilaridade(vp, item.vetor) }))
+            .sort((a, b) => b.similaridade - a.similaridade).slice(0, 15);
+    }
+    let ar = '';
+    if (rr.length > 0) {
+        ar = '\n=== ARTIGOS RELEVANTES DO MANUAL ===\n';
+        rr.forEach((r, i) => { ar += `[${i+1} - ${(r.similaridade*100).toFixed(0)}%] ${r.erro}\nSolução: ${r.solucao}\n${r.emitir ? 'Emissão: '+r.emitir+'\n' : ''}---\n`; });
+    }
+    const semResultado = rr.length === 0 || rr[0].similaridade < 0.5;
+    const mi = semResultado ? '\n⚠️ ATENÇÃO: Nenhum artigo relevante encontrado no manual para esta imagem. Informe claramente ao usuário que não encontrou e peça para descrever a dúvida no chat.' : '';
+    ld2.remove();
+    // ETAPA 3: Resposta final usando APENAS os artigos encontrados
+    const ch = obterContextoHorario();
+    const prompt = `🏢 VOCÊ É UM AGENTE DE SUPORTE DA BSOFT TMS\n\n${ch}\n\nO usuário anexou uma imagem para análise.\n\nIMAGEM IDENTIFICADA: ${descricaoTela}\n\n🎯 REGRAS OBRIGATÓRIAS:\n1. Use APENAS as informações dos artigos do manual abaixo. NUNCA invente.\n2. Se não encontrar no manual, diga claramente que não encontrou e peça para descrever a dúvida no chat.\n3. Relacione o que está visível na imagem com o que o manual diz.${mi}\n\n📚 MANUAL BSOFT TMS:\n${ar || 'Nenhum artigo relevante encontrado para esta imagem.'}\n\n📝 FORMATO:\n- Responda em Markdown limpo\n- Use **negrito** para termos importantes\n- No final, SEMPRE inclua: "Se não era isso que eu queria que analise na imagem, pode perguntar no chat o que necessita exatamente."`;
+    const ld3 = appendLoadingCard('🤖 Analisando com base no manual...');
+    try {
+        const result = await callMCPSemPensamento(
+            [{ role: 'user', content: [{ type: 'text', text: prompt }, { type: 'image_url', image_url: { url: base64Url } }]}],
+            { temperature: 0.2, maxTokens: 2048 }
+        );
+        ld3.remove(); _renderCard(result.text);
+    } catch(e) {
+        ld3.remove();
+        const retryMsg = appendMessage('ai', '⚠️ Erro na análise. Tentando novamente em <strong>5</strong> segundos...');
+        for (let i = 4; i >= 1; i--) {
+            await new Promise(r => setTimeout(r, 1000));
+            retryMsg.innerHTML = `⚠️ Erro na análise. Tentando novamente em <strong>${i}</strong> segundo${i !== 1 ? 's' : ''}...`;
+        }
+        await new Promise(r => setTimeout(r, 1000)); retryMsg.remove();
+        const ld4 = appendLoadingCard('🤖 Analisando com base no manual (2ª tentativa)...');
+        try {
+            const result2 = await callMCPSemPensamento(
+                [{ role: 'user', content: [{ type: 'text', text: prompt }, { type: 'image_url', image_url: { url: base64Url } }]}],
+                { temperature: 0.2, maxTokens: 2048 }
+            );
+            ld4.remove(); _renderCard(result2.text);
+        } catch(e2) {
+            ld4.remove();
+            appendMessage('ai', `❌ Não foi possível analisar a imagem. Descreva sua dúvida no chat ou tente novamente.<br><button onclick="document.getElementById('fileInput').click()" style="${btnStyle};margin-top:10px;" ${btnHo}>📎 Analisar outra imagem</button>`);
+        }
+    }
+}
 function limparChatStream() { const stream = document.getElementById('chatStream'); stream.innerHTML = ''; stream.appendChild(_criarWelcomeMsg()); }
 function restaurarConversa(id) {
     const conversa = conversas.find(c => c.id === id); if (!conversa) return;
@@ -3043,7 +3118,24 @@ function closeModal() { document.getElementById('resultsModal').style.display = 
 // ═══════════════════════════════════════════════════════════
 async function toggleScreenShare() { const b = document.getElementById('btnScreen'); if (screenStream) { screenStream.getTracks().forEach(t => t.stop()); screenStream = null; b.style.color = ""; return; } try { screenStream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: "always" }, audio: false }); b.style.color = "var(--primary)"; } catch (err) {} }
 document.addEventListener('paste', (e) => { for (let item of e.clipboardData.items) { if (item.type.indexOf("image") !== -1) handleFileUpload(item.getAsFile()); } });
-function handleFileUpload(file) { if (!file) return; const r = new FileReader(); r.onload = (e) => { attachedFileData = { mime_type: file.type, data: e.target.result.split(',')[1] }; appendMessage('user', `<em>📎 ${file.name || 'Imagem'}</em>`); }; r.readAsDataURL(file); }
+function handleFileUpload(file) {
+    if (!file) return;
+    const r = new FileReader();
+    r.onload = (e) => {
+        const base64Url = e.target.result;
+        if (file.type.startsWith('image/')) {
+            const welcome = document.getElementById('welcomeMsg');
+            if (welcome) welcome.remove();
+            appendMessage('user', `<em>📎 ${file.name || 'Imagem anexada'}</em>`);
+            adicionarMensagemNaConversa('user', `📎 ${file.name || 'Imagem anexada'}`);
+            _executarAnaliseImagem(base64Url, file.name || 'Imagem');
+        } else {
+            attachedFileData = { mime_type: file.type, data: base64Url.split(',')[1] };
+            appendMessage('user', `<em>📎 ${file.name || 'Arquivo'}</em>`);
+        }
+    };
+    r.readAsDataURL(file);
+}
 function speak(text) { if (isCallActive) { window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text.replace(/<[^>]*>/g, '')); u.lang = 'pt-BR'; u.onend = () => { if (isCallActive) recognition.start(); }; window.speechSynthesis.speak(u); } }
 function toggleVoice() { isCallActive = true; document.getElementById('voiceCallPanel').style.display = 'flex'; document.getElementById('callStatus').innerText = "Ouvindo..."; recognition.start(); }
 function endVoiceCall() { isCallActive = false; recognition.stop(); window.speechSynthesis.cancel(); document.getElementById('voiceCallPanel').style.display = 'none'; }
