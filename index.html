@@ -1404,21 +1404,33 @@ async function testMCPConnection(){const p=document.getElementById('mcpProvider'
 async function callMCPAPI(provider,model,apiKey,baseUrl,messages,config={}){const preset=PROVIDER_PRESETS[provider];if(!preset)throw new Error(`Provedor "${provider}" não suportado`);let url=baseUrl||preset.baseUrl;if(provider==='google'){url=preset.buildUrl(url,model,preset.chatEndpoint)+`?key=${apiKey}`;}else{url=url.replace(/\/+$/,'')+preset.chatEndpoint;}const headers=preset.headers(apiKey);const body=preset.formatRequestBody(model,messages,config);const response=await fetch(url,{method:'POST',headers,body:JSON.stringify(body)});const data=await response.json();if(!response.ok){const err=new Error(`[${provider}] ${data.error?.message||data.error?.code||`HTTP ${response.status}`}`);err.status=response.status;throw err;}return preset.parseResponse(data);}
 
 async function callCurrentMCP(messages,config={}){
-    const retryavel=(e)=>e.status===400||e.status===429;
+    const ULTRA_MODEL='nvidia/nemotron-3-ultra-550b-a55b:free';
+    const NANO_MODEL=mcpConfig.model; // nemotron-3-nano-omni-30b-a3b-reasoning:free
 
-    // ── OpenRouter: até 2 tentativas (400 ou 429 → retry) ──
+    // ── 1º: Ultra 550B — 2 tentativas ──
     for(let t=1;t<=2;t++){
         try{
-            if(t>1){console.warn('[OpenRouter] retry...');await new Promise(r=>setTimeout(r,2500));}
-            const res=await callMCPAPI(mcpConfig.provider,mcpConfig.model,mcpConfig.apiKey,mcpConfig.baseUrl,messages,config);
-            return{...res,_iaUsada:'OpenRouter',_iaModelo:mcpConfig.model};
+            if(t>1){console.warn('[Ultra] retry 2/2...');await new Promise(r=>setTimeout(r,2500));}
+            const res=await callMCPAPI(mcpConfig.provider,ULTRA_MODEL,mcpConfig.apiKey,mcpConfig.baseUrl,messages,config);
+            return{...res,_iaUsada:'OpenRouter',_iaModelo:ULTRA_MODEL};
         }catch(e){
-            console.warn(`[OpenRouter] tentativa ${t} falhou (${e.status||'?'}):`,e.message);
-            if(!retryavel(e)||t>=2)break;
+            console.warn(`[Ultra] tentativa ${t}/2 falhou (${e.status||'?'}):`,e.message);
         }
     }
 
-    // ── Gemini fallback: até 3 tentativas (400 ou 429 → retry) ──
+    // ── 2º: Nano (modelo configurado) — 2 tentativas ──
+    console.warn('[Fallback] Ultra indisponível — tentando Nano...');
+    for(let t=1;t<=2;t++){
+        try{
+            if(t>1){console.warn('[Nano] retry 2/2...');await new Promise(r=>setTimeout(r,2500));}
+            const res=await callMCPAPI(mcpConfig.provider,NANO_MODEL,mcpConfig.apiKey,mcpConfig.baseUrl,messages,config);
+            return{...res,_iaUsada:'OpenRouter',_iaModelo:NANO_MODEL};
+        }catch(e){
+            console.warn(`[Nano] tentativa ${t}/2 falhou (${e.status||'?'}):`,e.message);
+        }
+    }
+
+    // ── 3º: Gemini — até 3 tentativas ──
     console.warn('[Fallback] OpenRouter indisponível — ativando Gemini...');
     for(let t=1;t<=3;t++){
         try{
@@ -1426,8 +1438,8 @@ async function callCurrentMCP(messages,config={}){
             const res=await callMCPAPI('google',GEMINI_FALLBACK_MODEL,GEMINI_FALLBACK_KEY,'',messages,config);
             return{...res,_iaUsada:'Gemini',_iaModelo:GEMINI_FALLBACK_MODEL};
         }catch(e){
-            console.warn(`[Gemini] tentativa ${t} falhou (${e.status||'?'}):`,e.message);
-            if(!retryavel(e)||t>=3)throw e;
+            console.warn(`[Gemini] tentativa ${t}/3 falhou (${e.status||'?'}):`,e.message);
+            if(t>=3)throw e;
         }
     }
     throw new Error('Todos os provedores falharam.');
@@ -2123,7 +2135,8 @@ const REGRAS_PREDEFINIDAS_CODE={
     icms_demo:`def("tarifaCalculada",0);\nif ( obt("tarifaDigitada") > 0)\n   def("valorFrete", (obt("merc_quantKg[]")) * obt("tarifaDigitada")/1000);\nif ( obt("aliquota") > 0)\n   def("baseCalculo", (obt("valorFrete")));\nif ( obt("aliquota") < 1)\n   def("baseCalculo",0);\nvalor = obt("baseCalculo") * (obt("aliquota")/100);\ndef("valorICMS",valor);\ndef("totalPrestacao",  (obt("valorFrete")));`,
     simples:`def("tarifaCalculada",0);\nif ( obt("tarifaDigitada") > 0)\n   def("valorFrete", (obt("merc_quantKg[]")) * obt("tarifaDigitada"));\ndef("totalPrestacao",  (obt("valorFrete")));`,
     inverso:`def("tarifaCalculada",0);\nif ( obt("tarifaDigitada") > 0)\n   def("valorFrete", (obt("merc_quantKg[]")) * obt("tarifaDigitada"));\nvar inverso = ((100 - obt("aliquota")) /100)\nif ( obt("aliquota") > 0)\n   def("baseCalculo", ((obt("valorFrete") + obt("valoresOutros")) / inverso));\nif ( obt("aliquota") < 1)\n   def("baseCalculo", 0);\nvalor = obt("baseCalculo") * (obt("aliquota")/100);\ndef("valorICMS",valor);\ndef("totalPrestacao",  (obt("valorFrete") + obt("valorICMS")));`,
-    soma_icms:`def("tarifaCalculada",0);\nif ( obt("tarifaDigitada") > 0)\n   def("valorFrete", (obt("merc_quantKg[]")) * obt("tarifaDigitada"));\nif ( obt("aliquota") > 0)\n   def("baseCalculo", (obt("valorFrete")));\nif ( obt("aliquota") < 1)\n   def("baseCalculo", 0);\nvalor = obt("baseCalculo") * (obt("aliquota")/100);\ndef("valorICMS",valor);\ndef("totalPrestacao",  (obt("valorFrete") + obt("valorICMS")));`
+    soma_icms:`def("tarifaCalculada",0);\nif ( obt("tarifaDigitada") > 0)\n   def("valorFrete", (obt("merc_quantKg[]")) * obt("tarifaDigitada"));\nif ( obt("aliquota") > 0)\n   def("baseCalculo", (obt("valorFrete")));\nif ( obt("aliquota") < 1)\n   def("baseCalculo", 0);\nvalor = obt("baseCalculo") * (obt("aliquota")/100);\ndef("valorICMS",valor);\ndef("totalPrestacao",  (obt("valorFrete") + obt("valorICMS")));`,
+    peso_cubado_gris:`var pesoReal = obt("merc_quantKg[]");\nvar pesoCubado = obt("merc_cubagem[]") * 150;\nvar pesoDeUso = 0;\n\nif (pesoCubado > pesoReal) {\n    pesoDeUso = pesoCubado;\n} else {\n    pesoDeUso = pesoReal;\n}\n\nvar freteBaseTabela = tabelaPrecos.valorFrete;\nvar valorFinalFrete = 0;\n\nif (pesoDeUso > 150) {\n    var kgExcedente = pesoDeUso - 150;\n    var valorDoExcesso = kgExcedente * tabelaPrecos.valorExcesso;\n    valorFinalFrete = freteBaseTabela + valorDoExcesso;\n} else {\n    valorFinalFrete = freteBaseTabela;\n}\n\ndef("valorFrete", valorFinalFrete);\n\nvar vGris = obt("merc_valor[]") * (0.2 / 100);\ndef("Gris", vGris);\n\ndef("totalPrestacao", (\n    obt("valorFrete") + \n    obt("valoresOutros") + \n    obt("valorSeguro") + \n    obt("valorPedagioConhecimento") + \n    obt("diaria") +\n    obt("Gris")\n));`
 };
 const CALC_FRETE_MAP={
     nenhum:'Usuario digitara o valorFrete manualmente — NAO gere def("valorFrete") nem def("tarifaCalculada")',
@@ -2160,6 +2173,7 @@ function mostrarWizardRegra(queryOriginal){
     <label class="wizard-radio-label"><input type="radio" name="wRegraPre" value="simples" onchange="wOnRegraPreChange(this.value)"> Simples Nacional</label>
     <label class="wizard-radio-label"><input type="radio" name="wRegraPre" value="inverso" onchange="wOnRegraPreChange(this.value)"> Cálculo Inverso (ICMS por dentro)</label>
     <label class="wizard-radio-label"><input type="radio" name="wRegraPre" value="soma_icms" onchange="wOnRegraPreChange(this.value)"> Somar ICMS no Total</label>
+    <label class="wizard-radio-label"><input type="radio" name="wRegraPre" value="peso_cubado_gris" onchange="wOnRegraPreChange(this.value)"> Frete Calculado Peso KG ou Peso Cubado</label>
   </div>
 </div>
 <div class="wizard-section">
