@@ -795,7 +795,7 @@
             <strong style="color:#0369a1;font-size:13px;">⚙️ Configuração MCP (Multi-Cloud Provider)</strong>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
                 <div style="flex:1;min-width:200px;"><label>Provedor:</label><select id="mcpProvider" onchange="onProviderChange()" style="width:100%;"><option value="openrouter">OpenRouter</option><option value="google">Google Gemini</option><option value="custom">Custom (OpenAI Compatible)</option></select></div>
-                <div style="flex:1;min-width:200px;"><label>Modelo:</label><select id="mcpModel" onchange="onModelChange()" style="width:100%;"><option value="nvidia/nemotron-3-super-120b-a12b:free">nvidia/nemotron-3-super-120b-a12b:free (OpenRouter)</option><option value="nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free">Gemma 4 26B A4B (OpenRouter)</option><option value="gemma-4-26b-a4b-it">Gemma 4 26B A4B (Google)</option><option value="gemini-2.0-flash">Gemini 2.0 Flash (Google)</option><option value="__custom__">✏️ Digite o modelo...</option></select><input type="text" id="mcpModelCustom" placeholder="Ex: openai/gpt-4o, anthropic/claude-3-5-sonnet, meta-llama/..." style="width:100%;display:none;margin-top:4px;box-sizing:border-box;"></div>
+                <div style="flex:1;min-width:200px;"><label>Modelo (secundário):</label><select id="mcpModel" onchange="onModelChange()" style="width:100%;"><option value="nvidia/nemotron-3-ultra-550b-a55b:free">Nemotron Ultra 550B ⭐ (principal fixo)</option><option value="nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free">Nemotron Nano 30B Reasoning (secundário padrão)</option><option value="__custom__">✏️ Digite o modelo...</option></select><input type="text" id="mcpModelCustom" placeholder="Ex: openai/gpt-4o, anthropic/claude-3-5-sonnet, meta-llama/..." style="width:100%;display:none;margin-top:4px;box-sizing:border-box;"></div>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
                 <div style="flex:1;min-width:200px;"><label>API Key:</label><input type="password" id="mcpApiKey" placeholder="sk-or-v1-..." style="width:100%;"></div>
@@ -805,6 +805,7 @@
                 <span id="mcpStatus" class="mcp-status">✅ Configuração carregada</span>
                 <button onclick="testMCPConnection()" style="background:#0369a1;color:white;">🔌 Testar</button>
                 <button onclick="saveMCPConfig()" style="background:#15803d;color:white;">💾 Salvar</button>
+                <button onclick="resetMCPConfig()" style="background:#d97706;color:white;">↺ Restaurar Padrão</button>
                 <button onclick="closeMCP()" style="background:var(--border);color:var(--text-muted);">Fechar</button>
             </div>
         </div>
@@ -1028,6 +1029,8 @@ const CENTRAL_ARTIGOS_KEY = 'bsoft_central_artigos';
 const BLOG_ARTIGOS_KEY = 'bsoft_blog_artigos';
 const MANUAL_ARTIGOS_KEY = 'bsoft_repositorio_cache';
 const REPO_ARTIGOS_KEY = 'bsoft_repositorio_cache';
+const REPO_VECTORS_KEY  = 'bsoft_repositorio_vetores';
+const REPO_FILELIST_KEY = 'bsoft_repositorio_filelist';
 
 let conversas = [];
 let conversaAtivaId = null;
@@ -1386,59 +1389,115 @@ const GEMINI_FALLBACK_KEY=gf1+gf2+gf3;
 const GEMINI_FALLBACK_MODEL="gemma-4-26b-a4b-it";
 const DEFAULT_MCP_CONFIG = { provider:'openrouter', model:'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free', apiKey:o1+o2+o3, baseUrl:'https://openrouter.ai/api/v1', embeddingProvider:'google', embeddingKey:p1+p2+p3, embeddingModel:'gemini-embedding-2-preview' };
 const PROVIDER_PRESETS = {
-    openrouter: { baseUrl:'https://openrouter.ai/api/v1', models:['nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free','z-ai/glm-4.5-air:free','meta-llama/llama-3.3-70b-instruct'], defaultModel:'google/gemma-4-26b-a4b-it', chatEndpoint:'/chat/completions', headers:(k)=>({Authorization:`Bearer ${k}`,'Content-Type':'application/json','HTTP-Referer':window.location.origin,'X-Title':'Bsoft TMS Suporte'}), formatRequestBody:(m,msgs,c={})=>({model:m,messages:msgs,temperature:c.temperature||0.3,max_tokens:c.maxTokens||4096,...(c.responseFormat?{response_format:c.responseFormat}:{})}), parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro OpenRouter');return{text:d.choices?.[0]?.message?.content||'',full:d};} },
-    google: { baseUrl:'https://generativelanguage.googleapis.com/v1beta', models:['nvidia/nemotron-3-super-120b-a12b:free','gemini-2.0-flash','gemini-2.0-flash-lite'], defaultModel:'gemma-4-26b-a4b-it', chatEndpoint:'/models/{model}:generateContent', headers:()=>({'Content-Type':'application/json'}), formatRequestBody:(m,msgs,c={})=>{const cnt=msgs.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:typeof m.content==='string'?m.content:JSON.stringify(m.content)}]}));return{contents:cnt,generationConfig:{temperature:c.temperature||0.3,maxOutputTokens:c.maxTokens||4096,...(c.responseFormat?.type==='json_object'?{responseMimeType:'application/json'}:{})}};}, parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro Google');const p=d.candidates?.[0]?.content?.parts||[];return{text:p.filter(p=>p.text).map(p=>p.text).join(''),full:d};}, buildUrl:(b,m,e)=>`${b}${e.replace('{model}',m)}` },
+    openrouter: { baseUrl:'https://openrouter.ai/api/v1', models:['nvidia/nemotron-3-ultra-550b-a55b:free','nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free','z-ai/glm-4.5-air:free','meta-llama/llama-3.3-70b-instruct:free','deepseek/deepseek-r1:free'], defaultModel:'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free', chatEndpoint:'/chat/completions', headers:(k)=>({Authorization:`Bearer ${k}`,'Content-Type':'application/json','HTTP-Referer':window.location.origin,'X-Title':'Bsoft TMS Suporte'}), formatRequestBody:(m,msgs,c={})=>({model:m,messages:msgs,temperature:c.temperature||0.3,max_tokens:c.maxTokens||4096,...(c.responseFormat?{response_format:c.responseFormat}:{})}), parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro OpenRouter');return{text:d.choices?.[0]?.message?.content||'',full:d};} },
+    google: { baseUrl:'https://generativelanguage.googleapis.com/v1beta', models:['gemma-4-26b-a4b-it','gemini-2.0-flash','gemini-2.0-flash-lite','gemini-2.5-flash'], defaultModel:'gemma-4-26b-a4b-it', chatEndpoint:'/models/{model}:generateContent', headers:()=>({'Content-Type':'application/json'}), formatRequestBody:(m,msgs,c={})=>{const cnt=msgs.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:typeof m.content==='string'?m.content:JSON.stringify(m.content)}]}));return{contents:cnt,generationConfig:{temperature:c.temperature||0.3,maxOutputTokens:c.maxTokens||4096,...(c.responseFormat?.type==='json_object'?{responseMimeType:'application/json'}:{})}};}, parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro Google');const p=d.candidates?.[0]?.content?.parts||[];return{text:p.filter(p=>p.text).map(p=>p.text).join(''),full:d};}, buildUrl:(b,m,e)=>`${b}${e.replace('{model}',m)}` },
     custom: { baseUrl:'',models:[],defaultModel:'',chatEndpoint:'/chat/completions', headers:(k)=>({Authorization:`Bearer ${k}`,'Content-Type':'application/json'}), formatRequestBody:(m,msgs,c={})=>({model:m,messages:msgs,temperature:c.temperature||0.3,max_tokens:c.maxTokens||4096,...(c.responseFormat?{response_format:c.responseFormat}:{})}), parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro API');return{text:d.choices?.[0]?.message?.content||'',full:d};} }
+};
+const MODEL_LABELS = {
+    'nvidia/nemotron-3-ultra-550b-a55b:free':         'Nemotron Ultra 550B ⭐ (principal fixo)',
+    'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free': 'Nemotron Nano 30B Reasoning (secundário padrão)',
+    'z-ai/glm-4.5-air:free':                          'GLM-4.5 Air',
+    'meta-llama/llama-3.3-70b-instruct:free':         'Llama 3.3 70B Instruct',
+    'deepseek/deepseek-r1:free':                      'DeepSeek R1',
+    'gemma-4-26b-a4b-it':                             'Gemma 4 26B (fallback padrão)',
+    'gemini-2.0-flash':                               'Gemini 2.0 Flash',
+    'gemini-2.0-flash-lite':                          'Gemini 2.0 Flash Lite',
+    'gemini-2.5-flash':                               'Gemini 2.5 Flash',
 };
 let mcpConfig = { ...DEFAULT_MCP_CONFIG };
 function loadMCPConfig() { try { const s = localStorage.getItem(MCP_CONFIG_KEY); if (s) mcpConfig = { ...DEFAULT_MCP_CONFIG, ...JSON.parse(s) }; applyMCPConfigToUI(); } catch(e) { applyMCPConfigToUI(); } }
 function applyMCPConfigToUI() { document.getElementById('mcpProvider').value=mcpConfig.provider; document.getElementById('mcpApiKey').value=mcpConfig.apiKey; document.getElementById('mcpBaseUrl').value=mcpConfig.baseUrl; onProviderChange(); setTimeout(()=>{ const ms=document.getElementById('mcpModel'); const ci=document.getElementById('mcpModelCustom'); const existe=Array.from(ms.options).some(o=>o.value===mcpConfig.model&&o.value!=='__custom__'); if(existe){ms.value=mcpConfig.model;ci.style.display='none';}else{ms.value='__custom__';ci.value=mcpConfig.model||'';ci.style.display='block';} },100); }
-function onProviderChange() { const p=document.getElementById('mcpProvider').value; const pr=PROVIDER_PRESETS[p]; const ms=document.getElementById('mcpModel'); const bu=document.getElementById('mcpBaseUrl'); ms.innerHTML=''; (pr.models||[]).forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;ms.appendChild(o);}); const oc=document.createElement('option');oc.value='__custom__';oc.textContent='✏️ Digite o modelo...';ms.appendChild(oc); document.getElementById('mcpModelCustom').style.display='none'; bu.value=pr.baseUrl||''; bu.placeholder=pr.baseUrl||'https://sua-api.com/v1'; }
+function onProviderChange() { const p=document.getElementById('mcpProvider').value; const pr=PROVIDER_PRESETS[p]; const ms=document.getElementById('mcpModel'); const bu=document.getElementById('mcpBaseUrl'); ms.innerHTML=''; (pr.models||[]).forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=MODEL_LABELS[m]||m;ms.appendChild(o);}); const oc=document.createElement('option');oc.value='__custom__';oc.textContent='✏️ Digite o modelo...';ms.appendChild(oc); document.getElementById('mcpModelCustom').style.display='none'; bu.value=pr.baseUrl||''; bu.placeholder=pr.baseUrl||'https://sua-api.com/v1'; }
 function onModelChange(){const ms=document.getElementById('mcpModel');const ci=document.getElementById('mcpModelCustom');if(ms.value==='__custom__'){ci.style.display='block';ci.focus();}else{ci.style.display='none';}}
 function openMCP() { const s=prompt("Senha Administrativa:"); if(s===CORRECT_PASSWORD){loadMCPConfig();document.getElementById('mcpPanel').style.display='flex';updateMCPStatus('Configuração carregada.');}else if(s!==null){alert("Senha incorreta!");} }
 function closeMCP(){document.getElementById('mcpPanel').style.display='none';}
 function updateMCPStatus(m,e=false){const s=document.getElementById('mcpStatus');s.textContent=m;s.style.color=e?'#dc2626':'#0369a1';}
 function getModelFromUI(){const ms=document.getElementById('mcpModel');return ms.value==='__custom__'?document.getElementById('mcpModelCustom').value.trim():ms.value;}
 function saveMCPConfig(){mcpConfig.provider=document.getElementById('mcpProvider').value;mcpConfig.model=getModelFromUI();mcpConfig.apiKey=document.getElementById('mcpApiKey').value.trim();mcpConfig.baseUrl=document.getElementById('mcpBaseUrl').value.trim();if(!mcpConfig.model){updateMCPStatus('❌ Informe o nome do modelo',true);return;}localStorage.setItem(MCP_CONFIG_KEY,JSON.stringify(mcpConfig));updateMCPStatus('✅ Salvo! Recarregando...');setTimeout(()=>{manualVetorizado=[];loadData();},500);}
+function resetMCPConfig(){if(!confirm('Restaurar configurações padrão?\nIsso apagará as configurações salvas e voltará ao padrão do código.'))return;mcpConfig={...DEFAULT_MCP_CONFIG};localStorage.removeItem(MCP_CONFIG_KEY);applyMCPConfigToUI();updateMCPStatus('✅ Padrão restaurado com sucesso');}
 async function testMCPConnection(){const p=document.getElementById('mcpProvider').value;const m=getModelFromUI();const k=document.getElementById('mcpApiKey').value.trim();const b=document.getElementById('mcpBaseUrl').value.trim();if(!k){updateMCPStatus('❌ API Key obrigatória',true);return;}if(!m){updateMCPStatus('❌ Informe o nome do modelo',true);return;}updateMCPStatus(`🔌 Testando "${m}"...`);try{const r=await callMCPAPI(p,m,k,b,[{role:'user',content:'Responda "OK"'}],{maxTokens:10,temperature:0});updateMCPStatus(`✅ OK com "${m}": "${r.text.trim()}"`);}catch(e){updateMCPStatus(`❌ ${e.message}`,true);}}
-async function callMCPAPI(provider,model,apiKey,baseUrl,messages,config={}){const preset=PROVIDER_PRESETS[provider];if(!preset)throw new Error(`Provedor "${provider}" não suportado`);let url=baseUrl||preset.baseUrl;if(provider==='google'){url=preset.buildUrl(url,model,preset.chatEndpoint)+`?key=${apiKey}`;}else{url=url.replace(/\/+$/,'')+preset.chatEndpoint;}const headers=preset.headers(apiKey);const body=preset.formatRequestBody(model,messages,config);const response=await fetch(url,{method:'POST',headers,body:JSON.stringify(body)});const data=await response.json();if(!response.ok){const err=new Error(`[${provider}] ${data.error?.message||data.error?.code||`HTTP ${response.status}`}`);err.status=response.status;throw err;}return preset.parseResponse(data);}
+async function callMCPAPI(provider,model,apiKey,baseUrl,messages,config={}){
+    const preset=PROVIDER_PRESETS[provider];if(!preset)throw new Error(`Provedor "${provider}" não suportado`);
+    let url=baseUrl||preset.baseUrl;
+    if(provider==='google'){url=preset.buildUrl(url,model,preset.chatEndpoint)+`?key=${apiKey}`;}
+    else{url=url.replace(/\/+$/,'')+preset.chatEndpoint;}
+    const headers=preset.headers(apiKey);
+    const body=preset.formatRequestBody(model,messages,config);
+    const response=await fetch(url,{method:'POST',headers,body:JSON.stringify(body)});
+    const data=await response.json();
+    if(!response.ok){const err=new Error(`[${provider}] ${data.error?.message||data.error?.code||`HTTP ${response.status}`}`);err.status=response.status;throw err;}
+    return preset.parseResponse(data);
+}
 
 async function callCurrentMCP(messages,config={}){
     const ULTRA_MODEL='nvidia/nemotron-3-ultra-550b-a55b:free';
-    const NANO_MODEL=mcpConfig.model; // nemotron-3-nano-omni-30b-a3b-reasoning:free
+    const NANO_MODEL=DEFAULT_MCP_CONFIG.model; // padrão fixo do código
+    // modelo configurado pelo usuário — tem prioridade se for diferente do padrão
+    const CUSTOM_MODEL = mcpConfig.model !== NANO_MODEL ? mcpConfig.model : null;
+    const _providerLabel = mcpConfig.provider==='google'?'Google':mcpConfig.provider==='custom'?'Custom':'OpenRouter';
 
-    // ── 1º: Ultra 550B — 2 tentativas ──
-    for(let t=1;t<=2;t++){
-        try{
-            if(t>1){console.warn('[Ultra] retry 2/2...');await new Promise(r=>setTimeout(r,2500));}
-            const res=await callMCPAPI(mcpConfig.provider,ULTRA_MODEL,mcpConfig.apiKey,mcpConfig.baseUrl,messages,config);
-            return{...res,_iaUsada:'OpenRouter',_iaModelo:ULTRA_MODEL};
-        }catch(e){
-            console.warn(`[Ultra] tentativa ${t}/2 falhou (${e.status||'?'}):`,e.message);
+    const _tlog = (modelo, t, total, status, extra='') => console.log(
+        `%c⏱️ [IA] ${modelo} tentativa ${t}: ${status} em ${total.toFixed(0)}ms${extra}`,
+        status==='✅ OK' ? 'color:#16a34a;font-weight:600' : 'color:#dc2626;font-weight:600'
+    );
+
+    // ── 0º: Modelo configurado pelo usuário (prioridade máxima) ──
+    if(CUSTOM_MODEL){
+        console.log(`%c⭐ [IA] Modelo configurado: tentando ${CUSTOM_MODEL} primeiro...`,'color:#0891b2;font-weight:700');
+        for(let t=1;t<=2;t++){
+            try{
+                if(t>1){console.warn(`[Config] retry 2/2... ${CUSTOM_MODEL}`);await new Promise(r=>setTimeout(r,2000));}
+                const _tm=performance.now();
+                const res=await callMCPAPI(mcpConfig.provider,CUSTOM_MODEL,mcpConfig.apiKey,mcpConfig.baseUrl,messages,config);
+                _tlog(CUSTOM_MODEL,t,performance.now()-_tm,'✅ OK',` — via ${_providerLabel}`);
+                return{...res,_iaUsada:_providerLabel,_iaModelo:CUSTOM_MODEL};
+            }catch(e){
+                _tlog(CUSTOM_MODEL,t,0,`❌ erro (${e.status||e.message?.substring(0,40)||'?'})`);
+            }
+        }
+        console.warn(`[Config] ${CUSTOM_MODEL} falhou → entrando no fluxo padrão (Ultra → Nano → Gemini)...`);
+    }
+
+    // ── 1º: Ultra 550B — 2 tentativas (pula se já foi tentado como custom) ──
+    if(CUSTOM_MODEL !== ULTRA_MODEL){
+        for(let t=1;t<=2;t++){
+            try{
+                if(t>1){console.warn('[Ultra] retry 2/2...');await new Promise(r=>setTimeout(r,2500));}
+                const _tm=performance.now();
+                const res=await callMCPAPI(mcpConfig.provider,ULTRA_MODEL,mcpConfig.apiKey,mcpConfig.baseUrl,messages,config);
+                _tlog('Ultra 550B',t,performance.now()-_tm,'✅ OK',` — modelo real: ${ULTRA_MODEL}`);
+                return{...res,_iaUsada:_providerLabel,_iaModelo:ULTRA_MODEL};
+            }catch(e){
+                _tlog('Ultra 550B',t,0,`❌ erro (${e.status||e.message?.substring(0,40)||'?'})`);
+            }
         }
     }
 
-    // ── 2º: Nano (modelo configurado) — 2 tentativas ──
-    console.warn('[Fallback] Ultra indisponível — tentando Nano...');
+    // ── 2º: Nano padrão — 2 tentativas ──
+    console.log(`%c⏱️ [IA] Ultra falhou → tentando Nano padrão (${NANO_MODEL})...`,'color:#7c3aed;font-weight:600');
     for(let t=1;t<=2;t++){
         try{
             if(t>1){console.warn('[Nano] retry 2/2...');await new Promise(r=>setTimeout(r,2500));}
+            const _tm=performance.now();
             const res=await callMCPAPI(mcpConfig.provider,NANO_MODEL,mcpConfig.apiKey,mcpConfig.baseUrl,messages,config);
-            return{...res,_iaUsada:'OpenRouter',_iaModelo:NANO_MODEL};
+            _tlog('Nano padrão',t,performance.now()-_tm,'✅ OK',` — modelo real: ${NANO_MODEL}`);
+            return{...res,_iaUsada:_providerLabel,_iaModelo:NANO_MODEL};
         }catch(e){
-            console.warn(`[Nano] tentativa ${t}/2 falhou (${e.status||'?'}):`,e.message);
+            _tlog('Nano padrão',t,0,`❌ erro (${e.status||e.message?.substring(0,40)||'?'})`);
         }
     }
 
     // ── 3º: Gemini — até 3 tentativas ──
-    console.warn('[Fallback] OpenRouter indisponível — ativando Gemini...');
+    console.log('%c⏱️ [IA] OpenRouter falhou → ativando Gemini (fallback)...','color:#0369a1;font-weight:600');
     for(let t=1;t<=3;t++){
         try{
             if(t>1){console.warn(`[Gemini] retry ${t}/3...`);await new Promise(r=>setTimeout(r,2500));}
+            const _tm=performance.now();
             const res=await callMCPAPI('google',GEMINI_FALLBACK_MODEL,GEMINI_FALLBACK_KEY,'',messages,config);
+            _tlog('Gemini',t,performance.now()-_tm,'✅ OK',` — modelo real: ${GEMINI_FALLBACK_MODEL}`);
             return{...res,_iaUsada:'Gemini',_iaModelo:GEMINI_FALLBACK_MODEL};
         }catch(e){
-            console.warn(`[Gemini] tentativa ${t}/3 falhou (${e.status||'?'}):`,e.message);
+            _tlog('Gemini',t,0,`❌ erro (${e.status||e.message?.substring(0,40)||'?'})`);
             if(t>=3)throw e;
         }
     }
@@ -1460,15 +1519,47 @@ function filtrarPensamentoAlto(texto) {
 }
 function renderMd(txt) {
     if (!txt) return '';
-    let h = txt
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
-        .replace(/\*(.*?)\*/g, '<i>$1</i>');
-    h = h.replace(/^[ \t]*[-*] (.+)$/gm, '<li>$1</li>');
-    h = h.replace(/^[ \t]*\d+\. (.+)$/gm, '<li>$1</li>');
-    h = h.replace(/((?:<li>.+<\/li>\n?)+)/g, '<ul style="margin:6px 0 6px 18px;padding:0;">$1</ul>');
+    // Escape HTML
+    let h = txt.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    // Code blocks
+    h = h.replace(/```(?:\w+\n)?([\s\S]*?)```/g, (_, code) =>
+        `<pre style="background:#f4f4f4;border:1px solid #e5e7eb;border-radius:6px;padding:10px 12px;overflow-x:auto;font-size:12px;font-family:monospace;margin:8px 0;white-space:pre;">${code.trim()}</pre>`);
+    // Inline code
+    h = h.replace(/`([^`]+)`/g, '<code style="background:#f4f4f4;padding:1px 5px;border-radius:3px;font-family:monospace;font-size:12px;color:#c0392b;">$1</code>');
+    // Bold / italic
+    h = h.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+    h = h.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    // Headings
+    h = h.replace(/^####\s+(.+)$/gm, '<h4 style="font-size:13px;font-weight:700;color:#1f2937;margin:10px 0 3px;">$1</h4>');
+    h = h.replace(/^###\s+(.+)$/gm,  '<h3 style="font-size:14px;font-weight:700;color:#111827;margin:12px 0 4px;border-bottom:1px solid #f3f4f6;padding-bottom:3px;">$1</h3>');
+    h = h.replace(/^##\s+(.+)$/gm,   '<h2 style="font-size:15px;font-weight:700;color:#111827;margin:14px 0 5px;">$1</h2>');
+    h = h.replace(/^#\s+(.+)$/gm,    '<h2 style="font-size:16px;font-weight:700;color:#111827;margin:16px 0 6px;">$1</h2>');
+    // Horizontal rule
+    h = h.replace(/^---+$/gm, '<hr style="border:none;border-top:1px solid #e5e7eb;margin:10px 0;">');
+    // Tables (| col | col |)
+    h = h.replace(/((?:^\|.+\|\n?)+)/gm, (block) => {
+        const lines = block.trim().split('\n').filter(l => l.trim());
+        const isSep = l => /^\|[\s\-:|]+\|/.test(l.trim());
+        let tbl = '<div style="overflow-x:auto;margin:8px 0;"><table style="width:100%;border-collapse:collapse;font-size:12.5px;">';
+        let hdrDone = false;
+        lines.forEach(line => {
+            if (isSep(line)) { hdrDone = true; return; }
+            const cells = line.split('|').slice(1, -1);
+            const tag = !hdrDone ? 'th' : 'td';
+            const s = tag === 'th'
+                ? 'background:#f9fafb;font-weight:700;padding:7px 10px;border:1px solid #e5e7eb;text-align:left;'
+                : 'padding:6px 10px;border:1px solid #e5e7eb;vertical-align:top;';
+            tbl += '<tr>' + cells.map(c => `<${tag} style="${s}">${c.trim()}</${tag}>`).join('') + '</tr>';
+        });
+        return tbl + '</table></div>';
+    });
+    // Blockquotes (&gt; because > was already escaped)
+    h = h.replace(/^&gt;\s*(.+)$/gm, '<blockquote style="border-left:3px solid var(--primary);padding:4px 12px;margin:4px 0;color:#4b5563;background:#fef9f5;border-radius:0 6px 6px 0;">$1</blockquote>');
+    // Lists
+    h = h.replace(/^[ \t]*[-*] (.+)$/gm, '<li style="margin:2px 0;">$1</li>');
+    h = h.replace(/^[ \t]*\d+\. (.+)$/gm, '<li style="margin:2px 0;">$1</li>');
+    h = h.replace(/((?:<li[^>]*>.+<\/li>\n?)+)/g, '<ul style="margin:6px 0 6px 18px;padding:0;">$1</ul>');
+    // Line breaks
     h = h.replace(/\n/g, '<br>');
     return h;
 }
@@ -1660,6 +1751,8 @@ function detectarDocumento(texto) {
 async function forcarAtualizacaoRepositorio() {
     appendMessage('system', '🔄 <strong>Atualizando repositório...</strong>');
     localStorage.removeItem(REPO_ARTIGOS_KEY);
+    localStorage.removeItem(REPO_VECTORS_KEY);
+    localStorage.removeItem(REPO_FILELIST_KEY);
     repositorioCarregado = false;
     repositorioCache = [];
     manualVetorizado = manualVetorizado.filter(item => !item.isRepositorio);
@@ -1865,24 +1958,19 @@ async function handleChat() {
         return;
     }
 
-    const lf = appendLoadingCard("⭐ Verificando base de conhecimento...");
-    const rf = await buscarRespostaFixa(query);
-    lf.remove();
-
-    if (rf) {
-        appendMessage('system', '⭐ <strong>Resposta Confirmada</strong> — Baseada em feedback positivo.');
-        renderAnswerCard(rf.caminho || null, rf.como_fazer || rf.texto || '', rf.dicas || [], Date.now(), true);
-        const tc = (rf.como_fazer || rf.texto || '').replace(/\*\*(.*?)\*\*/g, '$1');
-        adicionarMensagemNaConversa('ai', tc); return;
-    }
+    const _t0 = performance.now();
+    const _tp = (label, from) => console.log(`%c⏱️ [handleChat] ${label}: ${(performance.now()-from).toFixed(0)}ms`, 'color:#f97316;font-weight:600;');
 
     const ld = appendLoadingCard("🧠 Elaborando sua resposta...");
+    const _t2 = performance.now();
     const vp = await gerarEmbedding(queryNormalizada);
+    _tp('gerarEmbedding', _t2);
+    const _t3 = performance.now();
     let rr = [];
     if (vp) { rr = manualVetorizado.map(item => ({ ...item, similaridade: calcularSimilaridade(vp, item.vetor) })).sort((a, b) => b.similaridade - a.similaridade).slice(0, 15); }
+    _tp('buscaVetorial (map+sort)', _t3);
 
     const trb = rr.length > 0 && rr[0].similaridade > 0.65;
-    const ctx = prepararContextoManualCompleto();
     let ar = "";
     if (rr.length > 0) { ar = "\n=== ARTIGOS MAIS RELEVANTES ===\n"; rr.forEach((r, i) => { ar += `[RELEVANTE ${i + 1} - ${(r.similaridade * 100).toFixed(0)}%] ${r.erro}\nSolução: ${r.solucao}\n${r.emitir ? 'Emissão: ' + r.emitir + '\n' : ''}---\n`; }); }
 
@@ -1893,7 +1981,9 @@ async function handleChat() {
 
     let conhecimentoRepositorio = '';
     if (!trb || vum) {
+        const _t4 = performance.now();
         const repoKnowledge = await buscarConhecimentoRelevanteNoRepositorio(query);
+        _tp('buscarRepositorio', _t4);
         if (repoKnowledge) { conhecimentoRepositorio = repoKnowledge; appendMessage('system', '📁 <strong>Documento relevante encontrado no repositório!</strong>'); }
     }
 
@@ -1901,8 +1991,6 @@ async function handleChat() {
     let hc = ""; if (cc.length > 0) { hc = "\n=== HISTÓRICO DA CONVERSA ===\n"; cc.forEach(m => { hc += `${m.role === 'user' ? '👤 Cliente' : '🤖 Suporte'}: ${m.content.substring(0, 400)}\n`; }); }
 
     const es = JSON.stringify(SISTEMA_BSOFT_TMS, null, 2);
-    let da = ""; if (dadosParametros.length > 0) { da += "\n=== PARÂMETROS ===\n"; dadosParametros.slice(0, 30).forEach((p, i) => { da += `[${i + 1}] ${JSON.stringify(p).substring(0, 300)}\n`; }); }
-    if (dadosFuncionalidades.length > 0) { da += "\n=== FUNCIONALIDADES ===\n"; dadosFuncionalidades.slice(0, 30).forEach((f, i) => { da += `[${i + 1}] ${JSON.stringify(f).substring(0, 300)}\n`; }); }
 
     const dc = conversa?.documentoContexto || detectarDocumento(query.toLowerCase());
     let ido = ""; if (dc && SISTEMA_BSOFT_TMS.documentos_principais[dc.toUpperCase()]) { ido = `\n=== DOCUMENTO EM CONTEXTO: ${dc.toUpperCase()} ===\n${JSON.stringify(SISTEMA_BSOFT_TMS.documentos_principais[dc.toUpperCase()], null, 2)}\n`; }
@@ -1918,14 +2006,21 @@ async function handleChat() {
 	PERGUNTA: "${query}"\n\n📝 FORMATO DE RESPOSTA OBRIGATÓRIO:\n- Responda SEMPRE em Markdown limpo.\n- NUNCA responda em JSON ou formato estruturado.\n- Use **negrito** para termos importantes.\n- Use listas com - para passos sequenciais.\n- Responda como um agente humano, de forma conversacional.${vum ? '\n- Não encontrou no manual — peça gentilmente para reformular a pergunta ou perguntar sobre outro assunto do Bsoft TMS.' : ''}`;
 
     try {
+        const _t5 = performance.now();
         const result = await callMCPSemPensamento([{ role: 'user', content: ps }], { temperature: 0.4, maxTokens: 4096 });
+        _tp('callMCPSemPensamento (IA)', _t5);
+        _tp('TOTAL handleChat', _t0);
+        console.log(`%c⏱️ [handleChat] modelo usado: ${result._iaUsada} / ${result._iaModelo}`, 'color:#7c3aed;font-weight:600;');
         ld.remove();
         const rf2 = renderMd(result.text);
         const iaUsada = result._iaUsada || 'OpenRouter';
         const iaModelo = (result._iaModelo || '').split('/').pop();
-        const iaBadge = iaUsada === 'Gemini'
-            ? `<span style="font-size:10px;color:#7c3aed;background:#f5f3ff;padding:2px 7px;border-radius:10px;border:1px solid #ddd6fe;font-weight:600;">🌐 Gemini (fallback)</span>`
-            : `<span style="font-size:10px;color:#0369a1;background:#f0f9ff;padding:2px 7px;border-radius:10px;border:1px solid #bae6fd;font-weight:600;">⚡ OpenRouter${iaModelo ? ' · '+iaModelo : ''}</span>`;
+        const _iaBadgeCfg = iaUsada==='Gemini'
+            ? {emoji:'🌐',color:'#7c3aed',bg:'#f5f3ff',border:'#ddd6fe'}
+            : iaUsada==='Custom'
+            ? {emoji:'🔌',color:'#059669',bg:'#f0fdf4',border:'#bbf7d0'}
+            : {emoji:'⚡',color:'#0369a1',bg:'#f0f9ff',border:'#bae6fd'};
+        const iaBadge = `<span style="font-size:10px;color:${_iaBadgeCfg.color};background:${_iaBadgeCfg.bg};padding:2px 7px;border-radius:10px;border:1px solid ${_iaBadgeCfg.border};font-weight:600;">${_iaBadgeCfg.emoji} ${iaUsada}${iaModelo?' · '+iaModelo:''}</span>`;
         const card = document.createElement('div'); card.className = 'answer-card';
         card.innerHTML = `<div class="answer-section"><div class="section-content">${rf2}</div></div>
             <div class="feedback-area">
@@ -2551,9 +2646,12 @@ function renderizarCardRegra(texto, li, iaUsada, iaModelo) {
         .replace(/\*\*(.*?)\*\*/g,'<b>$1</b>')
         .replace(/\n/g,'<br>');
     const modelo = (iaModelo||'').split('/').pop();
-    const badge = (iaUsada||'OpenRouter') === 'Gemini'
-        ? `<span style="font-size:10px;color:#7c3aed;background:#f5f3ff;padding:2px 7px;border-radius:10px;border:1px solid #ddd6fe;font-weight:600;">🌐 Gemini (fallback)</span>`
-        : `<span style="font-size:10px;color:#0369a1;background:#f0f9ff;padding:2px 7px;border-radius:10px;border:1px solid #bae6fd;font-weight:600;">⚡ OpenRouter${modelo?' · '+modelo:''}</span>`;
+    const _rBadgeCfg = (iaUsada||'OpenRouter')==='Gemini'
+        ? {emoji:'🌐',color:'#7c3aed',bg:'#f5f3ff',border:'#ddd6fe'}
+        : (iaUsada||'OpenRouter')==='Custom'
+        ? {emoji:'🔌',color:'#059669',bg:'#f0fdf4',border:'#bbf7d0'}
+        : {emoji:'⚡',color:'#0369a1',bg:'#f0f9ff',border:'#bae6fd'};
+    const badge = `<span style="font-size:10px;color:${_rBadgeCfg.color};background:${_rBadgeCfg.bg};padding:2px 7px;border-radius:10px;border:1px solid ${_rBadgeCfg.border};font-weight:600;">${_rBadgeCfg.emoji} ${iaUsada||'OpenRouter'}${modelo?' · '+modelo:''}</span>`;
     let h = `<div style="background:#f0fdf4;padding:8px 15px;border-bottom:1px solid #bbf7d0;font-size:11px;color:#166534;font-weight:600;">⚙️ Assistente de Criação de Regras — Bsoft TMS</div>`;
     h += `<div class="answer-section"><div class="section-content">${formatado}</div></div>`;
     h += `<div class="feedback-area"><span>Ajudou?</span><button class="feedback-btn" onclick="saveFeedback(${li},'positivo',this)">👍</button><button class="feedback-btn" onclick="saveFeedback(${li},'negativo',this)">👎</button><button onclick="novaConversa()" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);cursor:pointer;font-size:13px;font-weight:500;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='var(--primary)';this.style.background='var(--primary-light)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface)'">➕ Nova conversa</button><span style="margin-left:auto;">${badge}</span></div>`;
@@ -2820,16 +2918,23 @@ function getWindowsUser() {
 }
 function registrarNomeUsuario() {
     const atual = localStorage.getItem('bsoft_usuario_nome') || '';
-    const nome = prompt('Seu nome (aparecerá nos logs do sistema):', atual);
-    if (nome && nome.trim()) {
-        localStorage.setItem('bsoft_usuario_nome', nome.trim());
-        alert('✅ Nome registrado: ' + nome.trim());
-    }
+    let nome;
+    do {
+        nome = prompt('Seu nome (aparecerá nos logs do sistema):', atual);
+        if (nome === null) return; // usuário cancelou — mantém o nome atual
+        if (!nome.trim()) alert('⚠️ Nome não pode estar em branco!\nPor favor, informe um nome válido.');
+    } while (!nome.trim());
+    localStorage.setItem('bsoft_usuario_nome', nome.trim());
+    alert('✅ Nome registrado: ' + nome.trim());
 }
 function verificarNomeUsuario() {
-    if (!localStorage.getItem('bsoft_usuario_nome')) {
-        const nome = prompt('👋 Olá! Antes de continuar, informe seu nome para identificação nos logs do sistema:');
-        if (nome && nome.trim()) localStorage.setItem('bsoft_usuario_nome', nome.trim());
+    while (!localStorage.getItem('bsoft_usuario_nome')) {
+        const nome = prompt('👋 Olá! Para continuar, informe seu nome — ele aparecerá nos logs do sistema.\n(Campo obrigatório, não é possível pular)');
+        if (nome !== null && nome.trim()) {
+            localStorage.setItem('bsoft_usuario_nome', nome.trim());
+        } else {
+            alert('⚠️ Nome obrigatório! Informe seu nome para continuar.');
+        }
     }
 }
 async function openLogPanel() {
@@ -3224,86 +3329,92 @@ async function extrairTextoRepositorio(fileId) {
 async function buscarNoRepositorio(query) { await carregarRepositorio(); const termos = query.toLowerCase().split(' '); return repositorioCache.filter(a => { const n = a.nome.toLowerCase(); return termos.some(t => n.includes(t)); }).slice(0, 5); }
 
 // ═══════════════════════════════════════════════════════════
-//  PRÉ-CARREGAR REPOSITÓRIO (FORÇA EXTRAÇÃO - IGNORA CACHE)
+//  PRÉ-CARREGAR REPOSITÓRIO (COM CACHE INTELIGENTE)
 // ═══════════════════════════════════════════════════════════
+function _repoIsMidia(tipo) {
+    const t = (tipo || '').toLowerCase();
+    return t.includes('video') || t.includes('audio') || t.includes('image/png') || t.includes('image/jpeg');
+}
+
 async function carregarDadosRepositorio() {
     try {
-        console.log("📁 Iniciando carregamento FORÇADO do repositório...");
+        // 1. Busca lista atual de arquivos na API
         await carregarRepositorio();
-        if (repositorioCache.length === 0) {
-            console.log("📁 Repositório vazio.");
+        if (repositorioCache.length === 0) { console.log("📁 Repositório vazio."); return; }
+
+        const processaveis = repositorioCache.filter(a => !_repoIsMidia(a.tipo));
+        const idsAtuais    = processaveis.map(a => a.id);
+
+        // 2. Compara com a lista em cache
+        const idsCachados  = JSON.parse(localStorage.getItem(REPO_FILELIST_KEY) || '[]');
+        const novosIds     = idsAtuais.filter(id => !idsCachados.includes(id));
+        const removidosIds = idsCachados.filter(id => !idsAtuais.includes(id));
+
+        let artigosCache = JSON.parse(localStorage.getItem(REPO_ARTIGOS_KEY) || '{}');
+        let vetoresCache = JSON.parse(localStorage.getItem(REPO_VECTORS_KEY) || '[]');
+
+        // 3. Nenhuma mudança + vetores em cache → carrega da memória local, zero chamadas à API
+        if (novosIds.length === 0 && removidosIds.length === 0 && vetoresCache.length > 0) {
+            manualVetorizado = manualVetorizado.filter(item => !item.isRepositorio);
+            manualVetorizado.push(...vetoresCache);
+            console.log(`📁 Repositório: cache válido (${vetoresCache.length} itens) — nenhuma chamada à API necessária`);
             return;
         }
-        console.log(`📁 ${repositorioCache.length} arquivos encontrados. Extraindo TODOS (ignorando cache)...`);
-        const artigosCache = {};
-        let carregados = 0;
-        let erros = 0;
-        for (const arquivo of repositorioCache) {
-            const tipo = (arquivo.tipo || '').toLowerCase();
-            const nome = arquivo.nome || 'Sem nome';
-            if (tipo.includes('video') || tipo.includes('audio') || tipo.includes('image/png') || tipo.includes('image/jpeg')) {
-                console.log(`📁 Pulando (mídia): ${nome}`);
-                continue;
-            }
-            try {
-                console.log(`📁 Extraindo: ${nome} (${tipo})...`);
-                const resultado = await extrairTextoRepositorio(arquivo.id);
-                if (resultado && resultado.texto && resultado.texto.length > 50) {
-                    artigosCache[arquivo.id] = {
-                        titulo: nome,
-                        conteudo: resultado.texto.substring(0, 10000),
-                        data: new Date().toISOString()
-                    };
-                    carregados++;
-                    console.log(`✅ EXTRAÍDO: ${nome} (${resultado.texto.length} caracteres)`);
-                } else {
-                    console.warn(`⚠️ Texto vazio/curto: ${nome} (${resultado?.texto?.length || 0} caracteres)`);
-                    erros++;
-                }
-                await new Promise(r => setTimeout(r, 2000));
-            } catch(e) {
-                console.error(`❌ Erro: ${nome}:`, e);
-                erros++;
-            }
+
+        // 4. Remove arquivos deletados do cache
+        if (removidosIds.length > 0) {
+            console.log(`📁 ${removidosIds.length} arquivo(s) removido(s) do repositório`);
+            removidosIds.forEach(id => delete artigosCache[id]);
+            vetoresCache = vetoresCache.filter(v => !removidosIds.includes(v.repoId));
         }
-        localStorage.setItem(REPO_ARTIGOS_KEY, JSON.stringify(artigosCache));
-        const totalCache = Object.keys(artigosCache).length;
-        console.log(`📁 REPOSITÓRIO PRONTO: ${carregados} extraídos, ${erros} erros, ${totalCache} em cache`);
-        if (totalCache > 0) {
-            manualVetorizado = manualVetorizado.filter(item => !item.isRepositorio);
-            for (const [id, artigo] of Object.entries(artigosCache)) {
-                if (artigo && artigo.conteudo && artigo.conteudo.length > 100) {
-                    const textoCompleto = `REPOSITÓRIO: ${artigo.titulo} | CONTEÚDO: ${artigo.conteudo.substring(0, 2000)}`;
-                    try {
+
+        // 5. Extrai e vetoriza apenas os arquivos novos
+        if (novosIds.length > 0) {
+            console.log(`📁 ${novosIds.length} novo(s) arquivo(s) detectado(s) — extraindo...`);
+            for (const id of novosIds) {
+                const arquivo = processaveis.find(a => a.id === id);
+                const nome = arquivo?.nome || 'Sem nome';
+                try {
+                    console.log(`📁 Extraindo: ${nome}...`);
+                    const resultado = await extrairTextoRepositorio(id);
+                    if (resultado?.texto && resultado.texto.length > 50) {
+                        artigosCache[id] = { titulo: nome, conteudo: resultado.texto.substring(0, 10000), data: new Date().toISOString() };
+                        const textoCompleto = `REPOSITÓRIO: ${nome} | CONTEÚDO: ${resultado.texto.substring(0, 2000)}`;
                         const vetor = await gerarEmbedding(textoCompleto);
                         if (vetor) {
-                            manualVetorizado.push({
-                                texto: textoCompleto,
-                                erro: artigo.titulo,
-                                solucao: artigo.conteudo,
-                                emitir: '',
-                                categoria: 'Repositório',
-                                vetor: vetor,
-                                isRepositorio: true,
-                                repoId: id
-                            });
-                            console.log(`📁 Vetorizado: ${artigo.titulo}`);
+                            vetoresCache.push({ texto: textoCompleto, erro: nome, solucao: resultado.texto.substring(0, 10000), emitir: '', categoria: 'Repositório', vetor, isRepositorio: true, repoId: id });
+                            console.log(`✅ Extraído e vetorizado: ${nome} (${resultado.texto.length} chars)`);
                         }
-                    } catch(e) {
-                        console.warn(`⚠️ Erro ao vetorizar ${artigo.titulo}:`, e);
+                    } else {
+                        console.warn(`⚠️ Texto vazio/curto: ${nome} (${resultado?.texto?.length || 0} chars)`);
                     }
+                    await new Promise(r => setTimeout(r, 2000));
+                } catch(e) {
+                    console.error(`❌ Erro ao processar ${nome}:`, e);
                 }
             }
-            console.log(`📁 Total vetorizado do repositório: ${manualVetorizado.filter(item => item.isRepositorio).length} itens`);
         }
+
+        // 6. Salva cache atualizado
+        localStorage.setItem(REPO_FILELIST_KEY, JSON.stringify(idsAtuais));
+        localStorage.setItem(REPO_ARTIGOS_KEY,  JSON.stringify(artigosCache));
+        localStorage.setItem(REPO_VECTORS_KEY,  JSON.stringify(vetoresCache));
+
+        // 7. Carrega vetores na memória
+        manualVetorizado = manualVetorizado.filter(item => !item.isRepositorio);
+        manualVetorizado.push(...vetoresCache);
+        console.log(`📁 Repositório pronto: ${vetoresCache.length} item(ns) — ${novosIds.length} novo(s), ${removidosIds.length} removido(s)`);
+
     } catch(e) {
-        console.error("❌ Erro geral:", e);
+        console.error("❌ Erro geral no repositório:", e);
     }
 }
 
 async function forcarRecargaRepositorio() {
     appendMessage('system', '⚡ <strong>Forçando extração de todos os arquivos...</strong>');
     localStorage.removeItem(REPO_ARTIGOS_KEY);
+    localStorage.removeItem(REPO_VECTORS_KEY);
+    localStorage.removeItem(REPO_FILELIST_KEY);
     repositorioCarregado = false;
     repositorioCache = [];
     manualVetorizado = manualVetorizado.filter(item => !item.isRepositorio);
