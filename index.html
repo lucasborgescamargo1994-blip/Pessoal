@@ -1158,7 +1158,11 @@ function btnWelcomeSefaz() {
     if (welcome) welcome.remove();
     appendMessage('user', '🔍 Erros Sefaz');
     adicionarMensagemNaConversa('user', 'Erros Sefaz');
-    wizardRejeicaoSefaz().then(r => { if (r) { logSearch('Erros Sefaz', true); gerarRespostaSefaz(r.codigo, r.tipo); } });
+    wizardRejeicaoSefaz().then(r => {
+        if (!r) return;
+        if (r.bancoDados) { document.getElementById('searchInput').focus(); return; }
+        logSearch('Erros Sefaz', true); gerarRespostaSefaz(r.codigo, r.tipo);
+    });
 }
 function btnWelcomeRegra() {
     const welcome = document.getElementById('welcomeMsg');
@@ -2041,9 +2045,10 @@ async function handleChat() {
     }
 
     if (ehErroSefaz(query)) {
-        const r = await wizardRejeicaoSefaz();
-        if (r) { logSearch(query, true); await gerarRespostaSefaz(r.codigo, r.tipo); }
-        return;
+        const r = await wizardRejeicaoSefaz(true);
+        if (!r) return;
+        if (!r.bancoDados) { logSearch(query, true); await gerarRespostaSefaz(r.codigo, r.tipo); return; }
+        // r.bancoDados === true → continua no fluxo normal abaixo
     }
 
     const _t0 = performance.now();
@@ -2770,7 +2775,7 @@ function copiarRegra(btn) {
 // ═══════════════════════════════════════════════════════════
 let bancoRejeicoes = [], bancoRejeicoesCarregado = false;
 async function carregarBancoRejeicoes() { if (bancoRejeicoesCarregado && bancoRejeicoes.length > 0) return bancoRejeicoes; try { const {data, error} = await sb.from('RejeicoesSEFAZ').select('*'); if (error) throw error; if (Array.isArray(data)) { bancoRejeicoes = data; bancoRejeicoesCarregado = true; } } catch (e) { bancoRejeicoes = []; } return bancoRejeicoes; }
-function wizardRejeicaoSefaz() {
+function wizardRejeicaoSefaz(showBancoDados = false) {
     return new Promise(resolve => {
         const s = document.getElementById('chatStream');
         const card = document.createElement('div');
@@ -2785,6 +2790,7 @@ function wizardRejeicaoSefaz() {
         <button onclick="_sefazWizTipo('MDF-e',this)" class="_sefaz-tipo-btn" style="padding:10px 22px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;transition:all .15s;">MDF-e</button>
         <button onclick="_sefazWizTipo('NF-e',this)" class="_sefaz-tipo-btn" style="padding:10px 22px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;transition:all .15s;">NF-e</button>
         <button onclick="_sefazWizTipo('NFS-e',this)" class="_sefaz-tipo-btn" style="padding:10px 22px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;transition:all .15s;">NFS-e</button>
+        ${showBancoDados ? `<button onclick="_sefazWizBancoDados()" style="padding:10px 22px;background:#f0fdf4;color:#166534;border:2px solid #bbf7d0;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;transition:all .15s;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='#f0fdf4'">💬 Consultar no banco de dados</button>` : ''}
     </div>
 </div>
 <div id="sefazWizStep2" style="display:none;" class="answer-section">
@@ -2820,8 +2826,13 @@ function wizardRejeicaoSefaz() {
             if (!tipo) return;
             if (!codigo) { if (inp) { inp.style.borderColor = '#ef4444'; inp.focus(); } return; }
             card.remove();
-            window._sefazWizTipo = null; window._sefazWizBuscar = null;
+            window._sefazWizTipo = null; window._sefazWizBuscar = null; window._sefazWizBancoDados = null;
             resolve({ tipo, codigo });
+        };
+        window._sefazWizBancoDados = () => {
+            card.remove();
+            window._sefazWizTipo = null; window._sefazWizBuscar = null; window._sefazWizBancoDados = null;
+            resolve({ bancoDados: true });
         };
     });
 }
