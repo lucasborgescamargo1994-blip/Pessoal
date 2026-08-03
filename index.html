@@ -258,6 +258,8 @@
         .retry-btn { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; background: var(--primary); color: white; border: none; padding: 9px 18px; border-radius: 9px; cursor: pointer; font-family: inherit; font-weight: 700; font-size: 13px; transition: all 0.2s; }
         .retry-btn:hover { background: var(--primary-dark); transform: scale(1.03); }
         .feedback-area { display: flex; gap: 7px; padding: 8px 15px; background: #f8fafc; border-top: 1px solid var(--border); align-items: center; font-size: 12px; color: var(--text-muted); flex-wrap: wrap; }
+        @keyframes feedbackPulse { 0%,100%{background:#16a34a;box-shadow:0 0 0 0 rgba(22,163,74,.4);} 50%{background:#22c55e;box-shadow:0 0 0 5px rgba(22,163,74,0);} }
+        .feedback-util { font-weight:700; color:#fff !important; background:#16a34a; padding:3px 10px; border-radius:8px; animation:feedbackPulse 1.5s ease-in-out infinite; white-space:nowrap; }
         .regra-code { background:#1e1e2e;color:#cdd6f4;padding:12px 16px;border-radius:8px;font-size:12px;font-family:'Courier New',monospace;overflow-x:auto;white-space:pre;margin:8px 0;border:1px solid #313244;line-height:1.6; }
         .regra-badge { display:inline-block;background:#16a34a;color:white;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-bottom:8px; }
         .wizard-section { padding:12px 15px; border-bottom:1px solid #e5e7eb; }
@@ -1990,7 +1992,7 @@ INSTRUÇÕES:
         card.innerHTML = `<div style="background:#f0fdf4;padding:8px 15px;border-bottom:1px solid #bbf7d0;font-size:11px;color:#166534;font-weight:600;">⚙️ Assistente de Parâmetros e Funcionalidades — Bsoft TMS</div>
             <div class="answer-section"><div class="section-content">${rf}</div></div>
             <div class="feedback-area">
-                <span>Esta resposta foi útil?</span>
+                <span class="feedback-util">Esta resposta foi útil?</span>
                 <button class="feedback-btn" onclick="saveFeedback(${Date.now()},'positivo',this)">👍</button>
                 <button class="feedback-btn" onclick="saveFeedback(${Date.now()},'negativo',this)">👎</button>
                 <button onclick="novaConversa()" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);cursor:pointer;font-size:13px;font-weight:500;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='var(--primary)';this.style.background='var(--primary-light)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface)'">➕ Nova conversa</button>
@@ -2117,7 +2119,7 @@ async function handleChat() {
         const card = document.createElement('div'); card.className = 'answer-card';
         card.innerHTML = `<div class="answer-section"><div class="section-content">${rf2}</div></div>
             <div class="feedback-area">
-                <span>Esta resposta foi útil?</span>
+                <span class="feedback-util">Esta resposta foi útil?</span>
                 <button class="feedback-btn" onclick="saveFeedback(${Date.now()},'positivo',this)">👍</button>
                 <button class="feedback-btn" onclick="saveFeedback(${Date.now()},'negativo',this)">👎</button>
                 <button onclick="novaConversa()" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);cursor:pointer;font-size:13px;font-weight:500;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='var(--primary)';this.style.background='var(--primary-light)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface)'">➕ Nova conversa</button>
