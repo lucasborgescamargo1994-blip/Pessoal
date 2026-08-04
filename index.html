@@ -3017,24 +3017,41 @@ function closeAdmin() { document.getElementById('adminPanel').style.display = 'n
 function getWindowsUser() {
     return localStorage.getItem('bsoft_usuario_nome') || 'Desconhecido';
 }
+function nomeValido(nome) {
+    const n = (nome || '').trim();
+    // Aceita apenas letras (incluindo acentuadas do português) e espaços — sem números, pontos, símbolos
+    return n.length >= 2 && /^[A-Za-zÀ-ÖØ-öø-ÿ\s]+$/.test(n);
+}
 function registrarNomeUsuario() {
     const atual = localStorage.getItem('bsoft_usuario_nome') || '';
     let nome;
     do {
         nome = prompt('Seu nome (aparecerá nos logs do sistema):', atual);
         if (nome === null) return; // usuário cancelou — mantém o nome atual
-        if (!nome.trim()) alert('⚠️ Nome não pode estar em branco!\nPor favor, informe um nome válido.');
-    } while (!nome.trim());
+        if (!nome.trim()) {
+            alert('⚠️ Nome não pode estar em branco!\nPor favor, informe um nome válido.');
+        } else if (!nomeValido(nome)) {
+            alert('⚠️ Nome inválido!\nUse apenas letras e espaços.\nNúmeros, pontos e caracteres especiais não são permitidos.');
+        }
+    } while (!nome.trim() || !nomeValido(nome));
     localStorage.setItem('bsoft_usuario_nome', nome.trim());
     alert('✅ Nome registrado: ' + nome.trim());
 }
 function verificarNomeUsuario() {
+    // Detecta nomes já salvos mas inválidos (números, pontos, símbolos)
+    const nomeSalvo = localStorage.getItem('bsoft_usuario_nome');
+    if (nomeSalvo && !nomeValido(nomeSalvo)) {
+        localStorage.removeItem('bsoft_usuario_nome');
+        alert('⚠️ O nome "' + nomeSalvo + '" é inválido (contém números ou caracteres especiais).\nPor favor, informe um nome válido para continuar.');
+    }
     while (!localStorage.getItem('bsoft_usuario_nome')) {
-        const nome = prompt('👋 Olá! Para continuar, informe seu nome — ele aparecerá nos logs do sistema.\n(Campo obrigatório, não é possível pular)');
-        if (nome !== null && nome.trim()) {
-            localStorage.setItem('bsoft_usuario_nome', nome.trim());
-        } else {
+        const nome = prompt('👋 Olá! Para continuar, informe seu nome — ele aparecerá nos logs do sistema.\n(Apenas letras e espaços. Campo obrigatório, não é possível pular)');
+        if (nome === null || !nome.trim()) {
             alert('⚠️ Nome obrigatório! Informe seu nome para continuar.');
+        } else if (!nomeValido(nome)) {
+            alert('⚠️ Nome inválido!\nUse apenas letras e espaços.\nNúmeros, pontos e caracteres especiais não são permitidos.');
+        } else {
+            localStorage.setItem('bsoft_usuario_nome', nome.trim());
         }
     }
 }
