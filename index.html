@@ -260,6 +260,9 @@
         .feedback-area { display: flex; gap: 7px; padding: 8px 15px; background: #f8fafc; border-top: 1px solid var(--border); align-items: center; font-size: 12px; color: var(--text-muted); flex-wrap: wrap; }
         @keyframes feedbackPulse { 0%,100%{background:#16a34a;box-shadow:0 0 0 0 rgba(22,163,74,.4);} 50%{background:#22c55e;box-shadow:0 0 0 5px rgba(22,163,74,0);} }
         .feedback-util { font-weight:700; color:#fff !important; background:#16a34a; padding:3px 10px; border-radius:8px; animation:feedbackPulse 1.5s ease-in-out infinite; white-space:nowrap; }
+        @keyframes streamBlink { 0%,100%{opacity:1} 50%{opacity:0} }
+        .stream-cursor { display:inline-block; width:2px; height:1.1em; background:var(--primary); vertical-align:text-bottom; animation:streamBlink .6s step-start infinite; margin-left:1px; border-radius:1px; }
+        .stream-thinking { color:var(--text-muted,#888); font-style:italic; font-size:13px; margin-right:6px; }
         .regra-code { background:#1e1e2e;color:#cdd6f4;padding:12px 16px;border-radius:8px;font-size:12px;font-family:'Courier New',monospace;overflow-x:auto;white-space:pre;margin:8px 0;border:1px solid #313244;line-height:1.6; }
         .regra-badge { display:inline-block;background:#16a34a;color:white;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-bottom:8px; }
         .wizard-section { padding:12px 15px; border-bottom:1px solid #e5e7eb; }
@@ -2010,6 +2013,108 @@ INSTRUÇÕES:
 }
 
 // ═══════════════════════════════════════════════════════════
+//  HELPERS DE STREAMING
+// ═══════════════════════════════════════════════════════════
+function _makeThinkingFilter() {
+    let buf = '', inThinking = false, out = '';
+    return {
+        push(chunk) {
+            buf += chunk;
+            while (true) {
+                if (!inThinking) {
+                    const si = buf.indexOf('<thinking>');
+                    if (si === -1) {
+                        // Hold back 9 chars max (length of '<thinking') to avoid splitting across chunks
+                        const safe = Math.max(0, buf.length - 9);
+                        out += buf.slice(0, safe); buf = buf.slice(safe); break;
+                    }
+                    out += buf.slice(0, si); buf = buf.slice(si + 10); inThinking = true;
+                } else {
+                    const ei = buf.indexOf('</thinking>');
+                    if (ei === -1) { buf = buf.slice(Math.max(0, buf.length - 11)); break; }
+                    buf = buf.slice(ei + 11); inThinking = false;
+                }
+            }
+            return out;
+        },
+        finish() { if (!inThinking) out += buf; buf = ''; return out; }
+    };
+}
+
+async function _readSSEStream(resp, provider, onChunk) {
+    const reader = resp.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+    try {
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buf += dec.decode(value, { stream: true });
+            const lines = buf.split('\n');
+            buf = lines.pop() ?? '';
+            for (const line of lines) {
+                if (!line.startsWith('data: ')) continue;
+                const raw = line.slice(6).trim();
+                if (raw === '[DONE]') return;
+                try {
+                    const j = JSON.parse(raw);
+                    const chunk = provider === 'google'
+                        ? (j.candidates?.[0]?.content?.parts?.filter(p => p.text)?.map(p => p.text)?.join('') ?? '')
+                        : (j.choices?.[0]?.delta?.content ?? '');
+                    if (chunk) onChunk(chunk);
+                } catch {}
+            }
+        }
+    } finally {
+        try { reader.releaseLock(); } catch {}
+    }
+}
+
+async function callCurrentMCPStream(messages, config = {}) {
+    const ULTRA_MODEL = 'nvidia/nemotron-3-ultra-550b-a55b:free';
+    const NANO_MODEL = DEFAULT_MCP_CONFIG.model;
+    const CUSTOM_MODEL = mcpConfig.model !== NANO_MODEL ? mcpConfig.model : null;
+    const _pLabel = mcpConfig.provider==='google'?'Google':mcpConfig.provider==='custom'?'Custom':'OpenRouter';
+
+    const _conn = async (provider, model, apiKey, baseUrl) => {
+        const preset = PROVIDER_PRESETS[provider];
+        const isGoogle = provider === 'google';
+        let url = baseUrl || preset.baseUrl;
+        if (isGoogle) {
+            url = preset.buildUrl(url, model, preset.chatEndpoint) + `?key=${apiKey}&alt=sse`;
+        } else {
+            url = url.replace(/\/+$/, '') + preset.chatEndpoint;
+        }
+        const body = preset.formatRequestBody(model, messages, config);
+        if (!isGoogle) body.stream = true;
+        const resp = await fetch(url, { method: 'POST', headers: preset.headers(apiKey), body: JSON.stringify(body) });
+        if (!resp.ok) {
+            const d = await resp.json().catch(() => ({}));
+            throw Object.assign(new Error(`[${provider}] ${d.error?.message || 'HTTP ' + resp.status}`), { status: resp.status });
+        }
+        return resp;
+    };
+
+    const chain = [];
+    if (CUSTOM_MODEL) chain.push({ model: CUSTOM_MODEL, provider: mcpConfig.provider, apiKey: mcpConfig.apiKey, baseUrl: mcpConfig.baseUrl, label: _pLabel });
+    if (CUSTOM_MODEL !== ULTRA_MODEL) chain.push({ model: ULTRA_MODEL, provider: mcpConfig.provider, apiKey: mcpConfig.apiKey, baseUrl: mcpConfig.baseUrl, label: _pLabel });
+    chain.push({ model: NANO_MODEL, provider: mcpConfig.provider, apiKey: mcpConfig.apiKey, baseUrl: mcpConfig.baseUrl, label: _pLabel });
+    chain.push({ model: GEMINI_FALLBACK_MODEL, provider: 'google', apiKey: GEMINI_FALLBACK_KEY, baseUrl: '', label: 'Gemini' });
+
+    for (let i = 0; i < chain.length; i++) {
+        const c = chain[i];
+        try {
+            console.log(`%c⭐ [Stream] Tentando ${c.model}...`, 'color:#0891b2;font-weight:600');
+            const resp = await _conn(c.provider, c.model, c.apiKey, c.baseUrl);
+            return { resp, provider: c.provider, iaUsada: c.label, iaModelo: c.model };
+        } catch(e) {
+            console.warn(`[Stream] ${c.model} falhou:`, e.message);
+            if (i === chain.length - 1) throw new Error('Todos os provedores falharam.');
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════
 //  LÓGICA DE CHAT PRINCIPAL (com Repositório integrado)
 // ═══════════════════════════════════════════════════════════
 async function handleChat() {
@@ -2100,28 +2205,31 @@ async function handleChat() {
 	CONHECIMENTO:\n${es}\n${ido}${ar}${conhecimentoRepositorio}${hc}\n\n🗣️
 	PERGUNTA: "${query}"\n\n📝 FORMATO DE RESPOSTA OBRIGATÓRIO:\n- Responda SEMPRE em Markdown limpo.\n- NUNCA responda em JSON ou formato estruturado.\n- Use **negrito** para termos importantes.\n- Use listas com - para passos sequenciais.\n- Responda como um agente humano, de forma conversacional.${vum ? '\n- Não encontrou no manual — peça gentilmente para reformular a pergunta ou perguntar sobre outro assunto do Bsoft TMS.' : ''}`;
 
+    let _streamCard = null;
+    const _filter = _makeThinkingFilter();
     try {
         const _t5 = performance.now();
-        const result = await callMCPSemPensamento([{ role: 'user', content: ps }], { temperature: 0.4, maxTokens: 4096 });
-        _tp('callMCPSemPensamento (IA)', _t5);
-        _tp('TOTAL handleChat', _t0);
-        console.log(`%c⏱️ [handleChat] modelo usado: ${result._iaUsada} / ${result._iaModelo}`, 'color:#7c3aed;font-weight:600;');
+        const { resp: _resp, provider: _pr, iaUsada: _iu, iaModelo: _im } = await callCurrentMCPStream(
+            [{ role: 'user', content: ps }], { temperature: 0.4, maxTokens: 4096 }
+        );
+        _tp('callCurrentMCPStream (conectado)', _t5);
         ld.remove();
-        const rf2 = renderMd(result.text);
-        const iaUsada = result._iaUsada || 'OpenRouter';
-        const iaModelo = (result._iaModelo || '').split('/').pop();
+
+        const iaUsada = _iu || 'OpenRouter';
+        const iaModelo = (_im || '').split('/').pop();
         const _iaBadgeCfg = iaUsada==='Gemini'
             ? {emoji:'🌐',color:'#7c3aed',bg:'#f5f3ff',border:'#ddd6fe'}
             : iaUsada==='Custom'
             ? {emoji:'🔌',color:'#059669',bg:'#f0fdf4',border:'#bbf7d0'}
             : {emoji:'⚡',color:'#0369a1',bg:'#f0f9ff',border:'#bae6fd'};
         const iaBadge = `<span style="font-size:10px;color:${_iaBadgeCfg.color};background:${_iaBadgeCfg.bg};padding:2px 7px;border-radius:10px;border:1px solid ${_iaBadgeCfg.border};font-weight:600;">${_iaBadgeCfg.emoji} ${iaUsada}${iaModelo?' · '+iaModelo:''}</span>`;
-        const card = document.createElement('div'); card.className = 'answer-card';
-        card.innerHTML = `<div class="answer-section"><div class="section-content">${rf2}</div></div>
-            <div class="feedback-area">
+        const ts = Date.now();
+        const card = document.createElement('div'); card.className = 'answer-card'; _streamCard = card;
+        card.innerHTML = `<div class="answer-section"><div class="section-content" id="_sc${ts}"><span class="stream-thinking">💭 Pensando e formando resposta...</span><span class="stream-cursor"></span></div></div>
+            <div class="feedback-area" id="_sf${ts}" style="display:none">
                 <span class="feedback-util">Esta resposta foi útil?</span>
-                <button class="feedback-btn" onclick="saveFeedback(${Date.now()},'positivo',this)">👍</button>
-                <button class="feedback-btn" onclick="saveFeedback(${Date.now()},'negativo',this)">👎</button>
+                <button class="feedback-btn" onclick="saveFeedback(${ts},'positivo',this)">👍</button>
+                <button class="feedback-btn" onclick="saveFeedback(${ts},'negativo',this)">👎</button>
                 <button onclick="novaConversa()" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);cursor:pointer;font-size:13px;font-weight:500;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='var(--primary)';this.style.background='var(--primary-light)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface)'">➕ Nova conversa</button>
                 <button class="btn-pesquisa-avancada" style="background:linear-gradient(135deg, #10b981, #059669);" onclick="toggleCiotPanel()">🗺️ CIOT</button>
                 <button class="btn-pesquisa-avancada" style="background:linear-gradient(135deg, #dc2626, #991b1b);" onclick="toggleBlogPanel();document.getElementById('blogSearchInput').value='${query.replace(/'/g, "\\'")}';pesquisarNoBlog();">📝 Blog</button>
@@ -2131,12 +2239,47 @@ async function handleChat() {
                 ${filaSolucoes.length > 0 ? `<button class="feedback-btn next" onclick="fillAndSend('Próximo')">➡️ Próxima</button>` : ''}
                 <span style="margin-left:auto;">${iaBadge}</span>
             </div>`;
-        document.getElementById('chatStream').appendChild(card); scrollToBottom(true);
-        adicionarMensagemNaConversa('ai', result.text.replace(/\*\*(.*?)\*\*/g, '$1'));
+        document.getElementById('chatStream').appendChild(card);
+        scrollToBottom(true);
+
+        const contentEl = document.getElementById('_sc' + ts);
+        const feedbackEl = document.getElementById('_sf' + ts);
+        let rafPending = false, lastVis = '', streamDone = false;
+
+        await _readSSEStream(_resp, _pr, chunk => {
+            lastVis = _filter.push(chunk);
+            if (!rafPending) {
+                rafPending = true;
+                requestAnimationFrame(() => {
+                    rafPending = false;
+                    if (streamDone) return; // don't overwrite renderMd final render
+                    contentEl.innerHTML = renderMd(lastVis) + '<span class="stream-cursor"></span>';
+                    scrollToBottom(false);
+                });
+            }
+        });
+
+        streamDone = true;
+        const finalText = _filter.finish();
+        _tp('TOTAL handleChat (streaming)', _t0);
+        console.log(`%c⏱️ [handleChat] streaming: ${iaUsada} / ${_im}`, 'color:#7c3aed;font-weight:600;');
+        contentEl.innerHTML = renderMd(finalText);
+        feedbackEl.style.display = 'flex';
+        scrollToBottom(true);
+        adicionarMensagemNaConversa('ai', finalText.replace(/\*\*(.*?)\*\*/g, '$1'));
+
     } catch (e) {
-        ld.remove();
-        appendMessage('ai', '😕 <b>Não encontrei</b> esta informação no manual. Por favor, tente <b>reformular a pergunta</b> ou pergunte sobre outro assunto do Bsoft TMS.');
-        adicionarMensagemNaConversa('ai', 'Não encontrei esta informação no manual. Por favor, reformule a pergunta ou pergunte sobre outro assunto.');
+        if (_streamCard) {
+            const partial = _filter.finish();
+            const ce = _streamCard.querySelector('.section-content');
+            const fe = _streamCard.querySelector('.feedback-area');
+            if (ce) ce.innerHTML = (partial ? renderMd(partial) : '') + '<p style="color:#dc2626;font-size:12px;margin-top:8px">⚠️ Resposta interrompida. Tente novamente.</p>';
+            if (fe) fe.style.display = 'flex';
+        } else {
+            ld.remove();
+            appendMessage('ai', '😕 <b>Não encontrei</b> esta informação no manual. Por favor, tente <b>reformular a pergunta</b> ou pergunte sobre outro assunto do Bsoft TMS.');
+            adicionarMensagemNaConversa('ai', 'Não encontrei esta informação no manual. Por favor, reformule a pergunta ou pergunte sobre outro assunto.');
+        }
     }
 }
 
