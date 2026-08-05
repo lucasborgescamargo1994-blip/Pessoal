@@ -762,6 +762,7 @@
                 <button onclick="toggleSidebar()" title="Recolher conversas" style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--text-muted);padding:4px 6px;border-radius:6px;line-height:1;" onmouseover="this.style.background='var(--primary-light)'" onmouseout="this.style.background='none'">←</button>
             </div>
             <button class="btn-nova-conversa" onclick="novaConversa()">➕ Nova Conversa</button>
+            <input type="text" id="conversaSearch" placeholder="🔍 Pesquisar conversas..." oninput="renderizarListaConversas()" style="width:100%;box-sizing:border-box;padding:7px 10px;margin-top:8px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-size:13px;outline:none;transition:border-color .2s;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
         </div>
         <div class="sidebar-conversas" id="listaConversas"></div>
         <div class="sidebar-footer" style="display:flex;align-items:center;justify-content:space-between;">
@@ -1458,8 +1459,13 @@ function restaurarConversa(id) {
 }
 function renderizarListaConversas() {
     const lista = document.getElementById('listaConversas');
-    if (conversas.length === 0) { lista.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px;font-size:13px;">Nenhuma conversa ainda</div>'; return; }
-    lista.innerHTML = conversas.map(c => { const d = new Date(c.data); const ds = d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}); const ia = c.id===conversaAtivaId; const ml = c.mlKnowledgeId?' 🧠':''; return `<div class="conversa-item${ia?' active':''}" onclick="selecionarConversa('${c.id}')"><div class="conversa-titulo">${escapeHtml(c.titulo)}${ml}</div><div class="conversa-data">${ds} • ${c.mensagens.length} msgs</div><button class="btn-excluir-conversa" onclick="excluirConversa('${c.id}', event)" title="Excluir">🗑️</button></div>`; }).join('');
+    const q = (document.getElementById('conversaSearch')?.value || '').toLowerCase().trim();
+    const filtradas = q ? conversas.filter(c => c.titulo.toLowerCase().includes(q)) : conversas;
+    if (filtradas.length === 0) {
+        lista.innerHTML = `<div style="text-align:center;color:var(--text-muted);padding:20px;font-size:13px;">${q ? '🔍 Nenhuma conversa encontrada' : 'Nenhuma conversa ainda'}</div>`;
+        return;
+    }
+    lista.innerHTML = filtradas.map(c => { const d = new Date(c.data); const ds = d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}); const ia = c.id===conversaAtivaId; const ml = c.mlKnowledgeId?' 🧠':''; return `<div class="conversa-item${ia?' active':''}" onclick="selecionarConversa('${c.id}')"><div class="conversa-titulo">${escapeHtml(c.titulo)}${ml}</div><div class="conversa-data">${ds} • ${c.mensagens.length} msgs</div><button class="btn-excluir-conversa" onclick="excluirConversa('${c.id}', event)" title="Excluir">🗑️</button></div>`; }).join('');
 }
 function escapeHtml(text) { const d = document.createElement('div'); d.textContent = text; return d.innerHTML; }
 function toggleSidebar() {
