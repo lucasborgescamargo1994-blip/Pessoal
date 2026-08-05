@@ -4045,6 +4045,9 @@ window.addEventListener('DOMContentLoaded', async () => {
             handleChat();
         }
     });
+
+    // Recarrega a página a cada 12 horas para garantir que o usuário receba atualizações
+    setTimeout(() => location.reload(), 12 * 60 * 60 * 1000);
 });
 </script>
 </body>
