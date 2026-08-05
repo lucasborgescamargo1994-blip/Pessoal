@@ -2125,6 +2125,10 @@ async function handleChat() {
     const query = input.value.trim();
     if (!query) return;
 
+    // Oculta o card de boas-vindas ao enviar a primeira mensagem
+    const _wm = document.getElementById('welcomeMsg');
+    if (_wm) { _wm.style.transition = 'opacity .25s'; _wm.style.opacity = '0'; setTimeout(() => _wm.remove(), 250); }
+
 	const queryNormalizada = normalizarSinonimos(query);
     const fn = ["não deu", "não funcionou", "continuo com erro", "ainda não", "não deu certo", "proximo", "próximo", "outra opção", "mais alguma", "próxima solução"];
     const uqp = fn.some(f => query.toLowerCase().includes(f));
