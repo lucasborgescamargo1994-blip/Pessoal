@@ -1174,13 +1174,15 @@ function btnWelcomeSefaz() {
         logSearch('Erros Sefaz', true); gerarRespostaSefaz(r.codigo, r.tipo);
     });
 }
-function btnWelcomeRegra() {
+async function btnWelcomeRegra() {
     const welcome = document.getElementById('welcomeMsg');
     if (welcome) welcome.remove();
     appendMessage('user', '📋 Criar Regra');
     adicionarMensagemNaConversa('user', 'Criar Regra');
     logSearch('Criar Regra', true);
-    mostrarWizardRegra('');
+    const _tipo = await perguntarTipoRegra();
+    if (_tipo === 'cte') mostrarWizardRegra('');
+    else if (_tipo === 'contrato') mostrarWizardContrato('');
 }
 let _paramFuncMode = false;
 function btnWelcomeParametros() {
@@ -2612,7 +2614,8 @@ const CALC_FRETE_MAP={
 };
 
 const REGRAS_PREDEFINIDAS_CONTRATO={
-    combinado_motorista:`def("tarifaMotoristaCalculada", 0);\nvalor = (obt("valorTotalOrigem") * 0.2) * (obt("descontoINSS") / 100)\ndef("totalDescontoINSS", valor);\nvalor = (obt("valorTotalOrigem") * 0.2) * (obt("descontoSEST") / 100)\ndef("totalDescontoSEST", valor);\nvalorBase = (((obt("valorTotalOrigem"))*0.10)- obt("totalDescontoINSS"));\ndef("baseCalculoIRRF", valorBase);\nIRRF.defineDescontoIRRF();\nvalor =  obt("valorTotalOrigem")  + obt("outrosAcrescimos") - obt("outrosDescontos") - obt("totalDescontoINSS") - obt("totalDescontoSEST")  - obt("descontoIRRF");\ndef("freteLiquido", valor);\nvalor = obt("freteLiquido")  - obt("descontoQuebraPeso");\ndef("saldo", valor - obt("valorAdiantamento"));\ndef("resultado", obt("totalPrestacaoTerceiraAba") - obt("valorTotalOrigem") );`
+    combinado_motorista:`def("tarifaMotoristaCalculada", 0);\nvalor = (obt("valorTotalOrigem") * 0.2) * (obt("descontoINSS") / 100)\ndef("totalDescontoINSS", valor);\nvalor = (obt("valorTotalOrigem") * 0.2) * (obt("descontoSEST") / 100)\ndef("totalDescontoSEST", valor);\nvalorBase = (((obt("valorTotalOrigem"))*0.10)- obt("totalDescontoINSS"));\ndef("baseCalculoIRRF", valorBase);\nIRRF.defineDescontoIRRF();\nvalor =  obt("valorTotalOrigem")  + obt("outrosAcrescimos") - obt("outrosDescontos") - obt("totalDescontoINSS") - obt("totalDescontoSEST")  - obt("descontoIRRF");\ndef("freteLiquido", valor);\nvalor = obt("freteLiquido")  - obt("descontoQuebraPeso");\ndef("saldo", valor - obt("valorAdiantamento"));\ndef("resultado", obt("totalPrestacaoTerceiraAba") - obt("valorTotalOrigem") );`,
+    combinado_motorista_frete_minimo:`def("tarifaMotoristaCalculada", 0);\nvalor = (obt("valorTotalOrigem") * 0.2) * (obt("descontoINSS") / 100)\ndef("totalDescontoINSS", valor);\nvalor = (obt("valorTotalOrigem") * 0.2) * (obt("descontoSEST") / 100)\ndef("totalDescontoSEST", valor);\nvalorBase = (((obt("valorTotalOrigem"))*0.10)- obt("totalDescontoINSS"));\ndef("baseCalculoIRRF", valorBase);\nIRRF.defineDescontoIRRF();\nvalor =  obt("valorTotalOrigem")  + obt("outrosAcrescimos") - obt("outrosDescontos") - obt("totalDescontoINSS") - obt("totalDescontoSEST")  - obt("descontoIRRF");\ndef("freteLiquido", valor);\nvalor = obt("freteLiquido")  - obt("descontoQuebraPeso");\ndef("saldo", valor - obt("valorAdiantamento"));\ndef("resultado", obt("totalPrestacaoTerceiraAba") - obt("valorTotalOrigem") );\nif (obt("valorTotalOrigem") < obt("freteMinimo_valor")) {\n    alert("Valor abaixo do frete mínimo, será preenchido com valor do frete mínimo");\n    def("valorTotalOrigem", obt("freteMinimo_valor"));\n}`
 };
 
 function mostrarWizardRegra(queryOriginal){
@@ -2892,7 +2895,7 @@ function mostrarWizardContrato(queryOriginal){
     const card=document.createElement('div');
     card.id='wizardContratoCard';
     card.className='answer-card';
-    card.innerHTML=`<div style="background:#f5f3ff;padding:8px 15px;border-bottom:1px solid #ddd6fe;font-size:11px;color:#5b21b6;font-weight:600;">🚛 Assistente — Contrato de Frete</div><div style="padding:12px 15px 4px;"><div class="wizard-section"><div class="wizard-label">📋 Regra existente (opcional)</div><textarea id="wCfRegraCola" class="wizard-textarea" placeholder="Cole aqui a regra existente que deseja editar/modificar..." style="min-height:70px;"></textarea><div style="font-size:11px;color:#6b7280;margin:8px 0 4px;">Ou selecione uma predefinida como base:</div><div style="display:flex;flex-direction:column;gap:3px;"><label class="wizard-radio-label"><input type="radio" name="wCfRegraPre" value="" checked> Nenhuma (criar do zero)</label><label class="wizard-radio-label"><input type="radio" name="wCfRegraPre" value="combinado_motorista"> Combinado Motorista</label></div></div><div class="wizard-section"><div class="wizard-label">⚙️ Configurações da Regra</div><div class="wizard-subsection"><b>Frete líquido</b><div style="display:flex;flex-direction:column;gap:3px;margin:6px 0 8px;"><label class="wizard-radio-label"><input type="radio" name="wCfFreteOpcao" value="personalizar" checked onchange="wCfToggleFrete(this.value)"> Personalizar descontos</label><label class="wizard-radio-label"><input type="radio" name="wCfFreteOpcao" value="manter" onchange="wCfToggleFrete(this.value)"> Manter da regra existente</label></div><b style="font-size:11px;color:#374151;">Valor total origem, selecionar descontos:</b><div id="wDescontoChecks" style="margin-top:8px;"><div class="wizard-cbx-grid"><label class="wizard-radio-label"><input type="checkbox" name="wCfDesconto" value="outrosDescontos"> Outros Descontos</label><label class="wizard-radio-label"><input type="checkbox" name="wCfDesconto" value="totalDescontoINSS" checked> Valor Desconto INSS</label><label class="wizard-radio-label"><input type="checkbox" name="wCfDesconto" value="totalDescontoSEST" checked> Desconto SEST/SENAT (Valor)</label><label class="wizard-radio-label"><input type="checkbox" name="wCfDesconto" value="descontoIRRF" checked> Desconto IRRF</label><label class="wizard-radio-label"><input type="checkbox" name="wCfDesconto" value="descontoSeguro"> Desconto de Seguro</label><label class="wizard-radio-label"><input type="checkbox" name="wCfDesconto" value="valorPedagio"> Valor de Pedágio</label><label class="wizard-radio-label"><input type="checkbox" name="wCfDesconto" value="valorCombustivel"> Combustível</label></div></div></div></div><div class="wizard-section" style="border:none;"><div class="wizard-label">📝 O que precisa criar/alterar na regra?</div><textarea id="wCfDescricao" class="wizard-textarea" placeholder="Descreva o que necessita que crie ou modifique na regra..." style="min-height:100px;"></textarea></div><div style="padding:12px 15px 20px;"><button id="wCfBtnEnviar" class="wizard-submit" onclick="enviarWizardContrato()">🚀 Gerar Regra com IA</button></div></div>`;
+    card.innerHTML=`<div style="background:#f5f3ff;padding:8px 15px;border-bottom:1px solid #ddd6fe;font-size:11px;color:#5b21b6;font-weight:600;">🚛 Assistente — Contrato de Frete</div><div style="padding:12px 15px 4px;"><div class="wizard-section"><div class="wizard-label">📋 Regra existente (opcional)</div><textarea id="wCfRegraCola" class="wizard-textarea" placeholder="Cole aqui a regra existente que deseja editar/modificar..." style="min-height:70px;"></textarea><div style="font-size:11px;color:#6b7280;margin:8px 0 4px;">Ou selecione uma predefinida como base:</div><div style="display:flex;flex-direction:column;gap:3px;"><label class="wizard-radio-label"><input type="radio" name="wCfRegraPre" value="" checked> Nenhuma (criar do zero)</label><label class="wizard-radio-label"><input type="radio" name="wCfRegraPre" value="combinado_motorista"> Combinado Motorista</label><label class="wizard-radio-label"><input type="radio" name="wCfRegraPre" value="combinado_motorista_frete_minimo"> Combinado Motorista — Com alerta e bloqueio abaixo do frete mínimo</label></div></div><div class="wizard-section"><div class="wizard-label">⚙️ Configurações da Regra</div><div class="wizard-subsection"><b>Frete líquido</b><div style="display:flex;flex-direction:column;gap:3px;margin:6px 0 8px;"><label class="wizard-radio-label"><input type="radio" name="wCfFreteOpcao" value="personalizar" checked onchange="wCfToggleFrete(this.value)"> Personalizar descontos</label><label class="wizard-radio-label"><input type="radio" name="wCfFreteOpcao" value="manter" onchange="wCfToggleFrete(this.value)"> Manter da regra existente</label></div><b style="font-size:11px;color:#374151;">Valor total origem, selecionar descontos:</b><div id="wDescontoChecks" style="margin-top:8px;"><div class="wizard-cbx-grid"><label class="wizard-radio-label"><input type="checkbox" name="wCfDesconto" value="outrosDescontos"> Outros Descontos</label><label class="wizard-radio-label"><input type="checkbox" name="wCfDesconto" value="totalDescontoINSS" checked> Valor Desconto INSS</label><label class="wizard-radio-label"><input type="checkbox" name="wCfDesconto" value="totalDescontoSEST" checked> Desconto SEST/SENAT (Valor)</label><label class="wizard-radio-label"><input type="checkbox" name="wCfDesconto" value="descontoIRRF" checked> Desconto IRRF</label><label class="wizard-radio-label"><input type="checkbox" name="wCfDesconto" value="descontoSeguro"> Desconto de Seguro</label><label class="wizard-radio-label"><input type="checkbox" name="wCfDesconto" value="valorPedagio"> Valor de Pedágio</label><label class="wizard-radio-label"><input type="checkbox" name="wCfDesconto" value="valorCombustivel"> Combustível</label></div></div></div></div><div class="wizard-section" style="border:none;"><div class="wizard-label">📝 O que precisa criar/alterar na regra?</div><textarea id="wCfDescricao" class="wizard-textarea" placeholder="Descreva o que necessita que crie ou modifique na regra..." style="min-height:100px;"></textarea></div><div style="padding:12px 15px 20px;"><button id="wCfBtnEnviar" class="wizard-submit" onclick="enviarWizardContrato()">🚀 Gerar Regra com IA</button></div></div>`;
     s.appendChild(card);
     scrollToBottom(true);
 }
@@ -2914,8 +2917,8 @@ async function enviarWizardContrato(){
     const vFreteLiqEfetivo=freteOpcao==='manter'?vFreteLiqOriginal:vFreteLiq;
     let configTxt='';
     let sysMsg='';
-    if(regraPre==='combinado_motorista'&&!regraCola){
-        // Build the complete rule in JS — eliminates AI ambiguity
+    if((regraPre==='combinado_motorista'||regraPre==='combinado_motorista_frete_minimo')&&!regraCola){
+        const isFreteminimo = regraPre==='combinado_motorista_frete_minimo';
         const regraCompleta=[
             'def("tarifaMotoristaCalculada", 0);',
             'valor = (obt("valorTotalOrigem") * 0.2) * (obt("descontoINSS") / 100)',
@@ -2929,10 +2932,17 @@ async function enviarWizardContrato(){
             'def("freteLiquido", valor);',
             'valor = obt("freteLiquido")  - obt("descontoQuebraPeso");',
             'def("saldo", valor - obt("valorAdiantamento"));',
-            'def("resultado", obt("totalPrestacaoTerceiraAba") - obt("valorTotalOrigem"));'
+            'def("resultado", obt("totalPrestacaoTerceiraAba") - obt("valorTotalOrigem"));',
+            ...(isFreteminimo ? [
+                'if (obt("valorTotalOrigem") < obt("freteMinimo_valor")) {',
+                '    alert("Valor abaixo do frete mínimo, será preenchido com valor do frete mínimo");',
+                '    def("valorTotalOrigem", obt("freteMinimo_valor"));',
+                '}'
+            ] : [])
         ].join('\n');
+        const label = isFreteminimo ? 'Combinado Motorista — Com alerta e bloqueio abaixo do frete mínimo' : 'Combinado Motorista';
         configTxt=[
-            'CONFIGURACAO (Contrato de Frete — Combinado Motorista):',
+            `CONFIGURACAO (Contrato de Frete — ${label}):`,
             'REGRA COMPLETA OBRIGATORIA — copiar EXATAMENTE linha por linha, sem alterar, adicionar ou remover nada:\n'+regraCompleta,
             descricao?'\nAPLIQUE ALEM DISSO: '+descricao:'',
             _wizardContratoQuery?'\nCONTEXTO: '+_wizardContratoQuery:''
