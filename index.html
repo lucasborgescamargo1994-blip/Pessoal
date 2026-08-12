@@ -2226,15 +2226,17 @@ async function callCurrentMCPStream(messages, config = {}) {
     chain.push({ model: NANO_MODEL, provider: mcpConfig.provider, apiKey: mcpConfig.apiKey, baseUrl: mcpConfig.baseUrl, label: _pLabel });
     chain.push({ model: GEMINI_FALLBACK_MODEL, provider: 'google', apiKey: GEMINI_FALLBACK_KEY, baseUrl: '', label: 'Gemini' });
 
-    for (let i = 0; i < chain.length; i++) {
-        const c = chain[i];
+    const _skipModels = config.skipModels || [];
+    const _activeChain = _skipModels.length ? chain.filter(c => !_skipModels.includes(c.model)) : chain;
+    for (let i = 0; i < _activeChain.length; i++) {
+        const c = _activeChain[i];
         try {
             console.log(`%c⭐ [Stream] Tentando ${c.model}...`, 'color:#0891b2;font-weight:600');
             const resp = await _conn(c.provider, c.model, c.apiKey, c.baseUrl);
             return { resp, provider: c.provider, iaUsada: c.label, iaModelo: c.model };
         } catch(e) {
             console.warn(`[Stream] ${c.model} falhou:`, e.message);
-            if (i === chain.length - 1) throw new Error('Todos os provedores falharam.');
+            if (i === _activeChain.length - 1) throw new Error('Todos os provedores falharam.');
         }
     }
 }
@@ -2334,12 +2336,28 @@ async function handleChat() {
 	CONHECIMENTO:\n${es}\n${ido}${ar}${conhecimentoRepositorio}${hc}\n\n🗣️
 	PERGUNTA: "${query}"\n\n📝 FORMATO DE RESPOSTA OBRIGATÓRIO:\n- Responda SEMPRE em Markdown limpo.\n- NUNCA responda em JSON ou formato estruturado.\n- Use **negrito** para termos importantes.\n- Use listas com - para passos sequenciais.\n- Responda como um agente humano, de forma conversacional.${vum ? '\n- Não encontrou no manual — peça gentilmente para reformular a pergunta ou perguntar sobre outro assunto do Bsoft TMS.' : ''}`;
 
+    // Build multi-turn messages when conversation history exists
+    const _historyTurns = cc.slice(0, -1); // previous turns, current query already added to cc as last item
+    let _apiMessages;
+    if (_historyTurns.length >= 2) {
+        // Remove embedded history text from context to avoid duplication with proper message turns
+        const _psContexto = ps.split('\n\n🗣️')[0].replace(hc, '');
+        const _fmtSuffix = `\n\n📝 FORMATO:\n- Markdown limpo.\n- **negrito** para termos importantes.\n- Listas com - para passos sequenciais.\n- Linguagem conversacional e humana.${vum ? '\n- Se não encontrou no manual: pedir reformulação.' : ''}`;
+        _apiMessages = [
+            { role: 'user', content: _psContexto },
+            ..._historyTurns.map(m => ({ role: m.role, content: m.content.substring(0, 2000) })),
+            { role: 'user', content: `🗣️ PERGUNTA: "${query}"${_fmtSuffix}` }
+        ];
+    } else {
+        _apiMessages = [{ role: 'user', content: ps }];
+    }
+
     let _streamCard = null;
     const _filter = _makeThinkingFilter();
     try {
         const _t5 = performance.now();
         const { resp: _resp, provider: _pr, iaUsada: _iu, iaModelo: _im } = await callCurrentMCPStream(
-            [{ role: 'user', content: ps }], { temperature: 0.4, maxTokens: 4096 }
+            _apiMessages, { temperature: 0.4, maxTokens: 4096 }
         );
         _tp('callCurrentMCPStream (conectado)', _t5);
         ld.remove();
@@ -2389,9 +2407,47 @@ async function handleChat() {
         });
 
         streamDone = true;
-        const finalText = _filter.finish();
+        let finalText = _filter.finish();
         _tp('TOTAL handleChat (streaming)', _t0);
         console.log(`%c⏱️ [handleChat] streaming: ${iaUsada} / ${_im}`, 'color:#7c3aed;font-weight:600;');
+
+        // Auto-fallback quando resposta vier em branco
+        if (!finalText.trim()) {
+            console.warn('[handleChat] Resposta em branco — tentando fallback sem:', _im);
+            contentEl.innerHTML = '<span class="stream-thinking">⚠️ Resposta vazia, tentando modelo alternativo...</span><span class="stream-cursor"></span>';
+            let _fbOk = false;
+            try {
+                const _filter2 = _makeThinkingFilter();
+                const { resp: _resp2, provider: _pr2 } = await callCurrentMCPStream(
+                    _apiMessages, { temperature: 0.4, maxTokens: 4096, skipModels: [_im] }
+                );
+                let _rafPending2 = false, _streamDone2 = false;
+                await _readSSEStream(_resp2, _pr2, chunk => {
+                    const _vis2 = _filter2.push(chunk);
+                    if (!_rafPending2) {
+                        _rafPending2 = true;
+                        requestAnimationFrame(() => {
+                            _rafPending2 = false;
+                            if (_streamDone2) return;
+                            contentEl.innerHTML = renderMd(_vis2) + '<span class="stream-cursor"></span>';
+                            scrollToBottom(false);
+                        });
+                    }
+                });
+                _streamDone2 = true;
+                finalText = _filter2.finish();
+                _fbOk = !!finalText.trim();
+            } catch(e) { console.warn('[handleChat] Fallback também falhou:', e); }
+
+            if (!_fbOk) {
+                const _rq = query.replace(/'/g, "\\'");
+                contentEl.innerHTML = `<div style="color:var(--text-muted);font-style:italic;font-size:13px;margin-bottom:10px;">⚠️ Não foi possível obter resposta dos modelos disponíveis no momento.</div><button onclick="this.closest('.answer-card').remove();fillAndSend('${_rq}');" style="padding:8px 18px;border-radius:8px;background:var(--primary);color:#fff;border:none;cursor:pointer;font-weight:600;font-size:13px;">🔄 Tentar novamente</button>`;
+                feedbackEl.style.display = 'flex';
+                scrollToBottom(true);
+                return;
+            }
+        }
+
         contentEl.innerHTML = renderMd(finalText);
         feedbackEl.style.display = 'flex';
         scrollToBottom(true);
