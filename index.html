@@ -2414,7 +2414,7 @@ async function handleChat() {
         // Auto-fallback quando resposta vier em branco
         if (!finalText.trim()) {
             console.warn('[handleChat] Resposta em branco — tentando fallback sem:', _im);
-            contentEl.innerHTML = '<span class="stream-thinking">⚠️ Resposta vazia, tentando modelo alternativo...</span><span class="stream-cursor"></span>';
+            contentEl.innerHTML = '<span class="stream-thinking">⚠️ Servidor com lentidão, aguarde mais um momento...</span><span class="stream-cursor"></span>';
             let _fbOk = false;
             try {
                 const _filter2 = _makeThinkingFilter();
