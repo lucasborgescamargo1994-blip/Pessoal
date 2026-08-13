@@ -1496,15 +1496,17 @@ const p1="AIzaSyA3IOL",p2="jyyxIL3xlSD",p3="iEVvCu92JTgmD3vNQ";
 const gf1="AIzaSyChy",gf2="-QK5U1-KJJUNYD",gf3="rKakrOqi5JWf-aqo";
 const GEMINI_FALLBACK_KEY=gf1+gf2+gf3;
 const GEMINI_FALLBACK_MODEL="gemma-4-26b-a4b-it";
-const DEFAULT_MCP_CONFIG = { provider:'openrouter', model:'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free', apiKey:o1+o2+o3, baseUrl:'https://openrouter.ai/api/v1', embeddingProvider:'google', embeddingKey:p1+p2+p3, embeddingModel:'gemini-embedding-2-preview' };
+const DEFAULT_MCP_CONFIG = { provider:'openrouter', model:'nvidia/nemotron-3-nano-30b-a3b:free', apiKey:o1+o2+o3, baseUrl:'https://openrouter.ai/api/v1', embeddingProvider:'google', embeddingKey:p1+p2+p3, embeddingModel:'gemini-embedding-2-preview' };
 const PROVIDER_PRESETS = {
-    openrouter: { baseUrl:'https://openrouter.ai/api/v1', models:['nvidia/nemotron-3-ultra-550b-a55b:free','nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free','z-ai/glm-4.5-air:free','meta-llama/llama-3.3-70b-instruct:free','deepseek/deepseek-r1:free'], defaultModel:'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free', chatEndpoint:'/chat/completions', headers:(k)=>({Authorization:`Bearer ${k}`,'Content-Type':'application/json','HTTP-Referer':window.location.origin,'X-Title':'Bsoft TMS Suporte'}), formatRequestBody:(m,msgs,c={})=>({model:m,messages:msgs,temperature:c.temperature||0.3,max_tokens:c.maxTokens||4096,...(c.responseFormat?{response_format:c.responseFormat}:{})}), parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro OpenRouter');return{text:d.choices?.[0]?.message?.content||'',full:d};} },
+    openrouter: { baseUrl:'https://openrouter.ai/api/v1', models:['nvidia/nemotron-3-nano-30b-a3b:free','north-mini-code:free','nvidia/nemotron-3-ultra-550b-a55b:free','nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free','z-ai/glm-4.5-air:free','meta-llama/llama-3.3-70b-instruct:free','deepseek/deepseek-r1:free'], defaultModel:'nvidia/nemotron-3-nano-30b-a3b:free', chatEndpoint:'/chat/completions', headers:(k)=>({Authorization:`Bearer ${k}`,'Content-Type':'application/json','HTTP-Referer':window.location.origin,'X-Title':'Bsoft TMS Suporte'}), formatRequestBody:(m,msgs,c={})=>({model:m,messages:msgs,temperature:c.temperature||0.3,max_tokens:c.maxTokens||4096,...(c.responseFormat?{response_format:c.responseFormat}:{})}), parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro OpenRouter');return{text:d.choices?.[0]?.message?.content||'',full:d};} },
     google: { baseUrl:'https://generativelanguage.googleapis.com/v1beta', models:['gemma-4-26b-a4b-it','gemini-2.0-flash','gemini-2.0-flash-lite','gemini-2.5-flash'], defaultModel:'gemma-4-26b-a4b-it', chatEndpoint:'/models/{model}:generateContent', headers:()=>({'Content-Type':'application/json'}), formatRequestBody:(m,msgs,c={})=>{const cnt=msgs.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:typeof m.content==='string'?m.content:JSON.stringify(m.content)}]}));return{contents:cnt,generationConfig:{temperature:c.temperature||0.3,maxOutputTokens:c.maxTokens||4096,...(c.responseFormat?.type==='json_object'?{responseMimeType:'application/json'}:{})}};}, parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro Google');const p=d.candidates?.[0]?.content?.parts||[];return{text:p.filter(p=>p.text).map(p=>p.text).join(''),full:d};}, buildUrl:(b,m,e)=>`${b}${e.replace('{model}',m)}` },
     custom: { baseUrl:'',models:[],defaultModel:'',chatEndpoint:'/chat/completions', headers:(k)=>({Authorization:`Bearer ${k}`,'Content-Type':'application/json'}), formatRequestBody:(m,msgs,c={})=>({model:m,messages:msgs,temperature:c.temperature||0.3,max_tokens:c.maxTokens||4096,...(c.responseFormat?{response_format:c.responseFormat}:{})}), parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro API');return{text:d.choices?.[0]?.message?.content||'',full:d};} }
 };
 const MODEL_LABELS = {
-    'nvidia/nemotron-3-ultra-550b-a55b:free':         'Nemotron Ultra 550B ⭐ (principal fixo)',
-    'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free': 'Nemotron Nano 30B Reasoning (secundário padrão)',
+    'nvidia/nemotron-3-nano-30b-a3b:free':            'Nemotron Nano 30B (primário)',
+    'north-mini-code:free':                           'North Mini Code (secundário)',
+    'nvidia/nemotron-3-ultra-550b-a55b:free':         'Nemotron Ultra 550B ⭐ (terceiro)',
+    'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free': 'Nemotron Nano 30B Reasoning',
     'z-ai/glm-4.5-air:free':                          'GLM-4.5 Air',
     'meta-llama/llama-3.3-70b-instruct:free':         'Llama 3.3 70B Instruct',
     'deepseek/deepseek-r1:free':                      'DeepSeek R1',
@@ -1567,11 +1569,43 @@ async function callCurrentMCP(messages,config={}){
         console.warn(`[Config] ${CUSTOM_MODEL} falhou → entrando no fluxo padrão (Ultra → Nano → Gemini)...`);
     }
 
-    // ── 1º: Ultra 550B — 2 tentativas (pula se já foi tentado como custom) ──
-    if(CUSTOM_MODEL !== ULTRA_MODEL){
+    // ── 1º: Primário (north-mini) — 2 tentativas ──
+    console.log(`%c⏱️ [IA] Tentando primário (${NANO_MODEL})...`,'color:#7c3aed;font-weight:600');
+    for(let t=1;t<=2;t++){
+        try{
+            if(t>1){console.warn('[Primário] retry 2/2...');await new Promise(r=>setTimeout(r,1500));}
+            const _tm=performance.now();
+            const res=await callMCPAPI(DEFAULT_MCP_CONFIG.provider,NANO_MODEL,DEFAULT_MCP_CONFIG.apiKey,DEFAULT_MCP_CONFIG.baseUrl,messages,config);
+            _tlog('Primário',t,performance.now()-_tm,'✅ OK',` — modelo real: ${NANO_MODEL}`);
+            return{...res,_iaUsada:_providerLabel,_iaModelo:NANO_MODEL};
+        }catch(e){
+            _tlog('Primário',t,0,`❌ erro (${e.status||e.message?.substring(0,40)||'?'})`);
+        }
+    }
+
+    // ── 2º: North Mini Code — 2 tentativas ──
+    const MINI_MODEL = 'north-mini-code:free';
+    if(CUSTOM_MODEL !== MINI_MODEL && NANO_MODEL !== MINI_MODEL){
+        console.log(`%c⏱️ [IA] Primário falhou → tentando ${MINI_MODEL}...`,'color:#7c3aed;font-weight:600');
         for(let t=1;t<=2;t++){
             try{
-                if(t>1){console.warn('[Ultra] retry 2/2...');await new Promise(r=>setTimeout(r,2500));}
+                if(t>1){console.warn('[NorthMini] retry 2/2...');await new Promise(r=>setTimeout(r,1500));}
+                const _tm=performance.now();
+                const res=await callMCPAPI(DEFAULT_MCP_CONFIG.provider,MINI_MODEL,DEFAULT_MCP_CONFIG.apiKey,DEFAULT_MCP_CONFIG.baseUrl,messages,config);
+                _tlog('NorthMini',t,performance.now()-_tm,'✅ OK',` — modelo real: ${MINI_MODEL}`);
+                return{...res,_iaUsada:_providerLabel,_iaModelo:MINI_MODEL};
+            }catch(e){
+                _tlog('NorthMini',t,0,`❌ erro (${e.status||e.message?.substring(0,40)||'?'})`);
+            }
+        }
+    }
+
+    // ── 3º: Ultra 550B — 2 tentativas ──
+    if(CUSTOM_MODEL !== ULTRA_MODEL && NANO_MODEL !== ULTRA_MODEL){
+        console.log(`%c⏱️ [IA] Falhou → tentando Ultra 550B...`,'color:#ea6a0a;font-weight:600');
+        for(let t=1;t<=2;t++){
+            try{
+                if(t>1){console.warn('[Ultra] retry 2/2...');await new Promise(r=>setTimeout(r,1500));}
                 const _tm=performance.now();
                 const res=await callMCPAPI(mcpConfig.provider,ULTRA_MODEL,mcpConfig.apiKey,mcpConfig.baseUrl,messages,config);
                 _tlog('Ultra 550B',t,performance.now()-_tm,'✅ OK',` — modelo real: ${ULTRA_MODEL}`);
@@ -1582,34 +1616,6 @@ async function callCurrentMCP(messages,config={}){
         }
     }
 
-    // ── 2º: Nano padrão — 2 tentativas ──
-    console.log(`%c⏱️ [IA] Ultra falhou → tentando Nano padrão (${NANO_MODEL})...`,'color:#7c3aed;font-weight:600');
-    for(let t=1;t<=2;t++){
-        try{
-            if(t>1){console.warn('[Nano] retry 2/2...');await new Promise(r=>setTimeout(r,2500));}
-            const _tm=performance.now();
-            const res=await callMCPAPI(mcpConfig.provider,NANO_MODEL,mcpConfig.apiKey,mcpConfig.baseUrl,messages,config);
-            _tlog('Nano padrão',t,performance.now()-_tm,'✅ OK',` — modelo real: ${NANO_MODEL}`);
-            return{...res,_iaUsada:_providerLabel,_iaModelo:NANO_MODEL};
-        }catch(e){
-            _tlog('Nano padrão',t,0,`❌ erro (${e.status||e.message?.substring(0,40)||'?'})`);
-        }
-    }
-
-    // ── 3º: Gemini — até 3 tentativas ──
-    console.log('%c⏱️ [IA] OpenRouter falhou → ativando Gemini (fallback)...','color:#0369a1;font-weight:600');
-    for(let t=1;t<=3;t++){
-        try{
-            if(t>1){console.warn(`[Gemini] retry ${t}/3...`);await new Promise(r=>setTimeout(r,2500));}
-            const _tm=performance.now();
-            const res=await callMCPAPI('google',GEMINI_FALLBACK_MODEL,GEMINI_FALLBACK_KEY,'',messages,config);
-            _tlog('Gemini',t,performance.now()-_tm,'✅ OK',` — modelo real: ${GEMINI_FALLBACK_MODEL}`);
-            return{...res,_iaUsada:'Gemini',_iaModelo:GEMINI_FALLBACK_MODEL};
-        }catch(e){
-            _tlog('Gemini',t,0,`❌ erro (${e.status||e.message?.substring(0,40)||'?'})`);
-            if(t>=3)throw e;
-        }
-    }
     throw new Error('Todos os provedores falharam.');
 }
 
@@ -1978,53 +1984,56 @@ function liberarChat(modo="completo"){
 }
 function salvarVetorNoSupabase(id,vetor){if(!id)return;sb.from('BancoDados').update({embedding:vetor}).eq('id',id).then(({error})=>{if(error)console.error('Erro ao salvar vetor:',error);});}
 
-// ═══════════════════════════════════════════════════════════
-//  PREPARAR CONTEXTO MANUAL (COM REPOSITÓRIO)
-// ═══════════════════════════════════════════════════════════
-function prepararContextoManualCompleto() {
-    let cm = "=== MANUAL COMPLETO BSOFT TMS ===\n\n";
-    cm += "--- BASE DE CONHECIMENTO (BancoDados) ---\n";
-    bancoCompletoRaw.forEach((item, index) => {
-        const chaves = Object.keys(item);
-        const ek = chaves.find(k => k.toLowerCase().trim() === 'erro');
-        const sk = chaves.find(k => k.toLowerCase().trim() === 'solucao' || k.toLowerCase().trim() === 'solução');
-        const ck = chaves.find(k => k.toLowerCase().trim() === 'categoria');
-        const emk = chaves.find(k => { const kn = k.toLowerCase().trim(); return kn === 'como emitir' || kn === 'como_emitir' || kn === 'emissao' || kn === 'emissão' || kn === 'emitir'; });
-        if (ek && sk) {
-            cm += `[ARTIGO ${index + 1}] ${item[ek] || 'Sem título'}\n`;
-            cm += `Solução: ${item[sk] || ''}\n`;
-            if (ck && item[ck]) cm += `Categoria: ${item[ck]}\n`;
-            if (emk && item[emk]) cm += `Como emitir: ${item[emk]}\n`;
-            cm += "---\n";
-        }
-    });
-    cm += "\n--- 📁 CONHECIMENTO DO REPOSITÓRIO (Drive) ---\n";
-    const artigosCache = JSON.parse(localStorage.getItem(REPO_ARTIGOS_KEY) || '{}');
-    const cacheKeys = Object.keys(artigosCache);
-    if (cacheKeys.length > 0) {
-        let count = 0;
-        cacheKeys.forEach(key => {
-            const artigo = artigosCache[key];
-            if (artigo && artigo.conteudo && artigo.conteudo.length > 100) {
-                count++;
-                cm += `[REPOSITÓRIO ${count}: ${artigo.titulo || 'Sem título'}]\n`;
-                cm += artigo.conteudo.substring(0, 2000) + '\n';
-                cm += "---\n";
-            }
-        });
-    }
-    const mlc = mlKnowledge.filter(k => k.confirmado && !k.feedbackNegativo);
-    if (mlc.length > 0) { cm += "\n--- CONHECIMENTOS ML (Confirmados) ---\n"; mlc.forEach((k, i) => { cm += `[ML ${i + 1}] ${k.erro}\nSolução: ${k.solucao}\nFonte: ${k.fonte}\n---\n`; }); }
-    cm += "\n--- PARÂMETROS ---\n"; dadosParametros.forEach((p, i) => { cm += `[PARÂMETRO ${i + 1}] ${JSON.stringify(p).substring(0, 500)}\n`; if (i > 20) { cm += "... (mais parâmetros)\n"; return; } });
-    cm += "\n--- FUNCIONALIDADES ---\n"; dadosFuncionalidades.forEach((f, i) => { cm += `[FUNCIONALIDADE ${i + 1}] ${JSON.stringify(f).substring(0, 500)}\n`; if (i > 20) { cm += "... (mais funcionalidades)\n"; return; } });
-    return cm;
-}
 
 function extrairTermos(texto) {
     const sw = new Set(["como","que","qual","quais","para","com","sem","não","mas","por","mais","uma","isso","este","esta","esse","essa","num","numa","meu","minha","meus","minhas","tem","ter","ser","foi","vai","vou","tenho","posso","pode","quero","preciso","saber","sobre","nao","onde","quando","porque","pois","também","ainda","mesmo","tipo","ah","e","o","a","os","as","um","uns","umas","no","na","nos","nas","do","da","dos","das","de","em"]);
     return texto.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9 ]/g," ").split(/\s+/).filter(t => t.length > 2 && !sw.has(t));
 }
 
+function buildContextoSistema(query, dc) {
+    const s = SISTEMA_BSOFT_TMS;
+    const termos = extrairTermos(query);
+    const qt = query.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    let ctx = `Sistema: ${s.descricao}\nPrimeiros passos: ${s.primeiros_passos.join(' | ')}\nRegras: ${s.regras_gerais.join(' | ')}\n\n`;
+    ctx += `=== DOCUMENTOS ===\n`;
+    for (const [tipo, info] of Object.entries(s.documentos_principais)) {
+        const isAlvo = dc && tipo.toLowerCase() === dc.toLowerCase();
+        if (isAlvo) {
+            ctx += `[${tipo}] ${info.nome_completo}`;
+            if (info.emissao) ctx += ` | Emissão: ${info.emissao}`;
+            if (info.cancelamento_sefaz) ctx += ` | Cancelamento: ${info.cancelamento_sefaz}`;
+            if (info.funcionalidades_relacionadas) ctx += ` | Relacionados: ${info.funcionalidades_relacionadas.join(', ')}`;
+            ctx += '\n';
+        } else {
+            ctx += `[${tipo}] ${info.nome_completo} | Emissão: ${info.emissao || ''}\n`;
+        }
+    }
+    ctx += '\n';
+    const todosC = Object.entries(s.caminhos_rapidos);
+    let caminhos;
+    if (termos.length > 0) {
+        const scored = todosC.map(([nome, path]) => {
+            const txt = (nome + ' ' + path).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            return { nome, path, score: termos.reduce((acc, t) => acc + (txt.includes(t) ? 1 : 0), 0) };
+        });
+        caminhos = scored.filter(c => c.score > 0).sort((a, b) => b.score - a.score);
+        if (caminhos.length < 5) caminhos = todosC.map(([n, p]) => ({ nome: n, path: p }));
+    } else {
+        caminhos = todosC.map(([n, p]) => ({ nome: n, path: p }));
+    }
+    ctx += `=== CAMINHOS DO MENU ===\n`;
+    caminhos.forEach(c => { ctx += `${c.nome}: ${c.path}\n`; });
+    ctx += '\n';
+    if (/menu|onde fica|como acess|caminho|naveg/.test(qt)) {
+        ctx += `=== ESTRUTURA MENUS ===\n`;
+        Object.entries(s.estrutura_menus).forEach(([m, items]) => { ctx += `${m}: ${items.join(', ')}\n`; });
+        ctx += '\n';
+    }
+    if (s.taloes_configuracoes && /talao|taloes|tala|serie|seri|numeracao|numeração/.test(qt)) {
+        ctx += `=== TALÕES ===\n${s.taloes_configuracoes.join('\n')}\n\n`;
+    }
+    return ctx;
+}
 // ═══════════════════════════════════════════════════════════
 //  PARÂMETROS / FUNCIONALIDADES
 // ═══════════════════════════════════════════════════════════
@@ -2212,7 +2221,17 @@ async function callCurrentMCPStream(messages, config = {}) {
         }
         const body = preset.formatRequestBody(model, messages, config);
         if (!isGoogle) body.stream = true;
-        const resp = await fetch(url, { method: 'POST', headers: preset.headers(apiKey), body: JSON.stringify(body) });
+        const _ac = new AbortController();
+        const _tid = setTimeout(() => _ac.abort(), 12000);
+        let resp;
+        try {
+            resp = await fetch(url, { method: 'POST', headers: preset.headers(apiKey), body: JSON.stringify(body), signal: _ac.signal });
+        } catch(e) {
+            clearTimeout(_tid);
+            if (e.name === 'AbortError') throw new Error(`[${provider}] timeout 12s`);
+            throw e;
+        }
+        clearTimeout(_tid);
         if (!resp.ok) {
             const d = await resp.json().catch(() => ({}));
             throw Object.assign(new Error(`[${provider}] ${d.error?.message || 'HTTP ' + resp.status}`), { status: resp.status });
@@ -2220,11 +2239,13 @@ async function callCurrentMCPStream(messages, config = {}) {
         return resp;
     };
 
+    // Chain: Custom → Nano30B (primário) → NorthMini (secundário) → ULTRA (terceiro)
+    const MINI_MODEL = 'north-mini-code:free';
     const chain = [];
     if (CUSTOM_MODEL) chain.push({ model: CUSTOM_MODEL, provider: mcpConfig.provider, apiKey: mcpConfig.apiKey, baseUrl: mcpConfig.baseUrl, label: _pLabel });
-    if (CUSTOM_MODEL !== ULTRA_MODEL) chain.push({ model: ULTRA_MODEL, provider: mcpConfig.provider, apiKey: mcpConfig.apiKey, baseUrl: mcpConfig.baseUrl, label: _pLabel });
-    chain.push({ model: NANO_MODEL, provider: mcpConfig.provider, apiKey: mcpConfig.apiKey, baseUrl: mcpConfig.baseUrl, label: _pLabel });
-    chain.push({ model: GEMINI_FALLBACK_MODEL, provider: 'google', apiKey: GEMINI_FALLBACK_KEY, baseUrl: '', label: 'Gemini' });
+    chain.push({ model: NANO_MODEL, provider: DEFAULT_MCP_CONFIG.provider, apiKey: DEFAULT_MCP_CONFIG.apiKey, baseUrl: DEFAULT_MCP_CONFIG.baseUrl, label: 'OpenRouter' });
+    if (NANO_MODEL !== MINI_MODEL && CUSTOM_MODEL !== MINI_MODEL) chain.push({ model: MINI_MODEL, provider: DEFAULT_MCP_CONFIG.provider, apiKey: DEFAULT_MCP_CONFIG.apiKey, baseUrl: DEFAULT_MCP_CONFIG.baseUrl, label: 'OpenRouter' });
+    if (NANO_MODEL !== ULTRA_MODEL && CUSTOM_MODEL !== ULTRA_MODEL && MINI_MODEL !== ULTRA_MODEL) chain.push({ model: ULTRA_MODEL, provider: mcpConfig.provider, apiKey: mcpConfig.apiKey, baseUrl: mcpConfig.baseUrl, label: _pLabel });
 
     const _skipModels = config.skipModels || [];
     const _activeChain = _skipModels.length ? chain.filter(c => !_skipModels.includes(c.model)) : chain;
@@ -2298,12 +2319,16 @@ async function handleChat() {
     _tp('gerarEmbedding', _t2);
     const _t3 = performance.now();
     let rr = [];
-    if (vp) { rr = manualVetorizado.map(item => ({ ...item, similaridade: calcularSimilaridade(vp, item.vetor) })).sort((a, b) => b.similaridade - a.similaridade).slice(0, 15); }
+    if (vp) {
+        const _todos = manualVetorizado.map(item => ({ ...item, similaridade: calcularSimilaridade(vp, item.vetor) })).sort((a, b) => b.similaridade - a.similaridade);
+        const _topN = _todos[0]?.similaridade > 0.85 ? 5 : _todos[0]?.similaridade > 0.65 ? 8 : 12;
+        rr = _todos.slice(0, _topN);
+    }
     _tp('buscaVetorial (map+sort)', _t3);
 
     const trb = rr.length > 0 && rr[0].similaridade > 0.65;
     let ar = "";
-    if (rr.length > 0) { ar = "\n=== ARTIGOS MAIS RELEVANTES ===\n"; rr.forEach((r, i) => { ar += `[RELEVANTE ${i + 1} - ${(r.similaridade * 100).toFixed(0)}%] ${r.erro}\nSolução: ${r.solucao}\n${r.emitir ? 'Emissão: ' + r.emitir + '\n' : ''}---\n`; }); }
+    if (rr.length > 0) { ar = "\n=== ARTIGOS MAIS RELEVANTES ===\n"; rr.forEach((r, i) => { const _lim = i < 3 ? 500 : 300; ar += `[RELEVANTE ${i + 1} - ${(r.similaridade * 100).toFixed(0)}%] ${r.erro}\nSolução: ${r.solucao.substring(0, _lim)}\n${r.emitir ? 'Emissão: ' + r.emitir.substring(0, 200) + '\n' : ''}---\n`; }); }
 
     let mi = "", vum = false;
     if (!trb && rr.every(r => r.similaridade < 0.5)) { vum = true; mi = `\n⚠️ ATENÇÃO: Nenhum resultado encontrado no manual (max: ${rr.length > 0 ? (rr[0].similaridade * 100).toFixed(0) : 0}%).\n`; }
@@ -2318,13 +2343,11 @@ async function handleChat() {
         if (repoKnowledge) { conhecimentoRepositorio = repoKnowledge; appendMessage('system', '📁 <strong>Documento relevante encontrado no repositório!</strong>'); }
     }
 
-    const cc = conversa ? conversa.contexto.slice(-20) : [];
-    let hc = ""; if (cc.length > 0) { hc = "\n=== HISTÓRICO DA CONVERSA ===\n"; cc.forEach(m => { hc += `${m.role === 'user' ? '👤 Cliente' : '🤖 Suporte'}: ${m.content.substring(0, 400)}\n`; }); }
-
-    const es = JSON.stringify(SISTEMA_BSOFT_TMS, null, 2);
+    const cc = conversa ? conversa.contexto.slice(-6) : [];
+    let hc = ""; if (cc.length > 0) { hc = "\n=== HISTÓRICO DA CONVERSA ===\n"; cc.forEach(m => { hc += `${m.role === 'user' ? '👤 Cliente' : '🤖 Suporte'}: ${m.content.substring(0, 800)}\n`; }); }
 
     const dc = conversa?.documentoContexto || detectarDocumento(query.toLowerCase());
-    let ido = ""; if (dc && SISTEMA_BSOFT_TMS.documentos_principais[dc.toUpperCase()]) { ido = `\n=== DOCUMENTO EM CONTEXTO: ${dc.toUpperCase()} ===\n${JSON.stringify(SISTEMA_BSOFT_TMS.documentos_principais[dc.toUpperCase()], null, 2)}\n`; }
+    const es = buildContextoSistema(query, dc);
 
     const ps = `🏢 VOCÊ É UM AGENTE DE SUPORTE DA BSOFT TMS\n\n${ch}\n\n🎯 Atenda o cliente de forma PROFISSIONAL e DIDÁTICA.\n\n📋 
 	
@@ -2333,7 +2356,7 @@ async function handleChat() {
 	Mantenha o contexto da conversa.\n4. Seja conversacional e humano.\n5.
 	Explique passo a passo com caminhos do menu.\n6.
 	Diferencie: CT-e, MDF-e, NF-e, NFS-e, Minuta, OC, CIOT, VPO.\n\n${mi}\n📚
-	CONHECIMENTO:\n${es}\n${ido}${ar}${conhecimentoRepositorio}${hc}\n\n🗣️
+	CONHECIMENTO:\n${es}${ar}${conhecimentoRepositorio}${hc}\n\n🗣️
 	PERGUNTA: "${query}"\n\n📝 FORMATO DE RESPOSTA OBRIGATÓRIO:\n- Responda SEMPRE em Markdown limpo.\n- NUNCA responda em JSON ou formato estruturado.\n- Use **negrito** para termos importantes.\n- Use listas com - para passos sequenciais.\n- Responda como um agente humano, de forma conversacional.${vum ? '\n- Não encontrou no manual — peça gentilmente para reformular a pergunta ou perguntar sobre outro assunto do Bsoft TMS.' : ''}`;
 
     // Build multi-turn messages when conversation history exists
@@ -2345,7 +2368,7 @@ async function handleChat() {
         const _fmtSuffix = `\n\n📝 FORMATO:\n- Markdown limpo.\n- **negrito** para termos importantes.\n- Listas com - para passos sequenciais.\n- Linguagem conversacional e humana.${vum ? '\n- Se não encontrou no manual: pedir reformulação.' : ''}`;
         _apiMessages = [
             { role: 'user', content: _psContexto },
-            ..._historyTurns.map(m => ({ role: m.role, content: m.content.substring(0, 2000) })),
+            ..._historyTurns.map(m => ({ role: m.role, content: m.content.substring(0, 800) })),
             { role: 'user', content: `🗣️ PERGUNTA: "${query}"${_fmtSuffix}` }
         ];
     } else {
@@ -2357,7 +2380,7 @@ async function handleChat() {
     try {
         const _t5 = performance.now();
         const { resp: _resp, provider: _pr, iaUsada: _iu, iaModelo: _im } = await callCurrentMCPStream(
-            _apiMessages, { temperature: 0.4, maxTokens: 4096 }
+            _apiMessages, { temperature: 0.4, maxTokens: 1500 }
         );
         _tp('callCurrentMCPStream (conectado)', _t5);
         ld.remove();
@@ -2419,7 +2442,7 @@ async function handleChat() {
             try {
                 const _filter2 = _makeThinkingFilter();
                 const { resp: _resp2, provider: _pr2 } = await callCurrentMCPStream(
-                    _apiMessages, { temperature: 0.4, maxTokens: 4096, skipModels: [_im] }
+                    _apiMessages, { temperature: 0.4, maxTokens: 1500, skipModels: [_im] }
                 );
                 let _rafPending2 = false, _streamDone2 = false;
                 await _readSSEStream(_resp2, _pr2, chunk => {
