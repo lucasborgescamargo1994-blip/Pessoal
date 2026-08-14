@@ -4680,7 +4680,7 @@ function switchNewsTab(tab) {
     document.querySelectorAll('.news-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
     document.getElementById('newsTabNovidades').style.display = tab === 'novidades' ? 'flex' : 'none';
     document.getElementById('newsTabChat').style.display      = tab === 'chat'      ? 'flex' : 'none';
-    if (tab === 'novidades') { renderNovidades(); }
+    if (tab === 'novidades') { renderNovidades(); } // async, não precisa await aqui
     if (tab === 'chat') {
         chatUnreadCount = 0;
         _atualizarBadgeChat();
@@ -4724,58 +4724,91 @@ function sairNewsAdmin() {
     if (currentNewsTab === 'chat') _initChatTab();
 }
 
-// ── Novidades (localStorage) ────────────────────────────────
+// ── Novidades (Supabase Realtime) ───────────────────────────
+const NOVIDADES_TABLE = 'suporte_novidades';
+let novidadesSubscription = null;
 
-function carregarNovidades() { try { return JSON.parse(localStorage.getItem(NEWS_STORAGE_KEY) || '[]'); } catch(e) { return []; } }
-function salvarNovidades(items) { localStorage.setItem(NEWS_STORAGE_KEY, JSON.stringify(items)); }
+const _newsTypeMap = {
+    update:  { label: '✅ Atualização', cls: 'news-type-update' },
+    new:     { label: '🆕 Novidade',    cls: 'news-type-new' },
+    warning: { label: '⚠️ Aviso',       cls: 'news-type-warning' },
+    info:    { label: 'ℹ️ Info',         cls: 'news-type-info' },
+};
 
-function renderNovidades() {
-    const items = carregarNovidades();
-    const feed = document.getElementById('newsFeed');
-    const empty = document.getElementById('newsEmpty');
-    Array.from(feed.querySelectorAll('.news-item')).forEach(el => el.remove());
-    if (!items.length) { empty.style.display = 'block'; return; }
-    empty.style.display = 'none';
-    const typeMap = {
-        update:  { label: '✅ Atualização', cls: 'news-type-update' },
-        new:     { label: '🆕 Novidade',    cls: 'news-type-new' },
-        warning: { label: '⚠️ Aviso',       cls: 'news-type-warning' },
-        info:    { label: 'ℹ️ Info',         cls: 'news-type-info' },
-    };
-    [...items].reverse().forEach(item => {
-        const t = typeMap[item.tipo] || typeMap.info;
-        const div = document.createElement('div');
-        div.className = 'news-item';
-        div.innerHTML = `
-            <div class="news-item-header">
-                <span class="news-type-badge ${t.cls}">${t.label}</span>
-                <span class="news-date">${item.data}</span>
-            </div>
-            <div class="news-title">${escapeHtml(item.titulo)}</div>
-            <div class="news-content">${escapeHtml(item.conteudo).replace(/\n/g,'<br>')}</div>
-            <button class="news-admin-del" onclick="deletarNovidade('${escapeHtml(item.id)}')">🗑️ Remover</button>`;
-        feed.appendChild(div);
-    });
+function _renderNovidadeItem(item) {
+    const t = _newsTypeMap[item.tipo] || _newsTypeMap.info;
+    const data = new Date(item.created_at).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' });
+    const div = document.createElement('div');
+    div.className = 'news-item';
+    div.dataset.newsId = item.id;
+    div.innerHTML = `
+        <div class="news-item-header">
+            <span class="news-type-badge ${t.cls}">${t.label}</span>
+            <span class="news-date">${data}</span>
+        </div>
+        <div class="news-title">${escapeHtml(item.titulo)}</div>
+        <div class="news-content">${escapeHtml(item.conteudo).replace(/\n/g,'<br>')}</div>
+        <button class="news-admin-del" onclick="deletarNovidade(${item.id})">🗑️ Remover</button>`;
+    return div;
 }
 
-function publicarNovidade() {
+async function renderNovidades() {
+    const feed = document.getElementById('newsFeed');
+    const empty = document.getElementById('newsEmpty');
+    if (!feed) return;
+
+    const { data, error } = await sb.from(NOVIDADES_TABLE)
+        .select('*').order('created_at', { ascending: false });
+
+    Array.from(feed.querySelectorAll('.news-item')).forEach(el => el.remove());
+
+    if (error || !data || !data.length) {
+        empty.style.display = 'block';
+        return;
+    }
+    empty.style.display = 'none';
+    data.forEach(item => feed.appendChild(_renderNovidadeItem(item)));
+
+    // Inscreve realtime uma só vez
+    if (!novidadesSubscription) _subscribeNovidades();
+}
+
+function _subscribeNovidades() {
+    novidadesSubscription = sb.channel('novidades_channel')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: NOVIDADES_TABLE }, payload => {
+            const feed = document.getElementById('newsFeed');
+            const empty = document.getElementById('newsEmpty');
+            if (!feed) return;
+            empty.style.display = 'none';
+            feed.insertBefore(_renderNovidadeItem(payload.new), feed.firstChild);
+        })
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: NOVIDADES_TABLE }, payload => {
+            document.querySelector(`[data-news-id="${payload.old.id}"]`)?.remove();
+            const feed = document.getElementById('newsFeed');
+            if (feed && !feed.querySelector('.news-item'))
+                document.getElementById('newsEmpty').style.display = 'block';
+        })
+        .subscribe();
+}
+
+async function publicarNovidade() {
     const titulo = document.getElementById('newsTituloInput').value.trim();
     const conteudo = document.getElementById('newsConteudoInput').value.trim();
     const tipo = document.getElementById('newsTipoSelect').value;
     if (!titulo || !conteudo) { alert('Preencha o título e o conteúdo.'); return; }
-    const items = carregarNovidades();
-    items.push({ id: Date.now().toString(), titulo, conteudo, tipo,
-        data: new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' }) });
-    salvarNovidades(items);
+    const btn = document.querySelector('.btn-pub-news');
+    if (btn) { btn.disabled = true; btn.textContent = 'Publicando...'; }
+    const { error } = await sb.from(NOVIDADES_TABLE).insert({ tipo, titulo, conteudo });
+    if (btn) { btn.disabled = false; btn.textContent = '📢 Publicar'; }
+    if (error) { alert('Erro ao publicar: ' + error.message); return; }
     document.getElementById('newsTituloInput').value = '';
     document.getElementById('newsConteudoInput').value = '';
-    renderNovidades();
 }
 
-function deletarNovidade(id) {
+async function deletarNovidade(id) {
     if (!confirm('Remover esta novidade?')) return;
-    salvarNovidades(carregarNovidades().filter(n => n.id !== id));
-    renderNovidades();
+    const { error } = await sb.from(NOVIDADES_TABLE).delete().eq('id', id);
+    if (error) alert('Erro ao remover: ' + error.message);
 }
 
 // ── Live Chat (Supabase) ────────────────────────────────────
