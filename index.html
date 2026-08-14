@@ -1861,9 +1861,9 @@ const GEMINI_FALLBACK_KEY=gf1+gf2+gf3;
 const GEMINI_FALLBACK_MODEL="gemma-4-26b-a4b-it";
 const DEFAULT_MCP_CONFIG = { provider:'openrouter', model:'nvidia/nemotron-3-nano-30b-a3b:free', apiKey:o1+o2+o3, baseUrl:'https://openrouter.ai/api/v1', embeddingProvider:'google', embeddingKey:p1+p2+p3, embeddingModel:'gemini-embedding-2-preview' };
 const PROVIDER_PRESETS = {
-    openrouter: { baseUrl:'https://openrouter.ai/api/v1', models:['nvidia/nemotron-3-nano-30b-a3b:free','north-mini-code:free','nvidia/nemotron-3-ultra-550b-a55b:free','nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free','z-ai/glm-4.5-air:free','meta-llama/llama-3.3-70b-instruct:free','deepseek/deepseek-r1:free'], defaultModel:'nvidia/nemotron-3-nano-30b-a3b:free', chatEndpoint:'/chat/completions', headers:(k)=>({Authorization:`Bearer ${k}`,'Content-Type':'application/json','HTTP-Referer':window.location.origin,'X-Title':'Bsoft TMS Suporte'}), formatRequestBody:(m,msgs,c={})=>({model:m,messages:msgs,temperature:c.temperature||0.3,max_tokens:c.maxTokens||4096,...(c.responseFormat?{response_format:c.responseFormat}:{})}), parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro OpenRouter');return{text:d.choices?.[0]?.message?.content||'',full:d};} },
-    google: { baseUrl:'https://generativelanguage.googleapis.com/v1beta', models:['gemma-4-26b-a4b-it','gemini-2.0-flash','gemini-2.0-flash-lite','gemini-2.5-flash'], defaultModel:'gemma-4-26b-a4b-it', chatEndpoint:'/models/{model}:generateContent', headers:()=>({'Content-Type':'application/json'}), formatRequestBody:(m,msgs,c={})=>{const cnt=msgs.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:typeof m.content==='string'?m.content:JSON.stringify(m.content)}]}));return{contents:cnt,generationConfig:{temperature:c.temperature||0.3,maxOutputTokens:c.maxTokens||4096,...(c.responseFormat?.type==='json_object'?{responseMimeType:'application/json'}:{})}};}, parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro Google');const p=d.candidates?.[0]?.content?.parts||[];return{text:p.filter(p=>p.text).map(p=>p.text).join(''),full:d};}, buildUrl:(b,m,e)=>`${b}${e.replace('{model}',m)}` },
-    custom: { baseUrl:'',models:[],defaultModel:'',chatEndpoint:'/chat/completions', headers:(k)=>({Authorization:`Bearer ${k}`,'Content-Type':'application/json'}), formatRequestBody:(m,msgs,c={})=>({model:m,messages:msgs,temperature:c.temperature||0.3,max_tokens:c.maxTokens||4096,...(c.responseFormat?{response_format:c.responseFormat}:{})}), parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro API');return{text:d.choices?.[0]?.message?.content||'',full:d};} }
+    openrouter: { baseUrl:'https://openrouter.ai/api/v1', models:['nvidia/nemotron-3-nano-30b-a3b:free','north-mini-code:free','nvidia/nemotron-3-ultra-550b-a55b:free','nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free','z-ai/glm-4.5-air:free','meta-llama/llama-3.3-70b-instruct:free','deepseek/deepseek-r1:free'], defaultModel:'nvidia/nemotron-3-nano-30b-a3b:free', chatEndpoint:'/chat/completions', headers:(k)=>({Authorization:`Bearer ${k}`,'Content-Type':'application/json','HTTP-Referer':window.location.origin,'X-Title':'Bsoft TMS Suporte'}), formatRequestBody:(m,msgs,c={})=>({model:m,messages:msgs,temperature:c.temperature||0.3,max_tokens:c.maxTokens||4096,...(c.responseFormat?{response_format:c.responseFormat}:{})}), parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro OpenRouter');return{text:d.choices?.[0]?.message?.content||'',finishReason:d.choices?.[0]?.finish_reason||'',full:d};} },
+    google: { baseUrl:'https://generativelanguage.googleapis.com/v1beta', models:['gemma-4-26b-a4b-it','gemini-2.0-flash','gemini-2.0-flash-lite','gemini-2.5-flash'], defaultModel:'gemma-4-26b-a4b-it', chatEndpoint:'/models/{model}:generateContent', headers:()=>({'Content-Type':'application/json'}), formatRequestBody:(m,msgs,c={})=>{const cnt=msgs.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:typeof m.content==='string'?m.content:JSON.stringify(m.content)}]}));return{contents:cnt,generationConfig:{temperature:c.temperature||0.3,maxOutputTokens:c.maxTokens||4096,...(c.responseFormat?.type==='json_object'?{responseMimeType:'application/json'}:{})}};}, parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro Google');const p=d.candidates?.[0]?.content?.parts||[];return{text:p.filter(p=>p.text).map(p=>p.text).join(''),finishReason:d.candidates?.[0]?.finishReason||'',full:d};}, buildUrl:(b,m,e)=>`${b}${e.replace('{model}',m)}` },
+    custom: { baseUrl:'',models:[],defaultModel:'',chatEndpoint:'/chat/completions', headers:(k)=>({Authorization:`Bearer ${k}`,'Content-Type':'application/json'}), formatRequestBody:(m,msgs,c={})=>({model:m,messages:msgs,temperature:c.temperature||0.3,max_tokens:c.maxTokens||4096,...(c.responseFormat?{response_format:c.responseFormat}:{})}), parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro API');return{text:d.choices?.[0]?.message?.content||'',finishReason:d.choices?.[0]?.finish_reason||'',full:d};} }
 };
 const MODEL_LABELS = {
     'nvidia/nemotron-3-nano-30b-a3b:free':            'Nemotron Nano 30B (primário)',
@@ -2045,11 +2045,41 @@ async function callMCPSemPensamento(messages, config = {}, maxTentativas = 3) {
     for (let t = 1; t <= maxTentativas; t++) {
         const result = await callCurrentMCP(messages, config);
         const { texto, eraPensamento } = filtrarPensamentoAlto(result.text);
-        if (!eraPensamento) return { ...result, text: texto };
+        if (!eraPensamento) {
+            const truncado = result.finishReason === 'length' || result.finishReason === 'MAX_TOKENS';
+            const finalText = truncado ? await _continuarResposta(messages, texto, config) : texto;
+            return { ...result, text: finalText };
+        }
         console.warn('[AntiPensamento] tentativa ' + t + '/' + maxTentativas + ' — reprocessando...');
         if (t < maxTentativas) await new Promise(r => setTimeout(r, 1200));
     }
     throw new Error('Resposta nao obtida apos ' + maxTentativas + ' tentativas.');
+}
+
+async function _continuarResposta(messagesOriginais, textoTruncado, config, maxContinuacoes = 3) {
+    let texto = textoTruncado;
+    let msgs = messagesOriginais;
+    for (let i = 1; i <= maxContinuacoes; i++) {
+        try {
+            console.warn(`[Continuação ${i}/${maxContinuacoes}] Resposta truncada detectada — continuando automaticamente...`);
+            const contMsgs = [
+                ...msgs,
+                { role: 'assistant', content: texto },
+                { role: 'user', content: 'Continue exatamente de onde parou, sem repetir nada.' }
+            ];
+            const cont = await callCurrentMCP(contMsgs, config);
+            const { texto: cont_texto } = filtrarPensamentoAlto(cont.text);
+            texto = texto + cont_texto;
+            // para se a continuação também não foi cortada
+            const novamenteTruncado = cont.finishReason === 'length' || cont.finishReason === 'MAX_TOKENS';
+            if (!novamenteTruncado) break;
+            msgs = contMsgs;
+        } catch(e) {
+            console.warn('[Continuação] Falhou:', e.message);
+            break;
+        }
+    }
+    return texto;
 }
 // ═══════════════════════════════════════════════════════════
 let filaSolucoes=[],lastQuery="",attachedFileData=null,screenStream=null,isMinimized=false,isCallActive=false,silenceTimer,currentResults=[];
