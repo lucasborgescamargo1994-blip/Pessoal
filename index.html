@@ -2349,15 +2349,7 @@ async function handleChat() {
     const dc = conversa?.documentoContexto || detectarDocumento(query.toLowerCase());
     const es = buildContextoSistema(query, dc);
 
-    const ps = `🏢 VOCÊ É UM AGENTE DE SUPORTE DA BSOFT TMS\n\n${ch}\n\n🎯 Atenda o cliente de forma PROFISSIONAL e DIDÁTICA.\n\n📋 
-	
-	REGRAS:\n1. Use APENAS informações do manual ou fontes oficiais.\n2. NUNCA invente.
-	Se não encontrar no manual, informe educadamente que não encontrou a informação no manual e peça para reformular a pergunta ou perguntar sobre outro assunto.\n3.
-	Mantenha o contexto da conversa.\n4. Seja conversacional e humano.\n5.
-	Explique passo a passo com caminhos do menu.\n6.
-	Diferencie: CT-e, MDF-e, NF-e, NFS-e, Minuta, OC, CIOT, VPO.\n\n${mi}\n📚
-	CONHECIMENTO:\n${es}${ar}${conhecimentoRepositorio}${hc}\n\n🗣️
-	PERGUNTA: "${query}"\n\n📝 FORMATO DE RESPOSTA OBRIGATÓRIO:\n- Responda SEMPRE em Markdown limpo.\n- NUNCA responda em JSON ou formato estruturado.\n- Use **negrito** para termos importantes.\n- Use listas com - para passos sequenciais.\n- Responda como um agente humano, de forma conversacional.${vum ? '\n- Não encontrou no manual — peça gentilmente para reformular a pergunta ou perguntar sobre outro assunto do Bsoft TMS.' : ''}`;
+    const ps = `🏢 VOCÊ É UM AGENTE DE SUPORTE DA BSOFT TMS\n\n${ch}\n\n🎯 Atenda o cliente de forma PROFISSIONAL e DIDÁTICA.\n\nREGRAS OBRIGATÓRIAS:\n1. Use APENAS as informações contidas no CONHECIMENTO abaixo. Nada além.\n2. NUNCA invente. Se não encontrar a resposta no conhecimento fornecido, diga claramente que não encontrou e peça para reformular.\n3. ⚠️ CAMINHOS DE MENU — PROIBIDO INVENTAR: Só cite um caminho de menu (ex: "Transporte > Documentos > Ct-e") se ele aparecer LITERALMENTE nos CAMINHOS DO MENU ou na solução do artigo fornecido. Se o caminho não estiver explícito no conhecimento abaixo, NÃO mencione nenhum caminho — escreva apenas "acesse pelo menu do sistema" sem inventar a navegação.\n4. Procedimentos e passos: só descreva o que estiver documentado na solução. Não crie etapas extras por lógica própria.\n5. ⚠️ NÃO OMITA DETALHES DA SOLUÇÃO: Ao usar um artigo do manual, reproduza TODOS os passos e ações descritos na solução, sem resumir, encurtar ou pular etapas. Se a solução tem 8 passos, apresente os 8. O cliente precisa de todas as ações para resolver o problema.\n6. Mantenha o contexto da conversa.\n7. Seja conversacional e humano.\n8. Diferencie: CT-e, MDF-e, NF-e, NFS-e, Minuta, OC, CIOT, VPO.\n\n${mi}\n📚 CONHECIMENTO:\n${es}${ar}${conhecimentoRepositorio}${hc}\n\n🗣️ PERGUNTA: "${query}"\n\n📝 FORMATO:\n- Markdown limpo. NUNCA JSON.\n- **negrito** para termos importantes.\n- Listas com - para passos sequenciais.\n- Linguagem conversacional e humana.${vum ? '\n- Não encontrou: pedir reformulação.' : ''}`;
 
     // Build multi-turn messages when conversation history exists
     const _historyTurns = cc.slice(0, -1); // previous turns, current query already added to cc as last item
@@ -2380,7 +2372,7 @@ async function handleChat() {
     try {
         const _t5 = performance.now();
         const { resp: _resp, provider: _pr, iaUsada: _iu, iaModelo: _im } = await callCurrentMCPStream(
-            _apiMessages, { temperature: 0.4, maxTokens: 1500 }
+            _apiMessages, { temperature: 0.2, maxTokens: 2500 }
         );
         _tp('callCurrentMCPStream (conectado)', _t5);
         ld.remove();
