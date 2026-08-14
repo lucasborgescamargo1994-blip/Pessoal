@@ -651,6 +651,35 @@
     border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; font-family: inherit;
 }
 
+/* Toast de notificação dentro do painel */
+.panel-notif-toast {
+    display: none; flex-shrink: 0;
+    margin: 4px 6px;
+    background: var(--surface);
+    border: 1px solid var(--primary-border);
+    border-left: 3px solid var(--primary);
+    border-radius: 6px;
+    padding: 8px 26px 8px 10px;
+    box-shadow: 0 3px 10px rgba(249,115,22,0.15);
+    cursor: pointer; position: relative;
+}
+.panel-notif-toast.visible {
+    display: flex; flex-direction: column;
+    animation: notifSlideDown 0.22s ease;
+}
+@keyframes notifSlideDown {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.panel-notif-title { font-size: 11px; font-weight: 700; color: var(--primary-dark); margin-bottom: 2px; }
+.panel-notif-body  { font-size: 10px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.panel-notif-close {
+    position: absolute; top: 6px; right: 7px;
+    font-size: 11px; color: #9ca3af; cursor: pointer; line-height: 1;
+    background: none; border: none; padding: 0;
+}
+.panel-notif-close:hover { color: #ef4444; }
+
 /* news-tab não existe mais; newsPanel some em tela pequena */
 .news-tab { display: none !important; }
 @media (max-width: 960px) {
@@ -1010,6 +1039,12 @@
         <div class="news-header">
             <h3>🔔 Novidades</h3>
             <button class="news-lock-btn" id="newsLockBtn" onclick="toggleNewsAdminPrompt()" title="Área administrativa">🔒</button>
+        </div>
+        <!-- Toast de notificação in-panel -->
+        <div class="panel-notif-toast" id="panelNotifToast" onclick="_clicarNotifToast()">
+            <button class="panel-notif-close" onclick="event.stopPropagation();_fecharNotifToast()">✕</button>
+            <div class="panel-notif-title" id="panelNotifTitle"></div>
+            <div class="panel-notif-body"  id="panelNotifBody"></div>
         </div>
         <div class="news-pwd-prompt" id="newsPwdPrompt">
             <input type="password" id="newsPwdInput" placeholder="Senha admin..." onkeypress="if(event.key==='Enter') checkNewsAdminPwd()">
@@ -4603,6 +4638,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     console.log("✅ Banco de dados carregado! Chat liberado.");
     renderNovidades(); // inicializa painel de novidades
     _subscribeChat(chatSessionId); // escuta mensagens em tempo real para o usuário
+    _pedirPermissaoNotificacao();
     backfillDeviceId();
 
     // Auto-abertura quando a janela é aberta via abrirJanelaGestor()
@@ -4670,6 +4706,7 @@ let currentNewsTab = 'novidades';
 let chatSubscription = null;
 let chatUnreadCount = 0;
 let adminSelectedSession = null;
+let _adminRefreshInterval = null;
 
 function toggleNewsPanel() { /* painel fixo, sem toggle */ }
 
@@ -4680,7 +4717,7 @@ function switchNewsTab(tab) {
     document.querySelectorAll('.news-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
     document.getElementById('newsTabNovidades').style.display = tab === 'novidades' ? 'flex' : 'none';
     document.getElementById('newsTabChat').style.display      = tab === 'chat'      ? 'flex' : 'none';
-    if (tab === 'novidades') { renderNovidades(); } // async, não precisa await aqui
+    if (tab === 'novidades') { _pararRefreshAdmin(); renderNovidades(); }
     if (tab === 'chat') {
         chatUnreadCount = 0;
         _atualizarBadgeChat();
@@ -4707,6 +4744,8 @@ function checkNewsAdminPwd() {
         document.getElementById('newsFeed').classList.add('news-admin-mode');
         document.getElementById('newsLockBtn').textContent = '🔓';
         renderNovidades();
+        _pedirPermissaoNotificacao();
+        _subscribeAdminGlobal();
         if (currentNewsTab === 'chat') _initChatTab();
     } else {
         inp.style.borderColor = '#ef4444'; inp.style.background = '#3f1111';
@@ -4717,6 +4756,8 @@ function checkNewsAdminPwd() {
 function sairNewsAdmin() {
     newsAdminMode = false;
     adminSelectedSession = null;
+    _pararRefreshAdmin();
+    _unsubscribeAdminGlobal();
     document.getElementById('newsAdminBar').classList.remove('visible');
     document.getElementById('newsFeed').classList.remove('news-admin-mode');
     document.getElementById('newsLockBtn').textContent = '🔒';
@@ -4818,7 +4859,9 @@ function _initChatTab() {
         document.getElementById('chatIdentityBar').style.display = 'none';
         document.getElementById('chatIdentityEditBar').style.display = 'none';
         _mostrarListaSessions();
+        _iniciarRefreshAdmin();
     } else {
+        _pararRefreshAdmin();
         _esconderListaSessions();
         _atualizarIdentidadeChat();
         _carregarChat(chatSessionId);
@@ -4874,6 +4917,20 @@ function _esconderListaSessions() {
     const back = document.getElementById('chatAdminBack');
     if (back) { back.style.display = 'none'; adminSelectedSession = null; }
     document.getElementById('chatLiveStatus').textContent = 'Suporte Online';
+}
+
+function _iniciarRefreshAdmin() {
+    _pararRefreshAdmin();
+    _adminRefreshInterval = setInterval(() => {
+        // só atualiza a lista se admin estiver na aba chat e não estiver dentro de uma conversa
+        if (newsAdminMode && currentNewsTab === 'chat' && !adminSelectedSession) {
+            _mostrarListaSessions();
+        }
+    }, 20000);
+}
+
+function _pararRefreshAdmin() {
+    if (_adminRefreshInterval) { clearInterval(_adminRefreshInterval); _adminRefreshInterval = null; }
 }
 
 async function _mostrarListaSessions() {
@@ -4990,10 +5047,14 @@ function _subscribeChat(sessionId) {
             div.innerHTML = `<div class="chat-bubble">${escapeHtml(m.content).replace(/\n/g,'<br>')}</div><div class="chat-time">${new Date(m.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</div>`;
             container.appendChild(div);
             container.scrollTop = container.scrollHeight;
-            // Badge se aba fechada e mensagem for do admin (para o usuário)
-            if (m.role === 'admin' && (!newsPanelOpen || currentNewsTab !== 'chat')) {
-                chatUnreadCount++;
-                _atualizarBadgeChat();
+            // Badge e notificação — admin responde ao usuário
+            if (m.role === 'admin' && !newsAdminMode) {
+                if (currentNewsTab !== 'chat' || document.visibilityState !== 'visible') {
+                    chatUnreadCount++;
+                    _atualizarBadgeChat();
+                }
+                _mostrarNotifToast('💬 Suporte respondeu', m.content, null, null);
+                _enviarNotificacaoChat('💬 Suporte respondeu', m.content);
             }
         })
         .subscribe();
@@ -5027,6 +5088,94 @@ function _atualizarBadgeChat() {
     } else {
         badge.classList.remove('visible');
     }
+}
+
+// ── Notificações ────────────────────────────────────────────
+let _adminGlobalSub = null;
+let _notifToastTimeout = null;
+let _notifToastSession = null; // { id, nome } da sessão a abrir ao clicar
+
+function _mostrarNotifToast(titulo, corpo, sessionId, nomeSession) {
+    document.getElementById('panelNotifTitle').textContent = titulo;
+    document.getElementById('panelNotifBody').textContent = corpo.substring(0, 80);
+    _notifToastSession = sessionId ? { id: sessionId, nome: nomeSession } : null;
+    const toast = document.getElementById('panelNotifToast');
+    // restart animation
+    toast.classList.remove('visible');
+    void toast.offsetWidth;
+    toast.classList.add('visible');
+    clearTimeout(_notifToastTimeout);
+    _notifToastTimeout = setTimeout(_fecharNotifToast, 6000);
+}
+
+function _fecharNotifToast() {
+    clearTimeout(_notifToastTimeout);
+    document.getElementById('panelNotifToast')?.classList.remove('visible');
+}
+
+function _clicarNotifToast() {
+    _fecharNotifToast();
+    chatUnreadCount = 0;
+    _atualizarBadgeChat();
+    switchNewsTab('chat');
+    if (newsAdminMode && _notifToastSession) {
+        abrirSessaoAdmin(_notifToastSession.id, _notifToastSession.nome);
+    }
+}
+
+function _pedirPermissaoNotificacao() {
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+}
+
+function _tocarSomNotificacao() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.value = 830; osc.type = 'sine';
+        gain.gain.setValueAtTime(0.25, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+        osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.35);
+    } catch(e) {}
+}
+
+function _enviarNotificacaoChat(titulo, corpo) {
+    _tocarSomNotificacao();
+    if (!('Notification' in window)) return;
+    const texto = corpo.substring(0, 100);
+    if (Notification.permission === 'granted') {
+        try { new Notification(titulo, { body: texto, tag: 'bsoft-chat', renotify: true }); } catch(e) {}
+    } else if (Notification.permission !== 'denied') {
+        Notification.requestPermission().then(p => {
+            if (p === 'granted') {
+                try { new Notification(titulo, { body: texto, tag: 'bsoft-chat', renotify: true }); } catch(e) {}
+            }
+        });
+    }
+}
+
+function _subscribeAdminGlobal() {
+    if (_adminGlobalSub) return;
+    _adminGlobalSub = sb.channel('admin_global_msgs')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: LIVE_CHAT_TABLE }, payload => {
+            const m = payload.new;
+            if (m.role !== 'user') return;
+            // não notifica se já está visualizando essa sessão e a janela está em foco
+            if (adminSelectedSession === m.session_id && currentNewsTab === 'chat' && document.visibilityState === 'visible') return;
+            const nome = (m.usuario_nome && m.usuario_nome !== 'Desconhecido') ? m.usuario_nome : 'Usuário';
+            chatUnreadCount++;
+            _atualizarBadgeChat();
+            _mostrarNotifToast(`💬 ${nome}`, m.content, m.session_id, nome);
+            _enviarNotificacaoChat(`💬 ${nome}`, m.content);
+        })
+        .subscribe();
+}
+
+function _unsubscribeAdminGlobal() {
+    if (_adminGlobalSub) { try { sb.removeChannel(_adminGlobalSub); } catch(e){} _adminGlobalSub = null; }
 }
 </script>
 </body>
