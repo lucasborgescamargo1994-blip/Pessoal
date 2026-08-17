@@ -1534,7 +1534,7 @@ function btnWelcomeSefaz() {
     wizardRejeicaoSefaz().then(r => {
         if (!r) return;
         if (r.bancoDados) { document.getElementById('searchInput').focus(); return; }
-        logSearch('Erros Sefaz', true); gerarRespostaSefaz(r.codigo, r.tipo);
+        logSearch(`Erros Sefaz - ${r.codigo} (${r.tipo})`, true); gerarRespostaSefaz(r.codigo, r.tipo);
     });
 }
 async function btnWelcomeRegra() {
@@ -2444,14 +2444,39 @@ async function handleParametrosFuncionalidades() {
 
     const ld = appendLoadingCard('Consultando Parâmetros e Funcionalidades...');
 
+    // Normaliza texto: lowercase + sem acentos
+    const _norm = t => String(t||'').toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,'');
+    const _queryWords = _norm(query).split(/\s+/).filter(w => w.length > 2);
+
+    // Score por palavras-chave em qualquer campo do registro
+    const _scoreItem = item => {
+        const txt = _norm(Object.values(item).join(' '));
+        return _queryWords.reduce((s, w) => s + (txt.includes(w) ? 1 : 0), 0);
+    };
+
+    // Filtra entradas com pelo menos 1 palavra-chave; fallback = top-10
+    const _filtrarRelevantes = (lista, max = 25) => {
+        const scored = lista.map(item => ({ item, score: _scoreItem(item) })).sort((a, b) => b.score - a.score);
+        const comMatch = scored.filter(x => x.score > 0);
+        return (comMatch.length > 0 ? comMatch : scored).slice(0, max).map(x => x.item);
+    };
+
+    const _formatarRegistro = item => Object.entries(item)
+        .filter(([k, v]) => k !== 'id' && k !== 'created_at' && v != null && String(v).trim() !== '')
+        .map(([k, v]) => `  ${k}: ${String(v).trim()}`)
+        .join('\n');
+
+    const paramsRel = _filtrarRelevantes(dadosParametros);
+    const funcsRel  = _filtrarRelevantes(dadosFuncionalidades);
+
     let ctx = '';
-    if (dadosParametros.length > 0) {
-        ctx += '\n=== PARÂMETROS DO SISTEMA ===\n';
-        dadosParametros.forEach((p, i) => { ctx += `[PARÂMETRO ${i+1}] ${JSON.stringify(p).substring(0,600)}\n`; });
+    if (paramsRel.length > 0) {
+        ctx += '\n=== PARÂMETROS RELEVANTES ===\n';
+        paramsRel.forEach((p, i) => { ctx += `\n[PARÂMETRO ${i+1}]\n${_formatarRegistro(p)}\n`; });
     }
-    if (dadosFuncionalidades.length > 0) {
-        ctx += '\n=== FUNCIONALIDADES DO SISTEMA ===\n';
-        dadosFuncionalidades.forEach((f, i) => { ctx += `[FUNCIONALIDADE ${i+1}] ${JSON.stringify(f).substring(0,600)}\n`; });
+    if (funcsRel.length > 0) {
+        ctx += '\n=== FUNCIONALIDADES RELEVANTES ===\n';
+        funcsRel.forEach((f, i) => { ctx += `\n[FUNCIONALIDADE ${i+1}]\n${_formatarRegistro(f)}\n`; });
     }
     if (!ctx.trim()) {
         ld.remove();
@@ -2461,25 +2486,28 @@ async function handleParametrosFuncionalidades() {
 
     const prompt = `Você é um especialista no sistema Bsoft TMS.
 
-No sistema, muitas rotinas e tarefas exigem habilitar alguns parâmetros e funcionalidades para que apareça em tela ou permita executar uma função específica.
+No sistema, rotinas exigem habilitar parâmetros e/ou funcionalidades para que opções apareçam em tela ou permitam executar ações específicas.
+
+Abaixo estão os parâmetros e funcionalidades pré-selecionados como relevantes para a pergunta do usuário:
 
 ${ctx}
 
 PERGUNTA DO USUÁRIO: "${query}"
 
 INSTRUÇÕES:
-- Busque nos dados acima quais parâmetros e/ou funcionalidades respondem à pergunta do usuário.
-- Apresente de forma clara e objetiva quais devem ser habilitados e como configurá-los.
-- Depois de identificar e recomendar o parâmetro/funcionalidade, SEMPRE informe ao final: após habilitar, é necessário atualizar as permissões do usuário acessando no menu do sistema **Opções do Sistema > Atualizar Permissões**. Somente após isso verificar se a funcionalidade ou parâmetro foi liberado corretamente.
-- Use **negrito** para nomes de parâmetros, funcionalidades e caminhos de menu.
-- Se não encontrar correspondência nos dados, diga claramente e sugira reformular a busca.
-- Responda em Markdown limpo, sem JSON ou estruturas técnicas.`;
+- Apresente os resultados em DUAS seções obrigatórias:
+  **📋 Parâmetros relacionados** — liste TODOS os parâmetros acima que se aplicam, com nome e o que cada um faz.
+  **⚙️ Funcionalidades relacionadas** — liste TODAS as funcionalidades acima que se aplicam, com nome e o que cada uma faz.
+- Se não houver nenhum em uma seção, escreva "Nenhum encontrado nesta seção."
+- Inclua TODOS os itens relevantes das duas seções — não escolha apenas um.
+- Ao final, lembre: após habilitar, acesse **Opções do Sistema > Atualizar Permissões**.
+- Use **negrito** para nomes e caminhos de menu. Responda em Markdown limpo.`;
 
     let _pfCard = null;
     const _pfFilter = _makeThinkingFilter();
     try {
         const { resp: _resp, provider: _pr, iaUsada: _iu, iaModelo: _im } = await callCurrentMCPStream(
-            [{ role: 'user', content: prompt }], { temperature: 0.3, maxTokens: 3000 }
+            [{ role: 'user', content: prompt }], { temperature: 0.3, maxTokens: 8000 }
         );
         ld.remove();
 
@@ -2699,7 +2727,7 @@ async function handleChat() {
     if (ehErroSefaz(query)) {
         const r = await wizardRejeicaoSefaz(true);
         if (!r) return;
-        if (!r.bancoDados) { logSearch(query, true); await gerarRespostaSefaz(r.codigo, r.tipo); return; }
+        if (!r.bancoDados) { logSearch(`Erros Sefaz - ${r.codigo} (${r.tipo})`, true); await gerarRespostaSefaz(r.codigo, r.tipo); return; }
         // r.bancoDados === true → continua no fluxo normal abaixo
     }
 
