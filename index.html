@@ -2501,7 +2501,7 @@ INSTRUÇÕES:
 - Se não houver nenhum em uma seção, escreva "Nenhum encontrado nesta seção."
 - Inclua TODOS os itens relevantes das duas seções — não escolha apenas um.
 - Ao final, lembre: após habilitar, acesse **Opções do Sistema > Atualizar Permissões**.
-- Use **negrito** para nomes e caminhos de menu. Responda em Markdown limpo.`;
+- Use **negrito** para nomes e caminhos de menu. Responda em Markdown limpo.\n- OBRIGATÓRIO: ao encerrar toda resposta completa, escreva \`#finalizado\` sozinho na última linha.`;
 
     let _pfCard = null;
     const _pfFilter = _makeThinkingFilter();
@@ -2548,7 +2548,16 @@ INSTRUÇÕES:
         });
 
         streamDone = true;
-        const finalText = _pfFilter.finish();
+        const _pfRaw = _pfFilter.finish();
+        const _pfFinished = _pfRaw.includes('#finalizado');
+        const finalText = _pfRaw.replace(/#finalizado\s*/gi, '').trim();
+        if (!_pfFinished) {
+            const _rq = query.replace(/'/g, "\\'");
+            contentEl.innerHTML = `<div style="color:var(--text-muted);font-style:italic;font-size:13px;margin-bottom:10px;">⚠️ A resposta não foi concluída. Tente novamente.</div><button onclick="this.closest('.answer-card').remove();_paramFuncMode=true;document.getElementById('searchInput').value='${_rq}';handleChat();" style="padding:8px 18px;border-radius:8px;background:var(--primary);color:#fff;border:none;cursor:pointer;font-weight:600;font-size:13px;">🔄 Tentar novamente</button>`;
+            feedbackEl.style.display = 'flex';
+            scrollToBottom(true);
+            return;
+        }
         contentEl.innerHTML = renderMd(finalText);
         feedbackEl.style.display = 'flex';
         scrollToBottom(true);
@@ -2770,25 +2779,29 @@ async function handleChat() {
     const dc = conversa?.documentoContexto || detectarDocumento(query.toLowerCase());
     const es = buildContextoSistema(query, dc);
 
-    // Busca por palavras-chave em Parâmetros e Funcionalidades
+    // Busca por similaridade de palavras-chave em Parâmetros e Funcionalidades
     let pfCtx = '';
     try {
         const _nPF = t => String(t||'').toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,'');
         const _wPF = _nPF(query).split(/\s+/).filter(w => w.length > 2);
         if (_wPF.length > 0) {
-            const _sPF = item => { const txt = _nPF(Object.values(item).join(' ')); return _wPF.reduce((s, w) => s + (txt.includes(w) ? 1 : 0), 0); };
-            const _fPF = item => Object.entries(item).filter(([k,v]) => k!=='id'&&k!=='created_at'&&v!=null&&String(v).trim()!=='').map(([k,v]) => `  ${k}: ${String(v).trim()}`).join('\n');
-            const pm = dadosParametros.map(p=>({item:p,score:_sPF(p)})).filter(x=>x.score>0).sort((a,b)=>b.score-a.score).slice(0,5);
-            const fm = dadosFuncionalidades.map(f=>({item:f,score:_sPF(f)})).filter(x=>x.score>0).sort((a,b)=>b.score-a.score).slice(0,5);
+            // similaridade 0-1: proporção de palavras da query presentes no registro
+            const _simPF = item => { const txt = _nPF(Object.values(item).join(' ')); return _wPF.filter(w => txt.includes(w)).length / _wPF.length; };
+            // formata apenas campos relevantes, limitado a 250 chars por registro
+            const _fPF = item => Object.entries(item).filter(([k,v]) => k!=='id'&&k!=='created_at'&&v!=null&&String(v).trim()!=='').map(([k,v]) => `  ${k}: ${String(v).trim()}`).join('\n').substring(0, 250);
+            // mínimo: ao menos 2 palavras coincidem (ou 100% se query tiver 1 palavra)
+            const _minSim = Math.min(2, _wPF.length) / _wPF.length;
+            const pm = dadosParametros.map(p=>({item:p,sim:_simPF(p)})).filter(x=>x.sim>=_minSim).sort((a,b)=>b.sim-a.sim).slice(0,5);
+            const fm = dadosFuncionalidades.map(f=>({item:f,sim:_simPF(f)})).filter(x=>x.sim>=_minSim).sort((a,b)=>b.sim-a.sim).slice(0,5);
             if (pm.length > 0 || fm.length > 0) {
                 pfCtx = '\n=== PARÂMETROS E FUNCIONALIDADES RELACIONADOS ===\n';
-                pm.forEach((x,i) => { pfCtx += `\n[PARÂMETRO ${i+1}]\n${_fPF(x.item)}\n`; });
-                fm.forEach((x,i) => { pfCtx += `\n[FUNCIONALIDADE ${i+1}]\n${_fPF(x.item)}\n`; });
+                pm.forEach((x,i) => { pfCtx += `\n[PARÂMETRO ${i+1} - sim:${(x.sim*100).toFixed(0)}%]\n${_fPF(x.item)}\n`; });
+                fm.forEach((x,i) => { pfCtx += `\n[FUNCIONALIDADE ${i+1} - sim:${(x.sim*100).toFixed(0)}%]\n${_fPF(x.item)}\n`; });
             }
         }
     } catch(e) {}
 
-    const ps = `🏢 VOCÊ É UM AGENTE DE SUPORTE DA BSOFT TMS\n\n${ch}\n\n🎯 Atenda o cliente de forma PROFISSIONAL e DIDÁTICA.\n\nREGRAS OBRIGATÓRIAS:\n1. Use APENAS as informações contidas no CONHECIMENTO abaixo. Nada além.\n2. NUNCA invente. Se não encontrar a resposta no conhecimento fornecido, diga claramente que não encontrou e peça para reformular.\n3. ⚠️ CAMINHOS DE MENU — PROIBIDO INVENTAR: Só cite um caminho de menu (ex: "Transporte > Documentos > Ct-e") se ele aparecer LITERALMENTE nos CAMINHOS DO MENU ou na solução do artigo fornecido. Se o caminho não estiver explícito no conhecimento abaixo, NÃO mencione nenhum caminho — escreva apenas "acesse pelo menu do sistema" sem inventar a navegação.\n4. Procedimentos e passos: só descreva o que estiver documentado na solução. Não crie etapas extras por lógica própria.\n5. ⚠️ NÃO OMITA NADA DA SOLUÇÃO — REGRA ABSOLUTA: Reproduza TODOS os passos da solução do artigo, na íntegra. É PROIBIDO: resumir, condensar, escrever "etc.", "e assim por diante", pular etapas, ou dizer "siga os passos normais". Se a solução tem 10 passos, escreva os 10 completos com todos os detalhes. O público é suporte iniciante que não conhece o sistema — cada detalhe é essencial para resolver o problema. Prefira respostas longas e completas a respostas curtas e incompletas.\n6. Mantenha o contexto da conversa.\n7. Seja conversacional e humano.\n8. Diferencie: CT-e, MDF-e, NF-e, NFS-e, Minuta, OC, CIOT, VPO.\n9. PARÂMETROS E FUNCIONALIDADES: Se a seção "PARÂMETROS E FUNCIONALIDADES RELACIONADOS" contiver itens relevantes para a pergunta, mencione-os ao final da resposta como opção adicional — ex: "💡 Verifique também se o parâmetro/funcionalidade X está habilitado, pois pode estar relacionado a esta situação."\n\n${mi}\n📚 CONHECIMENTO:\n${es}${ar}${pfCtx}${conhecimentoRepositorio}${hc}\n\n🗣️ PERGUNTA: "${query}"\n\n📝 FORMATO:\n- Markdown limpo. NUNCA JSON.\n- **negrito** para termos importantes.\n- Listas com - para passos sequenciais.\n- Linguagem conversacional e humana.${vum ? '\n- Não encontrou: pedir reformulação.' : ''}`;
+    const ps = `🏢 VOCÊ É UM AGENTE DE SUPORTE DA BSOFT TMS\n\n${ch}\n\n🎯 Atenda o cliente de forma PROFISSIONAL e DIDÁTICA.\n\nREGRAS OBRIGATÓRIAS:\n1. Use APENAS as informações contidas no CONHECIMENTO abaixo. Nada além.\n2. NUNCA invente. Se não encontrar a resposta no conhecimento fornecido, diga claramente que não encontrou e peça para reformular.\n3. ⚠️ CAMINHOS DE MENU — PROIBIDO INVENTAR: Só cite um caminho de menu (ex: "Transporte > Documentos > Ct-e") se ele aparecer LITERALMENTE nos CAMINHOS DO MENU ou na solução do artigo fornecido. Se o caminho não estiver explícito no conhecimento abaixo, NÃO mencione nenhum caminho — escreva apenas "acesse pelo menu do sistema" sem inventar a navegação.\n4. Procedimentos e passos: só descreva o que estiver documentado na solução. Não crie etapas extras por lógica própria.\n5. ⚠️ NÃO OMITA NADA DA SOLUÇÃO — REGRA ABSOLUTA: Reproduza TODOS os passos da solução do artigo, na íntegra. É PROIBIDO: resumir, condensar, escrever "etc.", "e assim por diante", pular etapas, ou dizer "siga os passos normais". Se a solução tem 10 passos, escreva os 10 completos com todos os detalhes. O público é suporte iniciante que não conhece o sistema — cada detalhe é essencial para resolver o problema. Prefira respostas longas e completas a respostas curtas e incompletas.\n6. Mantenha o contexto da conversa.\n7. Seja conversacional e humano.\n8. Diferencie: CT-e, MDF-e, NF-e, NFS-e, Minuta, OC, CIOT, VPO.\n9. PARÂMETROS E FUNCIONALIDADES: Se a seção "PARÂMETROS E FUNCIONALIDADES RELACIONADOS" contiver itens relevantes para a pergunta, mencione-os ao final da resposta como opção adicional — ex: "💡 Verifique também se o parâmetro/funcionalidade X está habilitado, pois pode estar relacionado a esta situação."\n\n${mi}\n📚 CONHECIMENTO:\n${es}${ar}${pfCtx}${conhecimentoRepositorio}${hc}\n\n🗣️ PERGUNTA: "${query}"\n\n📝 FORMATO:\n- Markdown limpo. NUNCA JSON.\n- **negrito** para termos importantes.\n- Listas com - para passos sequenciais.\n- Linguagem conversacional e humana.${vum ? '\n- Não encontrou: pedir reformulação.' : ''}\n- OBRIGATÓRIO: ao encerrar toda resposta completa, escreva \`#finalizado\` sozinho na última linha.`;
 
     // Build multi-turn messages when conversation history exists
     const _historyTurns = cc.slice(0, -1); // previous turns, current query already added to cc as last item
@@ -2900,6 +2913,17 @@ async function handleChat() {
                 scrollToBottom(true);
                 return;
             }
+        }
+
+        // Verifica se a IA concluiu a resposta (deve conter #finalizado)
+        const _hcFinished = finalText.includes('#finalizado');
+        finalText = finalText.replace(/#finalizado\s*/gi, '').trim();
+        if (!_hcFinished && finalText.trim()) {
+            const _rq = query.replace(/'/g, "\\'");
+            contentEl.innerHTML = `<div style="color:var(--text-muted);font-style:italic;font-size:13px;margin-bottom:10px;">⚠️ A resposta não foi concluída. Tente novamente.</div><button onclick="this.closest('.answer-card').remove();fillAndSend('${_rq}');" style="padding:8px 18px;border-radius:8px;background:var(--primary);color:#fff;border:none;cursor:pointer;font-weight:600;font-size:13px;">🔄 Tentar novamente</button>`;
+            feedbackEl.style.display = 'flex';
+            scrollToBottom(true);
+            return;
         }
 
         contentEl.innerHTML = renderMd(finalText);
