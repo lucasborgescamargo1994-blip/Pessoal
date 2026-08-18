@@ -810,11 +810,72 @@
     padding: 2px 6px; border-radius: 4px; transition: background 0.15s;
 }
 .btn-refresh-sessions:hover { background: #ede9fe; }
+
+/* ── Overlay de instalação de IA ─────────────────────────── */
+#vecOverlay {
+    display: none;
+    position: fixed; inset: 0; z-index: 99999;
+    background: rgba(0,0,0,0.82);
+    backdrop-filter: blur(6px);
+    align-items: center; justify-content: center;
+    flex-direction: column;
+    animation: vecFadeIn 0.4s ease;
+}
+#vecOverlay.visible { display: flex; }
+@keyframes vecFadeIn { from { opacity:0; } to { opacity:1; } }
+@keyframes vecFadeOut { from { opacity:1; } to { opacity:0; } }
+#vecOverlay.hiding { animation: vecFadeOut 0.5s ease forwards; }
+
+.vec-box {
+    background: #fff;
+    border-radius: 20px;
+    padding: 48px 52px 44px;
+    max-width: 560px; width: 90%;
+    text-align: center;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.4);
+}
+.vec-icon { font-size: 56px; margin-bottom: 18px; display: block; animation: vecPulse 2s ease-in-out infinite; }
+@keyframes vecPulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.08);} }
+.vec-title {
+    font-size: 19px; font-weight: 800; color: #1e293b;
+    line-height: 1.4; margin-bottom: 10px;
+}
+.vec-subtitle {
+    font-size: 13px; color: #64748b; margin-bottom: 28px; line-height: 1.5;
+}
+.vec-bar-wrap {
+    background: #f1f5f9; border-radius: 99px; height: 14px;
+    overflow: hidden; margin-bottom: 14px;
+}
+.vec-bar {
+    height: 100%; border-radius: 99px;
+    background: linear-gradient(90deg, #f97316, #fb923c);
+    transition: width 0.6s ease;
+    min-width: 6px;
+}
+.vec-status {
+    font-size: 12px; color: #94a3b8; font-weight: 600; letter-spacing: 0.03em;
+}
+.vec-warn {
+    margin-top: 22px; font-size: 11px; color: #dc2626; font-weight: 700;
+    background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 8px 14px;
+}
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
+<!-- ── Overlay de instalação do sistema de IA ─────────────── -->
+<div id="vecOverlay">
+    <div class="vec-box">
+        <span class="vec-icon">🤖</span>
+        <div class="vec-title">Aguarde, instalando novos dados do<br>sistema de IA Aprimorado</div>
+        <div class="vec-subtitle">Uma atualização importante foi realizada.<br>Os dados estão sendo instalados localmente no seu dispositivo.<br>Próximas aberturas serão muito mais rápidas.</div>
+        <div class="vec-bar-wrap"><div class="vec-bar" id="vecBar" style="width:2%"></div></div>
+        <div class="vec-status" id="vecStatus">Iniciando instalação...</div>
+        <div class="vec-warn">⚠️ Não feche nem recarregue esta tela</div>
+    </div>
+</div>
 
 <!-- ═══════════════════════════════════════════════════════ -->
 <!--  GUIAS LATERAIS                                            -->
@@ -1682,7 +1743,7 @@ async function _executarAnaliseTela() {
     const ld1 = appendLoadingCard('🔍 Identificando o que está na tela...');
     let descricaoTela = '';
     try {
-        const r1 = await callMCPSemPensamento(
+        const r1 = await callMCPVision(
             [{ role: 'user', content: [
                 { type: 'text', text: 'Descreva de forma concisa o que aparece nesta tela do sistema Bsoft TMS: nome do módulo, funcionalidade, campos visíveis e qualquer mensagem de erro. Responda em português, em até 3 linhas, sem inventar nada que não esteja visível na imagem.' },
                 { type: 'image_url', image_url: { url: base64Url } }
@@ -1718,9 +1779,9 @@ async function _executarAnaliseTela() {
 
     const ld3 = appendLoadingCard('🤖 Analisando com base no manual...');
     try {
-        const result = await callMCPSemPensamento(
+        const result = await callMCPVision(
             [{ role: 'user', content: [{ type: 'text', text: prompt }, { type: 'image_url', image_url: { url: base64Url } }]}],
-            { temperature: 0.2, maxTokens: 2048 }
+            { temperature: 0.2, maxTokens: 4096 }
         );
         ld3.remove(); _renderCard(result.text);
     } catch(e) {
@@ -1733,9 +1794,9 @@ async function _executarAnaliseTela() {
         await new Promise(r => setTimeout(r, 1000)); retryMsg.remove();
         const ld4 = appendLoadingCard('🤖 Analisando com base no manual (2ª tentativa)...');
         try {
-            const result2 = await callMCPSemPensamento(
+            const result2 = await callMCPVision(
                 [{ role: 'user', content: [{ type: 'text', text: prompt }, { type: 'image_url', image_url: { url: base64Url } }]}],
-                { temperature: 0.2, maxTokens: 2048 }
+                { temperature: 0.2, maxTokens: 4096 }
             );
             ld4.remove(); _renderCard(result2.text);
         } catch(e2) {
@@ -1773,7 +1834,7 @@ async function _executarAnaliseImagem(base64Url, fileName) {
     const ld1 = appendLoadingCard('🔍 Identificando o que está na imagem...');
     let descricaoTela = '';
     try {
-        const r1 = await callMCPSemPensamento(
+        const r1 = await callMCPVision(
             [{ role: 'user', content: [
                 { type: 'text', text: 'Descreva de forma concisa o que aparece nesta imagem do sistema Bsoft TMS: nome do módulo, funcionalidade, campos visíveis e qualquer mensagem de erro. Responda em português, em até 3 linhas, sem inventar nada que não esteja visível na imagem.' },
                 { type: 'image_url', image_url: { url: base64Url } }
@@ -1805,9 +1866,9 @@ async function _executarAnaliseImagem(base64Url, fileName) {
     const prompt = `🏢 VOCÊ É UM AGENTE DE SUPORTE DA BSOFT TMS\n\n${ch}\n\nO usuário anexou uma imagem para análise.\n\nIMAGEM IDENTIFICADA: ${descricaoTela}\n\n🎯 REGRAS OBRIGATÓRIAS:\n1. Use APENAS as informações dos artigos do manual abaixo. NUNCA invente.\n2. Se não encontrar no manual, diga claramente que não encontrou e peça para descrever a dúvida no chat.\n3. Relacione o que está visível na imagem com o que o manual diz.${mi}\n\n📚 MANUAL BSOFT TMS:\n${ar || 'Nenhum artigo relevante encontrado para esta imagem.'}\n\n📝 FORMATO:\n- Responda em Markdown limpo\n- Use **negrito** para termos importantes\n- No final, SEMPRE inclua: "Se não era isso que eu queria que analise na imagem, pode perguntar no chat o que necessita exatamente."`;
     const ld3 = appendLoadingCard('🤖 Analisando com base no manual...');
     try {
-        const result = await callMCPSemPensamento(
+        const result = await callMCPVision(
             [{ role: 'user', content: [{ type: 'text', text: prompt }, { type: 'image_url', image_url: { url: base64Url } }]}],
-            { temperature: 0.2, maxTokens: 2048 }
+            { temperature: 0.2, maxTokens: 4096 }
         );
         ld3.remove(); _renderCard(result.text);
     } catch(e) {
@@ -1820,9 +1881,9 @@ async function _executarAnaliseImagem(base64Url, fileName) {
         await new Promise(r => setTimeout(r, 1000)); retryMsg.remove();
         const ld4 = appendLoadingCard('🤖 Analisando com base no manual (2ª tentativa)...');
         try {
-            const result2 = await callMCPSemPensamento(
+            const result2 = await callMCPVision(
                 [{ role: 'user', content: [{ type: 'text', text: prompt }, { type: 'image_url', image_url: { url: base64Url } }]}],
-                { temperature: 0.2, maxTokens: 2048 }
+                { temperature: 0.2, maxTokens: 4096 }
             );
             ld4.remove(); _renderCard(result2.text);
         } catch(e2) {
@@ -1872,7 +1933,9 @@ const p1="AIzaSyA3IOL",p2="jyyxIL3xlSD",p3="iEVvCu92JTgmD3vNQ";
 const gf1="AIzaSyChy",gf2="-QK5U1-KJJUNYD",gf3="rKakrOqi5JWf-aqo";
 const GEMINI_FALLBACK_KEY=gf1+gf2+gf3;
 const GEMINI_FALLBACK_MODEL="gemma-4-26b-a4b-it";
-const DEFAULT_MCP_CONFIG = { provider:'openrouter', model:'nvidia/nemotron-3-nano-30b-a3b:free', apiKey:o1+o2+o3, baseUrl:'https://openrouter.ai/api/v1', embeddingProvider:'google', embeddingKey:p1+p2+p3, embeddingModel:'gemini-embedding-2-preview' };
+const j1="jina_59e554b4ce3e4bfba5f7550ddb515ec7",j2="O3wfZe11iXINaz3azhRgd0-xpE5L";
+const JINA_KEY=j1+j2;
+const DEFAULT_MCP_CONFIG = { provider:'openrouter', model:'nvidia/nemotron-3-nano-30b-a3b:free', apiKey:o1+o2+o3, baseUrl:'https://openrouter.ai/api/v1' };
 const PROVIDER_PRESETS = {
     openrouter: { baseUrl:'https://openrouter.ai/api/v1', models:['nvidia/nemotron-3-nano-30b-a3b:free','north-mini-code:free','nvidia/nemotron-3-ultra-550b-a55b:free','nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free','z-ai/glm-4.5-air:free','meta-llama/llama-3.3-70b-instruct:free','deepseek/deepseek-r1:free'], defaultModel:'nvidia/nemotron-3-nano-30b-a3b:free', chatEndpoint:'/chat/completions', headers:(k)=>({Authorization:`Bearer ${k}`,'Content-Type':'application/json','HTTP-Referer':window.location.origin,'X-Title':'Bsoft TMS Suporte'}), formatRequestBody:(m,msgs,c={})=>({model:m,messages:msgs,temperature:c.temperature||0.3,max_tokens:c.maxTokens||4096,...(c.responseFormat?{response_format:c.responseFormat}:{})}), parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro OpenRouter');return{text:d.choices?.[0]?.message?.content||'',finishReason:d.choices?.[0]?.finish_reason||'',full:d};} },
     google: { baseUrl:'https://generativelanguage.googleapis.com/v1beta', models:['gemma-4-26b-a4b-it','gemini-2.0-flash','gemini-2.0-flash-lite','gemini-2.5-flash'], defaultModel:'gemma-4-26b-a4b-it', chatEndpoint:'/models/{model}:generateContent', headers:()=>({'Content-Type':'application/json'}), formatRequestBody:(m,msgs,c={})=>{const cnt=msgs.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:typeof m.content==='string'?m.content:JSON.stringify(m.content)}]}));return{contents:cnt,generationConfig:{temperature:c.temperature||0.3,maxOutputTokens:c.maxTokens||4096,...(c.responseFormat?.type==='json_object'?{responseMimeType:'application/json'}:{})}};}, parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro Google');const p=d.candidates?.[0]?.content?.parts||[];return{text:p.filter(p=>p.text).map(p=>p.text).join(''),finishReason:d.candidates?.[0]?.finishReason||'',full:d};}, buildUrl:(b,m,e)=>`${b}${e.replace('{model}',m)}` },
@@ -1900,7 +1963,28 @@ function openMCP() { const s=prompt("Senha Administrativa:"); if(s===CORRECT_PAS
 function closeMCP(){document.getElementById('mcpPanel').style.display='none';}
 function updateMCPStatus(m,e=false){const s=document.getElementById('mcpStatus');s.textContent=m;s.style.color=e?'#dc2626':'#0369a1';}
 function getModelFromUI(){const ms=document.getElementById('mcpModel');return ms.value==='__custom__'?document.getElementById('mcpModelCustom').value.trim():ms.value;}
-function saveMCPConfig(){mcpConfig.provider=document.getElementById('mcpProvider').value;mcpConfig.model=getModelFromUI();mcpConfig.apiKey=document.getElementById('mcpApiKey').value.trim();mcpConfig.baseUrl=document.getElementById('mcpBaseUrl').value.trim();if(!mcpConfig.model){updateMCPStatus('❌ Informe o nome do modelo',true);return;}localStorage.setItem(MCP_CONFIG_KEY,JSON.stringify(mcpConfig));updateMCPStatus('✅ Salvo! Recarregando...');setTimeout(()=>{manualVetorizado=[];loadData();},500);}
+function saveMCPConfig(){
+    mcpConfig.provider=document.getElementById('mcpProvider').value;
+    mcpConfig.model=getModelFromUI();
+    mcpConfig.apiKey=document.getElementById('mcpApiKey').value.trim();
+    mcpConfig.baseUrl=document.getElementById('mcpBaseUrl').value.trim();
+    if(!mcpConfig.model){updateMCPStatus('❌ Informe o nome do modelo',true);return;}
+    try {
+        localStorage.setItem(MCP_CONFIG_KEY,JSON.stringify(mcpConfig));
+    } catch(e) {
+        // localStorage cheio — libera caches antigos e tenta de novo
+        ['bsoft_emb_v1','bsoft_emb_v2'].forEach(k=>{try{localStorage.removeItem(k);}catch(_){}});
+        try {
+            localStorage.setItem(MCP_CONFIG_KEY,JSON.stringify(mcpConfig));
+        } catch(e2) {
+            updateMCPStatus('⚠️ Configuração salva apenas em memória (localStorage cheio)',true);
+            setTimeout(()=>{manualVetorizado=[];loadData();},500);
+            return;
+        }
+    }
+    updateMCPStatus('✅ Salvo! Recarregando...');
+    setTimeout(()=>{manualVetorizado=[];loadData();},500);
+}
 function resetMCPConfig(){if(!confirm('Restaurar configurações padrão?\nIsso apagará as configurações salvas e voltará ao padrão do código.'))return;mcpConfig={...DEFAULT_MCP_CONFIG};localStorage.removeItem(MCP_CONFIG_KEY);applyMCPConfigToUI();updateMCPStatus('✅ Padrão restaurado com sucesso');}
 async function testMCPConnection(){const p=document.getElementById('mcpProvider').value;const m=getModelFromUI();const k=document.getElementById('mcpApiKey').value.trim();const b=document.getElementById('mcpBaseUrl').value.trim();if(!k){updateMCPStatus('❌ API Key obrigatória',true);return;}if(!m){updateMCPStatus('❌ Informe o nome do modelo',true);return;}updateMCPStatus(`🔌 Testando "${m}"...`);try{const r=await callMCPAPI(p,m,k,b,[{role:'user',content:'Responda "OK"'}],{maxTokens:10,temperature:0});updateMCPStatus(`✅ OK com "${m}": "${r.text.trim()}"`);}catch(e){updateMCPStatus(`❌ ${e.message}`,true);}}
 async function callMCPAPI(provider,model,apiKey,baseUrl,messages,config={}){
@@ -1993,6 +2077,29 @@ async function callCurrentMCP(messages,config={}){
     }
 
     throw new Error('Todos os provedores falharam.');
+}
+
+// Modelos gratuitos com suporte a visão (multimodal) — para "analisar tela" e análise de imagem
+const _VISION_MODELS = [
+    'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free',
+    'meta-llama/llama-4-scout:free',
+    'meta-llama/llama-4-maverick:free',
+];
+
+async function callMCPVision(messages, config = {}) {
+    for (const model of _VISION_MODELS) {
+        for (let t = 1; t <= 2; t++) {
+            try {
+                if (t > 1) await new Promise(r => setTimeout(r, 1500));
+                const res = await callMCPAPI('openrouter', model, DEFAULT_MCP_CONFIG.apiKey, DEFAULT_MCP_CONFIG.baseUrl, messages, config);
+                console.log(`%c🖼️ [Vision] OK — modelo: ${model}`,'color:#16a34a;font-weight:600');
+                return res;
+            } catch(e) {
+                console.warn(`🖼️ [Vision] ${model} tentativa ${t}: erro ${e.status || e.message?.substring(0,40) || '?'}`);
+            }
+        }
+    }
+    throw new Error('Nenhum modelo de visão disponível.');
 }
 
 function filtrarPensamentoAlto(texto) {
@@ -2284,8 +2391,75 @@ async function forcarAtualizacaoRepositorio() {
 // ═══════════════════════════════════════════════════════════
 //  EMBEDDINGS
 // ═══════════════════════════════════════════════════════════
-async function gerarEmbedding(texto){const apiKey=mcpConfig.embeddingKey||mcpConfig.apiKey;const endpoint=`https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-2-preview:embedContent?key=${apiKey}`;try{const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:"models/gemini-embedding-2-preview",content:{parts:[{text:texto}]}})});const d=await r.json();if(r.ok&&d.embedding)return d.embedding.values;if(r.status===429){await new Promise(r=>setTimeout(r,30000));return gerarEmbedding(texto);}return null;}catch(e){return null;}}
+// Chamada rápida — sem retry. Usada em tempo real (handleChat).
+// Usa Jina AI (jina-embeddings-v3, 1024 dims) — limite de 1M tokens/mês grátis, sem 429.
+async function gerarEmbedding(texto) {
+    try {
+        const r = await fetch('https://api.jina.ai/v1/embeddings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${JINA_KEY}` },
+            body: JSON.stringify({ model: 'jina-embeddings-v3', input: [texto] })
+        });
+        const d = await r.json();
+        if (r.ok && d.data?.[0]?.embedding) return d.data[0].embedding;
+    } catch(e) {}
+    return null;
+}
+
+// Chamada com retry — usada na vetorização em background (repositório / novos registros).
+// Tenta até 4 vezes com espera crescente antes de desistir.
+async function gerarEmbeddingComRetry(texto, _tent = 0) {
+    const v = await gerarEmbedding(texto);
+    if (v) return v;
+    if (_tent < 3) {
+        const espera = [5000, 10000, 20000][_tent] || 20000;
+        await new Promise(res => setTimeout(res, espera));
+        return gerarEmbeddingComRetry(texto, _tent + 1);
+    }
+    return null;
+}
 function calcularSimilaridade(vA,vB){if(!vA||!vB||vA.length!==vB.length)return 0;let d=0,mA=0,mB=0;for(let i=0;i<vA.length;i++){d+=vA[i]*vB[i];mA+=vA[i]**2;mB+=vB[i]**2;}mA=Math.sqrt(mA);mB=Math.sqrt(mB);return(mA&&mB)?d/(mA*mB):0;}
+
+// ═══════════════════════════════════════════════════════════
+//  CACHE LOCAL DE EMBEDDINGS (evita baixar vetores do Supabase a cada carga)
+// ═══════════════════════════════════════════════════════════
+const _EMB_CACHE_KEY = 'bsoft_emb_v3'; // v3 = migração Gemini → Jina (1024 dims)
+let _embCacheMem = {};
+
+function _embToB64(arr) {
+    const f = new Float32Array(arr);
+    const b = new Uint8Array(f.buffer);
+    let s = ''; for (let i = 0; i < b.length; i++) s += String.fromCharCode(b[i]);
+    return btoa(s);
+}
+function _b64ToEmb(b64) {
+    const s = atob(b64);
+    const b = new Uint8Array(s.length);
+    for (let i = 0; i < s.length; i++) b[i] = s.charCodeAt(i);
+    return Array.from(new Float32Array(b.buffer));
+}
+function _loadEmbCache() {
+    try {
+        const raw = localStorage.getItem(_EMB_CACHE_KEY);
+        if (!raw) return;
+        const obj = JSON.parse(raw);
+        for (const [id, b64] of Object.entries(obj)) _embCacheMem[id] = _b64ToEmb(b64);
+    } catch(e) { _embCacheMem = {}; }
+}
+function _saveEmbToCache(id, vec) {
+    if (!id || !vec) return;
+    _embCacheMem[id] = vec;
+    try {
+        const raw = localStorage.getItem(_EMB_CACHE_KEY);
+        const obj = raw ? JSON.parse(raw) : {};
+        obj[String(id)] = _embToB64(vec);
+        localStorage.setItem(_EMB_CACHE_KEY, JSON.stringify(obj));
+    } catch(e) {} // localStorage cheio — mantém apenas em memória
+}
+function _getEmbFromCache(id) { return _embCacheMem[String(id)] || null; }
+_loadEmbCache();
+// Remove caches antigos de versões anteriores para liberar espaço no localStorage
+['bsoft_emb_v1','bsoft_emb_v2'].forEach(k => { try { localStorage.removeItem(k); } catch(e) {} });
 
 // ═══════════════════════════════════════════════════════════
 //  CARREGAMENTO DE DADOS (APENAS BANCO - RÁPIDO)
@@ -2302,10 +2476,10 @@ async function loadData() {
     try {
         b.innerText = `Carregando banco de dados...`;
         const [rB, rP, rF, rL, rM] = await Promise.allSettled([
-            sb.from('BancoDados').select('*'),
+            sb.from('BancoDados').select('id, titulo, conteudo, como_emitir, categoria'), // embedding vem do cache local
             sb.from('Parametros').select('*'),
             sb.from('Funcionalidades').select('*'),
-            sb.from('logs').select('*').order('created_at', {ascending: false}).limit(200),
+            sb.from('logs').select('pergunta, timestamp, created_at').order('created_at', {ascending: false}).limit(100),
             sb.from('machine_learning').select('*')
         ]);
         if (rP.status === 'fulfilled' && rP.value.data) dadosParametros = rP.value.data;
@@ -2329,12 +2503,31 @@ async function loadData() {
         if (rB.status !== 'fulfilled' || rB.value.error) throw new Error("Falha ao buscar BancoDados");
         let dados = rB.value.data;
         if (!Array.isArray(dados)) throw new Error("Formato inválido");
+
+        // Se cache local vazio, baixa embeddings do Supabase uma única vez por dispositivo.
+        // Pgvector retorna o vetor como string "[0.1,0.2,...]" — por isso parseamos antes de usar.
+        if (Object.keys(_embCacheMem).length === 0 && dados.length > 0) {
+            b.innerText = 'Baixando vetores do servidor...';
+            try {
+                const { data: embRows } = await sb.from('BancoDados').select('id, embedding');
+                let seeded = 0;
+                (embRows || []).forEach(r => {
+                    if (!r.embedding) return;
+                    let vec = r.embedding;
+                    if (typeof vec === 'string') { try { vec = JSON.parse(vec); } catch(e) { return; } }
+                    // Só aceita vetores Jina (1024 dims) — ignora vetores Gemini antigos (3072 dims)
+                    if (Array.isArray(vec) && vec.length === 1024) { _saveEmbToCache(r.id, vec); seeded++; }
+                });
+                console.log(`[cache] ${seeded} vetores Jina carregados do Supabase`);
+            } catch(e) { console.warn('[cache] Falha ao baixar vetores:', e); }
+        }
+
         dados = dados.map(row => ({
             ...row,
             erro: row.titulo || '',
             solucao: row.conteudo || '',
             'como emitir': row.como_emitir || '',
-            vetor: row.embedding || null
+            vetor: _getEmbFromCache(row.id) // lê do localStorage — zero egress Supabase
         }));
         bancoCompletoRaw = dados;
         b.innerText = "Vetorizando base...";
@@ -2356,7 +2549,43 @@ async function loadData() {
 }
 function popularBarraEmAlta(logsData){try{const isO=Array.isArray(logsData)&&logsData.length>0&&typeof logsData[0]==='object'&&!Array.isArray(logsData[0]);const rows=Array.isArray(logsData)?logsData:[];if(!rows.length)return;const cont={};const po=[];const agora=Date.now();const seteD=7*24*60*60*1000;rows.forEach((row)=>{let p="",ts=0;if(isO){p=(row.pergunta||row.Pergunta||"").toString().trim();if(row.data){const d=new Date(row.data);if(!isNaN(d.getTime()))ts=d.getTime();}}else{p=(row[1]||"").toString().trim();}if(!p||p.length<3||p.toUpperCase().startsWith("FEEDBACK")||p==="Pendente")return;if(!cont[p]){cont[p]={freq:0};po.push(p);}cont[p].freq++;if((agora-ts)<seteD&&ts>0)cont[p].recente=true;});if(Object.keys(cont).length===0)return;const u4=po.filter(p=>cont[p].recente).slice(0,4);const su4=new Set(u4);const rec=Object.entries(cont).filter(([k])=>!su4.has(k)&&cont[k].freq>=2).sort((a,b)=>b[1].freq-a[1].freq).map(([k])=>k);let lf=[...u4,...rec].filter((v,i,a)=>a.indexOf(v)===i).slice(0,8);const bar=document.getElementById('topTermsBar');if(!bar||!lf.length)return;bar.innerHTML='<span>Em alta:</span>';lf.forEach(t=>{const a=document.createElement('a');a.textContent=t.length>35?t.substring(0,33)+'…':t;a.title=t;a.onclick=()=>fillAndSend(t);bar.appendChild(a);});}catch(e){}}
 function carregarVetoresExistentes(dados){if(!dados.length)return{linhasComVetor:0,linhasSemVetor:[],chaves:[]};const chaves=Object.keys(dados[0]);const cv=chaves.find(k=>k.toLowerCase().trim()==='vetor'||k.toLowerCase().trim()==='embedding');const ce=chaves.find(k=>k.toLowerCase().trim()==='erro'||k.toLowerCase().trim()==='titulo');const cs=chaves.find(k=>k.toLowerCase().trim()==='solucao'||k.toLowerCase().trim()==='solução'||k.toLowerCase().trim()==='conteudo');const cc=chaves.find(k=>k.toLowerCase().trim()==='categoria');const cem=chaves.find(k=>{const kn=k.toLowerCase().trim();return kn==='como emitir'||kn==='como_emitir'||kn==='emissao'||kn==='emissão'||kn==='emitir';});if(!cv)return{linhasComVetor:0,linhasSemVetor:[],chaves};let lcv=0;const lsv=[];dados.forEach((linha,i)=>{const te=linha[ce]||"";const ts=linha[cs]||"";const tc=cc?(linha[cc]||""):"";const tem=cem?(linha[cem]||""):"";if(!te&&!ts)return;const tc2=`DÚVIDA: ${te} | PROCEDIMENTO: ${ts}${tem?' | COMO EMITIR: '+tem:''}${tc?' | CATEGORIA: '+tc:''}`;const ve=linha[cv];let veArray=null;if(Array.isArray(ve)){veArray=ve;}else if(ve&&typeof ve==='string'&&ve.trim().startsWith('[')){try{veArray=JSON.parse(ve);}catch(e){veArray=null;}}if(veArray&&veArray.length>0){manualVetorizado.push({texto:tc2,erro:te,solucao:ts,emitir:tem,categoria:tc,vetor:veArray,idSupabase:linha.id});lcv++;}else{lsv.push({linha,textoCompleto:tc2,textoErro:te,textoSolucao:ts,textoEmitir:tem,textoCategoria:tc,indexPlanilha:i+2,chaveVetor:cv,chaves,idSupabase:linha.id});}});return{linhasComVetor:lcv,linhasSemVetor:lsv,chaves};}
-async function vetorizarEmBackground(lsv,chaves){const b=document.getElementById('statusBadge');let es=0;for(let i=0;i<lsv.length;i++){if(es>5){b.innerText='IA Pronta ⚠️';break;}const item=lsv[i];b.innerText=`Vet. ${i+1}/${lsv.length}`;await new Promise(r=>setTimeout(r,3500));const nv=await gerarEmbedding(item.textoCompleto);if(nv){manualVetorizado.push({texto:item.textoCompleto,erro:item.textoErro,solucao:item.textoSolucao,emitir:item.textoEmitir||"",categoria:item.textoCategoria,vetor:nv,idSupabase:item.idSupabase});salvarVetorNoSupabase(item.idSupabase,nv);es=0;}else{es++;await new Promise(r=>setTimeout(r,10000));}}document.getElementById('statusBadge').innerText=`IA Pronta (${manualVetorizado.length})`;document.getElementById('statusBadge').className="badge";}
+async function vetorizarEmBackground(lsv,chaves){
+    const b=document.getElementById('statusBadge');
+    const overlay=document.getElementById('vecOverlay');
+    const vecBar=document.getElementById('vecBar');
+    const vecStatus=document.getElementById('vecStatus');
+    const manyItems = lsv.length > 5;
+    if(manyItems && overlay){ overlay.classList.add('visible'); }
+    const _updOverlay=(i,total)=>{
+        const pct=Math.round((i/total)*100);
+        if(vecBar) vecBar.style.width=Math.max(2,pct)+'%';
+        if(vecStatus) vecStatus.textContent=`Instalando registro ${i} de ${total} (${pct}% concluído)`;
+    };
+    const _hideOverlay=()=>{
+        if(!overlay)return;
+        overlay.classList.add('hiding');
+        setTimeout(()=>{ overlay.classList.remove('visible','hiding'); },500);
+    };
+    let es=0;
+    for(let i=0;i<lsv.length;i++){
+        if(es>5){b.innerText='IA Pronta ⚠️';break;}
+        const item=lsv[i];
+        b.innerText=`Vet. ${i+1}/${lsv.length}`;
+        if(manyItems) _updOverlay(i+1,lsv.length);
+        await new Promise(r=>setTimeout(r,500));
+        const nv=await gerarEmbeddingComRetry(item.textoCompleto);
+        if(nv){
+            manualVetorizado.push({texto:item.textoCompleto,erro:item.textoErro,solucao:item.textoSolucao,emitir:item.textoEmitir||"",categoria:item.textoCategoria,vetor:nv,idSupabase:item.idSupabase});
+            salvarVetorNoSupabase(item.idSupabase,nv);
+            es=0;
+        } else{es++;await new Promise(r=>setTimeout(r,10000));}
+    }
+    if(manyItems) _updOverlay(lsv.length,lsv.length);
+    await new Promise(r=>setTimeout(r,800));
+    _hideOverlay();
+    document.getElementById('statusBadge').innerText=`IA Pronta (${manualVetorizado.length})`;
+    document.getElementById('statusBadge').className="badge";
+}
 function liberarChat(modo="completo"){
     const b = document.getElementById('statusBadge');
     const w = document.getElementById('welcomeMsg');
@@ -2388,7 +2617,7 @@ function liberarChat(modo="completo"){
         if(w) w.innerHTML = `⚠️ Não consegui conectar ao banco de dados.<br>Posso tentar ajudar com conhecimento geral. Digite sua dúvida.<br><button class="retry-btn" onclick="location.reload()">🔄 Tentar Novamente</button>${_menuBtnsHtml()}`;
     }
 }
-function salvarVetorNoSupabase(id,vetor){if(!id)return;sb.from('BancoDados').update({embedding:vetor}).eq('id',id).then(({error})=>{if(error)console.error('Erro ao salvar vetor:',error);});}
+function salvarVetorNoSupabase(id,vetor){if(!id)return;_saveEmbToCache(id,vetor);sb.from('BancoDados').update({embedding:vetor}).eq('id',id).then(({error})=>{if(error)console.error('Erro ao salvar vetor:',error);});}
 
 
 function extrairTermos(texto) {
@@ -2444,7 +2673,12 @@ function buildContextoSistema(query, dc) {
 //  PARÂMETROS / FUNCIONALIDADES
 // ═══════════════════════════════════════════════════════════
 async function handleParametrosFuncionalidades() {
-    if (isVectorizing) return;
+    // Parâmetros/Funcionalidades não dependem de vetorização — dados carregados do Supabase em loadData
+    if (dadosParametros.length === 0 && dadosFuncionalidades.length === 0) {
+        appendMessage('ai', '⚠️ Dados ainda sendo carregados do servidor. Aguarde alguns segundos e tente novamente.');
+        console.warn('⚙️ [PF Debug] dadosParametros e dadosFuncionalidades ainda vazios');
+        return;
+    }
     const input = document.getElementById('searchInput');
     const query = input.value.trim();
     if (!query) return;
@@ -2484,6 +2718,18 @@ async function handleParametrosFuncionalidades() {
 
     const paramsRel = _filtrarRelevantes(dadosParametros);
     const funcsRel  = _filtrarRelevantes(dadosFuncionalidades);
+
+    // ── DEBUG ──────────────────────────────────────────────────────────────
+    console.group(`⚙️ [PF Debug] Query: "${query}"`);
+    console.log(`📦 Dados: ${dadosParametros.length} parâmetros | ${dadosFuncionalidades.length} funcionalidades`);
+    console.log(`🔤 Palavras buscadas: [${_queryWords.join(', ')}]`);
+    console.log(`✅ Parâmetros encontrados: ${paramsRel.length}`);
+    if (paramsRel.length > 0) paramsRel.slice(0,3).forEach((p,i) => console.log(`  P${i+1}:`, JSON.stringify(p).substring(0,150)));
+    console.log(`✅ Funcionalidades encontradas: ${funcsRel.length}`);
+    if (funcsRel.length > 0) funcsRel.slice(0,3).forEach((f,i) => console.log(`  F${i+1}:`, JSON.stringify(f).substring(0,150)));
+    if (paramsRel.length === 0 && funcsRel.length === 0) console.warn('⚠️ NENHUM resultado — verifique se dadosParametros/dadosFuncionalidades estão carregados');
+    console.groupEnd();
+    // ───────────────────────────────────────────────────────────────────────
 
     if (paramsRel.length === 0 && funcsRel.length === 0) {
         ld.remove();
@@ -2528,7 +2774,7 @@ INSTRUÇÕES:
     const _pfFilter = _makeThinkingFilter();
     try {
         const { resp: _resp, provider: _pr, iaUsada: _iu, iaModelo: _im } = await callCurrentMCPStream(
-            [{ role: 'user', content: prompt }], { temperature: 0.3, maxTokens: 2500 }
+            [{ role: 'user', content: prompt }], { temperature: 0.3, maxTokens: 5000 }
         );
         ld.remove();
 
@@ -2555,7 +2801,7 @@ INSTRUÇÕES:
         const feedbackEl = document.getElementById('_pff' + ts);
         let rafPending = false, lastVis = '', streamDone = false;
 
-        await _readSSEStream(_resp, _pr, chunk => {
+        const { finishReason: _pfFR } = await _readSSEStream(_resp, _pr, chunk => {
             lastVis = _pfFilter.push(chunk);
             if (!rafPending) {
                 rafPending = true;
@@ -2570,9 +2816,10 @@ INSTRUÇÕES:
 
         streamDone = true;
         const _pfRaw = _pfFilter.finish();
-        const _pfFinished = _pfRaw.includes('#finalizado');
         const finalText = _pfRaw.replace(/#finalizado\s*/gi, '').trim();
-        if (!_pfFinished) {
+        // Truncado = API sinalizou limit de tokens. Ausência de #finalizado não é critério.
+        const _pfTruncado = _pfFR === 'length' || _pfFR === 'max_tokens';
+        if (_pfTruncado || !finalText) {
             const _rq = query.replace(/'/g, "\\'");
             contentEl.innerHTML = `<div style="color:var(--text-muted);font-style:italic;font-size:13px;margin-bottom:10px;">⚠️ A resposta não foi concluída. Tente novamente.</div><button onclick="this.closest('.answer-card').remove();_paramFuncMode=true;document.getElementById('searchInput').value='${_rq}';handleChat();" style="padding:8px 18px;border-radius:8px;background:var(--primary);color:#fff;border:none;cursor:pointer;font-weight:600;font-size:13px;">🔄 Tentar novamente</button>`;
             feedbackEl.style.display = 'flex';
@@ -2630,6 +2877,7 @@ async function _readSSEStream(resp, provider, onChunk) {
     const reader = resp.body.getReader();
     const dec = new TextDecoder();
     let buf = '';
+    let finishReason = '';
     try {
         while (true) {
             const { done, value } = await reader.read();
@@ -2640,9 +2888,11 @@ async function _readSSEStream(resp, provider, onChunk) {
             for (const line of lines) {
                 if (!line.startsWith('data: ')) continue;
                 const raw = line.slice(6).trim();
-                if (raw === '[DONE]') return;
+                if (raw === '[DONE]') return { finishReason };
                 try {
                     const j = JSON.parse(raw);
+                    const fr = j.choices?.[0]?.finish_reason || j.candidates?.[0]?.finishReason;
+                    if (fr) finishReason = fr;
                     const chunk = provider === 'google'
                         ? (j.candidates?.[0]?.content?.parts?.filter(p => p.text)?.map(p => p.text)?.join('') ?? '')
                         : (j.choices?.[0]?.delta?.content ?? '');
@@ -2653,6 +2903,7 @@ async function _readSSEStream(resp, provider, onChunk) {
     } finally {
         try { reader.releaseLock(); } catch {}
     }
+    return { finishReason };
 }
 
 async function callCurrentMCPStream(messages, config = {}) {
@@ -2771,11 +3022,51 @@ async function handleChat() {
     const _t3 = performance.now();
     let rr = [];
     if (vp) {
+        // Busca vetorial (caminho normal)
         const _todos = manualVetorizado.map(item => ({ ...item, similaridade: calcularSimilaridade(vp, item.vetor) })).sort((a, b) => b.similaridade - a.similaridade);
-        const _topN = _todos[0]?.similaridade > 0.85 ? 5 : _todos[0]?.similaridade > 0.65 ? 8 : 12;
-        rr = _todos.slice(0, _topN);
+        // Se similaridade máxima < 0.1, houve incompatibilidade de dimensão (ex: vetor Llama fallback vs vetores Gemini armazenados)
+        if (_todos.length > 0 && _todos[0].similaridade >= 0.1) {
+            const _topN = _todos[0].similaridade > 0.85 ? 5 : _todos[0].similaridade > 0.65 ? 8 : 12;
+            rr = _todos.slice(0, _topN);
+        }
+    }
+    // Fallback por palavras-chave: embedding null OU incompatibilidade de dimensão (Llama vs Gemini)
+    if (rr.length === 0) {
+        const _norm = t => String(t||'').toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,'');
+        const _words = _norm(queryNormalizada).split(/\s+/).filter(w => w.length > 2);
+        if (_words.length > 0) {
+            const _fonte = bancoCompletoRaw.length > 0 ? bancoCompletoRaw : manualVetorizado;
+            rr = _fonte
+                .map(item => {
+                    const txt = _norm((item.erro || item.titulo || '') + ' ' + (item.solucao || item.conteudo || ''));
+                    const hits = _words.filter(w => txt.includes(w)).length;
+                    return { ...item, similaridade: hits / _words.length };
+                })
+                .filter(item => item.similaridade > 0)
+                .sort((a, b) => b.similaridade - a.similaridade)
+                .slice(0, 10);
+        }
     }
     _tp('buscaVetorial (map+sort)', _t3);
+
+    // ── DEBUG: mostra o que foi encontrado no banco e qual método foi usado ──
+    console.group(`🔍 [DB Debug] Pergunta: "${query.substring(0, 80)}"`);
+    console.log(`📐 Embedding: ${vp ? `gerado (${vp.length} dims)` : 'FALHOU → busca por palavras-chave'}`);
+    console.log(`📚 Banco carregado: ${manualVetorizado.length} artigos vetorizados | ${bancoCompletoRaw.length} artigos raw`);
+    console.log(`🎯 Método de busca: ${vp && rr.length > 0 && rr[0].similaridade >= 0.1 ? 'VETORIAL (Jina)' : 'PALAVRAS-CHAVE'}`);
+    if (rr.length > 0) {
+        console.log(`📋 Top ${rr.length} resultado(s) encontrado(s):`);
+        rr.slice(0, 5).forEach((r, i) => {
+            const titulo = r.erro || r.titulo || '(sem título)';
+            const sim = (r.similaridade * 100).toFixed(1);
+            const fonte = r.isRepositorio ? '📁 Repositório' : '🗃️ BancoDados';
+            console.log(`  ${i+1}. [${sim}%] ${fonte} — ${titulo.substring(0, 80)}`);
+        });
+    } else {
+        console.warn('⚠️ NENHUM artigo encontrado! A IA vai responder sem contexto do banco.');
+    }
+    console.groupEnd();
+    // ────────────────────────────────────────────────────────────────────────
 
     const trb = rr.length > 0 && rr[0].similaridade > 0.65;
     let ar = "";
@@ -2845,7 +3136,7 @@ async function handleChat() {
     try {
         const _t5 = performance.now();
         const { resp: _resp, provider: _pr, iaUsada: _iu, iaModelo: _im } = await callCurrentMCPStream(
-            _apiMessages, { temperature: 0.2, maxTokens: 6000 }
+            _apiMessages, { temperature: 0.2, maxTokens: 12000 }
         );
         _tp('callCurrentMCPStream (conectado)', _t5);
         ld.remove();
@@ -2881,7 +3172,7 @@ async function handleChat() {
         const feedbackEl = document.getElementById('_sf' + ts);
         let rafPending = false, lastVis = '', streamDone = false;
 
-        await _readSSEStream(_resp, _pr, chunk => {
+        const { finishReason: _hcFR } = await _readSSEStream(_resp, _pr, chunk => {
             lastVis = _filter.push(chunk);
             if (!rafPending) {
                 rafPending = true;
@@ -2907,7 +3198,7 @@ async function handleChat() {
             try {
                 const _filter2 = _makeThinkingFilter();
                 const { resp: _resp2, provider: _pr2 } = await callCurrentMCPStream(
-                    _apiMessages, { temperature: 0.4, maxTokens: 1500, skipModels: [_im] }
+                    _apiMessages, { temperature: 0.4, maxTokens: 3000, skipModels: [_im] }
                 );
                 let _rafPending2 = false, _streamDone2 = false;
                 await _readSSEStream(_resp2, _pr2, chunk => {
@@ -2936,10 +3227,10 @@ async function handleChat() {
             }
         }
 
-        // Verifica se a IA concluiu a resposta (deve conter #finalizado)
-        const _hcFinished = finalText.includes('#finalizado');
+        // Truncado = API sinalizou limite de tokens. Ausência de #finalizado não é critério.
         finalText = finalText.replace(/#finalizado\s*/gi, '').trim();
-        if (!_hcFinished && finalText.trim()) {
+        const _hcTruncado = _hcFR === 'length' || _hcFR === 'max_tokens';
+        if (_hcTruncado) {
             const _rq = query.replace(/'/g, "\\'");
             contentEl.innerHTML = `<div style="color:var(--text-muted);font-style:italic;font-size:13px;margin-bottom:10px;">⚠️ A resposta não foi concluída. Tente novamente.</div><button onclick="this.closest('.answer-card').remove();fillAndSend('${_rq}');" style="padding:8px 18px;border-radius:8px;background:var(--primary);color:#fff;border:none;cursor:pointer;font-weight:600;font-size:13px;">🔄 Tentar novamente</button>`;
             feedbackEl.style.display = 'flex';
@@ -3968,7 +4259,7 @@ async function carregarLogs(){
     const container=document.getElementById('logContainer');
     container.innerHTML='<div style="text-align:center;padding:24px;color:#6b7280;">⏳ Carregando...</div>';
     try{
-        const{data,error}=await sb.from('logs').select('*').order('created_at',{ascending:false}).limit(1000);
+        const{data,error}=await sb.from('logs').select('*').order('created_at',{ascending:false}).limit(300);
         if(error)throw error;
         _logsData=data||[];
         renderLogs();
@@ -4346,7 +4637,10 @@ async function carregarDadosRepositorio() {
         const removidosIds = idsCachados.filter(id => !idsAtuais.includes(id));
 
         let artigosCache = JSON.parse(localStorage.getItem(REPO_ARTIGOS_KEY) || '{}');
-        let vetoresCache = JSON.parse(localStorage.getItem(REPO_VECTORS_KEY) || '[]');
+        // Vetores do repositório ficam no cache compartilhado (base64) — REPO_VECTORS_KEY guarda só metadados
+        let vetoresCache = JSON.parse(localStorage.getItem(REPO_VECTORS_KEY) || '[]')
+            .map(item => ({ ...item, vetor: _getEmbFromCache('repo_' + item.repoId) }))
+            .filter(item => item.vetor);
 
         // 3. Nenhuma mudança + vetores em cache → carrega da memória local, zero chamadas à API
         if (novosIds.length === 0 && removidosIds.length === 0 && vetoresCache.length > 0) {
@@ -4375,15 +4669,16 @@ async function carregarDadosRepositorio() {
                     if (resultado?.texto && resultado.texto.length > 50) {
                         artigosCache[id] = { titulo: nome, conteudo: resultado.texto.substring(0, 10000), data: new Date().toISOString() };
                         const textoCompleto = `REPOSITÓRIO: ${nome} | CONTEÚDO: ${resultado.texto.substring(0, 2000)}`;
-                        const vetor = await gerarEmbedding(textoCompleto);
+                        const vetor = await gerarEmbeddingComRetry(textoCompleto);
                         if (vetor) {
+                            _saveEmbToCache('repo_' + id, vetor);
                             vetoresCache.push({ texto: textoCompleto, erro: nome, solucao: resultado.texto.substring(0, 10000), emitir: '', categoria: 'Repositório', vetor, isRepositorio: true, repoId: id });
                             console.log(`✅ Extraído e vetorizado: ${nome} (${resultado.texto.length} chars)`);
                         }
                     } else {
                         console.warn(`⚠️ Texto vazio/curto: ${nome} (${resultado?.texto?.length || 0} chars)`);
                     }
-                    await new Promise(r => setTimeout(r, 2000));
+                    await new Promise(r => setTimeout(r, 300));
                 } catch(e) {
                     console.error(`❌ Erro ao processar ${nome}:`, e);
                 }
@@ -4391,14 +4686,22 @@ async function carregarDadosRepositorio() {
         }
 
         // 6. Salva cache atualizado
-        localStorage.setItem(REPO_FILELIST_KEY, JSON.stringify(idsAtuais));
+        // Arquivos novos que falharam na vetorização NÃO entram na lista de processados
+        // — assim tentam de novo na próxima abertura (sem ficar presos forever)
+        const _idsVetorizados = new Set(vetoresCache.map(v => v.repoId));
+        const _idsSemVetor = novosIds.filter(id => !_idsVetorizados.has(id));
+        const _idsParaSalvar = idsAtuais.filter(id => !_idsSemVetor.includes(id));
+        localStorage.setItem(REPO_FILELIST_KEY, JSON.stringify(_idsParaSalvar));
         localStorage.setItem(REPO_ARTIGOS_KEY,  JSON.stringify(artigosCache));
-        localStorage.setItem(REPO_VECTORS_KEY,  JSON.stringify(vetoresCache));
+        // Salva apenas metadados (sem vetor) — vetores ficam no cache compartilhado (bsoft_emb_v3)
+        const _vcMeta = vetoresCache.map(({ vetor, ...rest }) => rest);
+        localStorage.setItem(REPO_VECTORS_KEY,  JSON.stringify(_vcMeta));
 
         // 7. Carrega vetores na memória
         manualVetorizado = manualVetorizado.filter(item => !item.isRepositorio);
         manualVetorizado.push(...vetoresCache);
-        console.log(`📁 Repositório pronto: ${vetoresCache.length} item(ns) — ${novosIds.length} novo(s), ${removidosIds.length} removido(s)`);
+        const _pendentes = _idsSemVetor.length > 0 ? ` (${_idsSemVetor.length} aguardando retry)` : '';
+        console.log(`📁 Repositório pronto: ${vetoresCache.length} item(ns) — ${novosIds.length} novo(s), ${removidosIds.length} removido(s)${_pendentes}`);
 
     } catch(e) {
         console.error("❌ Erro geral no repositório:", e);
