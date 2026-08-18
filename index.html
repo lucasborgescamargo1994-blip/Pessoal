@@ -1439,6 +1439,14 @@ function obterHoraBrasilia() {
     const utc = agora.getTime() + (agora.getTimezoneOffset() * 60000);
     return new Date(utc + (3600000 * offsetBrasilia));
 }
+function getBrasiliaTimestamp() {
+    // Subtrai 3h do UTC para obter horário de Brasília, grava com Z (sem offset)
+    // Supabase armazena e exibe 14:30 em vez de 17:30 UTC no painel
+    const h = new Date(new Date().getTime() - 3 * 3600000);
+    const p = n => String(n).padStart(2, '0');
+    const ms = String(h.getUTCMilliseconds()).padStart(3, '0');
+    return `${h.getUTCFullYear()}-${p(h.getUTCMonth()+1)}-${p(h.getUTCDate())}T${p(h.getUTCHours())}:${p(h.getUTCMinutes())}:${p(h.getUTCSeconds())}.${ms}Z`;
+}
 function obterSaudacao() {
     const hora = obterHoraBrasilia().getHours();
     const diaSemana = obterHoraBrasilia().getDay();
@@ -1584,7 +1592,12 @@ async function btnWelcomeFeedback() {
         }
 
         const linhas = data.map(log => {
-            const dt = log.timestamp ? new Date(log.timestamp).toLocaleString('pt-BR') : '—';
+            const _src = log.timestamp || log.created_at;
+            const _d = _src ? new Date(_src) : null;
+            const _p = n => String(n).padStart(2, '0');
+            const dt = log.timestamp && _d
+                ? `${_p(_d.getUTCDate())}/${_p(_d.getUTCMonth()+1)}/${_d.getUTCFullYear()}, ${_p(_d.getUTCHours())}:${_p(_d.getUTCMinutes())}`
+                : (log.created_at ? new Date(log.created_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '—');
             const pergunta = (log.pergunta || '—').slice(0, 120);
             const fb = log.feedback;
             const temRetorno = log.retorno && log.retorno.trim();
@@ -2448,26 +2461,39 @@ async function handleParametrosFuncionalidades() {
     const _norm = t => String(t||'').toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,'');
     const _queryWords = _norm(query).split(/\s+/).filter(w => w.length > 2);
 
-    // Score por palavras-chave em qualquer campo do registro
+    // Score: quantas palavras da query aparecem no registro
     const _scoreItem = item => {
         const txt = _norm(Object.values(item).join(' '));
         return _queryWords.reduce((s, w) => s + (txt.includes(w) ? 1 : 0), 0);
     };
 
-    // Filtra entradas com pelo menos 1 palavra-chave; fallback = top-10
-    const _filtrarRelevantes = (lista, max = 25) => {
-        const scored = lista.map(item => ({ item, score: _scoreItem(item) })).sort((a, b) => b.score - a.score);
-        const comMatch = scored.filter(x => x.score > 0);
-        return (comMatch.length > 0 ? comMatch : scored).slice(0, max).map(x => x.item);
-    };
+    // Filtra só os que têm ao menos 1 palavra em comum, máximo 8 por categoria
+    const _filtrarRelevantes = lista =>
+        lista.map(item => ({ item, score: _scoreItem(item) }))
+             .filter(x => x.score > 0)
+             .sort((a, b) => b.score - a.score)
+             .slice(0, 8)
+             .map(x => x.item);
 
+    // Formata registro limitado a 500 chars para não estourar o contexto da IA
     const _formatarRegistro = item => Object.entries(item)
         .filter(([k, v]) => k !== 'id' && k !== 'created_at' && v != null && String(v).trim() !== '')
         .map(([k, v]) => `  ${k}: ${String(v).trim()}`)
-        .join('\n');
+        .join('\n')
+        .substring(0, 500);
 
     const paramsRel = _filtrarRelevantes(dadosParametros);
     const funcsRel  = _filtrarRelevantes(dadosFuncionalidades);
+
+    if (paramsRel.length === 0 && funcsRel.length === 0) {
+        ld.remove();
+        if (dadosParametros.length === 0 && dadosFuncionalidades.length === 0) {
+            appendMessage('ai', '⚠️ Os dados de Parâmetros e Funcionalidades ainda não foram carregados. Aguarde e tente novamente.');
+        } else {
+            appendMessage('ai', `⚠️ Não encontrei parâmetros ou funcionalidades relacionados a "<strong>${query}</strong>". Tente palavras-chave mais específicas.`);
+        }
+        return;
+    }
 
     let ctx = '';
     if (paramsRel.length > 0) {
@@ -2477,11 +2503,6 @@ async function handleParametrosFuncionalidades() {
     if (funcsRel.length > 0) {
         ctx += '\n=== FUNCIONALIDADES RELEVANTES ===\n';
         funcsRel.forEach((f, i) => { ctx += `\n[FUNCIONALIDADE ${i+1}]\n${_formatarRegistro(f)}\n`; });
-    }
-    if (!ctx.trim()) {
-        ld.remove();
-        appendMessage('ai', '⚠️ Os dados de Parâmetros e Funcionalidades ainda não foram carregados. Aguarde e tente novamente.');
-        return;
     }
 
     const prompt = `Você é um especialista no sistema Bsoft TMS.
@@ -2507,7 +2528,7 @@ INSTRUÇÕES:
     const _pfFilter = _makeThinkingFilter();
     try {
         const { resp: _resp, provider: _pr, iaUsada: _iu, iaModelo: _im } = await callCurrentMCPStream(
-            [{ role: 'user', content: prompt }], { temperature: 0.3, maxTokens: 8000 }
+            [{ role: 'user', content: prompt }], { temperature: 0.3, maxTokens: 2500 }
         );
         ld.remove();
 
@@ -3738,7 +3759,7 @@ function logSearch(query, found) {
     if (!conversa) return;
     const totalPerguntasUser = conversa.mensagens.filter(m => m.sender === 'user').length;
     if (totalPerguntasUser === 1) {
-        currentLogTimestamp = Date.now();
+        currentLogTimestamp = getBrasiliaTimestamp();
         perguntaPrimariaAtual = query;
         conversa.primeiraPergunta = query;
         conversa.logTimestamp = currentLogTimestamp;
@@ -3923,7 +3944,11 @@ function renderLogs(){
         <th>Motivo</th><th style="min-width:60px;">Ações</th></tr></thead><tbody>`;
     dados.forEach(log=>{
         const id=log.id;
-        const dt=log.created_at?new Date(log.created_at).toLocaleString('pt-BR'):(log.timestamp?new Date(log.timestamp).toLocaleString('pt-BR'):'-');
+        const _dtSrc=log.timestamp||log.created_at;
+        const _dtObj=_dtSrc?new Date(_dtSrc):null;
+        const _p=n=>String(n).padStart(2,'0');
+        // timestamp gravado como horário Brasília com Z → lê UTC diretamente; created_at fallback usa conversão de fuso
+        const dt=log.timestamp&&_dtObj?`${_p(_dtObj.getUTCDate())}/${_p(_dtObj.getUTCMonth()+1)}/${_dtObj.getUTCFullYear()}, ${_p(_dtObj.getUTCHours())}:${_p(_dtObj.getUTCMinutes())}:${_p(_dtObj.getUTCSeconds())}`:(log.created_at?new Date(log.created_at).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'}):'-');
         const usuario=log.usuario_windows||'—';
         const pergFull=log.pergunta||'';
         const pergTrunc=pergFull.length>80?pergFull.substring(0,80)+'…':pergFull;
