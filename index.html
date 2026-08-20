@@ -3943,7 +3943,7 @@ function wizardRejeicaoSefaz(showBancoDados = false) {
 <div id="sefazWizStep2" style="display:none;" class="answer-section">
     <div class="section-label path" style="margin-bottom:10px;">🔢 Código da rejeição</div>
     <div style="display:flex;gap:8px;align-items:center;">
-        <input id="sefazWizCodigo" type="number" min="1" placeholder="Ex: 203"
+        <input id="sefazWizCodigo" type="text" inputmode="numeric" placeholder="Ex: 203"
             style="padding:10px 14px;border:2px solid var(--border);border-radius:8px;font-size:15px;font-family:inherit;outline:none;width:140px;transition:border-color .2s;"
             onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'"
             onkeydown="if(event.key==='Enter')_sefazWizBuscar()">
@@ -3963,6 +3963,12 @@ function wizardRejeicaoSefaz(showBancoDados = false) {
             });
             btn.style.background = 'var(--primary)'; btn.style.color = 'white'; btn.style.borderColor = 'var(--primary)';
             document.getElementById('sefazWizStep2').style.display = 'block';
+            const inpTipo = document.getElementById('sefazWizCodigo');
+            if (inpTipo) {
+                // NFS-e permite letras no código (ex: E305); demais tipos são só numéricos.
+                if (tipo === 'NFS-e') { inpTipo.setAttribute('inputmode', 'text'); inpTipo.placeholder = 'Ex: 305 ou E305'; }
+                else { inpTipo.setAttribute('inputmode', 'numeric'); inpTipo.placeholder = 'Ex: 203'; }
+            }
             setTimeout(() => { const inp = document.getElementById('sefazWizCodigo'); if (inp) inp.focus(); }, 80);
             scrollToBottom(true);
         };
@@ -3995,17 +4001,31 @@ function ehErroSefaz(query) {
     return pr.some(p => q.includes(p)) || /rejei[cç][aã]o\s+\d{3,4}/.test(q);
 }
 
+// Normaliza código de rejeição para comparação. Zeros à esquerda são sempre ignorados
+// (ex: "0310" === "310"). Para NFS-e, letra(s) no início também são descartadas — são só
+// formatação (ex: "E0310" === "0310" === "310") — assim uma única entrada no banco cobre
+// todas as variações; os demais tipos (CT-e, MDF-e, NF-e) aceitam somente dígitos.
+function _normCodigoRejeicao(codigo, tipoDoc) {
+    let c = String(codigo || '').trim();
+    if (tipoDoc && tipoDoc.toUpperCase() === 'NFS-E') {
+        c = c.toUpperCase().replace(/^[A-Z]+/, '').replace(/^0+(?=.)/, '');
+        return c || '0';
+    }
+    c = c.replace(/\D/g, '').replace(/^0+/, '');
+    return c || '0';
+}
 async function gerarRespostaSefaz(codigo, tipoDoc) {
     const ld = appendLoadingCard(`🔍 Buscando rejeição ${codigo} (${tipoDoc})...`);
     const li = Date.now();
     await carregarBancoRejeicoes();
+    const codigoNorm = _normCodigoRejeicao(codigo, tipoDoc);
     let re = null;
     if (bancoRejeicoes.length > 0) {
         re = bancoRejeicoes.find(r =>
-            String(r['Código']) === String(codigo) &&
-            r['Tipo Doc'] && r['Tipo Doc'].toLowerCase() === tipoDoc.toLowerCase()
+            r['Tipo Doc'] && r['Tipo Doc'].toLowerCase() === tipoDoc.toLowerCase() &&
+            _normCodigoRejeicao(r['Código'], r['Tipo Doc']) === codigoNorm
         );
-        if (!re) re = bancoRejeicoes.find(r => String(r['Código']) === String(codigo));
+        if (!re) re = bancoRejeicoes.find(r => _normCodigoRejeicao(r['Código'], r['Tipo Doc']) === codigoNorm);
     }
     ld.remove();
     if (re) {
