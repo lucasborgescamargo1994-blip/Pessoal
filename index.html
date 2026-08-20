@@ -4023,11 +4023,12 @@ async function gerarRespostaSefaz(codigo, tipoDoc) {
     const codigoNorm = _normCodigoRejeicao(codigo, tipoDoc);
     let re = null;
     if (bancoRejeicoes.length > 0) {
+        // Busca restrita ao tipo selecionado — sem fallback cruzando tipos de documento,
+        // pois o mesmo código pode significar coisas diferentes em CT-e, NF-e, MDF-e e NFS-e.
         re = bancoRejeicoes.find(r =>
             r['Tipo Doc'] && r['Tipo Doc'].toLowerCase() === tipoDoc.toLowerCase() &&
             _normCodigoRejeicao(r['Código'], r['Tipo Doc']) === codigoNorm
         );
-        if (!re) re = bancoRejeicoes.find(r => _normCodigoRejeicao(r['Código'], r['Tipo Doc']) === codigoNorm);
     }
     ld.remove();
     if (re) {
