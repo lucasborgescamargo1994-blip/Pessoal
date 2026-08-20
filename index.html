@@ -249,6 +249,8 @@
         .section-icon.path { background: #e0f2fe; } .section-icon.how { background: #dcfce7; } .section-icon.tip { background: #fef3c7; } .section-icon.ml { background: var(--ml-light); }
         .section-content { font-size: 13.5px; line-height: 1.6; color: var(--text); }
         .section-content b { color: var(--primary-dark); }
+        .section-content a { color: var(--primary-dark); text-decoration: underline; word-break: break-word; }
+        .section-content a:hover { color: var(--primary); }
         .path-breadcrumb { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 3px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 7px; padding: 5px 10px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #0c4a6e; }
         .path-breadcrumb .sep { color: var(--primary); font-weight: 700; margin: 0 1px; }
         .tip-item { display: flex; align-items: flex-start; gap: 7px; padding: 7px 10px; background: #fffbeb; border-radius: 7px; margin-bottom: 5px; border-left: 3px solid #f59e0b; font-size: 13px; }
@@ -1942,9 +1944,9 @@ const PROVIDER_PRESETS = {
     custom: { baseUrl:'',models:[],defaultModel:'',chatEndpoint:'/chat/completions', headers:(k)=>({Authorization:`Bearer ${k}`,'Content-Type':'application/json'}), formatRequestBody:(m,msgs,c={})=>({model:m,messages:msgs,temperature:c.temperature||0.3,max_tokens:c.maxTokens||4096,...(c.responseFormat?{response_format:c.responseFormat}:{})}), parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro API');return{text:d.choices?.[0]?.message?.content||'',finishReason:d.choices?.[0]?.finish_reason||'',full:d};} }
 };
 const MODEL_LABELS = {
-    'nvidia/nemotron-3-nano-30b-a3b:free':            'Nemotron Nano 30B (primário)',
-    'north-mini-code:free':                           'North Mini Code (secundário)',
-    'nvidia/nemotron-3-ultra-550b-a55b:free':         'Nemotron Ultra 550B ⭐ (terceiro)',
+    'nvidia/nemotron-3-nano-30b-a3b:free':            'Nemotron Nano 30B (secundário)',
+    'north-mini-code:free':                           'North Mini Code (terceiro)',
+    'nvidia/nemotron-3-ultra-550b-a55b:free':         'Nemotron Ultra 550B ⭐ (primário)',
     'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free': 'Nemotron Nano 30B Reasoning',
     'z-ai/glm-4.5-air:free':                          'GLM-4.5 Air',
     'meta-llama/llama-3.3-70b-instruct:free':         'Llama 3.3 70B Instruct',
@@ -2026,27 +2028,43 @@ async function callCurrentMCP(messages,config={}){
                 _tlog(CUSTOM_MODEL,t,0,`❌ erro (${e.status||e.message?.substring(0,40)||'?'})`);
             }
         }
-        console.warn(`[Config] ${CUSTOM_MODEL} falhou → entrando no fluxo padrão (Ultra → Nano → Gemini)...`);
+        console.warn(`[Config] ${CUSTOM_MODEL} falhou → entrando no fluxo padrão (Ultra → Nano → NorthMini)...`);
     }
 
-    // ── 1º: Primário (north-mini) — 2 tentativas ──
-    console.log(`%c⏱️ [IA] Tentando primário (${NANO_MODEL})...`,'color:#7c3aed;font-weight:600');
+    // ── 1º: Primário (Ultra 550B) — 2 tentativas ──
+    console.log(`%c⏱️ [IA] Tentando primário (Ultra 550B: ${ULTRA_MODEL})...`,'color:#7c3aed;font-weight:600');
     for(let t=1;t<=2;t++){
         try{
             if(t>1){console.warn('[Primário] retry 2/2...');await new Promise(r=>setTimeout(r,1500));}
             const _tm=performance.now();
-            const res=await callMCPAPI(DEFAULT_MCP_CONFIG.provider,NANO_MODEL,DEFAULT_MCP_CONFIG.apiKey,DEFAULT_MCP_CONFIG.baseUrl,messages,config);
-            _tlog('Primário',t,performance.now()-_tm,'✅ OK',` — modelo real: ${NANO_MODEL}`);
-            return{...res,_iaUsada:_providerLabel,_iaModelo:NANO_MODEL};
+            const res=await callMCPAPI(mcpConfig.provider,ULTRA_MODEL,mcpConfig.apiKey,mcpConfig.baseUrl,messages,config);
+            _tlog('Primário',t,performance.now()-_tm,'✅ OK',` — modelo real: ${ULTRA_MODEL}`);
+            return{...res,_iaUsada:_providerLabel,_iaModelo:ULTRA_MODEL};
         }catch(e){
             _tlog('Primário',t,0,`❌ erro (${e.status||e.message?.substring(0,40)||'?'})`);
         }
     }
 
-    // ── 2º: North Mini Code — 2 tentativas ──
+    // ── 2º: Nano 30B (secundário) — 2 tentativas ──
+    if(CUSTOM_MODEL !== NANO_MODEL && ULTRA_MODEL !== NANO_MODEL){
+        console.log(`%c⏱️ [IA] Primário falhou → tentando Nano 30B (${NANO_MODEL})...`,'color:#7c3aed;font-weight:600');
+        for(let t=1;t<=2;t++){
+            try{
+                if(t>1){console.warn('[Nano] retry 2/2...');await new Promise(r=>setTimeout(r,1500));}
+                const _tm=performance.now();
+                const res=await callMCPAPI(DEFAULT_MCP_CONFIG.provider,NANO_MODEL,DEFAULT_MCP_CONFIG.apiKey,DEFAULT_MCP_CONFIG.baseUrl,messages,config);
+                _tlog('Nano',t,performance.now()-_tm,'✅ OK',` — modelo real: ${NANO_MODEL}`);
+                return{...res,_iaUsada:_providerLabel,_iaModelo:NANO_MODEL};
+            }catch(e){
+                _tlog('Nano',t,0,`❌ erro (${e.status||e.message?.substring(0,40)||'?'})`);
+            }
+        }
+    }
+
+    // ── 3º: North Mini Code — 2 tentativas ──
     const MINI_MODEL = 'north-mini-code:free';
-    if(CUSTOM_MODEL !== MINI_MODEL && NANO_MODEL !== MINI_MODEL){
-        console.log(`%c⏱️ [IA] Primário falhou → tentando ${MINI_MODEL}...`,'color:#7c3aed;font-weight:600');
+    if(CUSTOM_MODEL !== MINI_MODEL && ULTRA_MODEL !== MINI_MODEL && NANO_MODEL !== MINI_MODEL){
+        console.log(`%c⏱️ [IA] Falhou → tentando ${MINI_MODEL}...`,'color:#ea6a0a;font-weight:600');
         for(let t=1;t<=2;t++){
             try{
                 if(t>1){console.warn('[NorthMini] retry 2/2...');await new Promise(r=>setTimeout(r,1500));}
@@ -2056,22 +2074,6 @@ async function callCurrentMCP(messages,config={}){
                 return{...res,_iaUsada:_providerLabel,_iaModelo:MINI_MODEL};
             }catch(e){
                 _tlog('NorthMini',t,0,`❌ erro (${e.status||e.message?.substring(0,40)||'?'})`);
-            }
-        }
-    }
-
-    // ── 3º: Ultra 550B — 2 tentativas ──
-    if(CUSTOM_MODEL !== ULTRA_MODEL && NANO_MODEL !== ULTRA_MODEL){
-        console.log(`%c⏱️ [IA] Falhou → tentando Ultra 550B...`,'color:#ea6a0a;font-weight:600');
-        for(let t=1;t<=2;t++){
-            try{
-                if(t>1){console.warn('[Ultra] retry 2/2...');await new Promise(r=>setTimeout(r,1500));}
-                const _tm=performance.now();
-                const res=await callMCPAPI(mcpConfig.provider,ULTRA_MODEL,mcpConfig.apiKey,mcpConfig.baseUrl,messages,config);
-                _tlog('Ultra 550B',t,performance.now()-_tm,'✅ OK',` — modelo real: ${ULTRA_MODEL}`);
-                return{...res,_iaUsada:_providerLabel,_iaModelo:ULTRA_MODEL};
-            }catch(e){
-                _tlog('Ultra 550B',t,0,`❌ erro (${e.status||e.message?.substring(0,40)||'?'})`);
             }
         }
     }
@@ -2115,10 +2117,27 @@ function filtrarPensamentoAlto(texto) {
     if (teveBlocos && limpo.length < 30) return { texto: '', eraPensamento: true };
     return { texto: texto.trim(), eraPensamento: false };
 }
+// Converte links em markdown [texto](url) e URLs soltas (http/https) em <a> clicável, abrindo em nova guia.
+function _linkify(txt) {
+    const _links = [];
+    let h = txt.replace(/\[([^\[\]]+)\]\((https?:\/\/[^\s()]+)\)/g, (_, label, url) => {
+        _links.push(`<a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`);
+        return ` L${_links.length - 1} `;
+    });
+    h = h.replace(/https?:\/\/(?:[^\s<>"')\]&]|&(?!lt;|gt;|quot;))+/g, url => {
+        const trail = (url.match(/[.,;:!?)]+$/) || [''])[0];
+        const clean = trail ? url.slice(0, -trail.length) : url;
+        _links.push(`<a href="${clean}" target="_blank" rel="noopener noreferrer">${clean}</a>`);
+        return ` L${_links.length - 1} ${trail}`;
+    });
+    return h.replace(/ L(\d+) /g, (_, i) => _links[i]);
+}
 function renderMd(txt) {
     if (!txt) return '';
     // Escape HTML
     let h = txt.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    // Links (markdown e URLs soltas) — antes dos demais estilos para não quebrar a sintaxe
+    h = _linkify(h);
     // Code blocks
     h = h.replace(/```(?:\w+\n)?([\s\S]*?)```/g, (_, code) =>
         `<pre style="background:#f4f4f4;border:1px solid #e5e7eb;border-radius:6px;padding:10px 12px;overflow-x:auto;font-size:12px;font-family:monospace;margin:8px 0;white-space:pre;">${code.trim()}</pre>`);
@@ -2941,13 +2960,13 @@ async function callCurrentMCPStream(messages, config = {}) {
         return resp;
     };
 
-    // Chain: Custom → Nano30B (primário) → NorthMini (secundário) → ULTRA (terceiro)
+    // Chain: Custom → ULTRA (primário) → Nano30B (secundário) → NorthMini (terceiro)
     const MINI_MODEL = 'north-mini-code:free';
     const chain = [];
     if (CUSTOM_MODEL) chain.push({ model: CUSTOM_MODEL, provider: mcpConfig.provider, apiKey: mcpConfig.apiKey, baseUrl: mcpConfig.baseUrl, label: _pLabel });
-    chain.push({ model: NANO_MODEL, provider: DEFAULT_MCP_CONFIG.provider, apiKey: DEFAULT_MCP_CONFIG.apiKey, baseUrl: DEFAULT_MCP_CONFIG.baseUrl, label: 'OpenRouter' });
-    if (NANO_MODEL !== MINI_MODEL && CUSTOM_MODEL !== MINI_MODEL) chain.push({ model: MINI_MODEL, provider: DEFAULT_MCP_CONFIG.provider, apiKey: DEFAULT_MCP_CONFIG.apiKey, baseUrl: DEFAULT_MCP_CONFIG.baseUrl, label: 'OpenRouter' });
-    if (NANO_MODEL !== ULTRA_MODEL && CUSTOM_MODEL !== ULTRA_MODEL && MINI_MODEL !== ULTRA_MODEL) chain.push({ model: ULTRA_MODEL, provider: mcpConfig.provider, apiKey: mcpConfig.apiKey, baseUrl: mcpConfig.baseUrl, label: _pLabel });
+    if (CUSTOM_MODEL !== ULTRA_MODEL) chain.push({ model: ULTRA_MODEL, provider: mcpConfig.provider, apiKey: mcpConfig.apiKey, baseUrl: mcpConfig.baseUrl, label: _pLabel });
+    if (ULTRA_MODEL !== NANO_MODEL && CUSTOM_MODEL !== NANO_MODEL) chain.push({ model: NANO_MODEL, provider: DEFAULT_MCP_CONFIG.provider, apiKey: DEFAULT_MCP_CONFIG.apiKey, baseUrl: DEFAULT_MCP_CONFIG.baseUrl, label: 'OpenRouter' });
+    if (ULTRA_MODEL !== MINI_MODEL && NANO_MODEL !== MINI_MODEL && CUSTOM_MODEL !== MINI_MODEL) chain.push({ model: MINI_MODEL, provider: DEFAULT_MCP_CONFIG.provider, apiKey: DEFAULT_MCP_CONFIG.apiKey, baseUrl: DEFAULT_MCP_CONFIG.baseUrl, label: 'OpenRouter' });
 
     const _skipModels = config.skipModels || [];
     const _activeChain = _skipModels.length ? chain.filter(c => !_skipModels.includes(c.model)) : chain;
@@ -3075,7 +3094,7 @@ async function handleChat() {
     let mi = "", vum = false;
     if (!trb && rr.every(r => r.similaridade < 0.5)) { vum = true; mi = `\n⚠️ ATENÇÃO: Nenhum resultado encontrado no manual (max: ${rr.length > 0 ? (rr[0].similaridade * 100).toFixed(0) : 0}%).\n`; }
 
-    logSearch(query, trb || vum);
+    logSearch(query, !vum);
 
     let conhecimentoRepositorio = '';
     if (!trb || vum) {
@@ -4002,7 +4021,7 @@ async function gerarRespostaSefaz(codigo, tipoDoc) {
 function renderizarCardRejeicaoLocal(re, dicas, li) { const s = document.getElementById('chatStream'); const c = document.createElement('div'); c.className = 'answer-card'; let h = `<div style="background:#f0fdf4;padding:8px 15px;border-bottom:1px solid #bbf7d0;font-size:11px;color:#166534;">📚 Banco Local • ${re['Fonte'] || 'Tecnospeed'}</div>`; h += `<div class="answer-section"><div class="section-label path">🔢 Código</div><div style="font-size:28px;font-weight:800;color:#dc2626;">${re['Código']}</div></div>`; if (re['Tipo Doc']) h += `<div class="answer-section"><div class="section-label path">📄 Tipo</div><div class="section-content"><b>${re['Tipo Doc']}</b></div></div>`; if (re['Significado']) h += `<div class="answer-section"><div class="section-label how">📋 Significado</div><div class="section-content">${formatarTexto(re['Significado'])}</div></div>`; if (re['Causa']) h += `<div class="answer-section"><div class="section-label path">🔍 Causa</div><div class="section-content">${formatarTexto(re['Causa'])}</div></div>`; if (re['Solução']) h += `<div class="answer-section"><div class="section-label how">✅ Solução</div><div class="section-content">${formatarTexto(re['Solução'])}</div></div>`; if (dicas && dicas.length > 0) h += `<div class="answer-section"><div class="section-label how">💡 Dicas</div><div class="section-content">${dicas.map(d => `• ${d}`).join('<br>')}</div></div>`; h += `<div class="feedback-area"><span>Ajudou?</span><button class="feedback-btn" onclick="saveFeedback(${li},'positivo',this)">👍</button><button class="feedback-btn" onclick="saveFeedback(${li},'negativo',this)">👎</button><button onclick="novaConversa()" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);cursor:pointer;font-size:13px;font-weight:500;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='var(--primary)';this.style.background='var(--primary-light)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface)'">➕ Nova conversa</button></div>`; c.innerHTML = h; s.appendChild(c); scrollToBottom(true); }
 function renderizarCardRejeicaoIA(parsed, tr, li) { const s = document.getElementById('chatStream'); const c = document.createElement('div'); c.className = 'answer-card'; let h = `<div style="background:#fef3c7;padding:8px 15px;border-bottom:1px solid #fde68a;font-size:11px;color:#92400e;">🤖 Resposta IA</div>`; if (parsed) { if (parsed.codigo) h += `<div class="answer-section"><div class="section-label path">🔢 Código</div><div style="font-size:28px;font-weight:800;color:#dc2626;">${parsed.codigo}</div></div>`; if (parsed.significado) h += `<div class="answer-section"><div class="section-label how">📋 Significado</div><div class="section-content">${formatarTexto(parsed.significado)}</div></div>`; if (parsed.causa) h += `<div class="answer-section"><div class="section-label path">🔍 Causa</div><div class="section-content">${formatarTexto(parsed.causa)}</div></div>`; if (parsed.solucao) h += `<div class="answer-section"><div class="section-label how">✅ Solução</div><div class="section-content">${formatarTexto(parsed.solucao)}</div></div>`; } else { h += `<div class="answer-section"><div class="section-content">${formatarTexto(tr)}</div></div>`; } h += `<div class="feedback-area"><span>Ajudou?</span><button class="feedback-btn" onclick="saveFeedback(${li},'positivo',this)">👍</button><button class="feedback-btn" onclick="saveFeedback(${li},'negativo',this)">👎</button><button onclick="novaConversa()" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);cursor:pointer;font-size:13px;font-weight:500;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='var(--primary)';this.style.background='var(--primary-light)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface)'">➕ Nova conversa</button></div>`; c.innerHTML = h; s.appendChild(c); scrollToBottom(true); }
 
-function formatarTexto(texto) { return texto.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>'); }
+function formatarTexto(texto) { return _linkify(texto).replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>'); }
 
 // ═══════════════════════════════════════════════════════════
 //  APRENDIZADO ONLINE COMPARTILHADO
