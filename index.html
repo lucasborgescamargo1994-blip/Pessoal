@@ -2120,11 +2120,13 @@ function filtrarPensamentoAlto(texto) {
 // Converte links em markdown [texto](url) e URLs soltas (http/https) em <a> clicável, abrindo em nova guia.
 function _linkify(txt) {
     const _links = [];
-    let h = txt.replace(/\[([^\[\]]+)\]\((https?:\/\/[^\s()]+)\)/g, (_, label, url) => {
+    let h = txt.replace(/\[([^\[\]]+)\]\((https?:\/\/[^\s()`*]+)\)/g, (_, label, url) => {
         _links.push(`<a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`);
         return ` L${_links.length - 1} `;
     });
-    h = h.replace(/https?:\/\/(?:[^\s<>"')\]&]|&(?!lt;|gt;|quot;))+/g, url => {
+    // Exclui também crase e asterisco: para que uma URL colada em `código` ou **negrito**
+    // não engula o delimitador de fechamento e bagunce o pareamento dos marcadores seguintes.
+    h = h.replace(/https?:\/\/(?:[^\s<>"')\]&`*]|&(?!lt;|gt;|quot;))+/g, url => {
         const trail = (url.match(/[.,;:!?)]+$/) || [''])[0];
         const clean = trail ? url.slice(0, -trail.length) : url;
         _links.push(`<a href="${clean}" target="_blank" rel="noopener noreferrer">${clean}</a>`);
