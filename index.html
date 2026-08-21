@@ -4310,6 +4310,29 @@ ${listaNok}
     scrollToBottom(true);
 }
 
+// Valida/normaliza o "exp" devolvido pela IA: pode ser uma referência direta do catálogo,
+// ou uma conta (soma/subtração/multiplicação/divisão) envolvendo campo(s) do catálogo.
+// Numa conta: exige que cada campo.subcampo usado exista de fato no catálogo (nunca confia
+// cegamente na IA), corrige vírgula decimal pra ponto, e garante parênteses ao redor de cada
+// campo (o sistema TMS retorna null se o campo usado numa conta não estiver entre parênteses).
+// Retorna a expressão normalizada, ou null se não for válida (referência inexistente ou sem operador).
+function _normalizarExpressaoRelatorio(exp, expsValidas) {
+    const s = String(exp || '').trim();
+    if (!s) return null;
+    if (expsValidas.has(s)) return s;
+    if (!/[+\-*/]/.test(s)) return null;
+    const campos = s.match(/[a-zA-Z_][a-zA-Z0-9_]*\.[a-zA-Z_][a-zA-Z0-9_]*/g) || [];
+    if (campos.length === 0 || !campos.every(c => expsValidas.has(c))) return null;
+    let norm = s.replace(/(\d),(\d)/g, '$1.$2');
+    campos.forEach(c => {
+        const cEsc = c.replace(/\./g, '\\.');
+        if (!new RegExp(`\\(\\s*${cEsc}\\s*\\)`).test(norm)) {
+            norm = norm.replace(new RegExp(cEsc, 'g'), `(${c})`);
+        }
+    });
+    return norm;
+}
+
 async function enviarWizardRelatorio() {
     const btn = document.getElementById('wRelBtnEnviar');
     const origemSel = window._relOrigemSel;
@@ -4325,7 +4348,7 @@ async function enviarWizardRelatorio() {
 
     const catalogo = CATALOGO_RELATORIOS[origemSel] || CATALOGO_RELATORIOS.CTe;
     const catalogoTxt = catalogo.map(c => `${c.label} => ${c.exp}`).join('\n');
-    const sysMsg = `Você identifica campos de relatório do Bsoft TMS a partir de uma descrição em português.\nAbaixo está o catálogo de campos disponíveis (rótulo => expressão). Use APENAS expressões desse catálogo, nunca invente uma expressão que não esteja listada.\n\nCATÁLOGO:\n${catalogoTxt}\n\n⚠️ REGRA ABSOLUTA — NÃO ADICIONE CAMPOS NÃO PEDIDOS: Inclua em "encontrados" SOMENTE campos que correspondem a algo que o usuário mencionou EXPLICITAMENTE no pedido — mesmo que o termo usado seja sinônimo, abreviado ou levemente diferente do rótulo do catálogo. É PROIBIDO incluir campos "relacionados", "que costumam aparecer junto", ou que pareçam úteis para o contexto do relatório, se o usuário não pediu por eles. Exemplo: se o usuário pediu "CFOP e Chave", a resposta deve conter exatamente esses 2 campos — nunca adicione um terceiro campo (como Agência ou Data Emissão) só porque é comum em relatórios de CT-e. Conte quantos itens distintos o usuário pediu e garanta que "encontrados" não tenha mais itens que isso (um pedido pode gerar menos itens, se algo não for encontrado, mas nunca mais).\n\nResponda APENAS um JSON válido (sem texto antes ou depois, sem markdown), no formato:\n{"encontrados":[{"label":"<rótulo exato do catálogo>","exp":"<expressão exata do catálogo>"}],"naoEncontrados":["<termo do pedido do usuário que não bateu com nenhum campo>"]}\nNão repita o mesmo campo duas vezes. Em "naoEncontrados", liste os termos pedidos que não têm nenhum campo correspondente no catálogo.`;
+    const sysMsg = `Você identifica campos de relatório do Bsoft TMS a partir de uma descrição em português.\nAbaixo está o catálogo de campos disponíveis (rótulo => expressão). Use APENAS expressões desse catálogo, nunca invente uma expressão que não esteja listada.\n\nCATÁLOGO:\n${catalogoTxt}\n\n⚠️ REGRA ABSOLUTA — NÃO ADICIONE CAMPOS NÃO PEDIDOS: Inclua em "encontrados" SOMENTE campos que correspondem a algo que o usuário mencionou EXPLICITAMENTE no pedido — mesmo que o termo usado seja sinônimo, abreviado ou levemente diferente do rótulo do catálogo. É PROIBIDO incluir campos "relacionados", "que costumam aparecer junto", ou que pareçam úteis para o contexto do relatório, se o usuário não pediu por eles. Exemplo: se o usuário pediu "CFOP e Chave", a resposta deve conter exatamente esses 2 campos — nunca adicione um terceiro campo (como Agência ou Data Emissão) só porque é comum em relatórios de CT-e. Conte quantos itens distintos o usuário pediu e garanta que "encontrados" não tenha mais itens que isso (um pedido pode gerar menos itens, se algo não for encontrado, mas nunca mais).\n\n📐 COLUNAS CALCULADAS (contas): o usuário pode pedir uma coluna que é o resultado de uma conta (soma, subtração, multiplicação ou divisão) envolvendo um campo do catálogo e um número, ou dois campos do catálogo. Nesse caso, em vez de uma expressão simples do catálogo, monte a fórmula matemática como "exp", seguindo ESTAS DUAS REGRAS OBRIGATÓRIAS do sistema:\n1. Separador decimal SEMPRE ponto, NUNCA vírgula — o sistema TMS não aceita vírgula. Se o usuário disser "vezes 0,02", escreva 0.02.\n2. Todo campo do catálogo usado dentro de uma conta DEVE ficar entre parênteses — se não ficar entre parênteses, o relatório retorna null nessa coluna. Use APENAS parênteses ao redor do campo, nunca ao redor do número.\nExemplo real: pedido "a coluna Comissão seja o Total prestação do Ct-e vezes 0,02" → {"label":"Comissão","exp":"(composicaoFrete.totalPrestacao)*0.02"}. Outro exemplo com dois campos: "Frete mais pedágio" → {"label":"Frete mais pedágio","exp":"(composicaoFrete.freteValor)+(composicaoFrete.pedagio)"}. Toda expressão dentro dos parênteses tem que ser uma expressão EXATA do catálogo acima — nunca invente uma.\n\nResponda APENAS um JSON válido (sem texto antes ou depois, sem markdown), no formato:\n{"encontrados":[{"label":"<rótulo do catálogo, ou o nome da coluna calculada pedida pelo usuário>","exp":"<expressão exata do catálogo, ou a fórmula de conta seguindo as regras acima>"}],"naoEncontrados":["<termo do pedido do usuário que não bateu com nenhum campo>"]}\nNão repita o mesmo campo duas vezes. Em "naoEncontrados", liste os termos pedidos que não têm nenhum campo correspondente no catálogo.`;
     const userMsg = `Pedido do usuário: "${camposTxt}"`;
 
     try {
@@ -4344,11 +4367,12 @@ async function enviarWizardRelatorio() {
         const encontrados = [];
         const vistos = new Set();
         (parsed.encontrados || []).forEach(item => {
-            if (item && expsValidas.has(item.exp) && !vistos.has(item.exp)) {
-                vistos.add(item.exp);
-                const cat = porExp.get(item.exp);
-                encontrados.push({ exp: cat.exp, label: (item.label || cat.label) });
-            }
+            if (!item) return;
+            const expNorm = _normalizarExpressaoRelatorio(item.exp, expsValidas);
+            if (expNorm === null || vistos.has(expNorm)) return;
+            vistos.add(expNorm);
+            const cat = porExp.get(expNorm);
+            encontrados.push({ exp: expNorm, label: (item.label || (cat ? cat.label : expNorm)) });
         });
         const naoEncontrados = Array.isArray(parsed.naoEncontrados) ? parsed.naoEncontrados.filter(Boolean) : [];
 
