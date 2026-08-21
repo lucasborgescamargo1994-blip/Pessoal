@@ -1588,7 +1588,7 @@ function _menuBtnsHtml() {
     const ho = "this.style.borderColor='var(--primary)';this.style.background='var(--primary-light)'";
     const ho2 = "this.style.borderColor='var(--border)';this.style.background='var(--surface)'";
     const isPiP = window.self !== window.top;
-    return `<div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;"><button onclick="btnWelcomeSefaz()" style="${s}" onmouseover="${ho}" onmouseout="${ho2}"><span style="font-size:18px">🔍</span> <span>Erros Sefaz</span> <span style="margin-left:auto;font-size:12px;color:var(--text-muted);font-weight:400">Abre o assistente de erros SEFAZ</span></button><button onclick="btnWelcomeRegra()" style="${s}" onmouseover="${ho}" onmouseout="${ho2}"><span style="font-size:18px">📋</span> <span>Criar Regra</span> <span style="margin-left:auto;font-size:12px;color:var(--text-muted);font-weight:400">Abre o assistente de criar regra</span></button><button onclick="btnWelcomeParametros()" style="${s}" onmouseover="${ho}" onmouseout="${ho2}"><span style="font-size:18px">⚙️</span> <span>Parâmetros / Funcionalidades</span> <span style="margin-left:auto;font-size:12px;color:var(--text-muted);font-weight:400">Busca parâmetros e funcionalidades do sistema</span></button><button onclick="btnWelcomeAnalisarTela()" style="${s}" onmouseover="${ho}" onmouseout="${ho2}"><span style="font-size:18px">🖥️</span> <span>Analisar tela</span> <span style="margin-left:auto;font-size:12px;color:var(--text-muted);font-weight:400">Compartilha a tela e a IA analisa</span></button>${isPiP ? '' : `<button onclick="abrirCopilot()" style="${s}" onmouseover="${ho}" onmouseout="${ho2}"><span style="font-size:18px">🤖</span> <span>Abrir modo Copilot</span> <span style="margin-left:auto;font-size:12px;color:var(--text-muted);font-weight:400">Abre o assistente em janela flutuante</span></button>`}<button onclick="btnWelcomeFeedback()" style="${s}" onmouseover="${ho}" onmouseout="${ho2}"><span style="font-size:18px">💬</span> <span>Gestão de Feedback</span> <span style="margin-left:auto;font-size:12px;color:var(--text-muted);font-weight:400">Veja seus feedbacks e retornos do suporte</span></button></div>`;
+    return `<div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;"><button onclick="btnWelcomeSefaz()" style="${s}" onmouseover="${ho}" onmouseout="${ho2}"><span style="font-size:18px">🔍</span> <span>Erros Sefaz</span> <span style="margin-left:auto;font-size:12px;color:var(--text-muted);font-weight:400">Abre o assistente de erros SEFAZ</span></button><button onclick="btnWelcomeRegra()" style="${s}" onmouseover="${ho}" onmouseout="${ho2}"><span style="font-size:18px">📋</span> <span>Criar Regra</span> <span style="margin-left:auto;font-size:12px;color:var(--text-muted);font-weight:400">Abre o assistente de criar regra</span></button><button onclick="btnWelcomeRelatorios()" style="${s}" onmouseover="${ho}" onmouseout="${ho2}"><span style="font-size:18px">📊</span> <span>Assistente de Relatórios</span> <span style="margin-left:auto;font-size:12px;color:var(--text-muted);font-weight:400">Gera arquivo .dat de relatório personalizado</span></button><button onclick="btnWelcomeParametros()" style="${s}" onmouseover="${ho}" onmouseout="${ho2}"><span style="font-size:18px">⚙️</span> <span>Parâmetros / Funcionalidades</span> <span style="margin-left:auto;font-size:12px;color:var(--text-muted);font-weight:400">Busca parâmetros e funcionalidades do sistema</span></button><button onclick="btnWelcomeAnalisarTela()" style="${s}" onmouseover="${ho}" onmouseout="${ho2}"><span style="font-size:18px">🖥️</span> <span>Analisar tela</span> <span style="margin-left:auto;font-size:12px;color:var(--text-muted);font-weight:400">Compartilha a tela e a IA analisa</span></button>${isPiP ? '' : `<button onclick="abrirCopilot()" style="${s}" onmouseover="${ho}" onmouseout="${ho2}"><span style="font-size:18px">🤖</span> <span>Abrir modo Copilot</span> <span style="margin-left:auto;font-size:12px;color:var(--text-muted);font-weight:400">Abre o assistente em janela flutuante</span></button>`}<button onclick="btnWelcomeFeedback()" style="${s}" onmouseover="${ho}" onmouseout="${ho2}"><span style="font-size:18px">💬</span> <span>Gestão de Feedback</span> <span style="margin-left:auto;font-size:12px;color:var(--text-muted);font-weight:400">Veja seus feedbacks e retornos do suporte</span></button></div>`;
 }
 function _criarWelcomeMsg() {
     const w = document.createElement('div');
@@ -1617,6 +1617,13 @@ async function btnWelcomeRegra() {
     const _tipo = await perguntarTipoRegra();
     if (_tipo === 'cte') mostrarWizardRegra('');
     else if (_tipo === 'contrato') mostrarWizardContrato('');
+}
+function btnWelcomeRelatorios() {
+    const welcome = document.getElementById('welcomeMsg');
+    if (welcome) welcome.remove();
+    appendMessage('user', '📊 Assistente de Relatórios');
+    adicionarMensagemNaConversa('user', 'Assistente de Relatórios');
+    mostrarWizardRelatorio();
 }
 let _paramFuncMode = false;
 function btnWelcomeParametros() {
@@ -3033,6 +3040,8 @@ async function handleChat() {
         // r.bancoDados === true → continua no fluxo normal abaixo
     }
 
+    if (ehAssistenteRelatorios(query)) { mostrarWizardRelatorio(); return; }
+
     const _t0 = performance.now();
     const _tp = (label, from) => console.log(`%c⏱️ [handleChat] ${label}: ${(performance.now()-from).toFixed(0)}ms`, 'color:#f97316;font-weight:600;');
 
@@ -3917,6 +3926,452 @@ function copiarRegra(btn) {
         btn.textContent = '✅ Copiado!'; btn.style.background = '#166534';
         setTimeout(() => { btn.textContent = '📋 Copiar'; btn.style.background = '#313244'; }, 2200);
     });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ASSISTENTE DE RELATÓRIOS (gera .dat pra importar no Bsoft)
+// ═══════════════════════════════════════════════════════════
+
+// Gera entradas de catálogo para grupos "tipo pessoa" (cliente, remetente, destinatário,
+// expedidor, recebedor, contratado, emissor, motorista) — reaproveita os mesmos rótulos
+// pros sufixos de campo em comum, evitando repetir manualmente ~90 linhas quase iguais.
+const _LABELS_CAMPO_PESSOA = {
+    CNPJ: 'CNPJ', IE: 'IE', bairro: 'Bairro', celular: 'Celular', cep: 'CEP', cidade: 'Cidade',
+    documentoFormatado: 'Documento Formatado', endereco_telefone1: 'Telefone do Endereço 1',
+    endereco_telefone2: 'Telefone do Endereço 2', inscricao_estadual: 'Inscrição Estadual',
+    nome: 'Nome', numero: 'Número', razaoSocial: 'Razão Social', rua: 'Rua', telefone: 'Telefone',
+    uf: 'UF', cpf: 'CPF', rg: 'RG', descricao: 'Descrição', empresa: 'Empresa'
+};
+function _CAT_PESSOA(prefixo, grupo, campos) {
+    return campos.map(c => ({ grupo, exp: prefixo + '.' + c, label: `${_LABELS_CAMPO_PESSOA[c] || c} (${grupo})` }));
+}
+
+// Texto bruto de "Demais campos" (árvore avançada de tabelas do sistema, além dos grupos
+// "Dados" curados acima) — colado como veio, uma linha por grupo: "grupo (tabela): grupo.campo1 grupo.campo2 ...".
+// Convertido em catálogo pelo parser _parseDemaisCampos logo abaixo.
+const _DEMAIS_CAMPOS_RAW_CTE = `
+cte (transp_conhecimentoTransporteReais): cte.id cte.operacoes_id cte.operacoesMercadorias_id cte.agencias_id cte.agenciasComissao_id cte.tiposTaloes_id cte.pedidos_id cte.complementoPedido cte.ordensCarregamento_id cte.cfops_id cte.cliente_id cte.manifestador_usuarios_id cte.nroConhecimento cte.dataCriacao cte.dtEmissao cte.statusCancelado cte.remetente_id cte.destinatario_id cte.consignatario_id cte.redespacho_id cte.pagamentoFrete cte.calcAte cte.localColeta cte.localEntrega cte.precosConhecimento_id cte.regraFrete_id cte.tarifaDigitada cte.tarifaCalculada cte.valorFrete cte.aliquota cte.valorICMS cte.valoresOutros cte.valorSeguroAduaneiro cte.valorPedagio cte.valorPedagioConhecimento cte.totalPrestacao cte.motorista_id cte.veiculos_id cte.carreta_id cte.semireboque_id cte.quartoVeiculo_id cte.favorecido_id cte.imprimirProprietario cte.respSeg cte.seguradora_id cte.numeroApolice cte.regrasCarreto_id cte.tolerancia cte.pesoColeta cte.tarifaMotoristaCalculada cte.tarifaMotoristaDigitada cte.valorTotalOrigem cte.outrosDescontos cte.outrosAcrescimos cte.descontoINSS cte.totalDescontoINSS cte.descontoSEST cte.totalDescontoSEST cte.freteLiquido cte.valorAdiantamento cte.pesoChegada cte.tipoPedagio cte.descontoQuebraPeso cte.saldo cte.pesoChegadaReal cte.descontoQuebraPesoReal cte.valorFaturado cte.tarifaImpressa cte.statusBloqueado cte.dtAtualizacao cte.enderecoRemetente_id cte.enderecoDestinatario_id cte.enderecoConsignatario_id cte.enderecoRedespacho_id cte.enderecoCliente_id cte.parcelarAdiantamento cte.valorSeguro cte.mercadoriaAvariada cte.container cte.lacre cte.valorContainer cte.mercadoriaOrdem_id cte.substitui cte.substituidoPor cte.numeroCartao cte.dtPrevChegada cte.estadoColeta cte.estadoEntrega cte.processos_id cte.codigo_lancamento cte.cod_rateio cte.codigo_lancamentoCreditoViagem cte.diaria cte.diariaFrete cte.reciboFrete_id cte.gerouReciboFrete cte.chaveCTe cte.protocoloCTe cte.resultadoCTe cte.protocoloCancelamentoCTe cte.cMunIni cte.cMunFim cte.enderecoEntrega_id cte.UFIni cte.UFFim cte.manifestoCarga_id cte.procCTeVersao cte.km cte.rascunho cte.CST cte.tipoDocumentos cte.valorISS cte.gerouReciboFreteExterno cte.baseResultadoCT cte.anuladoPor_id cte.anulou_id cte.comboio cte.dtCancelamento cte.complementou_id cte.lotacao cte.tpCTe cte.emailEnviado cte.totalServico cte.tpServ cte.substituiSefaz_id cte.definirQuantCargasManualmente cte.perfisApropriacao_id cte.formaApropriacao cte.forPag cte.emitiuDeclaracaoAnulacao cte.rotaDistribuicao_id cte.globalizado cte.percurso_id
+talao (transp_tiposTaloes): talao.id talao.descricao talao.layoutImpressao_id talao.empresas_id talao.numeroMinimoFolhas talao.tipo talao.layoutImpressao_recibo_frete_id
+cteComplementar (transp_conhecimentoTransporteReais): cteComplementar.id cteComplementar.operacoes_id cteComplementar.operacoesMercadorias_id cteComplementar.agencias_id cteComplementar.agenciasComissao_id cteComplementar.tiposTaloes_id cteComplementar.pedidos_id cteComplementar.complementoPedido cteComplementar.ordensCarregamento_id cteComplementar.cfops_id cteComplementar.cliente_id cteComplementar.manifestador_usuarios_id cteComplementar.nroConhecimento cteComplementar.dataCriacao cteComplementar.dtEmissao cteComplementar.statusCancelado
+totais (transp_conhecimentoTransporteTotais): totais.conhecimento_id totais.quantMercadorias totais.valorMercadorias totais.pesoMercadorias totais.cubagemMercadorias totais.nroMercadorias totais.nroContainers totais.valorContainers totais.valorProdutos totais.valorDespesasExtras totais.pesoCubadoMercadorias totais.pesoTaxadoMercadorias totais.predominanteTipoNatureza_id
+iniPrest (bancoCeps.localidades): iniPrest.id iniPrest.localidade iniPrest.uf iniPrest.codIBGE iniPrest.mesoCod iniPrest.codANP iniPrest.usado
+fimPrest (bancoCeps.localidades): fimPrest.id fimPrest.localidade fimPrest.uf fimPrest.codIBGE fimPrest.mesoCod fimPrest.codANP fimPrest.usado fimPrest.antigoId
+configTransporte (pessoas_configTransporte): configTransporte.pessoas_id configTransporte.tomadorServico configTransporte.regraFrete_id configTransporte.observacoesConhecimento configTransporte.observacoesOrdemCarregamento configTransporte.observacoesPedido configTransporte.seguroProprio
+apolicesSeguro (transp_apolicesSeguro): apolicesSeguro.id apolicesSeguro.seguradora_id apolicesSeguro.nroApolice apolicesSeguro.dtInicioVigencia apolicesSeguro.dtFimVigencia apolicesSeguro.valorMaximoMercadoria apolicesSeguro.descricao apolicesSeguro.premioLiquido apolicesSeguro.descontoSobreTabela apolicesSeguro.contratante_id apolicesSeguro.roubo apolicesSeguro.apoliceDeCliente apolicesSeguro.sugerirApoliceQuandoContratanteTomador apolicesSeguro.acidente apolicesSeguro.calculoSeguroRelatorios apolicesSeguro.descontoSobreTabelaRoubo apolicesSeguro.IOFAcidente apolicesSeguro.IOFRoubo apolicesSeguro.premioMinimoAcidente apolicesSeguro.premioMinimoRoubo apolicesSeguro.validaParaFiliaisContratante apolicesSeguro.ramoAverbacao apolicesSeguro.config_formaAverbacao apolicesSeguro.config_tipoAverbacao apolicesSeguro.config_emailsParaAverbacao apolicesSeguro.config_usuarioWS apolicesSeguro.config_senhaWS apolicesSeguro.config_senhaWSCrypt apolicesSeguro.config_codigoATM apolicesSeguro.config_codigoGUEP apolicesSeguro.config_formatoEDI_id apolicesSeguro.config_enviarTagRespSeg apolicesSeguro.config_seguradora apolicesSeguro.config_token apolicesSeguro.config_tokenCrypt apolicesSeguro.config_ordemEnvioVeiculo apolicesSeguro.operacaoCargaDescarga apolicesSeguro.web_service_ATM_campos apolicesSeguro.web_service_ATM_campos_extras apolicesSeguro.ativo apolicesSeguro.rcv_seguradora
+cliente (pessoasPessoas): cliente.id cliente.carteiras_id cliente.cod_localidade cliente.fisica_juridica cliente.CNPJ cliente.razao_social cliente.CI
+enderecoCliente (pessoasEnderecosPessoas): enderecoCliente.id enderecoCliente.pessoas_id enderecoCliente.pessoasInativo_id enderecoCliente.cep enderecoCliente.endereco enderecoCliente.bairro enderecoCliente.cidade enderecoCliente.estado enderecoCliente.UF_estrangeiro enderecoCliente.telefone1 enderecoCliente.telefone2 enderecoCliente.pais enderecoCliente.paises_id enderecoCliente.cobranca_preferencial enderecoCliente.endereco_preferencial enderecoCliente.inscricaoEstadual enderecoCliente.inscricaoMunicipal enderecoCliente.isento enderecoCliente.isencaoMun enderecoCliente.logradouro_id enderecoCliente.localidade enderecoCliente.nro enderecoCliente.complemento enderecoCliente.cidade_id enderecoCliente.historicoAlteracao enderecoCliente.dificilAcesso enderecoCliente.valorColeta enderecoCliente.valorEntrega enderecoCliente.codIBGE enderecoCliente.naoContribuinte enderecoCliente.referencia enderecoCliente.chaveBusca
+finan_empresas: finan_empresas.id finan_empresas.descricao finan_empresas.logo finan_empresas.pessoas_id finan_empresas.atividades_id finan_empresas.endereco_id finan_empresas.codigoContabil
+emissor (pessoasPessoas): emissor.id emissor.carteiras_id emissor.cod_localidade emissor.fisica_juridica emissor.CNPJ emissor.razao_social emissor.CI emissor.descricao emissor.nome emissor.sobrenome emissor.email emissor.site emissor.data_cadastro emissor.observacoes emissor.data_nascimento emissor.profissao emissor.sexo emissor.contato_tecnico_id emissor.contato_administrativo_id emissor.cod_fiscal_cliente emissor.cod_fiscal_fornecedor emissor.cnh emissor.categoria emissor.dtExpedicao emissor.dtPrimeiraExpedicao emissor.dtValidade emissor.orgaoExpedidor emissor.limite_credito emissor.matriculaINSS emissor.apelido emissor.celular emissor.cod_fiscal_processos emissor.telResidencial emissor.protocoloCNH emissor.naturalidade emissor.nacionalidade emissor.pai emissor.mae emissor.outrosTels emissor.PIS_PASEP emissor.referencias emissor.usuarios_id emissor.ultimaAtualizacao emissor.preferenciaImpressaoNF emissor.bloqueado emissor.grupoDespesaEspecifico emissor.contas_id emissor.estado_civil emissor.identificador emissor.alvara emissor.conjuge emissor.escala emissor.protestar emissor.nroDiasProtesto emissor.logo emissor.codISSQNAtividadePrincipal emissor.statusPessoa_id emissor.enquadramento emissor.consultor_id emissor.CI_Estado emissor.naturalidadeEstado emissor.categoriaCRM emissor.emailCobranca emissor.documentoFormatado emissor.emissaoRG emissor.lotacao_id emissor.nit emissor.RNTRC emissor.tipoTransportadora emissor.IEC emissor.dependentesIRRF emissor.CI_orgaoExpedidor emissor.suframa emissor.seguroCNH emissor.emailCotacaoEstoque emissor.celularNumerico emissor.grauInstruTrabalhador emissor.paisNascimento_id emissor.paisNacionalidade_id emissor.numeroCTPS emissor.serieCTPS emissor.ufExpedicaoCTPS emissor.raca emissor.radicalCNPJ emissor.emailOcorrenciasTransporte emissor.receberPesquisaAtendimento emissor.naturalidade_id emissor.usuarioCadastro emissor.dtValidadeExameToxicologico emissor.cidadeEmissaoCNH_id emissor.ignoraValidacaoNIS emissor.renachCNH emissor.CI_orgaoExpedidor_mdm emissor.nome_social
+enderecoEmissor (pessoasEnderecosPessoas): enderecoEmissor.id enderecoEmissor.pessoas_id enderecoEmissor.pessoasInativo_id enderecoEmissor.cep enderecoEmissor.endereco enderecoEmissor.bairro enderecoEmissor.cidade
+transp_manifestoCarga: transp_manifestoCarga.id transp_manifestoCarga.nro transp_manifestoCarga.stAberto transp_manifestoCarga.dtEmissao transp_manifestoCarga.dtSaida transp_manifestoCarga.munIni transp_manifestoCarga.munFim transp_manifestoCarga.UFIni transp_manifestoCarga.UFFim transp_manifestoCarga.motorista_id transp_manifestoCarga.veiculos_id transp_manifestoCarga.carreta_id transp_manifestoCarga.semireboque_id transp_manifestoCarga.quartoVeiculo_id transp_manifestoCarga.KmInicial transp_manifestoCarga.KmFinal transp_manifestoCarga.dtFechamento transp_manifestoCarga.observacao transp_manifestoCarga.manifestoOriginal_id transp_manifestoCarga.tipoManifesto_id transp_manifestoCarga.munIni_id transp_manifestoCarga.munFim_id transp_manifestoCarga.agencias_id transp_manifestoCarga.tiposTaloes_id transp_manifestoCarga.stLiberado transp_manifestoCarga.usuario_id transp_manifestoCarga.controleUsoInicio_id transp_manifestoCarga.controleUsoFim_id transp_manifestoCarga.suprimentos_id transp_manifestoCarga.descricao transp_manifestoCarga.descricaoAcerto transp_manifestoCarga.conferente_id transp_manifestoCarga.MDFeChaveAcesso transp_manifestoCarga.MDFeNumeroRecibo transp_manifestoCarga.MDFeProtocoloAutorizacao transp_manifestoCarga.MDFeDataAutorizacao transp_manifestoCarga.MDFeProtocoloCancelamento transp_manifestoCarga.MDFeDataCancelamento transp_manifestoCarga.MDFeProtocoloEncerramento transp_manifestoCarga.MDFeDataEncerramento transp_manifestoCarga.acertos_id transp_manifestoCarga.contratado_id transp_manifestoCarga.tpEmit transp_manifestoCarga.percurso_id transp_manifestoCarga.tiposDistribuicao_id transp_manifestoCarga.mobile_id transp_manifestoCarga.cancelado transp_manifestoCarga.dataCancelamento transp_manifestoCarga.motivoCancelamento transp_manifestoCarga.usuarioCancelamento_id transp_manifestoCarga.contingencia transp_manifestoCarga.dtEncerramentoAutomatico transp_manifestoCarga.definirSeguradorasManualmente transp_manifestoCarga.usuarioEncerramento_id transp_manifestoCarga.aeronave_id transp_manifestoCarga.numeroVoo transp_manifestoCarga.aerodromoEmbarque_id transp_manifestoCarga.aerodromoDestino_id transp_manifestoCarga.dataVoo transp_manifestoCarga.modalidade transp_manifestoCarga.responsavelOco_id transp_manifestoCarga.cepOrigem transp_manifestoCarga.cepDestino transp_manifestoCarga.reciboFrete_id transp_manifestoCarga.considerarMultiplosDestinos transp_manifestoCarga.data_atualizacao transp_manifestoCarga.operacao_alto_desempenho transp_manifestoCarga.coordenadas_carregamento transp_manifestoCarga.coordenadas_descarregamento transp_manifestoCarga.status_averbacao
+remetente (pessoasPessoas): remetente.id remetente.carteiras_id remetente.cod_localidade remetente.fisica_juridica remetente.CNPJ remetente.razao_social remetente.CI remetente.descricao remetente.nome remetente.sobrenome remetente.email remetente.site remetente.data_cadastro remetente.observacoes remetente.data_nascimento remetente.profissao remetente.sexo remetente.contato_tecnico_id remetente.contato_administrativo_id remetente.cod_fiscal_cliente remetente.cod_fiscal_fornecedor remetente.cnh remetente.categoria remetente.dtExpedicao remetente.dtPrimeiraExpedicao remetente.dtValidade remetente.orgaoExpedidor remetente.limite_credito remetente.matriculaINSS remetente.apelido remetente.celular remetente.cod_fiscal_processos remetente.telResidencial remetente.protocoloCNH remetente.naturalidade remetente.nacionalidade remetente.pai remetente.mae remetente.outrosTels remetente.PIS_PASEP remetente.referencias remetente.usuarios_id remetente.ultimaAtualizacao remetente.preferenciaImpressaoNF remetente.bloqueado remetente.grupoDespesaEspecifico remetente.contas_id remetente.estado_civil remetente.identificador remetente.alvara remetente.conjuge remetente.cnae_id remetente.escala remetente.protestar remetente.nroDiasProtesto remetente.logo remetente.codISSQNAtividadePrincipal remetente.statusPessoa_id remetente.enquadramento remetente.consultor_id remetente.CI_Estado remetente.naturalidadeEstado remetente.categoriaCRM remetente.emailCobranca remetente.documentoFormatado remetente.emissaoRG remetente.lotacao_id remetente.nit remetente.RNTRC remetente.tipoTransportadora remetente.IEC remetente.dependentesIRRF remetente.CI_orgaoExpedidor remetente.suframa remetente.seguroCNH remetente.emailCotacaoEstoque remetente.celularNumerico remetente.grauInstruTrabalhador remetente.paisNascimento_id remetente.paisNacionalidade_id remetente.numeroCTPS remetente.serieCTPS remetente.ufExpedicaoCTPS remetente.raca remetente.radicalCNPJ remetente.emailOcorrenciasTransporte remetente.receberPesquisaAtendimento remetente.naturalidade_id remetente.usuarioCadastro remetente.dtValidadeExameToxicologico remetente.cidadeEmissaoCNH_id remetente.ignoraValidacaoNIS remetente.renachCNH remetente.CI_orgaoExpedidor_mdm remetente.nome_social
+enderecoRemetente (pessoasEnderecosPessoas): enderecoRemetente.id enderecoRemetente.pessoas_id enderecoRemetente.pessoasInativo_id enderecoRemetente.cep enderecoRemetente.endereco enderecoRemetente.bairro enderecoRemetente.cidade
+destinatario (pessoasPessoas): destinatario.id destinatario.carteiras_id destinatario.cod_localidade destinatario.fisica_juridica destinatario.CNPJ destinatario.razao_social destinatario.CI
+enderecoDestinatario (pessoasEnderecosPessoas): enderecoDestinatario.id enderecoDestinatario.pessoas_id enderecoDestinatario.pessoasInativo_id enderecoDestinatario.cep enderecoDestinatario.endereco enderecoDestinatario.bairro enderecoDestinatario.cidade
+expedidor (pessoasPessoas): expedidor.id expedidor.carteiras_id expedidor.cod_localidade expedidor.fisica_juridica expedidor.CNPJ expedidor.razao_social expedidor.CI
+enderecoExpedidor (pessoasEnderecosPessoas): enderecoExpedidor.id enderecoExpedidor.pessoas_id enderecoExpedidor.pessoasInativo_id enderecoExpedidor.cep enderecoExpedidor.endereco enderecoExpedidor.bairro enderecoExpedidor.cidade
+recebedor (pessoasPessoas): recebedor.id recebedor.carteiras_id recebedor.cod_localidade recebedor.fisica_juridica recebedor.CNPJ recebedor.razao_social recebedor.CI
+enderecoRecebedor (pessoasEnderecosPessoas): enderecoRecebedor.id enderecoRecebedor.pessoas_id enderecoRecebedor.pessoasInativo_id enderecoRecebedor.cep enderecoRecebedor.endereco enderecoRecebedor.bairro enderecoRecebedor.cidade
+contratado (pessoasPessoas): contratado.id contratado.carteiras_id contratado.cod_localidade contratado.fisica_juridica contratado.CNPJ contratado.razao_social contratado.CI
+enderecoContratado (pessoasEnderecosPessoas): enderecoContratado.id enderecoContratado.pessoas_id enderecoContratado.pessoasInativo_id enderecoContratado.cep enderecoContratado.endereco enderecoContratado.bairro
+transp_mercadoriasConhecimento: transp_mercadoriasConhecimento.id transp_mercadoriasConhecimento.conhecimentoTransporte_id transp_mercadoriasConhecimento.marcas_id transp_mercadoriasConhecimento.especies_id transp_mercadoriasConhecimento.naturezas_id transp_mercadoriasConhecimento.natureza transp_mercadoriasConhecimento.dtNotaFiscal
+naturezaCarga (transp_naturezas): naturezaCarga.id naturezaCarga.descricao naturezaCarga.toleranciaQuebra naturezaCarga.stAtivo naturezaCarga.codigoBuonny naturezaCarga.tipoNatureza_id naturezaCarga.nONU naturezaCarga.xNomeAE naturezaCarga.xClaRisco naturezaCarga.NCM naturezaCarga.grupoEmbalagens naturezaCarga.codigo_opentech
+transp_especies: transp_especies.id transp_especies.descricao transp_especies.possuiQuebra transp_especies.capacidade transp_especies.nomeInterno transp_especies.stAtivo transp_especies.cUnid
+finan_cfops: finan_cfops.id finan_cfops.cfop finan_cfops.descricao finan_cfops.textoNotaFiscal finan_cfops.operacaoEstoque finan_cfops.operacaoEspecificaNFRetorno finan_cfops.programarContas finan_cfops.tipoProgramacao finan_cfops.operacaoICMS finan_cfops.operacaoIPI finan_cfops.operacaoISS finan_cfops.operacaoII finan_cfops.operacaoIRRF finan_cfops.operacaoFETHAB finan_cfops.historicoLancamentoEstoque finan_cfops.lancamento finan_cfops.fiscal finan_cfops.gerencial finan_cfops.rateios finan_cfops.modo_lancamento finan_cfops.conta_pis finan_cfops.conta_cofins finan_cfops.conta_irrf finan_cfops.conta_csll finan_cfops.conta_inss finan_cfops.conta_pis_gerencial finan_cfops.conta_cofins_gerencial finan_cfops.conta_irrf_gerencial finan_cfops.conta_csll_gerencial finan_cfops.conta_inss_gerencial finan_cfops.conta_FETHAB_gerencial finan_cfops.conta_ICMSDeson_gerencial finan_cfops.programacaoFaturaLancamento finan_cfops.aliquotaICMS finan_cfops.operacaoCSLL finan_cfops.operacaoPIS finan_cfops.operacaoCOFINS finan_cfops.operacaoINSS finan_cfops.operacoesEstoque_id finan_cfops.finalidadeMovimentacao_id finan_cfops.utilizaImpostos finan_cfops.stAtivo finan_cfops.stNaturezaTransp finan_cfops.conta_issqn_gerencial finan_cfops.modalidadeBCICMS
+containers (transp_containersConhecimento): containers.id containers.conhecimentoTransporte_id containers.container containers.mercadoriaAvariada containers.lacre containers.valorContainer containers.tara
+tamanhoContainers (cadTamanhosContainers): tamanhoContainers.id tamanhoContainers.nomeInterno tamanhoContainers.descricao tamanhoContainers.pesoLimite tamanhoContainers.teu
+manifestador (ambiente_usuarios): manifestador.id manifestador.descricao manifestador.nome manifestador.senha manifestador.forca_troca_senha manifestador.email manifestador.stRemovido
+obsConhecimento (transp_observacoesConhecimento): obsConhecimento.conhecimentoTransporte_id obsConhecimento.tipoObservacao obsConhecimento.observacao
+obsConhecimentoPV (transp_observacoesConhecimento): obsConhecimentoPV.conhecimentoTransporte_id obsConhecimentoPV.tipoObservacao obsConhecimentoPV.observacao
+motivoCancelamento (transp_observacoesConhecimento): motivoCancelamento.conhecimentoTransporte_id motivoCancelamento.tipoObservacao motivoCancelamento.observacao
+transp_perfisApropriacao: transp_perfisApropriacao.id transp_perfisApropriacao.nome transp_perfisApropriacao.stAtivo transp_perfisApropriacao.cod_rateio transp_perfisApropriacao.tipo transp_perfisApropriacao.cod_gerencial_receita transp_perfisApropriacao.cod_gerencial_receita_fob
+docRef (transp_conhecimentoTransporteDocReferencia): docRef.id docRef.conhecimento_id docRef.docReferencia docRef.tomador_id docRef.modelo docRef.serie docRef.subserie
+outrosVal (transp_conhecimentoTransporteComposicaoOutros): outrosVal.conhecimentoTransporte_id outrosVal.tipoValoresOutros_id outrosVal.valor
+transp_despesasExtras: transp_despesasExtras.id transp_despesasExtras.conhecimento_id transp_despesasExtras.fornecedor_id transp_despesasExtras.valor transp_despesasExtras.observacao transp_despesasExtras.tipoDespesasExtras_id transp_despesasExtras.tipoDocumento
+fornecedorDespesasExtras (pessoasPessoas): fornecedorDespesasExtras.id fornecedorDespesasExtras.carteiras_id fornecedorDespesasExtras.cod_localidade fornecedorDespesasExtras.fisica_juridica fornecedorDespesasExtras.CNPJ fornecedorDespesasExtras.razao_social fornecedorDespesasExtras.CI
+transp_tiposDespesasExtras: transp_tiposDespesasExtras.id transp_tiposDespesasExtras.descricao transp_tiposDespesasExtras.nomeInterno transp_tiposDespesasExtras.operacaoFinanceira transp_tiposDespesasExtras.codGerencialFaturaPagar_id transp_tiposDespesasExtras.codGerencialFaturaReceber_id transp_tiposDespesasExtras.codRateioFaturaPagar_id transp_tiposDespesasExtras.codRateioFaturaReceber_id transp_tiposDespesasExtras.tipoDocFaturaPagar transp_tiposDespesasExtras.tipoDocFaturaReceber transp_tiposDespesasExtras.comportamentoRelMultEmpresa transp_tiposDespesasExtras.definirTipoDocFaturaPagar transp_tiposDespesasExtras.definirTipoDocFaturaReceber transp_tiposDespesasExtras.formaApropriacaoFaturaPagar transp_tiposDespesasExtras.empresaFatura transp_tiposDespesasExtras.tipo transp_tiposDespesasExtras.permiteDefinirInfoVencimento transp_tiposDespesasExtras.numeracaoFaturaPagar transp_tiposDespesasExtras.numeracaoFaturaReceber transp_tiposDespesasExtras.dataEmissaoFatura transp_tiposDespesasExtras.dataEntradaFatura transp_tiposDespesasExtras.permite_definir_tipo_pagamento transp_tiposDespesasExtras.replicar_obs_titulo transp_tiposDespesasExtras.obriga_vinculo_documento
+usuarioDespesasExtras (ambiente_usuarios): usuarioDespesasExtras.id usuarioDespesasExtras.descricao usuarioDespesasExtras.nome usuarioDespesasExtras.senha usuarioDespesasExtras.forca_troca_senha usuarioDespesasExtras.email usuarioDespesasExtras.stRemovido
+tipoOutro (transp_tiposValoresOutrosReais): tipoOutro.id tipoOutro.nomeInterno tipoOutro.descricao tipoOutro.imprimir tipoOutro.ativo tipoOutro.totalizaOutrosCTRC tipoOutro.tipo
+tagsCTeVal (transp_conhecimentoTransporteTagsCTe): tagsCTeVal.conhecmento_id tagsCTeVal.tagCTe_id tagsCTeVal.valor
+tagsCTe (transp_tagsCTe): tagsCTe.id tagsCTe.nomeInterno tagsCTe.descricao tagsCTe.ativo tagsCTe.incluirNoXML tagsCTe.qlTag tagsCTe.imprime_no_dacte_remover
+prevInicioViagem (transp_conhecimentoTransporteEventos): prevInicioViagem.conhecimento_id prevInicioViagem.tpEvento prevInicioViagem.nSeq prevInicioViagem.nProt prevInicioViagem.dhRecbto prevInicioViagem.usuario_id
+`;
+
+// Converte o texto bruto acima em entradas {grupo, exp, label}. Aceita tanto
+// "grupo (tabela): ..." quanto "grupo: ..." (sem parênteses). Remove duplicatas
+// (o texto original tem alguns campos repetidos). O label leva o grupo entre
+// parênteses pra IA nunca confundir "id"/"nome"/"tipo" de tabelas diferentes.
+function _parseDemaisCampos(raw) {
+    const resultado = [];
+    const vistos = new Set();
+    raw.split('\n').map(l => l.trim()).filter(Boolean).forEach(linha => {
+        const m = linha.match(/^(\S+?)\s*(?:\(([^)]*)\))?:\s*(.+)$/);
+        if (!m) return;
+        const grupo = m[1];
+        m[3].trim().split(/\s+/).forEach(tok => {
+            if (vistos.has(tok)) return;
+            vistos.add(tok);
+            const dot = tok.indexOf('.');
+            if (dot < 0) return;
+            const campo = tok.substring(dot + 1);
+            resultado.push({ grupo: `Demais campos: ${grupo}`, exp: tok, label: `${campo} (${grupo})` });
+        });
+    });
+    return resultado;
+}
+
+// Catálogo de campos disponíveis por origem. V1: apenas CT-e.
+const CATALOGO_RELATORIOS = {
+    CTe: [
+        { grupo: 'Ct-e', exp: 'cte.agencia', label: 'Agência' },
+        { grupo: 'Ct-e', exp: 'cte.anoSaida', label: 'Ano Emissão' },
+        { grupo: 'Ct-e', exp: 'cte.cancelado', label: 'Cancelado?' },
+        { grupo: 'Ct-e', exp: 'cte.cfop', label: 'CFOP' },
+        { grupo: 'Ct-e', exp: 'cte.chave', label: 'Chave' },
+        { grupo: 'Ct-e', exp: 'cte.cidadeDestino', label: 'Cidade Destino' },
+        { grupo: 'Ct-e', exp: 'cte.cidadeOrigem', label: 'Cidade Origem' },
+        { grupo: 'Ct-e', exp: 'cte.codCidadeDestino', label: 'Código Cidade Destino' },
+        { grupo: 'Ct-e', exp: 'cte.codCidadeOrigem', label: 'Código Cidade Origem' },
+        { grupo: 'Ct-e', exp: 'cte.complementoPedido', label: 'Complemento do Pedido' },
+        { grupo: 'Ct-e', exp: 'cte.cst', label: 'CST' },
+        { grupo: 'Ct-e', exp: 'cte.diaSaida', label: 'Dia Emissão' },
+        { grupo: 'Ct-e', exp: 'cte.dtCancelamento', label: 'Data Cancelamento' },
+        { grupo: 'Ct-e', exp: 'cte.dtEmissao', label: 'Data Emissão' },
+        { grupo: 'Ct-e', exp: 'cte.dtPrevChegada', label: 'Data Previsão Chegada' },
+        { grupo: 'Ct-e', exp: 'cte.dtPrevInicio', label: 'Data Previsão Início' },
+        { grupo: 'Ct-e', exp: 'cte.ehCTe', label: 'É CT-e' },
+        { grupo: 'Ct-e', exp: 'cte.manifestador', label: 'Manifestador' },
+        { grupo: 'Ct-e', exp: 'cte.mesSaida', label: 'Mês Emissão' },
+        { grupo: 'Ct-e', exp: 'cte.motivoCancelamento', label: 'Motivo Cancelamento' },
+        { grupo: 'Ct-e', exp: 'cte.naturezaOperacao', label: 'Natureza da Operação' },
+        { grupo: 'Ct-e', exp: 'cte.nroCteComplementado', label: 'Número CT-e Complementado' },
+        { grupo: 'Ct-e', exp: 'cte.nroCteSubstituido', label: 'Número CT-e Substituído' },
+        { grupo: 'Ct-e', exp: 'cte.observacaoConhecimento', label: 'Observação do Conhecimento' },
+        { grupo: 'Ct-e', exp: 'cte.observacaoConhecimentoPV', label: 'Observação do Conhecimento (PV)' },
+        { grupo: 'Ct-e', exp: 'cte.perfilApropriacao', label: 'Perfil de Apropriação' },
+        { grupo: 'Ct-e', exp: 'cte.serie', label: 'Série' },
+        { grupo: 'Ct-e', exp: 'cte.talao', label: 'Talão' },
+        { grupo: 'Ct-e', exp: 'cte.tipo', label: 'Tipo' },
+        { grupo: 'Ct-e', exp: 'cte.tomadorServico', label: 'Tomador do Serviço' },
+        { grupo: 'Ct-e', exp: 'cte.ufDestino', label: 'UF Destino' },
+        { grupo: 'Ct-e', exp: 'cte.ufOrigem', label: 'UF Origem' },
+        { grupo: 'Composição do frete', exp: 'composicaoFrete.aliq', label: 'Alíquota' },
+        { grupo: 'Composição do frete', exp: 'composicaoFrete.baseCalculo', label: 'Base de Cálculo' },
+        { grupo: 'Composição do frete', exp: 'composicaoFrete.diaria', label: 'Diária' },
+        { grupo: 'Composição do frete', exp: 'composicaoFrete.freteValor', label: 'Valor do Frete' },
+        { grupo: 'Composição do frete', exp: 'composicaoFrete.outros', label: 'Outros' },
+        { grupo: 'Composição do frete', exp: 'composicaoFrete.pedagio', label: 'Pedágio' },
+        { grupo: 'Composição do frete', exp: 'composicaoFrete.seguro', label: 'Seguro' },
+        { grupo: 'Composição do frete', exp: 'composicaoFrete.tarifaFinal', label: 'Tarifa Final' },
+        { grupo: 'Composição do frete', exp: 'composicaoFrete.tarifaReal', label: 'Tarifa Real' },
+        { grupo: 'Composição do frete', exp: 'composicaoFrete.totalPrestacao', label: 'Total da Prestação' },
+        { grupo: 'Composição do frete', exp: 'composicaoFrete.totalServico', label: 'Total do Serviço' },
+        { grupo: 'Composição do frete', exp: 'composicaoFrete.valorICMS', label: 'Valor ICMS' },
+        { grupo: 'Veículos', exp: 'veiculos.categoriaVeiculo', label: 'Categoria do Veículo' },
+        { grupo: 'Veículos', exp: 'veiculos.conjuntoVeiculos', label: 'Conjunto de Veículos' },
+        { grupo: 'Veículos', exp: 'veiculos.frotaPropria', label: 'Frota Própria' },
+        { grupo: 'Veículos', exp: 'veiculos.grupoVeiculo', label: 'Grupo do Veículo' },
+        { grupo: 'Veículos', exp: 'veiculos.marcaVeiculo', label: 'Marca do Veículo' },
+        { grupo: 'Veículos', exp: 'veiculos.modeloVeiculo', label: 'Modelo do Veículo' },
+        { grupo: 'Veículos', exp: 'veiculos.placaCarreta', label: 'Placa Carreta' },
+        { grupo: 'Veículos', exp: 'veiculos.placaQuartoVeiculo', label: 'Placa Quarto Veículo' },
+        { grupo: 'Veículos', exp: 'veiculos.placaSemireboque', label: 'Placa Semirreboque' },
+        { grupo: 'Veículos', exp: 'veiculos.placaVeiculo', label: 'Placa Veículo' },
+        { grupo: 'Veículos', exp: 'veiculos.proprietario', label: 'Proprietário' },
+        { grupo: 'Veículos', exp: 'veiculos.proprietarioCarreta', label: 'Proprietário Carreta' },
+        { grupo: 'Veículos', exp: 'veiculos.proprietarioQuartoVeiculo', label: 'Proprietário Quarto Veículo' },
+        { grupo: 'Veículos', exp: 'veiculos.proprietarioSemireboque', label: 'Proprietário Semirreboque' },
+        { grupo: 'Seguro', exp: 'seguro.acobertaRoubo', label: 'Acoberta Roubo' },
+        { grupo: 'Seguro', exp: 'seguro.apolice', label: 'Apólice' },
+        { grupo: 'Seguro', exp: 'seguro.proprio', label: 'Próprio' },
+        { grupo: 'Seguro', exp: 'seguro.responsavel', label: 'Responsável' },
+        { grupo: 'Documentos', exp: 'docs.quantidade', label: 'Quantidade de Documentos' },
+        { grupo: 'Documentos', exp: 'docs.somaCubagem', label: 'Soma Cubagem' },
+        { grupo: 'Documentos', exp: 'docs.somaPesos', label: 'Soma Pesos' },
+        { grupo: 'Documentos', exp: 'docs.somaValores', label: 'Soma Valores' },
+        { grupo: 'Documentos', exp: 'docs.somaValoresProdutos', label: 'Soma Valores dos Produtos' },
+        { grupo: 'Conteineres', exp: 'containers.nroContainers', label: 'Número de Containers' },
+        { grupo: 'Conteineres', exp: 'containers.quantidade', label: 'Quantidade de Containers' },
+        { grupo: 'Conteineres', exp: 'containers.somaValores', label: 'Soma Valores Containers' },
+        { grupo: 'Conteineres', exp: 'containers.tamanhoContainers', label: 'Tamanho dos Containers' },
+        ..._CAT_PESSOA('cliente', 'Cliente', ['CNPJ', 'IE', 'bairro', 'celular', 'cidade', 'documentoFormatado', 'endereco_telefone1', 'endereco_telefone2', 'inscricao_estadual', 'nome', 'numero', 'razaoSocial', 'rua', 'telefone', 'uf']),
+        ..._CAT_PESSOA('emissor', 'Emissor', ['CNPJ', 'IE', 'celular', 'descricao', 'empresa', 'endereco_telefone1', 'endereco_telefone2', 'inscricao_estadual', 'razaoSocial', 'telefone']),
+        { grupo: 'Manifesto de carga', exp: 'transp_manifestoCarga.dtEmissao', label: 'Data Emissão do Manifesto' },
+        { grupo: 'Manifesto de carga', exp: 'transp_manifestoCarga.dtSaida', label: 'Data Saída do Manifesto' },
+        { grupo: 'Manifesto de carga', exp: 'transp_manifestoCarga.nro', label: 'Número do Manifesto' },
+        ..._CAT_PESSOA('motorista', 'Motorista', ['IE', 'celular', 'cpf', 'endereco_telefone1', 'endereco_telefone2', 'inscricao_estadual', 'nome', 'rg', 'telefone']),
+        { grupo: 'Faturamento', exp: 'faturamento.dtEmissao', label: 'Data Emissão da Fatura' },
+        { grupo: 'Faturamento', exp: 'faturamento.dtVencimento', label: 'Data Vencimento' },
+        { grupo: 'Faturamento', exp: 'faturamento.nroFatura', label: 'Número da Fatura' },
+        ..._CAT_PESSOA('remetente', 'Remetente', ['CNPJ', 'IE', 'bairro', 'celular', 'cep', 'cidade', 'documentoFormatado', 'endereco_telefone1', 'endereco_telefone2', 'inscricao_estadual', 'nome', 'numero', 'razaoSocial', 'rua', 'telefone', 'uf']),
+        ..._CAT_PESSOA('destinatario', 'Destinatário', ['CNPJ', 'IE', 'bairro', 'celular', 'cep', 'cidade', 'documentoFormatado', 'endereco_telefone1', 'endereco_telefone2', 'nome', 'numero', 'razaoSocial', 'rua', 'telefone', 'uf']),
+        ..._CAT_PESSOA('expedidor', 'Expedidor', ['CNPJ', 'IE', 'bairro', 'celular', 'cep', 'cidade', 'documentoFormatado', 'endereco_telefone1', 'endereco_telefone2', 'inscricao_estadual', 'nome', 'numero', 'razaoSocial', 'rua', 'telefone', 'uf']),
+        ..._CAT_PESSOA('recebedor', 'Recebedor', ['CNPJ', 'IE', 'bairro', 'celular', 'cep', 'cidade', 'documentoFormatado', 'endereco_telefone1', 'endereco_telefone2', 'inscricao_estadual', 'nome', 'numero', 'razaoSocial', 'rua', 'telefone', 'uf']),
+        ..._CAT_PESSOA('contratado', 'Contratado', ['CNPJ', 'IE', 'bairro', 'celular', 'cep', 'cidade', 'documentoFormatado', 'endereco_telefone1', 'endereco_telefone2', 'inscricao_estadual', 'nome', 'numero', 'razaoSocial', 'rua', 'telefone', 'uf']),
+        { grupo: 'Notas fiscais', exp: 'notasFiscais.NCM', label: 'NCM' },
+        { grupo: 'Notas fiscais', exp: 'notasFiscais.chaveNotas', label: 'Chave das Notas' },
+        { grupo: 'Notas fiscais', exp: 'notasFiscais.especies', label: 'Espécies' },
+        { grupo: 'Notas fiscais', exp: 'notasFiscais.naturezasCarga', label: 'Natureza da Carga' },
+        { grupo: 'Notas fiscais', exp: 'notasFiscais.nroNotas', label: 'Número das Notas' },
+        { grupo: 'Notas fiscais', exp: 'notasFiscais.valorNotas', label: 'Valor das Notas' },
+        { grupo: 'Pedido', exp: 'pedido.numero', label: 'Número do Pedido' },
+        { grupo: 'Doc. Anterior', exp: 'docRef.chaveCTe', label: 'Chave do CT-e (Doc. Anterior)' },
+        { grupo: 'Doc. Anterior', exp: 'docRef.dtEmissao', label: 'Data Emissão (Doc. Anterior)' },
+        { grupo: 'Doc. Anterior', exp: 'docRef.numero', label: 'Número (Doc. Anterior)' },
+        { grupo: 'Doc. Anterior', exp: 'docRef.numeroCTe', label: 'Número do CT-e (Doc. Anterior)' },
+        { grupo: 'Doc. Anterior', exp: 'docRef.referencia', label: 'Referência (Doc. Anterior)' },
+        { grupo: 'Doc. Anterior', exp: 'docRef.serie', label: 'Série (Doc. Anterior)' },
+        { grupo: 'Doc. Anterior', exp: 'docRef.valor', label: 'Valor (Doc. Anterior)' },
+        { grupo: 'Despesas extras', exp: 'despesasExtras.dataLancamento', label: 'Data Lançamento' },
+        { grupo: 'Despesas extras', exp: 'despesasExtras.fornecedor', label: 'Fornecedor' },
+        { grupo: 'Despesas extras', exp: 'despesasExtras.nroDocumento', label: 'Número do Documento' },
+        { grupo: 'Despesas extras', exp: 'despesasExtras.observacao', label: 'Observação' },
+        { grupo: 'Despesas extras', exp: 'despesasExtras.tipo', label: 'Tipo' },
+        { grupo: 'Despesas extras', exp: 'despesasExtras.tipoDocumento', label: 'Tipo de Documento' },
+        { grupo: 'Despesas extras', exp: 'despesasExtras.usuarioLancamento', label: 'Usuário do Lançamento' },
+        { grupo: 'Despesas extras', exp: 'despesasExtras.valor', label: 'Valor' },
+        { grupo: 'Impostos CBS e IBS', exp: 'impostosCbsIbs.baseCalculoCBSIBS', label: 'Base de Cálculo CBS/IBS' },
+        { grupo: 'Impostos CBS e IBS', exp: 'impostosCbsIbs.cbsAliquota', label: 'Alíquota CBS' },
+        { grupo: 'Impostos CBS e IBS', exp: 'impostosCbsIbs.cbsValor', label: 'Valor CBS' },
+        { grupo: 'Impostos CBS e IBS', exp: 'impostosCbsIbs.codigoClassificacaoTributaria', label: 'Código de Classificação Tributária' },
+        { grupo: 'Impostos CBS e IBS', exp: 'impostosCbsIbs.cst', label: 'CST (CBS/IBS)' },
+        { grupo: 'Impostos CBS e IBS', exp: 'impostosCbsIbs.ibsEstadualAliquota', label: 'Alíquota IBS Estadual' },
+        { grupo: 'Impostos CBS e IBS', exp: 'impostosCbsIbs.ibsEstadualValor', label: 'Valor IBS Estadual' },
+        { grupo: 'Impostos CBS e IBS', exp: 'impostosCbsIbs.ibsMunicipalAliquota', label: 'Alíquota IBS Municipal' },
+        { grupo: 'Impostos CBS e IBS', exp: 'impostosCbsIbs.ibsMunicipalValor', label: 'Valor IBS Municipal' }
+    ]
+};
+(function _mesclarDemaisCampos() {
+    // Campos do dump técnico que já existem no catálogo curado (com rótulo amigável) são
+    // ignorados aqui — o rótulo amigável fica valendo sozinho. Só entra o que é realmente novo.
+    const jaExiste = new Set(CATALOGO_RELATORIOS.CTe.map(c => c.exp));
+    _parseDemaisCampos(_DEMAIS_CAMPOS_RAW_CTE).forEach(c => {
+        if (jaExiste.has(c.exp)) return;
+        jaExiste.add(c.exp);
+        CATALOGO_RELATORIOS.CTe.push(c);
+    });
+})();
+
+// Converte para Latin-1 (Windows-1252) "seguro": 1 char JS = 1 byte de saída — é o que
+// o Bsoft espera no .dat (ex: "Relatório" grava o "ó" em 1 byte, não UTF-8). Caracteres
+// fora do intervalo Latin-1 (raros em PT-BR) viram "?" pra nunca quebrar a contagem de bytes.
+function _toLatin1Safe(str) {
+    let out = '';
+    for (let i = 0; i < str.length; i++) {
+        const code = str.charCodeAt(i);
+        out += code <= 0xFF ? str[i] : '?';
+    }
+    return out;
+}
+function _phpSerializeString(s) {
+    const safe = _toLatin1Safe(String(s == null ? '' : s));
+    return `s:${safe.length}:"${safe}";`;
+}
+function _phpSerializeAssoc(obj) {
+    const entradas = Object.entries(obj);
+    let out = `a:${entradas.length}:{`;
+    for (const [k, v] of entradas) out += _phpSerializeString(k) + _phpSerializeString(v);
+    return out + '}';
+}
+
+// Monta o JSON interno do campo "dados" a partir da lista de campos escolhidos.
+function _construirDadosRelatorioJSON(campos) {
+    const linha = campos.map(c => ({
+        exp: c.exp, tipo: '', tamanho: [''], label: c.label,
+        alinhamento: '', totalizador: '', tipoOrdenacao: '', ordemOrdenacao: ''
+    }));
+    return JSON.stringify({ formato: 'html', linhas: [linha] });
+}
+
+// Gera a string PHP-serializada completa (pronta pra virar bytes e baixar como .dat).
+function _gerarConteudoDatRelatorio({ nome, nomeArquivo = '', origem = 'CTe', tamanhoRelatorio = '27cm', campos }) {
+    const estrutura = { nome, nomeArquivo, origem, tamanhoRelatorio, dados: _construirDadosRelatorioJSON(campos) };
+    return _phpSerializeAssoc(estrutura);
+}
+
+// Baixa a string serializada como arquivo .dat (bytes Latin-1/CP1252, sem BOM).
+function _baixarDatRelatorio(conteudoSerializado, nomeArquivo) {
+    const safe = _toLatin1Safe(conteudoSerializado);
+    const bytes = new Uint8Array(safe.length);
+    for (let i = 0; i < safe.length; i++) bytes[i] = safe.charCodeAt(i);
+    const blob = new Blob([bytes], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = nomeArquivo.endsWith('.dat') ? nomeArquivo : nomeArquivo + '.dat';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+function ehAssistenteRelatorios(query) {
+    const q = query.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    const padroes = [
+        'assistente de relatorio', 'assistente de relatórios', 'criar relatorio',
+        'novo relatorio', 'gerar relatorio', 'montar relatorio', 'relatorio personalizado',
+        'quero um relatorio', 'preciso de um relatorio', 'relatorio .dat', 'arquivo .dat', 'exportar relatorio'
+    ];
+    return padroes.some(p => q.includes(p)) || (/relat[oó]rio/.test(q) && /\b(criar|gerar|montar|novo|preciso|quero|fazer)\b/.test(q));
+}
+
+window._relOrigemSel = null;
+function _relSelecionarOrigem(origem) {
+    window._relOrigemSel = origem;
+    document.querySelectorAll('._rel-origem-btn').forEach(b => {
+        const ativo = b.dataset.origem === origem;
+        b.style.background = ativo ? 'var(--primary)' : '#f3f4f6';
+        b.style.color = ativo ? 'white' : '#374151';
+        b.style.borderColor = ativo ? 'var(--primary)' : '#e5e7eb';
+    });
+    const step2 = document.getElementById('wRelStep2');
+    if (step2) step2.style.display = 'block';
+    setTimeout(() => { if (!document.getElementById('wRelNome')?.value) document.getElementById('wRelNome')?.focus(); }, 80);
+    scrollToBottom(true);
+}
+
+function mostrarWizardRelatorio(nomePrefill, camposPrefill) {
+    const s = document.getElementById('chatStream');
+    const old = document.getElementById('wizardRelatorioCard'); if (old) old.remove();
+    window._relOrigemSel = null;
+    const card = document.createElement('div');
+    card.id = 'wizardRelatorioCard';
+    card.className = 'answer-card';
+    card.innerHTML = `
+<div style="background:#eff6ff;padding:10px 15px;border-bottom:1px solid #bfdbfe;font-size:12px;color:#1e40af;font-weight:700;border-radius:12px 12px 0 0;">📊 Assistente de Relatórios — Bsoft TMS</div>
+<div style="padding:12px 15px 4px;">
+  <div class="wizard-section">
+    <div class="wizard-label">🏢 Origem</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button onclick="_relSelecionarOrigem('CTe')" data-origem="CTe" class="_rel-origem-btn" style="padding:10px 22px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;transition:all .15s;">CT-e</button>
+    </div>
+    <div style="font-size:11px;color:#9ca3af;margin-top:6px;">Este assistente gera relatórios personalizados especificamente para CT-e.</div>
+  </div>
+  <div id="wRelStep2" style="display:none;">
+    <div class="wizard-section">
+      <div class="wizard-label">📝 Nome do relatório</div>
+      <input id="wRelNome" type="text" placeholder="Ex: Relatório de CT-e por região" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;">
+    </div>
+    <div class="wizard-section" style="border:none;">
+      <div class="wizard-label">📋 Quais dados você quer no relatório? <span style="font-size:10px;color:#9ca3af;font-weight:400;">(descreva em texto livre — a IA identifica os campos)</span></div>
+      <textarea id="wRelCampos" class="wizard-textarea" placeholder="Ex: Agência, Ano emissão, Cancelado e CFOP" style="min-height:90px;"></textarea>
+      <div style="font-size:11px;color:#6b7280;margin-top:6px;">Campos disponíveis: dados do conhecimento, composição do frete, veículos, seguro, documentos, conteineres, cliente, emissor, motorista, remetente, destinatário e mais.</div>
+    </div>
+    <div style="padding:12px 0 8px;">
+      <button id="wRelBtnEnviar" class="wizard-submit" onclick="enviarWizardRelatorio()">🚀 Gerar Relatório</button>
+    </div>
+  </div>
+</div>`;
+    s.appendChild(card);
+    // Atribuído via .value (não interpolado no HTML) pra não precisar escapar aspas/caracteres especiais do texto do usuário.
+    if (nomePrefill) document.getElementById('wRelNome').value = nomePrefill;
+    if (camposPrefill) document.getElementById('wRelCampos').value = camposPrefill;
+    if (nomePrefill || camposPrefill) {
+        // Reabrindo via "Tentar novamente" — já sabemos que é CT-e, pula a seleção manual.
+        _relSelecionarOrigem('CTe');
+        setTimeout(() => document.getElementById('wRelCampos')?.focus(), 80);
+    } else {
+        scrollToBottom(true);
+    }
+}
+
+function _tentarNovamenteRelatorio(ts) {
+    const dados = window['_relatorioDat_' + ts];
+    if (!dados) return;
+    const card = document.getElementById('_relatorioResultCard_' + ts); if (card) card.remove();
+    mostrarWizardRelatorio(dados.nome, dados.camposTxt);
+}
+
+function _renderizarCardResultadoRelatorio(nomeRelatorio, camposTxt, encontrados, naoEncontrados, conteudoSerializado, nomeArquivoSugerido) {
+    const s = document.getElementById('chatStream');
+    const card = document.createElement('div');
+    card.className = 'answer-card';
+    const listaOk = encontrados.map(c => `<li><b>${escapeHtml(c.label)}</b> <span style="color:#6b7280;font-family:monospace;font-size:11.5px;">(${escapeHtml(c.exp)})</span></li>`).join('');
+    const listaNok = naoEncontrados.length
+        ? `<div class="answer-section"><div class="section-label path">⚠️ Não identificado</div><div class="section-content">Não encontrei campo correspondente para: <b>${naoEncontrados.map(escapeHtml).join(', ')}</b>. Você pode baixar mesmo assim e adicionar manualmente pelo sistema, ou clicar em "Tentar novamente" pra reformular.</div></div>`
+        : '';
+    const comoUsar = `<div class="answer-section"><div class="section-label tip"><div class="section-icon tip">📥</div>Como importar no sistema</div><div class="section-content"><ol style="margin:0;padding-left:18px;line-height:1.9;">
+        <li>Clique em <b>⬇️ Baixar</b> abaixo para salvar o arquivo <code style="background:#f4f4f4;padding:1px 5px;border-radius:3px;font-family:monospace;font-size:12px;color:#c0392b;">.dat</code>.</li>
+        <li>No sistema, acesse o menu <b>Transporte &gt; EDI &gt; Assistente de Relatórios</b>.</li>
+        <li>Clique em <b>➕</b> para adicionar um novo relatório.</li>
+        <li>Clique em <b>"Escolher arquivo"</b> e selecione o arquivo que você baixou.</li>
+        <li>Clique em <b>Salvar</b>. Pronto — relatório criado com sucesso.</li>
+    </ol></div></div>`;
+    const ts = Date.now();
+    card.id = '_relatorioResultCard_' + ts;
+    window['_relatorioDat_' + ts] = { conteudo: conteudoSerializado, nomeArquivo: nomeArquivoSugerido, nome: nomeRelatorio, camposTxt };
+    card.innerHTML = `<div style="background:#eff6ff;padding:8px 15px;border-bottom:1px solid #bfdbfe;font-size:11px;color:#1e40af;font-weight:600;">📊 Assistente de Relatórios — Bsoft TMS</div>
+<div class="answer-section"><div class="section-label how">✅ Campos identificados (${encontrados.length})</div><div class="section-content"><ul style="margin:0;padding-left:18px;">${listaOk || '<li>Nenhum</li>'}</ul></div></div>
+${comoUsar}
+${listaNok}
+<div class="feedback-area">
+  <button onclick="_baixarDatRelatorio(window['_relatorioDat_${ts}'].conteudo, window['_relatorioDat_${ts}'].nomeArquivo)" style="display:flex;align-items:center;gap:6px;padding:8px 16px;border:none;border-radius:8px;background:#1e40af;color:white;cursor:pointer;font-size:13px;font-weight:700;">⬇️ Baixar ${escapeHtml(nomeArquivoSugerido)}</button>
+  <button onclick="_tentarNovamenteRelatorio(${ts})" style="display:flex;align-items:center;gap:6px;padding:8px 16px;border:1.5px solid #1e40af;border-radius:8px;background:white;color:#1e40af;cursor:pointer;font-size:13px;font-weight:700;">🔄 Tentar novamente</button>
+  <button onclick="novaConversa()" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);cursor:pointer;font-size:13px;font-weight:500;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='var(--primary)';this.style.background='var(--primary-light)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface)'">➕ Nova conversa</button>
+</div>`;
+    s.appendChild(card);
+    scrollToBottom(true);
+}
+
+async function enviarWizardRelatorio() {
+    const btn = document.getElementById('wRelBtnEnviar');
+    const origemSel = window._relOrigemSel;
+    if (!origemSel) { scrollToBottom(true); return; }
+    const nome = (document.getElementById('wRelNome')?.value || '').trim();
+    const camposTxt = (document.getElementById('wRelCampos')?.value || '').trim();
+    if (!nome || !camposTxt) {
+        if (!nome) document.getElementById('wRelNome')?.focus();
+        else document.getElementById('wRelCampos')?.focus();
+        return;
+    }
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Identificando campos...'; }
+
+    const catalogo = CATALOGO_RELATORIOS[origemSel] || CATALOGO_RELATORIOS.CTe;
+    const catalogoTxt = catalogo.map(c => `${c.label} => ${c.exp}`).join('\n');
+    const sysMsg = `Você identifica campos de relatório do Bsoft TMS a partir de uma descrição em português.\nAbaixo está o catálogo de campos disponíveis (rótulo => expressão). Use APENAS expressões desse catálogo, nunca invente uma expressão que não esteja listada.\n\nCATÁLOGO:\n${catalogoTxt}\n\n⚠️ REGRA ABSOLUTA — NÃO ADICIONE CAMPOS NÃO PEDIDOS: Inclua em "encontrados" SOMENTE campos que correspondem a algo que o usuário mencionou EXPLICITAMENTE no pedido — mesmo que o termo usado seja sinônimo, abreviado ou levemente diferente do rótulo do catálogo. É PROIBIDO incluir campos "relacionados", "que costumam aparecer junto", ou que pareçam úteis para o contexto do relatório, se o usuário não pediu por eles. Exemplo: se o usuário pediu "CFOP e Chave", a resposta deve conter exatamente esses 2 campos — nunca adicione um terceiro campo (como Agência ou Data Emissão) só porque é comum em relatórios de CT-e. Conte quantos itens distintos o usuário pediu e garanta que "encontrados" não tenha mais itens que isso (um pedido pode gerar menos itens, se algo não for encontrado, mas nunca mais).\n\nResponda APENAS um JSON válido (sem texto antes ou depois, sem markdown), no formato:\n{"encontrados":[{"label":"<rótulo exato do catálogo>","exp":"<expressão exata do catálogo>"}],"naoEncontrados":["<termo do pedido do usuário que não bateu com nenhum campo>"]}\nNão repita o mesmo campo duas vezes. Em "naoEncontrados", liste os termos pedidos que não têm nenhum campo correspondente no catálogo.`;
+    const userMsg = `Pedido do usuário: "${camposTxt}"`;
+
+    try {
+        const result = await callMCPSemPensamento(
+            [{ role: 'system', content: sysMsg }, { role: 'user', content: userMsg }],
+            { temperature: 0.1, maxTokens: 2000 }
+        );
+        let raw = (result.text || '').trim();
+        raw = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
+        const jsonMatch = raw.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error('IA não retornou JSON válido.');
+        const parsed = JSON.parse(jsonMatch[0]);
+
+        const expsValidas = new Set(catalogo.map(c => c.exp));
+        const porExp = new Map(catalogo.map(c => [c.exp, c]));
+        const encontrados = [];
+        const vistos = new Set();
+        (parsed.encontrados || []).forEach(item => {
+            if (item && expsValidas.has(item.exp) && !vistos.has(item.exp)) {
+                vistos.add(item.exp);
+                const cat = porExp.get(item.exp);
+                encontrados.push({ exp: cat.exp, label: (item.label || cat.label) });
+            }
+        });
+        const naoEncontrados = Array.isArray(parsed.naoEncontrados) ? parsed.naoEncontrados.filter(Boolean) : [];
+
+        const wCard = document.getElementById('wizardRelatorioCard'); if (wCard) wCard.remove();
+
+        if (encontrados.length === 0) {
+            appendMessage('ai', '⚠️ Não consegui identificar nenhum campo do catálogo de CT-e a partir da sua descrição. Tente detalhar melhor (ex: nomes como Agência, CFOP, Placa do Veículo, Valor do Frete...).');
+            if (btn) { btn.disabled = false; btn.textContent = '🚀 Gerar Relatório'; }
+            return;
+        }
+
+        const nomeArquivoBase = nome.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'relatorio';
+        const nomeArquivoDat = nomeArquivoBase + '.dat';
+        const conteudo = _gerarConteudoDatRelatorio({ nome, nomeArquivo: '', origem: origemSel, tamanhoRelatorio: '27cm', campos: encontrados });
+
+        _renderizarCardResultadoRelatorio(nome, camposTxt, encontrados, naoEncontrados, conteudo, nomeArquivoDat);
+        adicionarMensagemNaConversa('ai', `Relatório "${nome}" gerado com ${encontrados.length} campo(s): ${encontrados.map(c => c.label).join(', ')}.`);
+        logSearch('Assistente de Relatórios - ' + nome, true);
+    } catch (e) {
+        console.error('[Relatórios]', e);
+        if (btn) { btn.disabled = false; btn.textContent = '🚀 Gerar Relatório'; }
+        appendMessage('ai', '❌ Erro ao identificar os campos do relatório. Tente novamente.');
+    }
 }
 
 // ═══════════════════════════════════════════════════════════
