@@ -28,7 +28,7 @@
             --ml-light: #f5f3ff;
             --ml-border: #ddd6fe;
             --central-color: #0891b2;
-            --central-dark: #0e7490;
+            <!-- --central-dark: #0e7490; -->
             --central-light: #ecfeff;
             --central-border: #a5f3fc;
             --blog-color: #dc2626;
@@ -3629,7 +3629,23 @@ function mostrarWizardRegra(queryOriginal){
 }
 
 function wToggleChecks(tipo,valor){const id=tipo==='prest'?'wPrestChecks':'wServChecks';const el=document.getElementById(id);if(el)el.style.display=valor==='sim'?(tipo==='prest'?'block':'grid'):'none';}
-function wOnRegraPreChange(val){const icms=document.querySelector('input[name="wPrest"][value="valorICMS"]');if(icms)icms.checked=(val==='soma_icms');}
+function wOnRegraPreChange(val){
+    const icms=document.querySelector('input[name="wPrest"][value="valorICMS"]');if(icms)icms.checked=(val==='soma_icms');
+    if(val){
+        // Predefinida selecionada: marca "Manter da regra existente" em todos os grupos,
+        // pra IA não distorcer a base ao gerar a regra.
+        const cf=document.querySelector('input[name="wCalcFrete"][value="manter"]'); if(cf)cf.checked=true;
+        const bc=document.querySelector('input[name="wBaseCalc"][value="manter"]'); if(bc){bc.checked=true;wToggleBaseCalc('manter');}
+        const cp=document.querySelector('input[name="wCalcPrest"][value="manter"]'); if(cp){cp.checked=true;wToggleChecks('prest','manter');}
+        const cs=document.querySelector('input[name="wCalcServ"][value="manter"]'); if(cs){cs.checked=true;wToggleServCalc('manter');}
+    }else{
+        // "Nenhuma (criar do zero)": volta aos padrões originais do formulário.
+        const cf=document.querySelector('input[name="wCalcFrete"][value="nenhum"]'); if(cf)cf.checked=true;
+        const bc=document.querySelector('input[name="wBaseCalc"][value="nenhum"]'); if(bc){bc.checked=true;wToggleBaseCalc('nenhum');}
+        const cp=document.querySelector('input[name="wCalcPrest"][value="sim"]'); if(cp){cp.checked=true;wToggleChecks('prest','sim');}
+        const cs=document.querySelector('input[name="wCalcServ"][value="nao"]'); if(cs){cs.checked=true;wToggleServCalc('nao');}
+    }
+}
 function wToggleBaseCalc(val){const el=document.getElementById('wBaseCalcChecks');if(el)el.style.display=(val==='nenhum'||val==='manter')?'none':'block';}
 function wToggleEspecificar(checked){const el=document.getElementById('wBaseEspecificarTxt');if(el)el.style.display=checked?'block':'none';}
 function wTogglePrestEspecificar(checked){const el=document.getElementById('wPrestEspecificarTxt');if(el)el.style.display=checked?'block':'none';}
