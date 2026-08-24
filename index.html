@@ -3474,15 +3474,15 @@ const REGRAS_PREDEFINIDAS_CODE={
     simples:`def("tarifaCalculada",0);\nif ( obt("tarifaDigitada") > 0)\n   def("valorFrete", (obt("merc_quantKg[]")) * obt("tarifaDigitada"));\ndef("totalPrestacao",  (obt("valorFrete")));`,
     inverso:`def("tarifaCalculada",0);\nif ( obt("tarifaDigitada") > 0)\n   def("valorFrete", (obt("merc_quantKg[]")) * obt("tarifaDigitada"));\nvar inverso = ((100 - obt("aliquota")) /100)\nif ( obt("aliquota") > 0)\n   def("baseCalculo", ((obt("valorFrete") + obt("valoresOutros")) / inverso));\nif ( obt("aliquota") < 1)\n   def("baseCalculo", 0);\nvalor = obt("baseCalculo") * (obt("aliquota")/100);\ndef("valorICMS",valor);\ndef("totalPrestacao",  (obt("valorFrete") + obt("valorICMS")));`,
     soma_icms:`def("tarifaCalculada",0);\nif ( obt("tarifaDigitada") > 0)\n   def("valorFrete", (obt("merc_quantKg[]")) * obt("tarifaDigitada"));\nif ( obt("aliquota") > 0)\n   def("baseCalculo", (obt("valorFrete")));\nif ( obt("aliquota") < 1)\n   def("baseCalculo", 0);\nvalor = obt("baseCalculo") * (obt("aliquota")/100);\ndef("valorICMS",valor);\ndef("totalPrestacao",  (obt("valorFrete") + obt("valorICMS")));`,
-    peso_cubado_gris:`var pesoReal = obt("merc_quantKg[]");\nvar pesoCubado = obt("merc_cubagem[]") * 150;\nvar pesoDeUso = 0;\n\nif (pesoCubado > pesoReal) {\n    pesoDeUso = pesoCubado;\n} else {\n    pesoDeUso = pesoReal;\n}\n\nvar freteBaseTabela = tabelaPrecos.valorFrete;\nvar valorFinalFrete = 0;\n\nif (pesoDeUso > 150) {\n    var kgExcedente = pesoDeUso - 150;\n    var valorDoExcesso = kgExcedente * tabelaPrecos.valorExcesso;\n    valorFinalFrete = freteBaseTabela + valorDoExcesso;\n} else {\n    valorFinalFrete = freteBaseTabela;\n}\n\ndef("valorFrete", valorFinalFrete);\n\nvar vGris = obt("merc_valor[]") * (0.2 / 100);\ndef("Gris", vGris);\n\ndef("totalPrestacao", (\n    obt("valorFrete") + \n    obt("valoresOutros") + \n    obt("valorSeguro") + \n    obt("valorPedagioConhecimento") + \n    obt("diaria") +\n    obt("Gris")\n));`
+    peso_cubado_gris:`var pesoReal = obt("merc_quantKg[]");\nvar pesoCubado = obt("merc_cubagem[]") * 150;\nvar pesoDeUso = 0;\n\nif (pesoCubado > pesoReal) {\n    pesoDeUso = pesoCubado;\n} else {\n    pesoDeUso = pesoReal;\n}\n\nvar freteBaseTabela = tabelaPrecos.valorFrete;\nvar valorFinalFrete = 0;\n\nif (pesoDeUso > 150) {\n    var kgExcedente = pesoDeUso - 150;\n    var valorDoExcesso = kgExcedente * tabelaPrecos.valorExcesso;\n    valorFinalFrete = freteBaseTabela + valorDoExcesso;\n} else {\n    valorFinalFrete = freteBaseTabela;\n}\n\ndef("valorFrete", valorFinalFrete);\n\nvar vGris = obt("merc_valor[]") * (0.2 / 100);\ndef("Gris", vGris);\n\ndef("totalPrestacao", (\n    obt("valorFrete") + \n    obt("valoresOutros") + \n    obt("valorSeguro") + \n    obt("valorPedagioConhecimento") + \n    obt("diaria") +\n    obt("Gris")\n));`,
+    tabela_simples:`def("aliquota", 0);\ndef("baseCalculo", 0);\ndef("valorICMS", 0);\n\nif (obt("tarifaDigitada") > 0)\ndef("valorFrete", (obt("tarifaDigitada")) * obt("merc_quantKg[]")/1000);\n\ndef('totalPrestacao', obt('valorFrete'));`,
+    tabela_icms_demo:`if (obt("tarifaDigitada") > 0)\ndef("valorFrete", (obt("tarifaDigitada")) * obt("merc_quantKg[]")/1000);\n\nif ( obt("aliquota") > 0)\ndef("baseCalculo", (obt("valorFrete")));\n\nif ( obt("aliquota") < 1)\ndef("baseCalculo",0);\n\ndef("valorICMS", obt("baseCalculo") * (obt("aliquota")/100));\n\ndef("totalPrestacao",  (obt("valorFrete")));`
 };
 const CALC_FRETE_MAP={
     nenhum:'Usuario digitara o valorFrete manualmente — NAO gere def("valorFrete") nem def("tarifaCalculada")',
     nao_calcular:'Nao calcular (def("tarifaCalculada",0))',
     tf_pt:'Tarifa final x peso total → def("valorFrete", obt("tarifaDigitada") * obt("merc_quantKg[]"))',
-    tr_pt:'Tarifa real x peso total → def("valorFrete", obt("tarifaCalculada") * obt("merc_quantKg[]"))',
     tf_pt_1000:'Tarifa final x peso total / 1000 → def("valorFrete", obt("tarifaDigitada") * obt("merc_quantKg[]") / 1000)',
-    tr_pt_1000:'Tarifa real x peso total / 1000 → def("valorFrete", obt("tarifaCalculada") * obt("merc_quantKg[]") / 1000)',
     tf_qt:'Tarifa final x quantidade total → def("valorFrete", obt("tarifaDigitada") * obt("merc_quant[]"))',
     tf_vt_doc:'Tarifa final x valor total (Valor do documento) → def("valorFrete", obt("tarifaDigitada") * obt("merc_valor[]"))',
     tf_vt_prod:'Tarifa final x valor total (Valor do produto) → def("valorFrete", obt("tarifaDigitada") * obt("merc_valor[]"))',
@@ -3513,6 +3513,8 @@ function mostrarWizardRegra(queryOriginal){
     <label class="wizard-radio-label"><input type="radio" name="wRegraPre" value="inverso" onchange="wOnRegraPreChange(this.value)"> Cálculo Inverso (ICMS por dentro)</label>
     <label class="wizard-radio-label"><input type="radio" name="wRegraPre" value="soma_icms" onchange="wOnRegraPreChange(this.value)"> Somar ICMS no Total</label>
     <label class="wizard-radio-label"><input type="radio" name="wRegraPre" value="peso_cubado_gris" onchange="wOnRegraPreChange(this.value)"> Frete Calculado Peso KG ou Peso Cubado</label>
+    <label class="wizard-radio-label"><input type="radio" name="wRegraPre" value="tabela_simples" onchange="wOnRegraPreChange(this.value)"> Tabela de Preços (Tarifa × Peso/1000) — Simples Nacional, sem ICMS</label>
+    <label class="wizard-radio-label"><input type="radio" name="wRegraPre" value="tabela_icms_demo" onchange="wOnRegraPreChange(this.value)"> Tabela de Preços (Tarifa × Peso/1000) — ICMS Demonstrativo</label>
   </div>
 </div>
 <div class="wizard-section">
@@ -3538,9 +3540,7 @@ function mostrarWizardRegra(queryOriginal){
       <label class="wizard-radio-label"><input type="radio" name="wCalcFrete" value="nenhum" checked> Nenhum</label>
       <label class="wizard-radio-label"><input type="radio" name="wCalcFrete" value="nao_calcular"> Não calcular</label>
       <label class="wizard-radio-label"><input type="radio" name="wCalcFrete" value="tf_pt"> Tarifa final × peso total</label>
-      <label class="wizard-radio-label"><input type="radio" name="wCalcFrete" value="tr_pt"> Tarifa real × peso total</label>
       <label class="wizard-radio-label"><input type="radio" name="wCalcFrete" value="tf_pt_1000"> Tarifa final × peso total / 1000</label>
-      <label class="wizard-radio-label"><input type="radio" name="wCalcFrete" value="tr_pt_1000"> Tarifa real × peso total / 1000</label>
       <label class="wizard-radio-label"><input type="radio" name="wCalcFrete" value="tf_qt"> Tarifa final × quantidade total</label>
       <label class="wizard-radio-label"><input type="radio" name="wCalcFrete" value="tf_vt_doc"> Tarifa final × valor total <small style="color:#6b7280;">(campo Valor do documento)</small></label>
       <label class="wizard-radio-label"><input type="radio" name="wCalcFrete" value="tf_vt_prod"> Tarifa final × valor total <small style="color:#6b7280;">(campo Valor do produto)</small></label>
