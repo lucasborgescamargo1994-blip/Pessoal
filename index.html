@@ -1951,7 +1951,7 @@ const PROVIDER_PRESETS = {
     custom: { baseUrl:'',models:[],defaultModel:'',chatEndpoint:'/chat/completions', headers:(k)=>({Authorization:`Bearer ${k}`,'Content-Type':'application/json'}), formatRequestBody:(m,msgs,c={})=>({model:m,messages:msgs,temperature:c.temperature||0.3,max_tokens:c.maxTokens||4096,...(c.responseFormat?{response_format:c.responseFormat}:{})}), parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro API');return{text:d.choices?.[0]?.message?.content||'',finishReason:d.choices?.[0]?.finish_reason||'',full:d};} }
 };
 const MODEL_LABELS = {
-    'nvidia/nemotron-3-nano-30b-a3b:free':            'Nemotron Nano 30B (secundário)',
+    'nvidia/nemotron-3-super-120b-a12b:free':         'Nemotron 3 Super (secundário)',
     'north-mini-code:free':                           'North Mini Code (terceiro)',
     'nvidia/nemotron-3-ultra-550b-a55b:free':         'Nemotron Ultra 550B ⭐ (primário)',
     'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free': 'Nemotron Nano 30B Reasoning',
@@ -4630,7 +4630,7 @@ async function gerarRespostaSefaz(codigo, tipoDoc) {
         renderizarCardRejeicaoLocal(re, da, li);
         adicionarMensagemNaConversa('ai', `Rejeição ${re['Código']} (${re['Tipo Doc']}): ${re['Significado']}`);
     } else {
-        appendMessage('ai', `❌ Rejeição <b>${codigo}</b> (${tipoDoc}) não encontrada no manual interno. Verifique diretamente no portal SEFAZ ou entre em contato com o suporte Tecnospeed.`);
+        appendMessage('ai', `❌ Rejeição <b>${codigo}</b> (${tipoDoc}) não encontrada no manual interno. Verifique diretamente no portal SEFAZ ou entre em contato com seu líder de equipe.`);
         adicionarMensagemNaConversa('ai', `Rejeição ${codigo} (${tipoDoc}) não encontrada no manual.`);
     }
 }
