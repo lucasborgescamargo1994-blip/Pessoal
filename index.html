@@ -1615,8 +1615,17 @@ async function btnWelcomeRegra() {
     adicionarMensagemNaConversa('user', 'Criar Regra');
     logSearch('Criar Regra', true);
     const _tipo = await perguntarTipoRegra();
-    if (_tipo === 'cte') mostrarWizardRegra('');
-    else if (_tipo === 'contrato') mostrarWizardContrato('');
+    if (_tipo === 'cte') {
+        const _modoCte = await perguntarModoCte();
+        if (_modoCte === 'dnd') mostrarWizardRegraDnd('');
+        else if (_modoCte === 'classico') mostrarWizardRegra('');
+    }
+    else if (_tipo === 'contrato') {
+        const _modo = await perguntarModoContrato();
+        if (_modo === 'dnd') mostrarWizardContratoDnd('');
+        else if (_modo === 'classico') mostrarWizardContrato('');
+    }
+    else if (_tipo === 'faturamento') mostrarWizardFaturamento('');
 }
 function btnWelcomeRelatorios() {
     const welcome = document.getElementById('welcomeMsg');
@@ -2715,7 +2724,7 @@ async function handleParametrosFuncionalidades() {
     input.placeholder = 'Digite sua dúvida...';
     appendMessage('user', `⚙️ ${query}`);
     adicionarMensagemNaConversa('user', query);
-    logSearch(query, true);
+    logSearch('Assistente de Parâmetros e Funcionalidades - ' + query, true);
 
     const ld = appendLoadingCard('Consultando Parâmetros e Funcionalidades...');
 
@@ -3026,8 +3035,19 @@ async function handleChat() {
         const _rr = await perguntarAuxilioRegra();
         if (_rr === 'sim') {
             const _tipo = await perguntarTipoRegra();
-            if (_tipo === 'cte') { logSearch(query, true); mostrarWizardRegra(query); return; }
-            if (_tipo === 'contrato') { logSearch(query, true); mostrarWizardContrato(query); return; }
+            if (_tipo === 'cte') {
+                const _modoCte = await perguntarModoCte();
+                if (_modoCte === 'dnd') { logSearch(query, true); mostrarWizardRegraDnd(query); return; }
+                if (_modoCte === 'classico') { logSearch(query, true); mostrarWizardRegra(query); return; }
+                return;
+            }
+            if (_tipo === 'contrato') {
+                const _modo = await perguntarModoContrato();
+                if (_modo === 'dnd') { logSearch(query, true); mostrarWizardContratoDnd(query); return; }
+                if (_modo === 'classico') { logSearch(query, true); mostrarWizardContrato(query); return; }
+                return;
+            }
+            if (_tipo === 'faturamento') { logSearch(query, true); mostrarWizardFaturamento(query); return; }
             return;
         }
         // 'nao' → continua busca normal no banco
@@ -3461,13 +3481,43 @@ def("saldo", valor - obt("valorAdiantamento"));
 def("resultado", obt("totalPrestacaoTerceiraAba") - obt("valorTotalOrigem") );
 `;
 
+const CONTEXTO_FATURAMENTO = `
+Exemplo de regra padrão de faturamento:
+def("totalPrestacao", obt('freteValor') + obt('valorICMS'));
+
+Campos disponíveis no faturamento:
+notaFiscal, freteValor, valorICMS, valoresOutros, valoresPedagio, outrosDescontos, pesoColeta, pesoChegadaReal, descontoQuebraPesoReal, totalPrestacao, tolerancia, tarifaMotoristaDigitada, regraFrete
+
+Para regras de faturamento também é possível utilizar os seguintes campos do conhecimento (Ct-e):
+regraFrete, clienteCTRC_id, tiposTaloes_id, tipoQuebra
+cidadeColeta, estadoColeta, nomeRemetente
+cidadeDestino, estadoDestino
+pesoMercadorias, quantMercadorias, valorMercadorias
+totalPrestacaoCT, totalServicoCT
+
+REGRA DE SINTAXE OBRIGATÓRIA:
+- Campos do tipo TEXTO usam o método $V — exemplo: $V('tipoQuebra')
+- Campos do tipo VALOR (numérico) usam o método obt — exemplo: obt('totalPrestacaoCT');
+- Valores de "outros valores" do conhecimento usam obt('outrosValores[nomeInterno]') — troque nomeInterno pelo campo pedido.
+`;
+
 // ─── WIZARD DE CRIAÇÃO DE REGRAS ───────────────────────────
 let _regraWizardResolve=null,_wizardQueryOriginal='',_wizardCteBase64=null,_wizardTabelaBase64=null;
 function _resolverEscolhaRegra(e){const c=document.getElementById('regraEscolhaCard');if(c)c.remove();if(_regraWizardResolve){_regraWizardResolve(e);_regraWizardResolve=null;}}
 function perguntarAuxilioRegra(){return new Promise(resolve=>{_regraWizardResolve=resolve;const s=document.getElementById('chatStream');const card=document.createElement('div');card.id='regraEscolhaCard';card.className='answer-card';card.innerHTML=`<div style="background:#f0fdf4;padding:8px 15px;border-bottom:1px solid #bbf7d0;font-size:11px;color:#166534;font-weight:600;">⚙️ Criação de Regras</div><div class="answer-section"><div class="section-content"><div style="font-size:13px;color:#374151;margin-bottom:10px;">Precisa de auxílio para criar/editar a regra?</div><div style="display:flex;gap:10px;"><button onclick="_resolverEscolhaRegra('sim')" style="flex:1;padding:10px 16px;background:#16a34a;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">✅ Sim — abrir assistente</button><button onclick="_resolverEscolhaRegra('nao')" style="flex:1;padding:10px 16px;background:#6b7280;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">🔍 Não — buscar no banco</button></div></div></div>`;s.appendChild(card);scrollToBottom(true);});}
 let _tipoRegraResolve=null,_wizardContratoQuery='';
 function _resolverTipoRegra(tipo){const c=document.getElementById('tipoRegraCard');if(c)c.remove();if(_tipoRegraResolve){_tipoRegraResolve(tipo);_tipoRegraResolve=null;}}
-function perguntarTipoRegra(){return new Promise(resolve=>{_tipoRegraResolve=resolve;const s=document.getElementById('chatStream');const card=document.createElement('div');card.id='tipoRegraCard';card.className='answer-card';card.innerHTML=`<div style="background:#f5f3ff;padding:8px 15px;border-bottom:1px solid #ddd6fe;font-size:11px;color:#5b21b6;font-weight:600;">⚙️ Tipo de Regra</div><div class="answer-section"><div class="section-content"><div style="font-size:13px;color:#374151;margin-bottom:10px;">Para qual tipo de regra precisa de auxílio?</div><div style="display:flex;gap:10px;"><button onclick="_resolverTipoRegra('cte')" style="flex:1;padding:10px 16px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">📄 Ct-e / Conhecimento</button><button onclick="_resolverTipoRegra('contrato')" style="flex:1;padding:10px 16px;background:#7c3aed;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">🚛 Contrato de Frete</button></div></div></div>`;s.appendChild(card);scrollToBottom(true);});}
+function perguntarTipoRegra(){return new Promise(resolve=>{_tipoRegraResolve=resolve;const s=document.getElementById('chatStream');const card=document.createElement('div');card.id='tipoRegraCard';card.className='answer-card';card.innerHTML=`<div style="background:#f5f3ff;padding:8px 15px;border-bottom:1px solid #ddd6fe;font-size:11px;color:#5b21b6;font-weight:600;">⚙️ Tipo de Regra</div><div class="answer-section"><div class="section-content"><div style="font-size:13px;color:#374151;margin-bottom:10px;">Para qual tipo de regra precisa de auxílio?</div><div style="display:flex;gap:10px;"><button onclick="_resolverTipoRegra('cte')" style="flex:1;padding:10px 16px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">📄 Ct-e / Conhecimento</button><button onclick="_resolverTipoRegra('contrato')" style="flex:1;padding:10px 16px;background:#7c3aed;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">🚛 Contrato de Frete</button><button onclick="_resolverTipoRegra('faturamento')" style="flex:1;padding:10px 16px;background:#059669;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">💰 Faturamento</button></div></div></div>`;s.appendChild(card);scrollToBottom(true);});}
+let _modoContratoResolve=null;
+function _resolverModoContrato(modo){const c=document.getElementById('modoContratoCard');if(c)c.remove();if(_modoContratoResolve){_modoContratoResolve(modo);_modoContratoResolve=null;}}
+// Pergunta se o usuário quer o montador novo (arrastar campos) ou o formulário clássico de
+// Contrato de Frete — mantém os dois caminhos pra quem já está acostumado com o antigo.
+function perguntarModoContrato(){return new Promise(resolve=>{_modoContratoResolve=resolve;const s=document.getElementById('chatStream');const card=document.createElement('div');card.id='modoContratoCard';card.className='answer-card';card.innerHTML=`<div style="background:#f5f3ff;padding:8px 15px;border-bottom:1px solid #ddd6fe;font-size:11px;color:#5b21b6;font-weight:600;">🚛 Contrato de Frete</div><div class="answer-section"><div class="section-content"><div style="font-size:13px;color:#374151;margin-bottom:10px;">Como prefere montar a regra?</div><div style="display:flex;gap:10px;flex-wrap:wrap;"><button onclick="_resolverModoContrato('dnd')" style="flex:1;min-width:180px;padding:10px 16px;background:#7c3aed;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">🧩 Nova forma — arrastar campos</button><button onclick="_resolverModoContrato('classico')" style="flex:1;min-width:180px;padding:10px 16px;background:#6b7280;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">📋 Formulário clássico</button></div></div></div>`;s.appendChild(card);scrollToBottom(true);});}
+let _modoCteResolve=null;
+function _resolverModoCte(modo){const c=document.getElementById('modoCteCard');if(c)c.remove();if(_modoCteResolve){_modoCteResolve(modo);_modoCteResolve=null;}}
+// Mesma escolha do Contrato de Frete, agora pro Ct-e — mantém o formulário clássico (com anexo
+// de prints) disponível pra quem já está acostumado, ao lado do novo montador de arrastar campos.
+function perguntarModoCte(){return new Promise(resolve=>{_modoCteResolve=resolve;const s=document.getElementById('chatStream');const card=document.createElement('div');card.id='modoCteCard';card.className='answer-card';card.innerHTML=`<div style="background:#eff6ff;padding:8px 15px;border-bottom:1px solid #bfdbfe;font-size:11px;color:#1e40af;font-weight:600;">📄 Ct-e / Conhecimento</div><div class="answer-section"><div class="section-content"><div style="font-size:13px;color:#374151;margin-bottom:10px;">Como prefere montar a regra?</div><div style="display:flex;gap:10px;flex-wrap:wrap;"><button onclick="_resolverModoCte('dnd')" style="flex:1;min-width:180px;padding:10px 16px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">🧩 Nova forma — arrastar campos</button><button onclick="_resolverModoCte('classico')" style="flex:1;min-width:180px;padding:10px 16px;background:#6b7280;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">📋 Formulário clássico</button></div></div></div>`;s.appendChild(card);scrollToBottom(true);});}
 
 const REGRAS_PREDEFINIDAS_CODE={
     icms_demo:`def("tarifaCalculada",0);\nif ( obt("tarifaDigitada") > 0)\n   def("valorFrete", (obt("merc_quantKg[]")) * obt("tarifaDigitada")/1000);\nif ( obt("aliquota") > 0)\n   def("baseCalculo", (obt("valorFrete")));\nif ( obt("aliquota") < 1)\n   def("baseCalculo",0);\nvalor = obt("baseCalculo") * (obt("aliquota")/100);\ndef("valorICMS",valor);\ndef("totalPrestacao",  (obt("valorFrete")));`,
@@ -3754,14 +3804,428 @@ async function enviarWizardRegra(){
     }else{
         userContent='Monte a regra conforme as configuracoes abaixo.\n'+configTxt;
     }
-    const wCard=document.getElementById('wizardRegraCard');if(wCard)wCard.remove();
+    const wCard=document.getElementById('wizardRegraCard');
+    const _estadoForm=wCard?_capturarEstadoForm(wCard):null;
+    const _cteExtra={cteB64:_wizardCteBase64,tabelaB64:_wizardTabelaBase64};
+    if(wCard)wCard.remove();
     appendMessage('system','⚙️ <strong>Gerando regra personalizada...</strong>');
     const ld=appendLoadingCard('⚙️ Elaborando regra de frete...');
     const li=Date.now();
     try{
         const result=await callMCPSemPensamento([{role:'system',content:sysMsg},{role:'user',content:userContent}],{temperature:0.15,maxTokens:3000});
         ld.remove();
-        renderizarCardRegra(result.text,li,result._iaUsada,result._iaModelo);
+        renderizarCardRegra(result.text,li,result._iaUsada,result._iaModelo,'cte',{query:_wizardQueryOriginal,estadoForm:_estadoForm,cteExtra:_cteExtra});
+        adicionarMensagemNaConversa('ai',result.text);
+    }catch(e){ld.remove();appendMessage('ai','❌ Erro ao gerar regra. Tente novamente.');}
+}
+
+// ─── Ct-e / Conhecimento — Montador visual (arrastar e soltar) ───
+// Mesma lógica/mecânica do montador de Contrato de Frete e Faturamento, adaptada aos campos de
+// Ct-e. Reaproveita os mesmos helpers genéricos (_fatTermoParaExpressao, _recalcExprDeTermos,
+// _termoParaLabel, _clonarBlocos, _seedTermosBase, _parseRegraParaBlocos, _decomporExpressao).
+const CTE_CAMPOS=[
+    {label:'Tarifa Final',campo:'tarifaDigitada'},
+    {label:'Tarifa Real (calculada)',campo:'tarifaCalculada'},
+    {label:'Frete Valor',campo:'valorFrete'},
+    {label:'Base Cálculo ICMS',campo:'baseCalculo'},
+    {label:'Alíquota ICMS',campo:'aliquota'},
+    {label:'Valor ICMS',campo:'valorICMS'},
+    {label:'Outros',campo:'valoresOutros'},
+    {label:'Pedágio',campo:'valorPedagioConhecimento'},
+    {label:'Gris',campo:'Gris'},
+    {label:'Diária',campo:'diaria'},
+    {label:'Seguro',campo:'valorSeguro'},
+    {label:'Total Serviço',campo:'totalServico'},
+    {label:'Total Prestação',campo:'totalPrestacao'},
+    {label:'Valor total das notas fiscais',campo:'merc_valor[]'},
+    {label:'Valor total do peso das Notas fiscais',campo:'merc_quantKg[]'},
+    {label:'Quantidade total das Notas fiscais',campo:'merc_quant[]'}
+];
+let _wizardRegraDndQuery='';
+function mostrarWizardRegraDnd(queryOriginal){
+    _wizardRegraDndQuery=queryOriginal;
+    window._cteAcaoSel='+';
+    window._cteBlocos=[{destino:'totalPrestacao',expr:null}];
+    window._cteExtras=[];
+    const s=document.getElementById('chatStream');
+    const wCard=document.getElementById('wizardRegraDndCard');if(wCard)wCard.remove();
+    const card=document.createElement('div');
+    card.id='wizardRegraDndCard';
+    card.className='answer-card';
+    card.style.cssText='max-height:680px;overflow-y:auto;';
+    const chipsHtml=CTE_CAMPOS.map(c=>`<span class="_cte-chip" draggable="true" data-campo="${c.campo}" title="${escapeHtml(c.label)}" ondragstart="_cteDragStart(event)" style="display:inline-block;padding:6px 12px;background:white;border:1.5px solid #d1d5db;border-radius:16px;font-size:12px;font-family:monospace;cursor:grab;user-select:none;">${c.campo}</span>`).join('');
+    card.innerHTML=`<div style="background:#eff6ff;padding:10px 15px;border-bottom:1px solid #bfdbfe;font-size:12px;color:#1e40af;font-weight:700;">📄 Assistente — Ct-e / Conhecimento <span style="font-weight:500;">(arrastar campos)</span></div>
+<div style="padding:12px 15px 4px;">
+  <div class="wizard-section">
+    <div class="wizard-label">📋 Colar regra existente do sistema</div>
+    <textarea id="wCteColarRegra" class="wizard-textarea" placeholder="Cole aqui uma regra já pronta do sistema..." style="min-height:90px;font-family:monospace;font-size:11.5px;" oninput="_cteColarRegraInput()"></textarea>
+    <div style="font-size:10.5px;color:#2563eb;margin-top:4px;">🔄 A área de montagem abaixo é atualizada automaticamente conforme você cola ou edita aqui.</div>
+  </div>
+  <div class="wizard-section">
+    <div class="wizard-label">📋 Regras pré-existentes (padrão)</div>
+    <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Clique pra gerar direto, sem IA:</div>
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      <button onclick="_cteUsarPredefinida('icms_demo')" style="width:100%;text-align:left;padding:9px 12px;background:#f9fafb;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12.5px;color:#374151;font-weight:600;">📐 ICMS Demonstrativo</button>
+      <button onclick="_cteUsarPredefinida('simples')" style="width:100%;text-align:left;padding:9px 12px;background:#f9fafb;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12.5px;color:#374151;font-weight:600;">📐 Simples Nacional</button>
+      <button onclick="_cteUsarPredefinida('inverso')" style="width:100%;text-align:left;padding:9px 12px;background:#f9fafb;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12.5px;color:#374151;font-weight:600;">📐 Cálculo Inverso (ICMS por dentro)</button>
+      <button onclick="_cteUsarPredefinida('soma_icms')" style="width:100%;text-align:left;padding:9px 12px;background:#f9fafb;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12.5px;color:#374151;font-weight:600;">📐 Somar ICMS no Total</button>
+      <button onclick="_cteUsarPredefinida('peso_cubado_gris')" style="width:100%;text-align:left;padding:9px 12px;background:#f9fafb;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12.5px;color:#374151;font-weight:600;">📐 Frete Calculado Peso KG ou Peso Cubado</button>
+      <button onclick="_cteUsarPredefinida('tabela_simples')" style="width:100%;text-align:left;padding:9px 12px;background:#f9fafb;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12.5px;color:#374151;font-weight:600;">📐 Tabela de Preços (Tarifa × Peso/1000) — Simples Nacional, sem ICMS</button>
+      <button onclick="_cteUsarPredefinida('tabela_icms_demo')" style="width:100%;text-align:left;padding:9px 12px;background:#f9fafb;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12.5px;color:#374151;font-weight:600;">📐 Tabela de Preços (Tarifa × Peso/1000) — ICMS Demonstrativo</button>
+    </div>
+  </div>
+  <div class="wizard-section" style="border:none;position:sticky;top:0;z-index:2;background:var(--surface);border-bottom:2px solid #bfdbfe;box-shadow:0 4px 8px -6px rgba(0,0,0,.2);">
+    <div class="wizard-label">🧩 Monte sua regra arrastando os campos</div>
+    <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">1. Selecione a ação:</div>
+    <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
+      <button class="_cte-acao-btn" data-acao="+" onclick="_cteSelecionarAcao('+')" style="padding:8px 14px;background:var(--primary);color:white;border:2px solid var(--primary);border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➕ Somar</button>
+      <button class="_cte-acao-btn" data-acao="-" onclick="_cteSelecionarAcao('-')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➖ Subtrair</button>
+      <button class="_cte-acao-btn" data-acao="*" onclick="_cteSelecionarAcao('*')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">✖️ Multiplicar</button>
+      <button class="_cte-acao-btn" data-acao="/" onclick="_cteSelecionarAcao('/')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➗ Dividir</button>
+      <span style="width:1px;background:#e5e7eb;margin:2px 2px;"></span>
+      <button class="_cte-acao-btn" data-acao=">" onclick="_cteSelecionarAcao('&gt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt; Maior que</button>
+      <button class="_cte-acao-btn" data-acao="<" onclick="_cteSelecionarAcao('&lt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt; Menor que</button>
+      <button class="_cte-acao-btn" data-acao="==" onclick="_cteSelecionarAcao('==')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">== Igual</button>
+      <button class="_cte-acao-btn" data-acao=">=" onclick="_cteSelecionarAcao('&gt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt;= Maior ou igual</button>
+      <button class="_cte-acao-btn" data-acao="<=" onclick="_cteSelecionarAcao('&lt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt;= Menor ou igual</button>
+    </div>
+    <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">2. Campos disponíveis (arraste para a área abaixo):</div>
+    <div id="wCteCamposPalette" style="display:flex;flex-wrap:wrap;gap:6px;padding:10px;border:1.5px dashed #d1d5db;border-radius:8px;margin-bottom:10px;max-height:110px;overflow-y:auto;">${chipsHtml}</div>
+    <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Ou digite um valor numérico (ex: 100, 0.02) e arraste-o pra área de montagem — útil pra dividir/multiplicar um campo por um número fixo:</div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <input type="text" id="wCteValorInput" inputmode="decimal" placeholder="Ex: 100" oninput="_cteValorInputChange()" style="width:110px;padding:7px 10px;border:1.5px solid #d1d5db;border-radius:6px;font-size:12px;font-family:monospace;">
+      <span id="wCteValorChip" draggable="true" ondragstart="_cteValorDragStart(event)" style="display:inline-flex;align-items:center;gap:4px;padding:7px 12px;background:#fff7ed;border:1.5px solid #fdba74;border-radius:16px;font-size:12px;font-family:monospace;cursor:not-allowed;user-select:none;color:#9a3412;opacity:.4;transition:opacity .15s;">🔢 Arrastar valor</span>
+    </div>
+  </div>
+  <div class="wizard-section" style="border:none;">
+    <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">3. Área de montagem — arraste um campo (ou valor) sobre outro pra combinar com a ação selecionada:</div>
+    <div id="wCteBlocosContainer"></div>
+    <button onclick="_cteAdicionarBloco()" style="width:100%;padding:8px;background:white;border:1.5px dashed #3b82f6;border-radius:8px;color:#1e40af;cursor:pointer;font-size:12.5px;font-weight:700;margin-bottom:12px;">➕ Definir mais um campo</button>
+    <div id="wCteExtrasContainer"></div>
+    <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Prévia da regra (uma linha por campo definido):</div>
+    <div id="wCteRegraPreview" style="padding:8px 10px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;font-family:monospace;font-size:11.5px;color:#374151;margin-bottom:10px;white-space:pre-wrap;word-break:break-all;">def("totalPrestacao", );</div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="_cteLimparCanvas()" style="padding:8px 14px;background:#fef2f2;color:#991b1b;border:1.5px solid #fecaca;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:600;">🗑️ Limpar tudo</button>
+      <button onclick="_cteGerarRegraCustom()" style="flex:1;padding:8px 14px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;">🚀 Gerar Regra Montada</button>
+    </div>
+  </div>
+  <div class="wizard-section" style="border:none;border-top:1px solid #e5e7eb;padding-top:14px;">
+    <div class="wizard-label">✏️ Ou descreva em texto livre <span style="font-size:10px;color:#9ca3af;font-weight:400;">(a IA monta — use pra editar uma regra existente ou algo fora do padrão de contas simples)</span></div>
+    <textarea id="wCteRegraCola" class="wizard-textarea" placeholder="Cole aqui a regra existente que deseja editar (opcional)..." style="min-height:60px;"></textarea>
+    <textarea id="wCteDescricao" class="wizard-textarea" placeholder="Descreva o que necessita..." style="min-height:70px;margin-top:8px;"></textarea>
+    <button id="wCteBtnEnviar" class="wizard-submit" onclick="enviarWizardRegraDnd()" style="margin-top:8px;">🚀 Gerar com IA</button>
+  </div>
+</div>`;
+    s.appendChild(card);
+    _cteRenderBlocos();
+    scrollToBottom(true);
+}
+function _cteSelecionarAcao(acao){
+    window._cteAcaoSel=acao;
+    document.querySelectorAll('._cte-acao-btn').forEach(b=>{
+        const ativo=b.dataset.acao===acao;
+        b.style.background=ativo?'var(--primary)':'#f3f4f6';
+        b.style.color=ativo?'white':'#374151';
+        b.style.borderColor=ativo?'var(--primary)':'#e5e7eb';
+    });
+}
+function _cteDragStart(e){
+    e.dataTransfer.setData('text/plain','campo:'+e.target.dataset.campo);
+    e.dataTransfer.effectAllowed='copy';
+}
+function _cteValorInputChange(){
+    const val=(document.getElementById('wCteValorInput')?.value||'').trim();
+    const chip=document.getElementById('wCteValorChip');
+    if(!chip)return;
+    const valido=val!==''&&!isNaN(Number(val.replace(',','.')));
+    chip.style.opacity=valido?'1':'.4';
+    chip.style.cursor=valido?'grab':'not-allowed';
+}
+function _cteValorDragStart(e){
+    const val=(document.getElementById('wCteValorInput')?.value||'').trim();
+    const norm=val.replace(',','.');
+    if(!val||isNaN(Number(norm))){e.preventDefault();return;}
+    e.dataTransfer.setData('text/plain','valor:'+norm);
+    e.dataTransfer.effectAllowed='copy';
+}
+function _cteRenderBlocos(){
+    const cont=document.getElementById('wCteBlocosContainer');
+    if(!cont)return;
+    cont.innerHTML=window._cteBlocos.map((bloco,idx)=>{
+        let canvasConteudo;
+        if(bloco.termos&&bloco.termos.length){
+            canvasConteudo=bloco.termos.map((t,tIdx)=>{
+                const sep=tIdx>0?`<span style="font-size:13px;color:#2563eb;font-weight:700;margin:0 3px;">${escapeHtml(t.acao||'')}</span>`:'';
+                const label=_termoParaLabel(t.termo);
+                return `${sep}<span title="${escapeHtml(t.termo)}" style="display:inline-flex;align-items:center;gap:3px;padding:3px 4px 3px 9px;margin:2px 0;background:white;border:1px solid #93c5fd;border-radius:12px;font-size:11.5px;font-family:monospace;color:#1e40af;">${escapeHtml(label)}<button onclick="_cteRemoverTermo(${idx},${tIdx})" title="Remover este item" style="border:none;background:none;color:#2563eb;cursor:pointer;font-size:13px;padding:0 4px;line-height:1;font-weight:700;">✕</button></span>`;
+            }).join('');
+        }else if(bloco.expr){
+            canvasConteudo=`<span style="font-family:monospace;font-size:12.5px;color:#1e40af;word-break:break-all;">${escapeHtml(bloco.expr)}</span>`;
+        }else{
+            canvasConteudo=`<span style="color:#9ca3af;font-size:12px;">Arraste campos aqui</span>`;
+        }
+        const btnLimparExpr=bloco.expr
+            ?`<div style="text-align:right;margin-top:4px;"><button onclick="_cteLimparExprBloco(${idx})" title="Remover tudo o que foi arrastado aqui (mantém o nome do campo)" style="padding:3px 8px;background:none;border:1px dashed #93c5fd;border-radius:6px;color:#2563eb;cursor:pointer;font-size:10.5px;">🧹 limpar o que foi arrastado</button></div>`
+            :'';
+        const btnRemover=window._cteBlocos.length>1
+            ?`<button onclick="_cteRemoverBloco(${idx})" title="Remover esta definição" style="padding:7px 10px;background:#fef2f2;color:#991b1b;border:1.5px solid #fecaca;border-radius:6px;cursor:pointer;font-size:12px;">🗑️</button>`
+            :'';
+        let condSecao=`<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:#92400e;cursor:pointer;margin:6px 0 8px;">
+                <input type="checkbox" ${bloco.temCondicao?'checked':''} onchange="_cteToggleCondicao(${idx},this.checked)"> Definir condição?
+            </label>`;
+        if(bloco.temCondicao){
+            const condTermos=(bloco.condicao&&bloco.condicao.termos)||[];
+            const condConteudo=condTermos.length
+                ?condTermos.map((t,tIdx)=>{
+                    const sep=tIdx>0?`<span style="font-size:13px;color:#b45309;font-weight:700;margin:0 3px;">${escapeHtml(t.acao||'')}</span>`:'';
+                    const label=_termoParaLabel(t.termo);
+                    return `${sep}<span title="${escapeHtml(t.termo)}" style="display:inline-flex;align-items:center;gap:3px;padding:3px 4px 3px 9px;margin:2px 0;background:white;border:1px solid #fcd34d;border-radius:12px;font-size:11.5px;font-family:monospace;color:#92400e;">${escapeHtml(label)}<button onclick="_cteRemoverTermoCondicao(${idx},${tIdx})" title="Remover este item" style="border:none;background:none;color:#b45309;cursor:pointer;font-size:13px;padding:0 4px;line-height:1;font-weight:700;">✕</button></span>`;
+                }).join('')
+                :`<span style="color:#b45309;font-size:12px;">Arraste campos aqui pra montar a condição</span>`;
+            condSecao+=`<div style="margin:0 0 10px;padding-left:8px;border-left:3px solid #fbbf24;">
+                <div style="font-size:10.5px;color:#92400e;margin-bottom:4px;">Condição — SE isso for verdade, o campo é definido:</div>
+                <div ondragover="_cteCanvasDragOver(event)" ondrop="_cteCondicaoDrop(event,${idx})" style="min-height:44px;padding:8px;border:1.5px dashed #f59e0b;border-radius:8px;background:#fffbeb;display:flex;align-items:center;flex-wrap:wrap;">
+                    ${condConteudo}
+                </div>
+            </div>`;
+        }
+        return `<div style="border:1.5px solid #e5e7eb;border-radius:8px;padding:10px;margin-bottom:10px;">
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+                <label style="font-size:11px;color:#374151;white-space:nowrap;">Campo a definir:</label>
+                <input type="text" value="${escapeHtml(bloco.destino)}" placeholder="digite ou arraste um campo aqui"
+                    ondragover="_cteDestinoDragOver(event)" ondrop="_cteDestinoDrop(event,${idx})" oninput="_cteDestinoInput(event,${idx})"
+                    style="flex:1;padding:7px 10px;border:1.5px solid #3b82f6;border-radius:6px;font-size:12px;font-family:monospace;background:#eff6ff;color:#1e40af;font-weight:600;outline:none;">
+                ${btnRemover}
+            </div>
+            ${condSecao}
+            <div ondragover="_cteCanvasDragOver(event)" ondrop="_cteCanvasDrop(event,${idx})" style="min-height:50px;padding:10px;border:1.5px dashed #3b82f6;border-radius:8px;background:#eff6ff;display:flex;align-items:center;flex-wrap:wrap;">
+                ${canvasConteudo}
+            </div>
+            ${btnLimparExpr}
+        </div>`;
+    }).join('');
+    _cteRenderExtras();
+    _cteAtualizarPreview();
+}
+function _cteCanvasDragOver(e){e.preventDefault();e.dataTransfer.dropEffect='copy';}
+function _cteCanvasDrop(e,idx){
+    e.preventDefault();
+    const raw=e.dataTransfer.getData('text/plain');
+    if(!raw)return;
+    const termo=_fatTermoParaExpressao(raw);
+    if(termo===null)return;
+    const bloco=window._cteBlocos[idx];
+    _seedTermosBase(bloco);
+    bloco.termos.push({termo, acao: bloco.termos.length?(window._cteAcaoSel||'+'):null});
+    _recalcExprDeTermos(bloco);
+    _cteRenderBlocos();
+}
+// Liga/desliga a condição de um campo — ao ligar, cria a área de montagem da condição (vazia se
+// for a primeira vez); ao desligar, só esconde (não perde o que já tinha montado, caso reative).
+function _cteToggleCondicao(idx,marcado){
+    const bloco=window._cteBlocos[idx];
+    if(!bloco)return;
+    bloco.temCondicao=marcado;
+    if(marcado&&!bloco.condicao)bloco.condicao={termos:[],expr:null};
+    _cteRenderBlocos();
+}
+// Arrastar campo/valor pra área de montagem da CONDIÇÃO (mesmo mecanismo do valor, só que guarda
+// em bloco.condicao ao invés de no próprio bloco) — usa a mesma ação selecionada (>, <, ==, etc.).
+function _cteCondicaoDrop(e,idx){
+    e.preventDefault();
+    const raw=e.dataTransfer.getData('text/plain');
+    if(!raw)return;
+    const termo=_fatTermoParaExpressao(raw);
+    if(termo===null)return;
+    const bloco=window._cteBlocos[idx];
+    if(!bloco.condicao)bloco.condicao={termos:[],expr:null};
+    bloco.condicao.termos.push({termo, acao: bloco.condicao.termos.length?(window._cteAcaoSel||'+'):null});
+    _recalcExprDeTermos(bloco.condicao);
+    _cteRenderBlocos();
+}
+function _cteRemoverTermoCondicao(idx,termoIdx){
+    const bloco=window._cteBlocos[idx];
+    if(!bloco||!bloco.condicao||!bloco.condicao.termos)return;
+    bloco.condicao.termos.splice(termoIdx,1);
+    _recalcExprDeTermos(bloco.condicao);
+    _cteRenderBlocos();
+}
+function _cteDestinoDragOver(e){e.preventDefault();e.dataTransfer.dropEffect='copy';}
+function _cteDestinoDrop(e,idx){
+    e.preventDefault();
+    const raw=e.dataTransfer.getData('text/plain');
+    if(!raw)return;
+    const nome=raw.startsWith('campo:')?raw.slice(6):raw.startsWith('valor:')?raw.slice(6):raw;
+    window._cteBlocos[idx].destino=nome;
+    _cteRenderBlocos();
+}
+function _cteDestinoInput(e,idx){
+    window._cteBlocos[idx].destino=e.target.value;
+    _cteAtualizarPreview();
+}
+function _cteAdicionarBloco(){
+    window._cteBlocos.push({destino:'',expr:null});
+    _cteRenderBlocos();
+}
+function _cteRemoverBloco(idx){
+    if(window._cteBlocos.length<=1)return;
+    window._cteBlocos.splice(idx,1);
+    _cteRenderBlocos();
+}
+// Remove só um item arrastado dentro do campo (idx = bloco, termoIdx = posição do item na área de
+// montagem) — o resto do que já estava montado nesse campo continua intacto, sem perder tudo.
+function _cteRemoverTermo(idx,termoIdx){
+    const bloco=window._cteBlocos[idx];
+    if(!bloco||!bloco.termos)return;
+    bloco.termos.splice(termoIdx,1);
+    _recalcExprDeTermos(bloco);
+    _cteRenderBlocos();
+}
+// Limpa só o que foi arrastado num campo (mantém o nome do "Campo a definir" e os demais campos).
+function _cteLimparExprBloco(idx){
+    const bloco=window._cteBlocos[idx];
+    if(!bloco)return;
+    bloco.expr=null;
+    bloco.termos=[];
+    _cteRenderBlocos();
+}
+// Linhas "extras" vêm de uma regra colada/pré-definida carregada no canvas (ver _parseRegraParaBlocos)
+// que não cabem no modelo campo=expressão (chamada de método, bloco if) — mostradas como estão,
+// só de leitura, com a posição onde entram na regra final (antes de qual campo, ou no final).
+function _cteRenderExtras(){
+    const cont=document.getElementById('wCteExtrasContainer');
+    if(!cont)return;
+    const extras=window._cteExtras||[];
+    if(!extras.length){ cont.innerHTML=''; return; }
+    cont.innerHTML=extras.map((ex,idx)=>{
+        const posLabel=ex.antesDe?`executa antes de definir <b>"${escapeHtml(ex.antesDe)}"</b>`:'executa no final da regra';
+        return `<div style="border:1.5px dashed #f59e0b;border-radius:8px;padding:8px 10px;margin-bottom:8px;background:#fffbeb;">
+            <div style="font-size:10.5px;color:#92400e;margin-bottom:4px;">⚡ Linha extra da regra original (mantida como está — ${posLabel}):</div>
+            <pre style="margin:0 0 6px;font-family:monospace;font-size:11.5px;color:#78350f;white-space:pre-wrap;word-break:break-all;">${escapeHtml(ex.linha)}</pre>
+            <button onclick="_cteRemoverExtra(${idx})" style="padding:4px 10px;background:#fef2f2;color:#991b1b;border:1px solid #fecaca;border-radius:6px;cursor:pointer;font-size:11px;">🗑️ Remover esta linha</button>
+        </div>`;
+    }).join('');
+}
+function _cteRemoverExtra(idx){
+    if(!window._cteExtras)return;
+    window._cteExtras.splice(idx,1);
+    _cteRenderExtras();
+    _cteAtualizarPreview();
+}
+function _cteLinhasValidas(){
+    const extras=window._cteExtras||[];
+    const usadas=new Set(); // evita repetir a mesma extra quando 2 campos têm o mesmo nome (comum
+    // no Ct-e, ex.: "baseCalculo" definido condicionalmente duas vezes) — cada extra só entra uma
+    // vez, na primeira ocorrência ainda não usada daquele nome, na ordem em que apareciam na regra.
+    const linhas=[];
+    window._cteBlocos.forEach(b=>{
+        if(b.destino&&b.destino.trim()){
+            const idxExtra=extras.findIndex((ex,i)=>!usadas.has(i)&&ex.antesDe===b.destino.trim());
+            if(idxExtra!==-1){ linhas.push(extras[idxExtra].linha); usadas.add(idxExtra); }
+        }
+        if(b.destino&&b.destino.trim()&&b.expr){
+            const linhaDef=`def("${b.destino.trim()}", ${b.expr});`;
+            if(b.temCondicao&&b.condicao&&b.condicao.expr){
+                linhas.push(`if (${b.condicao.expr}) {`);
+                linhas.push(`    ${linhaDef}`);
+                linhas.push(`}`);
+            }else{
+                linhas.push(linhaDef);
+            }
+        }
+    });
+    // Sobrou alguma extra sem usar (era pra ir no final, ou o campo que ela precedia foi
+    // renomeado/removido) — entra no final da regra de qualquer forma, nada fica de fora.
+    extras.forEach((ex,i)=>{ if(!usadas.has(i)) linhas.push(ex.linha); });
+    return linhas;
+}
+function _cteAtualizarPreview(){
+    const linhas=_cteLinhasValidas();
+    const preview=document.getElementById('wCteRegraPreview');
+    if(preview)preview.textContent=linhas.length?linhas.join('\n'):'// defina um campo (nome + arraste algo pra área de montagem)';
+}
+function _cteLimparCanvas(){
+    window._cteBlocos=[{destino:'totalPrestacao',expr:null}];
+    window._cteExtras=[];
+    const colar=document.getElementById('wCteColarRegra');
+    if(colar)colar.value='';
+    _cteRenderBlocos();
+}
+function _cteGerarRegraCustom(){
+    const linhas=_cteLinhasValidas();
+    if(linhas.length===0){alert('Defina ao menos um campo: dê um nome e arraste ao menos um campo pra área de montagem dele.');return;}
+    _renderizarCardRegraCteDndSemIA(linhas.join('\n'));
+}
+// Ao escolher uma regra pré-definida, ao invés de já gerar o resultado final, preenche o canvas
+// com os campos/definições dela — o usuário parte dessa base pronta e edita/adiciona o que precisar.
+function _cteUsarPredefinida(chave){
+    const codigo=REGRAS_PREDEFINIDAS_CODE[chave];
+    if(!codigo)return;
+    const colar=document.getElementById('wCteColarRegra');
+    if(colar)colar.value=codigo; // mantém o campo de colar em sincronia com o que foi carregado
+    const {blocos,extras}=_parseRegraParaBlocos(codigo);
+    window._cteBlocos=(blocos.length?blocos:[{destino:'totalPrestacao',expr:null}]).map(_seedTermosBase);
+    window._cteExtras=extras;
+    _cteRenderBlocos();
+    const cont=document.getElementById('wCteBlocosContainer');
+    if(cont)cont.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+// Campo "colar regra existente" — a cada edição (colar, digitar, apagar), reprocessa o texto e
+// já monta os campos/definições na área de montagem, ao vivo, sem precisar clicar em nada.
+function _cteColarRegraInput(){
+    const texto=(document.getElementById('wCteColarRegra')?.value||'').trim();
+    if(!texto){
+        window._cteBlocos=[{destino:'totalPrestacao',expr:null}];
+        window._cteExtras=[];
+        _cteRenderBlocos();
+        return;
+    }
+    const {blocos,extras}=_parseRegraParaBlocos(texto);
+    window._cteBlocos=(blocos.length?blocos:[{destino:'totalPrestacao',expr:null}]).map(_seedTermosBase);
+    window._cteExtras=extras;
+    _cteRenderBlocos();
+}
+function _renderizarCardRegraCteDndSemIA(codigo){
+    const wCard=document.getElementById('wizardRegraDndCard');
+    const _estadoForm=wCard?_capturarEstadoForm(wCard):null;
+    const _cteExtraVoltar={acaoSel:window._cteAcaoSel,blocos:_clonarBlocos(window._cteBlocos),extras:(window._cteExtras||[]).map(e=>({...e}))};
+    if(wCard)wCard.remove();
+    const s=document.getElementById('chatStream');
+    const c=document.createElement('div');c.className='answer-card';
+    const ts=Date.now();
+    c.id='_regraResultCard_'+ts;
+    window['_regraVoltar_'+ts]={tipo:'cte-dnd',query:_wizardRegraDndQuery,estadoForm:_estadoForm,cteExtraDnd:_cteExtraVoltar};
+    const escaped=codigo.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    let h=`<div style="background:#eff6ff;padding:8px 15px;border-bottom:1px solid #bfdbfe;font-size:11px;color:#1e40af;font-weight:600;">📄 Regra de Ct-e — montada sem IA</div>`;
+    h+=`<div class="answer-section"><div class="section-content"><div style="position:relative;margin:8px 0;"><pre class="regra-code">${escaped}</pre><button onclick="copiarRegra(this)" style="position:absolute;top:8px;right:8px;background:#313244;color:#a6e3a1;border:none;border-radius:5px;padding:3px 10px;font-size:11px;cursor:pointer;font-weight:600;">📋 Copiar</button></div></div></div>`;
+    h+=`<div class="feedback-area"><button onclick="_voltarParaWizardRegra(${ts})" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border:1.5px solid #1e40af;border-radius:8px;background:white;color:#1e40af;cursor:pointer;font-size:13px;font-weight:600;">🔙 Voltar</button><button onclick="novaConversa()" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);cursor:pointer;font-size:13px;font-weight:500;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='var(--primary)';this.style.background='var(--primary-light)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface)'">➕ Nova conversa</button></div>`;
+    c.innerHTML=h;
+    s.appendChild(c);
+    scrollToBottom(true);
+    adicionarMensagemNaConversa('ai',codigo);
+    logSearch('Criar Regra Ct-e (montada sem IA)',true);
+}
+async function enviarWizardRegraDnd(){
+    const btn=document.getElementById('wCteBtnEnviar');
+    if(btn){btn.disabled=true;btn.textContent='⏳ Gerando...';}
+    const regraCola=(document.getElementById('wCteRegraCola')?.value||'').trim();
+    const descricao=(document.getElementById('wCteDescricao')?.value||'').trim();
+    const configTxt=[
+        regraCola?'REGRA EXISTENTE PARA EDITAR:\n'+regraCola:'',
+        descricao?'\nSOLICITACAO: '+descricao:'',
+        _wizardRegraDndQuery?'\nCONTEXTO: '+_wizardRegraDndQuery:''
+    ].filter(Boolean).join('\n');
+    const sysMsg='Voce e um especialista em regras de Ct-e / Conhecimento do Bsoft TMS.\nGere APENAS o codigo da regra pronto para uso, entre triple backticks.\n\nDEFINICAO DE CAMPOS OCULTOS ($SV):\nPara definir um campo oculto sem gerar erro de "campo nao encontrado", SEMPRE verifique se o elemento existe antes de usar $SV():\nif (document.getElementsByName(\'NOMECAMPO\').length > 0) {\n   $SV(\'NOMECAMPO\', obt("nomeInterno"));\n}\nNUNCA use $SV() direto sem essa verificacao.\n\nDOCUMENTACAO:\n'+CONTEXTO_REGRAS;
+    const wCard=document.getElementById('wizardRegraDndCard');
+    const _estadoForm=wCard?_capturarEstadoForm(wCard):null;
+    if(wCard)wCard.remove();
+    appendMessage('system','📄 <strong>Gerando regra de Ct-e...</strong>');
+    const ld=appendLoadingCard('📄 Elaborando regra de Ct-e...');
+    const li=Date.now();
+    try{
+        const result=await callMCPSemPensamento([{role:'system',content:sysMsg},{role:'user',content:'Monte a regra conforme a solicitacao abaixo.\n'+configTxt}],{temperature:0.15,maxTokens:3000});
+        ld.remove();
+        renderizarCardRegra(result.text,li,result._iaUsada,result._iaModelo,'cte-dnd',{query:_wizardRegraDndQuery,estadoForm:_estadoForm});
         adicionarMensagemNaConversa('ai',result.text);
     }catch(e){ld.remove();appendMessage('ai','❌ Erro ao gerar regra. Tente novamente.');}
 }
@@ -3868,14 +4332,1146 @@ async function enviarWizardContrato(){
         }
         sysMsg='Voce e um especialista em regras de Contrato de Frete do Bsoft TMS.\nREGRA CRITICA: O BLOCO FRETE LIQUIDO OBRIGATORIO deve ser copiado EXATAMENTE no lugar correto da regra. Nao altere, adicione nem remova linhas desse bloco.\nGere APENAS o codigo da regra pronto para uso, entre triple backticks.\n\nDEFINICAO DE CAMPOS OCULTOS ($SV):\nPara definir um campo oculto sem gerar erro de "campo nao encontrado", SEMPRE verifique se o elemento existe antes de usar $SV():\nif (document.getElementsByName(\'NOMECAMPO\').length > 0) {\n   $SV(\'NOMECAMPO\', obt("nomeInterno"));\n}\nNUNCA use $SV() direto sem essa verificacao.\n\nDOCUMENTACAO:\n'+CONTEXTO_CONTRATO_FRETE;
     }
-    const wCard=document.getElementById('wizardContratoCard');if(wCard)wCard.remove();
+    const wCard=document.getElementById('wizardContratoCard');
+    const _estadoForm=wCard?_capturarEstadoForm(wCard):null;
+    if(wCard)wCard.remove();
     appendMessage('system','🚛 <strong>Gerando regra de Contrato de Frete...</strong>');
     const ld=appendLoadingCard('🚛 Elaborando regra de contrato...');
     const li=Date.now();
     try{
         const result=await callMCPSemPensamento([{role:'system',content:sysMsg},{role:'user',content:'Monte a regra conforme as configuracoes abaixo.\n'+configTxt}],{temperature:0.15,maxTokens:3000});
         ld.remove();
-        renderizarCardRegra(result.text,li,result._iaUsada,result._iaModelo);
+        renderizarCardRegra(result.text,li,result._iaUsada,result._iaModelo,'contrato',{query:_wizardContratoQuery,estadoForm:_estadoForm});
+        adicionarMensagemNaConversa('ai',result.text);
+    }catch(e){ld.remove();appendMessage('ai','❌ Erro ao gerar regra. Tente novamente.');}
+}
+
+// ─── Contrato de Frete — Montador visual (arrastar e soltar) ───
+// Mesma lógica/mecânica do montador de Faturamento, adaptada aos campos de Contrato de Frete.
+// Reaproveita _fatTermoParaExpressao (genérica, sem estado próprio) e os helpers de
+// captura/restauração de formulário (_capturarEstadoForm/_restaurarEstadoForm/_voltarParaWizardRegra).
+// Interpreta um código de regra pronto (linhas def(...), atribuições temporárias "valor = ...",
+// chamadas de método, blocos if) e devolve blocos {destino,expr} prontos pro canvas de arrastar —
+// usado ao clicar numa regra pré-definida, pra já começar com uma base ao invés do zero.
+// Variáveis temporárias (valor=, valorBase=...) são inlinadas direto na expressão do def() que as
+// consome (troca de nome por token, com parênteses, exceto quando o def() usa só a variável pura).
+// Linhas que não viram um bloco (chamada de método, bloco if) entram em "extras": {antesDe, linha}
+// — antesDe é o campo cujo def() vem logo depois (ou null = vai no final) — mantidas como estão,
+// coladas na posição certa ao montar a regra final, ao invés de simplesmente descartadas.
+// Normaliza aspas tipográficas ("inteligentes"/curvas — comuns ao copiar regra de Word, e-mail,
+// chat etc.) para aspas retas comuns antes de qualquer outro parse — sem isso, até o próprio
+// def("campo", ...) deixa de ser reconhecido se vier com aspas curvas coladas do sistema de testes.
+function _normalizarAspasRegra(codigo){
+    if(!codigo)return codigo;
+    return codigo
+        .replace(/[‘’‚‛]/g,"'")
+        .replace(/[“”„‟]/g,'"');
+}
+// Tenta reconhecer o padrão "if (condição) def(campo, valor);" — com ou sem chaves — como um
+// CAMPO CONDICIONAL (o mesmo modelo do checkbox "Definir condição?" da área de montagem), ao
+// invés de virar uma linha "extra" sem interação. Só reconhece quando o corpo do if é EXATAMENTE
+// um único def() — nada de else, nem mais de uma linha dentro — por segurança: qualquer coisa
+// mais complexa (efeito colateral, reatribuição condicional, if/else) continua indo pra "extras",
+// preservada como estava, sem risco de montar errado.
+// Devolve {campo, valorExpr, condExpr, novoIndex} em caso de sucesso, ou null (chamador cai no
+// tratamento padrão de linha/bloco).
+function _tentarIfDef(linhas, i){
+    const linha=linhas[i].trim();
+    const mIf=linha.match(/^if\s*\((.+)\)\s*(\{)?\s*$/);
+    if(!mIf)return null;
+    const condTexto=mIf[1].trim();
+    let corpo, proximoIndex;
+    if(mIf[2]){
+        // Com chave — junta linhas até achar o fechamento correspondente (só entende 1 nível).
+        let j=i+1;
+        const corpoLinhas=[];
+        let profundidade=1;
+        while(j<linhas.length && profundidade>0){
+            const l=linhas[j];
+            profundidade+=(l.match(/\{/g)||[]).length-(l.match(/\}/g)||[]).length;
+            if(profundidade>0){ corpoLinhas.push(l); }
+            else{
+                const idxFecha=l.lastIndexOf('}');
+                const antes=l.slice(0,idxFecha).trim();
+                if(antes)corpoLinhas.push(antes);
+            }
+            j++;
+        }
+        if(profundidade!==0)return null; // chave nunca fechou — sintaxe incompleta, não arrisca
+        const restoMesmaLinha=linhas[j-1].slice(linhas[j-1].lastIndexOf('}')+1).trim();
+        if(restoMesmaLinha.startsWith('else'))return null;
+        if(linhas[j] && linhas[j].trim().startsWith('else'))return null; // if/else — não mexe
+        corpo=corpoLinhas.filter(l=>l.trim()).map(l=>l.trim());
+        proximoIndex=j;
+    }else{
+        // Sem chave — só a próxima linha não vazia é o corpo (uma única declaração).
+        let j=i+1;
+        while(j<linhas.length && !linhas[j].trim())j++;
+        if(j>=linhas.length)return null;
+        corpo=[linhas[j].trim()];
+        proximoIndex=j+1;
+    }
+    if(corpo.length!==1)return null; // corpo com mais de 1 linha — não é o padrão simples, não mexe
+    const mDefCorpo=corpo[0].match(/^def\(\s*["']([^"']+)["']\s*,\s*(.+)\)\s*;?\s*$/);
+    if(!mDefCorpo)return null; // corpo não é um def() — não mexe
+    return { campo:mDefCorpo[1], valorExpr:mDefCorpo[2].trim(), condExpr:condTexto, novoIndex:proximoIndex };
+}
+function _parseRegraParaBlocos(codigo){
+    const linhas=_normalizarAspasRegra(codigo||'').split('\n');
+    const tempVars={};
+    const blocos=[];
+    const extras=[];
+    let bufferExtra=[];
+    let i=0;
+    while(i<linhas.length){
+        const linhaOriginal=linhas[i];
+        const linha=linhaOriginal.trim();
+        if(!linha){ i++; continue; }
+        const mDef=linha.match(/^def\(\s*["']([^"']+)["']\s*,\s*(.+)\)\s*;?\s*$/);
+        if(mDef){
+            const campo=mDef[1];
+            let expr=mDef[2].trim();
+            Object.keys(tempVars).forEach(nome=>{
+                if(expr===nome){ expr=tempVars[nome]; }
+                else{ expr=expr.replace(new RegExp('\\b'+nome+'\\b','g'), '('+tempVars[nome]+')'); }
+            });
+            expr=expr.replace(/obt\(\s*"([^"]+)"\s*\)/g, "obt('$1')").trim();
+            blocos.push({destino:campo, expr});
+            if(bufferExtra.length){ extras.push({antesDe:campo, linha:bufferExtra.join('\n')}); bufferExtra=[]; }
+            i++; continue;
+        }
+        // Aceita "nome = valor" e também "var nome = valor" (var é comum nas regras de Ct-e,
+        // ex.: "var inverso = ...") — o "var " é só descartado, o resto funciona igual.
+        const mVar=linha.match(/^(?:var\s+)?(\w+)\s*=\s*(.+?);?\s*$/);
+        if(mVar && !linha.startsWith('if')){
+            const nome=mVar[1];
+            const expr=mVar[2].replace(/;$/,'').trim().replace(/obt\(\s*"([^"]+)"\s*\)/g, "obt('$1')");
+            tempVars[nome]=expr;
+            i++; continue;
+        }
+        // "if (condição) def(campo, valor);" (com ou sem chaves) — tenta reconhecer como campo
+        // condicional antes de cair no tratamento genérico de linha/bloco abaixo.
+        if(/^if\s*\(/.test(linha)){
+            const ifDef=_tentarIfDef(linhas, i);
+            if(ifDef){
+                let expr=ifDef.valorExpr;
+                Object.keys(tempVars).forEach(nome=>{
+                    if(expr===nome){ expr=tempVars[nome]; }
+                    else{ expr=expr.replace(new RegExp('\\b'+nome+'\\b','g'), '('+tempVars[nome]+')'); }
+                });
+                expr=expr.replace(/obt\(\s*"([^"]+)"\s*\)/g, "obt('$1')").trim();
+                const condicaoRaw=ifDef.condExpr.replace(/obt\(\s*"([^"]+)"\s*\)/g, "obt('$1')").trim();
+                blocos.push({destino:ifDef.campo, expr, temCondicao:true, condicaoRaw});
+                if(bufferExtra.length){ extras.push({antesDe:ifDef.campo, linha:bufferExtra.join('\n')}); bufferExtra=[]; }
+                i=ifDef.novoIndex; continue;
+            }
+            // Não reconheceu o padrão simples (else, mais de 1 linha no corpo, etc.) — cai no
+            // tratamento padrão de bloco/linha abaixo, sem perder nada.
+        }
+        // Linha não representável no canvas (chamada de método, if/bloco) — guarda como está,
+        // consumindo o bloco { ... } inteiro quando a linha abre uma chave.
+        if(/\{\s*$/.test(linha)){
+            const buf=[linhaOriginal];
+            let depth=(linha.match(/\{/g)||[]).length-(linha.match(/\}/g)||[]).length;
+            while(depth>0 && i+1<linhas.length){
+                i++; buf.push(linhas[i]);
+                depth+=(linhas[i].match(/\{/g)||[]).length-(linhas[i].match(/\}/g)||[]).length;
+            }
+            const blocoTexto=buf.join('\n');
+            // Se uma variável temporária já conhecida for reatribuída dentro desse bloco (ex.: um
+            // if/else que muda o valor conforme a condição), ela deixa de ser confiável pra
+            // substituir em linhas seguintes — o valor real depende da condição, que não dá pra
+            // "abrir" com segurança aqui (evita trocar um def() por um valor errado/desatualizado).
+            Object.keys(tempVars).forEach(nome=>{
+                if(new RegExp('\\b'+nome+'\\s*=(?!=)').test(blocoTexto)) delete tempVars[nome];
+            });
+            bufferExtra.push(blocoTexto);
+        }else{
+            bufferExtra.push(linhaOriginal);
+        }
+        i++;
+    }
+    if(bufferExtra.length) extras.push({antesDe:null, linha:bufferExtra.join('\n')});
+    return {blocos, extras};
+}
+const CONTRATO_FRETE_CAMPOS=[
+    {label:'Tolerância',campo:'tolerancia'},
+    {label:'Tarifa do Motorista (calculada)',campo:'tarifaMotoristaCalculada'},
+    {label:'Peso de Coleta',campo:'pesoColeta'},
+    {label:'Tarifa (kg)',campo:'tarifaMotoristaDigitada'},
+    {label:'Valor do Contrato',campo:'valorTotalOrigem'},
+    {label:'Diária',campo:'diariaFrete'},
+    {label:'Outros Descontos',campo:'outrosDescontos'},
+    {label:'Outros Acréscimos',campo:'outrosAcrescimos'},
+    {label:'Valor Tonelada',campo:'outrosValoresCF[valorTon]'},
+    {label:'Desconto INSS (%)',campo:'descontoINSS'},
+    {label:'Valor Desconto INSS',campo:'totalDescontoINSS'},
+    {label:'Desconto SEST (%)',campo:'descontoSEST'},
+    {label:'Desconto SEST/SENAT (Valor)',campo:'totalDescontoSEST'},
+    {label:'Base Cálculo IR',campo:'baseCalculoIRRF'},
+    {label:'Desconto IRRF',campo:'descontoIRRF'},
+    {label:'Desconto Seguro',campo:'descontoSeguro'},
+    {label:'Pedágio',campo:'valorPedagio'},
+    {label:'Frete Líquido',campo:'freteLiquido'},
+    {label:'Adiantamento',campo:'valorAdiantamento'},
+    {label:'Nro. Parcelas',campo:'nroParcelas'},
+    {label:'Combustível',campo:'valorCombustivel'},
+    {label:'Peso Chegada',campo:'pesoChegada'},
+    {label:'Desconto Quebra Peso',campo:'descontoQuebraPeso'},
+    {label:'Saldo',campo:'saldo'},
+    {label:'Saldo Combustível',campo:'saldoCombustivel'},
+    {label:'Complemento',campo:'valorComplemento'},
+    {label:'Resultado',campo:'resultado'},
+    {label:'Total Prestação (3ª aba)',campo:'totalPrestacaoTerceiraAba'}
+];
+let _wizardContratoDndQuery='';
+function mostrarWizardContratoDnd(queryOriginal){
+    _wizardContratoDndQuery=queryOriginal;
+    window._cfdAcaoSel='+';
+    window._cfdBlocos=[{destino:'freteLiquido',expr:null}];
+    window._cfdExtras=[];
+    const s=document.getElementById('chatStream');
+    const wCard=document.getElementById('wizardContratoDndCard');if(wCard)wCard.remove();
+    const card=document.createElement('div');
+    card.id='wizardContratoDndCard';
+    card.className='answer-card';
+    card.style.cssText='max-height:680px;overflow-y:auto;';
+    const chipsHtml=CONTRATO_FRETE_CAMPOS.map(c=>`<span class="_cfd-chip" draggable="true" data-campo="${c.campo}" title="${escapeHtml(c.label)}" ondragstart="_cfdDragStart(event)" style="display:inline-block;padding:6px 12px;background:white;border:1.5px solid #d1d5db;border-radius:16px;font-size:12px;font-family:monospace;cursor:grab;user-select:none;">${c.campo}</span>`).join('');
+    card.innerHTML=`<div style="background:#f5f3ff;padding:10px 15px;border-bottom:1px solid #ddd6fe;font-size:12px;color:#5b21b6;font-weight:700;">🚛 Assistente — Contrato de Frete <span style="font-weight:500;">(arrastar campos)</span></div>
+<div style="padding:12px 15px 4px;">
+  <div class="wizard-section">
+    <div class="wizard-label">📋 Colar regra existente do sistema</div>
+    <textarea id="wCfdColarRegra" class="wizard-textarea" placeholder="Cole aqui uma regra já pronta do sistema..." style="min-height:90px;font-family:monospace;font-size:11.5px;" oninput="_cfdColarRegraInput()"></textarea>
+    <div style="font-size:10.5px;color:#7c3aed;margin-top:4px;">🔄 A área de montagem abaixo é atualizada automaticamente conforme você cola ou edita aqui.</div>
+  </div>
+  <div class="wizard-section">
+    <div class="wizard-label">📋 Regras pré-existentes (padrão)</div>
+    <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Clique pra gerar direto, sem IA:</div>
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      <button onclick="_cfdUsarPredefinida('combinado_motorista')" style="width:100%;text-align:left;padding:9px 12px;background:#f9fafb;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12.5px;color:#374151;font-weight:600;">🤝 Combinado Motorista</button>
+      <button onclick="_cfdUsarPredefinida('combinado_motorista_frete_minimo')" style="width:100%;text-align:left;padding:9px 12px;background:#f9fafb;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12.5px;color:#374151;font-weight:600;">🤝 Combinado Motorista — com alerta e bloqueio abaixo do frete mínimo</button>
+    </div>
+  </div>
+  <div class="wizard-section" style="border:none;position:sticky;top:0;z-index:2;background:var(--surface);border-bottom:2px solid #ddd6fe;box-shadow:0 4px 8px -6px rgba(0,0,0,.2);">
+    <div class="wizard-label">🧩 Monte sua regra arrastando os campos</div>
+    <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">1. Selecione a ação:</div>
+    <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
+      <button class="_cfd-acao-btn" data-acao="+" onclick="_cfdSelecionarAcao('+')" style="padding:8px 14px;background:var(--primary);color:white;border:2px solid var(--primary);border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➕ Somar</button>
+      <button class="_cfd-acao-btn" data-acao="-" onclick="_cfdSelecionarAcao('-')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➖ Subtrair</button>
+      <button class="_cfd-acao-btn" data-acao="*" onclick="_cfdSelecionarAcao('*')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">✖️ Multiplicar</button>
+      <button class="_cfd-acao-btn" data-acao="/" onclick="_cfdSelecionarAcao('/')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➗ Dividir</button>
+      <span style="width:1px;background:#e5e7eb;margin:2px 2px;"></span>
+      <button class="_cfd-acao-btn" data-acao=">" onclick="_cfdSelecionarAcao('&gt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt; Maior que</button>
+      <button class="_cfd-acao-btn" data-acao="<" onclick="_cfdSelecionarAcao('&lt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt; Menor que</button>
+      <button class="_cfd-acao-btn" data-acao="==" onclick="_cfdSelecionarAcao('==')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">== Igual</button>
+      <button class="_cfd-acao-btn" data-acao=">=" onclick="_cfdSelecionarAcao('&gt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt;= Maior ou igual</button>
+      <button class="_cfd-acao-btn" data-acao="<=" onclick="_cfdSelecionarAcao('&lt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt;= Menor ou igual</button>
+    </div>
+    <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">2. Campos disponíveis (arraste para a área abaixo):</div>
+    <div id="wCfdCamposPalette" style="display:flex;flex-wrap:wrap;gap:6px;padding:10px;border:1.5px dashed #d1d5db;border-radius:8px;margin-bottom:10px;max-height:110px;overflow-y:auto;">${chipsHtml}</div>
+    <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Ou digite um valor numérico (ex: 100, 0.02) e arraste-o pra área de montagem — útil pra dividir/multiplicar um campo por um número fixo:</div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <input type="text" id="wCfdValorInput" inputmode="decimal" placeholder="Ex: 100" oninput="_cfdValorInputChange()" style="width:110px;padding:7px 10px;border:1.5px solid #d1d5db;border-radius:6px;font-size:12px;font-family:monospace;">
+      <span id="wCfdValorChip" draggable="true" ondragstart="_cfdValorDragStart(event)" style="display:inline-flex;align-items:center;gap:4px;padding:7px 12px;background:#fff7ed;border:1.5px solid #fdba74;border-radius:16px;font-size:12px;font-family:monospace;cursor:not-allowed;user-select:none;color:#9a3412;opacity:.4;transition:opacity .15s;">🔢 Arrastar valor</span>
+    </div>
+  </div>
+  <div class="wizard-section" style="border:none;">
+    <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">3. Área de montagem — arraste um campo (ou valor) sobre outro pra combinar com a ação selecionada:</div>
+    <div id="wCfdBlocosContainer"></div>
+    <button onclick="_cfdAdicionarBloco()" style="width:100%;padding:8px;background:white;border:1.5px dashed #7c3aed;border-radius:8px;color:#5b21b6;cursor:pointer;font-size:12.5px;font-weight:700;margin-bottom:12px;">➕ Definir mais um campo</button>
+    <div id="wCfdExtrasContainer"></div>
+    <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Prévia da regra (uma linha por campo definido):</div>
+    <div id="wCfdPreview" style="padding:8px 10px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;font-family:monospace;font-size:11.5px;color:#374151;margin-bottom:10px;white-space:pre-wrap;word-break:break-all;">def("freteLiquido", );</div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="_cfdLimparCanvas()" style="padding:8px 14px;background:#fef2f2;color:#991b1b;border:1.5px solid #fecaca;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:600;">🗑️ Limpar tudo</button>
+      <button onclick="_cfdGerarRegraCustom()" style="flex:1;padding:8px 14px;background:#7c3aed;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;">🚀 Gerar Regra Montada</button>
+    </div>
+  </div>
+  <div class="wizard-section" style="border:none;border-top:1px solid #e5e7eb;padding-top:14px;">
+    <div class="wizard-label">✏️ Ou descreva em texto livre <span style="font-size:10px;color:#9ca3af;font-weight:400;">(a IA monta — use pra editar uma regra existente ou algo fora do padrão de contas simples)</span></div>
+    <textarea id="wCfdRegraCola" class="wizard-textarea" placeholder="Cole aqui a regra existente que deseja editar (opcional)..." style="min-height:60px;"></textarea>
+    <textarea id="wCfdDescricao" class="wizard-textarea" placeholder="Descreva o que necessita..." style="min-height:70px;margin-top:8px;"></textarea>
+    <button id="wCfdBtnEnviar" class="wizard-submit" onclick="enviarWizardContratoDnd()" style="margin-top:8px;">🚀 Gerar com IA</button>
+  </div>
+</div>`;
+    s.appendChild(card);
+    _cfdRenderBlocos();
+    scrollToBottom(true);
+}
+function _cfdSelecionarAcao(acao){
+    window._cfdAcaoSel=acao;
+    document.querySelectorAll('._cfd-acao-btn').forEach(b=>{
+        const ativo=b.dataset.acao===acao;
+        b.style.background=ativo?'var(--primary)':'#f3f4f6';
+        b.style.color=ativo?'white':'#374151';
+        b.style.borderColor=ativo?'var(--primary)':'#e5e7eb';
+    });
+}
+function _cfdDragStart(e){
+    e.dataTransfer.setData('text/plain','campo:'+e.target.dataset.campo);
+    e.dataTransfer.effectAllowed='copy';
+}
+function _cfdValorInputChange(){
+    const val=(document.getElementById('wCfdValorInput')?.value||'').trim();
+    const chip=document.getElementById('wCfdValorChip');
+    if(!chip)return;
+    const valido=val!==''&&!isNaN(Number(val.replace(',','.')));
+    chip.style.opacity=valido?'1':'.4';
+    chip.style.cursor=valido?'grab':'not-allowed';
+}
+function _cfdValorDragStart(e){
+    const val=(document.getElementById('wCfdValorInput')?.value||'').trim();
+    const norm=val.replace(',','.');
+    if(!val||isNaN(Number(norm))){e.preventDefault();return;}
+    e.dataTransfer.setData('text/plain','valor:'+norm);
+    e.dataTransfer.effectAllowed='copy';
+}
+function _cfdRenderBlocos(){
+    const cont=document.getElementById('wCfdBlocosContainer');
+    if(!cont)return;
+    cont.innerHTML=window._cfdBlocos.map((bloco,idx)=>{
+        let canvasConteudo;
+        if(bloco.termos&&bloco.termos.length){
+            canvasConteudo=bloco.termos.map((t,tIdx)=>{
+                const sep=tIdx>0?`<span style="font-size:13px;color:#7c3aed;font-weight:700;margin:0 3px;">${escapeHtml(t.acao||'')}</span>`:'';
+                const label=_termoParaLabel(t.termo);
+                return `${sep}<span title="${escapeHtml(t.termo)}" style="display:inline-flex;align-items:center;gap:3px;padding:3px 4px 3px 9px;margin:2px 0;background:white;border:1px solid #c4b5fd;border-radius:12px;font-size:11.5px;font-family:monospace;color:#5b21b6;">${escapeHtml(label)}<button onclick="_cfdRemoverTermo(${idx},${tIdx})" title="Remover este item" style="border:none;background:none;color:#9333ea;cursor:pointer;font-size:13px;padding:0 4px;line-height:1;font-weight:700;">✕</button></span>`;
+            }).join('');
+        }else if(bloco.expr){
+            canvasConteudo=`<span style="font-family:monospace;font-size:12.5px;color:#5b21b6;word-break:break-all;">${escapeHtml(bloco.expr)}</span>`;
+        }else{
+            canvasConteudo=`<span style="color:#9ca3af;font-size:12px;">Arraste campos aqui</span>`;
+        }
+        const btnLimparExpr=bloco.expr
+            ?`<div style="text-align:right;margin-top:4px;"><button onclick="_cfdLimparExprBloco(${idx})" title="Remover tudo o que foi arrastado aqui (mantém o nome do campo)" style="padding:3px 8px;background:none;border:1px dashed #c4b5fd;border-radius:6px;color:#7c3aed;cursor:pointer;font-size:10.5px;">🧹 limpar o que foi arrastado</button></div>`
+            :'';
+        const btnRemover=window._cfdBlocos.length>1
+            ?`<button onclick="_cfdRemoverBloco(${idx})" title="Remover esta definição" style="padding:7px 10px;background:#fef2f2;color:#991b1b;border:1.5px solid #fecaca;border-radius:6px;cursor:pointer;font-size:12px;">🗑️</button>`
+            :'';
+        let condSecao=`<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:#92400e;cursor:pointer;margin:6px 0 8px;">
+                <input type="checkbox" ${bloco.temCondicao?'checked':''} onchange="_cfdToggleCondicao(${idx},this.checked)"> Definir condição?
+            </label>`;
+        if(bloco.temCondicao){
+            const condTermos=(bloco.condicao&&bloco.condicao.termos)||[];
+            const condConteudo=condTermos.length
+                ?condTermos.map((t,tIdx)=>{
+                    const sep=tIdx>0?`<span style="font-size:13px;color:#b45309;font-weight:700;margin:0 3px;">${escapeHtml(t.acao||'')}</span>`:'';
+                    const label=_termoParaLabel(t.termo);
+                    return `${sep}<span title="${escapeHtml(t.termo)}" style="display:inline-flex;align-items:center;gap:3px;padding:3px 4px 3px 9px;margin:2px 0;background:white;border:1px solid #fcd34d;border-radius:12px;font-size:11.5px;font-family:monospace;color:#92400e;">${escapeHtml(label)}<button onclick="_cfdRemoverTermoCondicao(${idx},${tIdx})" title="Remover este item" style="border:none;background:none;color:#b45309;cursor:pointer;font-size:13px;padding:0 4px;line-height:1;font-weight:700;">✕</button></span>`;
+                }).join('')
+                :`<span style="color:#b45309;font-size:12px;">Arraste campos aqui pra montar a condição</span>`;
+            condSecao+=`<div style="margin:0 0 10px;padding-left:8px;border-left:3px solid #fbbf24;">
+                <div style="font-size:10.5px;color:#92400e;margin-bottom:4px;">Condição — SE isso for verdade, o campo é definido:</div>
+                <div ondragover="_cfdCanvasDragOver(event)" ondrop="_cfdCondicaoDrop(event,${idx})" style="min-height:44px;padding:8px;border:1.5px dashed #f59e0b;border-radius:8px;background:#fffbeb;display:flex;align-items:center;flex-wrap:wrap;">
+                    ${condConteudo}
+                </div>
+            </div>`;
+        }
+        return `<div style="border:1.5px solid #e5e7eb;border-radius:8px;padding:10px;margin-bottom:10px;">
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+                <label style="font-size:11px;color:#374151;white-space:nowrap;">Campo a definir:</label>
+                <input type="text" value="${escapeHtml(bloco.destino)}" placeholder="digite ou arraste um campo aqui"
+                    ondragover="_cfdDestinoDragOver(event)" ondrop="_cfdDestinoDrop(event,${idx})" oninput="_cfdDestinoInput(event,${idx})"
+                    style="flex:1;padding:7px 10px;border:1.5px solid #7c3aed;border-radius:6px;font-size:12px;font-family:monospace;background:#f5f3ff;color:#5b21b6;font-weight:600;outline:none;">
+                ${btnRemover}
+            </div>
+            ${condSecao}
+            <div ondragover="_cfdCanvasDragOver(event)" ondrop="_cfdCanvasDrop(event,${idx})" style="min-height:50px;padding:10px;border:1.5px dashed #7c3aed;border-radius:8px;background:#f5f3ff;display:flex;align-items:center;flex-wrap:wrap;">
+                ${canvasConteudo}
+            </div>
+            ${btnLimparExpr}
+        </div>`;
+    }).join('');
+    _cfdRenderExtras();
+    _cfdAtualizarPreview();
+}
+function _cfdCanvasDragOver(e){e.preventDefault();e.dataTransfer.dropEffect='copy';}
+function _cfdCanvasDrop(e,idx){
+    e.preventDefault();
+    const raw=e.dataTransfer.getData('text/plain');
+    if(!raw)return;
+    const termo=_fatTermoParaExpressao(raw);
+    if(termo===null)return;
+    const bloco=window._cfdBlocos[idx];
+    _seedTermosBase(bloco);
+    bloco.termos.push({termo, acao: bloco.termos.length?(window._cfdAcaoSel||'+'):null});
+    _recalcExprDeTermos(bloco);
+    _cfdRenderBlocos();
+}
+// Liga/desliga a condição de um campo — ao ligar, cria a área de montagem da condição (vazia se
+// for a primeira vez); ao desligar, só esconde (não perde o que já tinha montado, caso reative).
+function _cfdToggleCondicao(idx,marcado){
+    const bloco=window._cfdBlocos[idx];
+    if(!bloco)return;
+    bloco.temCondicao=marcado;
+    if(marcado&&!bloco.condicao)bloco.condicao={termos:[],expr:null};
+    _cfdRenderBlocos();
+}
+// Arrastar campo/valor pra área de montagem da CONDIÇÃO (mesmo mecanismo do valor, só que guarda
+// em bloco.condicao ao invés de no próprio bloco) — usa a mesma ação selecionada (>, <, ==, etc.).
+function _cfdCondicaoDrop(e,idx){
+    e.preventDefault();
+    const raw=e.dataTransfer.getData('text/plain');
+    if(!raw)return;
+    const termo=_fatTermoParaExpressao(raw);
+    if(termo===null)return;
+    const bloco=window._cfdBlocos[idx];
+    if(!bloco.condicao)bloco.condicao={termos:[],expr:null};
+    bloco.condicao.termos.push({termo, acao: bloco.condicao.termos.length?(window._cfdAcaoSel||'+'):null});
+    _recalcExprDeTermos(bloco.condicao);
+    _cfdRenderBlocos();
+}
+function _cfdRemoverTermoCondicao(idx,termoIdx){
+    const bloco=window._cfdBlocos[idx];
+    if(!bloco||!bloco.condicao||!bloco.condicao.termos)return;
+    bloco.condicao.termos.splice(termoIdx,1);
+    _recalcExprDeTermos(bloco.condicao);
+    _cfdRenderBlocos();
+}
+function _cfdDestinoDragOver(e){e.preventDefault();e.dataTransfer.dropEffect='copy';}
+function _cfdDestinoDrop(e,idx){
+    e.preventDefault();
+    const raw=e.dataTransfer.getData('text/plain');
+    if(!raw)return;
+    const nome=raw.startsWith('campo:')?raw.slice(6):raw.startsWith('valor:')?raw.slice(6):raw;
+    window._cfdBlocos[idx].destino=nome;
+    _cfdRenderBlocos();
+}
+function _cfdDestinoInput(e,idx){
+    window._cfdBlocos[idx].destino=e.target.value;
+    _cfdAtualizarPreview();
+}
+function _cfdAdicionarBloco(){
+    window._cfdBlocos.push({destino:'',expr:null});
+    _cfdRenderBlocos();
+}
+function _cfdRemoverBloco(idx){
+    if(window._cfdBlocos.length<=1)return;
+    window._cfdBlocos.splice(idx,1);
+    _cfdRenderBlocos();
+}
+// Remove só um item arrastado dentro do campo (idx = bloco, termoIdx = posição do item na área de
+// montagem) — o resto do que já estava montado nesse campo continua intacto, sem perder tudo.
+function _cfdRemoverTermo(idx,termoIdx){
+    const bloco=window._cfdBlocos[idx];
+    if(!bloco||!bloco.termos)return;
+    bloco.termos.splice(termoIdx,1);
+    _recalcExprDeTermos(bloco);
+    _cfdRenderBlocos();
+}
+// Limpa só o que foi arrastado num campo (mantém o nome do "Campo a definir" e os demais campos).
+function _cfdLimparExprBloco(idx){
+    const bloco=window._cfdBlocos[idx];
+    if(!bloco)return;
+    bloco.expr=null;
+    bloco.termos=[];
+    _cfdRenderBlocos();
+}
+// Linhas "extras" vêm de uma regra pré-definida carregada no canvas (ver _parseRegraParaBlocos)
+// que não cabem no modelo campo=expressão (chamada de método, bloco if) — mostradas como estão,
+// só de leitura, com a posição onde entram na regra final (antes de qual campo, ou no final).
+function _cfdRenderExtras(){
+    const cont=document.getElementById('wCfdExtrasContainer');
+    if(!cont)return;
+    const extras=window._cfdExtras||[];
+    if(!extras.length){ cont.innerHTML=''; return; }
+    cont.innerHTML=extras.map((ex,idx)=>{
+        const posLabel=ex.antesDe?`executa antes de definir <b>"${escapeHtml(ex.antesDe)}"</b>`:'executa no final da regra';
+        return `<div style="border:1.5px dashed #f59e0b;border-radius:8px;padding:8px 10px;margin-bottom:8px;background:#fffbeb;">
+            <div style="font-size:10.5px;color:#92400e;margin-bottom:4px;">⚡ Linha extra da regra original (mantida como está — ${posLabel}):</div>
+            <pre style="margin:0 0 6px;font-family:monospace;font-size:11.5px;color:#78350f;white-space:pre-wrap;word-break:break-all;">${escapeHtml(ex.linha)}</pre>
+            <button onclick="_cfdRemoverExtra(${idx})" style="padding:4px 10px;background:#fef2f2;color:#991b1b;border:1px solid #fecaca;border-radius:6px;cursor:pointer;font-size:11px;">🗑️ Remover esta linha</button>
+        </div>`;
+    }).join('');
+}
+function _cfdRemoverExtra(idx){
+    if(!window._cfdExtras)return;
+    window._cfdExtras.splice(idx,1);
+    _cfdRenderExtras();
+    _cfdAtualizarPreview();
+}
+function _cfdLinhasValidas(){
+    const extras=window._cfdExtras||[];
+    const usadas=new Set(); // evita repetir a mesma extra quando 2 campos têm o mesmo nome — cada
+    // extra só entra uma vez, na primeira ocorrência ainda não usada daquele nome, na ordem em que
+    // apareciam na regra.
+    const linhas=[];
+    window._cfdBlocos.forEach(b=>{
+        if(b.destino&&b.destino.trim()){
+            const idxExtra=extras.findIndex((ex,i)=>!usadas.has(i)&&ex.antesDe===b.destino.trim());
+            if(idxExtra!==-1){ linhas.push(extras[idxExtra].linha); usadas.add(idxExtra); }
+        }
+        if(b.destino&&b.destino.trim()&&b.expr){
+            const linhaDef=`def("${b.destino.trim()}", ${b.expr});`;
+            if(b.temCondicao&&b.condicao&&b.condicao.expr){
+                linhas.push(`if (${b.condicao.expr}) {`);
+                linhas.push(`    ${linhaDef}`);
+                linhas.push(`}`);
+            }else{
+                linhas.push(linhaDef);
+            }
+        }
+    });
+    extras.forEach((ex,i)=>{ if(!usadas.has(i)) linhas.push(ex.linha); });
+    return linhas;
+}
+function _cfdAtualizarPreview(){
+    const linhas=_cfdLinhasValidas();
+    const preview=document.getElementById('wCfdPreview');
+    if(preview)preview.textContent=linhas.length?linhas.join('\n'):'// defina um campo (nome + arraste algo pra área de montagem)';
+}
+function _cfdLimparCanvas(){
+    window._cfdBlocos=[{destino:'freteLiquido',expr:null}];
+    window._cfdExtras=[];
+    const colar=document.getElementById('wCfdColarRegra');
+    if(colar)colar.value='';
+    _cfdRenderBlocos();
+}
+function _cfdGerarRegraCustom(){
+    const linhas=_cfdLinhasValidas();
+    if(linhas.length===0){alert('Defina ao menos um campo: dê um nome e arraste ao menos um campo pra área de montagem dele.');return;}
+    _renderizarCardRegraContratoDndSemIA(linhas.join('\n'));
+}
+// Ao escolher uma regra pré-definida, ao invés de já gerar o resultado final, preenche o canvas
+// com os campos/definições dela — o usuário parte dessa base pronta e edita/adiciona o que precisar.
+function _cfdUsarPredefinida(chave){
+    const codigo=REGRAS_PREDEFINIDAS_CONTRATO[chave];
+    if(!codigo)return;
+    const colar=document.getElementById('wCfdColarRegra');
+    if(colar)colar.value=codigo; // mantém o campo de colar em sincronia com o que foi carregado
+    const {blocos,extras}=_parseRegraParaBlocos(codigo);
+    window._cfdBlocos=(blocos.length?blocos:[{destino:'freteLiquido',expr:null}]).map(_seedTermosBase);
+    window._cfdExtras=extras;
+    _cfdRenderBlocos();
+    const cont=document.getElementById('wCfdBlocosContainer');
+    if(cont)cont.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+// Campo "colar regra existente" — a cada edição (colar, digitar, apagar), reprocessa o texto e
+// já monta os campos/definições na área de montagem, ao vivo, sem precisar clicar em nada.
+function _cfdColarRegraInput(){
+    const texto=(document.getElementById('wCfdColarRegra')?.value||'').trim();
+    if(!texto){
+        window._cfdBlocos=[{destino:'freteLiquido',expr:null}];
+        window._cfdExtras=[];
+        _cfdRenderBlocos();
+        return;
+    }
+    const {blocos,extras}=_parseRegraParaBlocos(texto);
+    window._cfdBlocos=(blocos.length?blocos:[{destino:'freteLiquido',expr:null}]).map(_seedTermosBase);
+    window._cfdExtras=extras;
+    _cfdRenderBlocos();
+}
+function _renderizarCardRegraContratoDndSemIA(codigo){
+    const wCard=document.getElementById('wizardContratoDndCard');
+    const _estadoForm=wCard?_capturarEstadoForm(wCard):null;
+    const _cfdExtra={acaoSel:window._cfdAcaoSel,blocos:_clonarBlocos(window._cfdBlocos),extras:(window._cfdExtras||[]).map(e=>({...e}))};
+    if(wCard)wCard.remove();
+    const s=document.getElementById('chatStream');
+    const c=document.createElement('div');c.className='answer-card';
+    const ts=Date.now();
+    c.id='_regraResultCard_'+ts;
+    window['_regraVoltar_'+ts]={tipo:'contrato-dnd',query:_wizardContratoDndQuery,estadoForm:_estadoForm,cfdExtra:_cfdExtra};
+    const escaped=codigo.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    let h=`<div style="background:#f5f3ff;padding:8px 15px;border-bottom:1px solid #ddd6fe;font-size:11px;color:#5b21b6;font-weight:600;">🚛 Regra de Contrato de Frete — montada sem IA</div>`;
+    h+=`<div class="answer-section"><div class="section-content"><div style="position:relative;margin:8px 0;"><pre class="regra-code">${escaped}</pre><button onclick="copiarRegra(this)" style="position:absolute;top:8px;right:8px;background:#313244;color:#a6e3a1;border:none;border-radius:5px;padding:3px 10px;font-size:11px;cursor:pointer;font-weight:600;">📋 Copiar</button></div></div></div>`;
+    h+=`<div class="feedback-area"><button onclick="_voltarParaWizardRegra(${ts})" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border:1.5px solid #1e40af;border-radius:8px;background:white;color:#1e40af;cursor:pointer;font-size:13px;font-weight:600;">🔙 Voltar</button><button onclick="novaConversa()" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);cursor:pointer;font-size:13px;font-weight:500;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='var(--primary)';this.style.background='var(--primary-light)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface)'">➕ Nova conversa</button></div>`;
+    c.innerHTML=h;
+    s.appendChild(c);
+    scrollToBottom(true);
+    adicionarMensagemNaConversa('ai',codigo);
+    logSearch('Criar Regra Contrato de Frete (montada sem IA)',true);
+}
+async function enviarWizardContratoDnd(){
+    const btn=document.getElementById('wCfdBtnEnviar');
+    if(btn){btn.disabled=true;btn.textContent='⏳ Gerando...';}
+    const regraCola=(document.getElementById('wCfdRegraCola')?.value||'').trim();
+    const descricao=(document.getElementById('wCfdDescricao')?.value||'').trim();
+    const configTxt=[
+        regraCola?'REGRA EXISTENTE PARA EDITAR:\n'+regraCola:'',
+        descricao?'\nSOLICITACAO: '+descricao:'',
+        _wizardContratoDndQuery?'\nCONTEXTO: '+_wizardContratoDndQuery:''
+    ].filter(Boolean).join('\n');
+    const sysMsg='Voce e um especialista em regras de Contrato de Frete do Bsoft TMS.\nGere APENAS o codigo da regra pronto para uso, entre triple backticks.\n\nDEFINICAO DE CAMPOS OCULTOS ($SV):\nPara definir um campo oculto sem gerar erro de "campo nao encontrado", SEMPRE verifique se o elemento existe antes de usar $SV():\nif (document.getElementsByName(\'NOMECAMPO\').length > 0) {\n   $SV(\'NOMECAMPO\', obt("nomeInterno"));\n}\nNUNCA use $SV() direto sem essa verificacao.\n\nDOCUMENTACAO:\n'+CONTEXTO_CONTRATO_FRETE;
+    const wCard=document.getElementById('wizardContratoDndCard');
+    const _estadoForm=wCard?_capturarEstadoForm(wCard):null;
+    if(wCard)wCard.remove();
+    appendMessage('system','🚛 <strong>Gerando regra de Contrato de Frete...</strong>');
+    const ld=appendLoadingCard('🚛 Elaborando regra de contrato...');
+    const li=Date.now();
+    try{
+        const result=await callMCPSemPensamento([{role:'system',content:sysMsg},{role:'user',content:'Monte a regra conforme a solicitacao abaixo.\n'+configTxt}],{temperature:0.15,maxTokens:3000});
+        ld.remove();
+        renderizarCardRegra(result.text,li,result._iaUsada,result._iaModelo,'contrato-dnd',{query:_wizardContratoDndQuery,estadoForm:_estadoForm});
+        adicionarMensagemNaConversa('ai',result.text);
+    }catch(e){ld.remove();appendMessage('ai','❌ Erro ao gerar regra. Tente novamente.');}
+}
+
+const FATURAMENTO_CAMPOS=['notaFiscal','freteValor','valorICMS','valoresOutros','valoresPedagio','outrosDescontos','pesoColeta','pesoChegadaReal','descontoQuebraPesoReal','totalPrestacao','tolerancia','tarifaMotoristaDigitada','regraFrete'];
+const FATURAMENTO_REGRA_PADRAO=`def("totalPrestacao", obt('freteValor') + obt('valorICMS'));`;
+
+let _wizardFaturamentoQuery='';
+function mostrarWizardFaturamento(queryOriginal){
+    _wizardFaturamentoQuery=queryOriginal;
+    window._fatAcaoSel='+';
+    window._fatBlocos=[{destino:'totalPrestacao',expr:null}];
+    window._fatExtras=[];
+    const s=document.getElementById('chatStream');
+    const wCard=document.getElementById('wizardFaturamentoCard');if(wCard)wCard.remove();
+    const card=document.createElement('div');
+    card.id='wizardFaturamentoCard';
+    card.className='answer-card';
+    card.style.cssText='max-height:680px;overflow-y:auto;';
+    const chipsHtml=FATURAMENTO_CAMPOS.map(c=>`<span class="_fat-chip" draggable="true" data-campo="${c}" ondragstart="_fatDragStart(event)" style="display:inline-block;padding:6px 12px;background:white;border:1.5px solid #d1d5db;border-radius:16px;font-size:12px;font-family:monospace;cursor:grab;user-select:none;">${c}</span>`).join('');
+    card.innerHTML=`<div style="background:#ecfdf5;padding:10px 15px;border-bottom:1px solid #a7f3d0;font-size:12px;color:#065f46;font-weight:700;">💰 Assistente — Regra de Faturamento</div>
+<div style="padding:12px 15px 4px;">
+  <div class="wizard-section">
+    <div class="wizard-label">📋 Colar regra existente do sistema</div>
+    <textarea id="wFatColarRegra" class="wizard-textarea" placeholder="Cole aqui uma regra já pronta do sistema..." style="min-height:90px;font-family:monospace;font-size:11.5px;" oninput="_fatColarRegraInput()"></textarea>
+    <div style="font-size:10.5px;color:#059669;margin-top:4px;">🔄 A área de montagem abaixo é atualizada automaticamente conforme você cola ou edita aqui.</div>
+  </div>
+  <div class="wizard-section">
+    <div class="wizard-label">📋 Regra pré-existente (padrão)</div>
+    <button onclick="_fatUsarPredefinida()" style="width:100%;text-align:left;padding:10px 12px;background:#f9fafb;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-family:monospace;font-size:11.5px;color:#374151;">${FATURAMENTO_REGRA_PADRAO}</button>
+  </div>
+  <div class="wizard-section" style="border:none;position:sticky;top:0;z-index:2;background:var(--surface);border-bottom:2px solid #a7f3d0;box-shadow:0 4px 8px -6px rgba(0,0,0,.2);">
+    <div class="wizard-label">🧩 Monte sua regra arrastando os campos</div>
+    <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">1. Selecione a ação:</div>
+    <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
+      <button class="_fat-acao-btn" data-acao="+" onclick="_fatSelecionarAcao('+')" style="padding:8px 14px;background:var(--primary);color:white;border:2px solid var(--primary);border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➕ Somar</button>
+      <button class="_fat-acao-btn" data-acao="-" onclick="_fatSelecionarAcao('-')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➖ Subtrair</button>
+      <button class="_fat-acao-btn" data-acao="*" onclick="_fatSelecionarAcao('*')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">✖️ Multiplicar</button>
+      <button class="_fat-acao-btn" data-acao="/" onclick="_fatSelecionarAcao('/')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➗ Dividir</button>
+      <span style="width:1px;background:#e5e7eb;margin:2px 2px;"></span>
+      <button class="_fat-acao-btn" data-acao=">" onclick="_fatSelecionarAcao('&gt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt; Maior que</button>
+      <button class="_fat-acao-btn" data-acao="<" onclick="_fatSelecionarAcao('&lt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt; Menor que</button>
+      <button class="_fat-acao-btn" data-acao="==" onclick="_fatSelecionarAcao('==')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">== Igual</button>
+      <button class="_fat-acao-btn" data-acao=">=" onclick="_fatSelecionarAcao('&gt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt;= Maior ou igual</button>
+      <button class="_fat-acao-btn" data-acao="<=" onclick="_fatSelecionarAcao('&lt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt;= Menor ou igual</button>
+    </div>
+    <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">2. Campos disponíveis (arraste para a área abaixo):</div>
+    <div id="wFatCamposPalette" style="display:flex;flex-wrap:wrap;gap:6px;padding:10px;border:1.5px dashed #d1d5db;border-radius:8px;margin-bottom:10px;max-height:110px;overflow-y:auto;">${chipsHtml}</div>
+    <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Ou digite um valor numérico (ex: 100, 0.02) e arraste-o pra área de montagem — útil pra dividir/multiplicar um campo por um número fixo:</div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <input type="text" id="wFatValorInput" inputmode="decimal" placeholder="Ex: 100" oninput="_fatValorInputChange()" style="width:110px;padding:7px 10px;border:1.5px solid #d1d5db;border-radius:6px;font-size:12px;font-family:monospace;">
+      <span id="wFatValorChip" draggable="true" ondragstart="_fatValorDragStart(event)" style="display:inline-flex;align-items:center;gap:4px;padding:7px 12px;background:#fff7ed;border:1.5px solid #fdba74;border-radius:16px;font-size:12px;font-family:monospace;cursor:not-allowed;user-select:none;color:#9a3412;opacity:.4;transition:opacity .15s;">🔢 Arrastar valor</span>
+    </div>
+  </div>
+  <div class="wizard-section" style="border:none;">
+    <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">3. Área de montagem — arraste um campo (ou valor) sobre outro pra combinar com a ação selecionada:</div>
+    <div id="wFatBlocosContainer"></div>
+    <button onclick="_fatAdicionarBloco()" style="width:100%;padding:8px;background:white;border:1.5px dashed #10b981;border-radius:8px;color:#059669;cursor:pointer;font-size:12.5px;font-weight:700;margin-bottom:12px;">➕ Definir mais um campo</button>
+    <div id="wFatExtrasContainer"></div>
+    <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Prévia da regra (uma linha por campo definido):</div>
+    <div id="wFatPreview" style="padding:8px 10px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;font-family:monospace;font-size:11.5px;color:#374151;margin-bottom:10px;white-space:pre-wrap;word-break:break-all;">def("totalPrestacao", );</div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="_fatLimparCanvas()" style="padding:8px 14px;background:#fef2f2;color:#991b1b;border:1.5px solid #fecaca;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:600;">🗑️ Limpar tudo</button>
+      <button onclick="_fatGerarRegraCustom()" style="flex:1;padding:8px 14px;background:#059669;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;">🚀 Gerar Regra Montada</button>
+    </div>
+  </div>
+  <div class="wizard-section" style="border:none;border-top:1px solid #e5e7eb;padding-top:14px;">
+    <div class="wizard-label">✏️ Ou descreva em texto livre <span style="font-size:10px;color:#9ca3af;font-weight:400;">(a IA monta — use pra editar uma regra existente ou algo fora do padrão de contas simples)</span></div>
+    <textarea id="wFatRegraCola" class="wizard-textarea" placeholder="Cole aqui a regra existente que deseja editar (opcional)..." style="min-height:60px;"></textarea>
+    <textarea id="wFatDescricao" class="wizard-textarea" placeholder="Descreva o que necessita..." style="min-height:70px;margin-top:8px;"></textarea>
+    <button id="wFatBtnEnviar" class="wizard-submit" onclick="enviarWizardFaturamento()" style="margin-top:8px;">🚀 Gerar com IA</button>
+  </div>
+</div>`;
+    s.appendChild(card);
+    _fatRenderBlocos();
+    scrollToBottom(true);
+}
+
+// ─── Montador visual (arrastar e soltar) da regra de Faturamento ───
+function _fatSelecionarAcao(acao){
+    window._fatAcaoSel=acao;
+    document.querySelectorAll('._fat-acao-btn').forEach(b=>{
+        const ativo=b.dataset.acao===acao;
+        b.style.background=ativo?'var(--primary)':'#f3f4f6';
+        b.style.color=ativo?'white':'#374151';
+        b.style.borderColor=ativo?'var(--primary)':'#e5e7eb';
+    });
+}
+function _fatDragStart(e){
+    e.dataTransfer.setData('text/plain','campo:'+e.target.dataset.campo);
+    e.dataTransfer.effectAllowed='copy';
+}
+// Chip de valor numérico (área "digite um valor e arraste"): só arrasta se o campo tiver um
+// número válido — vírgula é aceita ao digitar mas sempre convertida pra ponto (o sistema TMS
+// não aceita vírgula). Ficam esmaecidos/"not-allowed" até ter um número válido digitado.
+function _fatValorInputChange(){
+    const val=(document.getElementById('wFatValorInput')?.value||'').trim();
+    const chip=document.getElementById('wFatValorChip');
+    if(!chip)return;
+    const valido=val!==''&&!isNaN(Number(val.replace(',','.')));
+    chip.style.opacity=valido?'1':'.4';
+    chip.style.cursor=valido?'grab':'not-allowed';
+}
+function _fatValorDragStart(e){
+    const val=(document.getElementById('wFatValorInput')?.value||'').trim();
+    const norm=val.replace(',','.');
+    if(!val||isNaN(Number(norm))){e.preventDefault();return;}
+    e.dataTransfer.setData('text/plain','valor:'+norm);
+    e.dataTransfer.effectAllowed='copy';
+}
+// Converte o texto recebido no drop em um termo pra expressão: campo vira obt('campo'),
+// valor numérico entra puro (sem obt) — é assim que se divide/multiplica por um número fixo.
+function _fatTermoParaExpressao(raw){
+    if(raw.startsWith('campo:'))return `obt('${raw.slice(6)}')`;
+    if(raw.startsWith('valor:')){
+        const n=raw.slice(6);
+        return /^-?\d+(\.\d+)?$/.test(n)?n:null;
+    }
+    return raw?`obt('${raw}')`:null;
+}
+// Extrai o nome pra mostrar num chip da área de montagem: obt('campo') ou obt("campo") vira só
+// "campo" (aceita as duas aspas — ambas funcionam na regra), valor numérico fica como está —
+// usado tanto no Contrato de Frete quanto no Faturamento.
+function _termoParaLabel(termo){
+    const m=termo.match(/^obt\(\s*["']([^"']*)["']\s*\)$/);
+    return m?m[1]:termo;
+}
+// Recalcula bloco.expr a partir de bloco.termos (lista de itens arrastados) depois de
+// adicionar ou remover um item — intercala a ação de cada termo com o que já foi acumulado.
+function _recalcExprDeTermos(bloco){
+    if(!bloco.termos||!bloco.termos.length){ bloco.expr=null; return; }
+    bloco.expr=bloco.termos.reduce((acc,t,i)=> i===0?t.termo:`(${acc}) ${t.acao} ${t.termo}`, null);
+}
+// Clona uma lista de blocos (usado ao capturar/restaurar estado pro botão Voltar) preservando
+// "termos" e "condicao" como estruturas próprias — evita que a cópia guardada e a em uso
+// compartilhem referência.
+function _clonarBlocos(blocos){
+    return (blocos||[]).map(b=>({
+        ...b,
+        termos: b.termos?b.termos.map(t=>({...t})):b.termos,
+        condicao: b.condicao?{...b.condicao, termos:b.condicao.termos?b.condicao.termos.map(t=>({...t})):b.condicao.termos}:b.condicao
+    }));
+}
+// ─── Decompõe uma expressão em termos individuais (usado pra "abrir" o valor de um campo vindo
+// de uma regra pré-definida em chips arrastáveis/removíveis individuais — mesma granularidade de
+// quando o usuário monta arrastando campo por campo) ───
+// Só decompõe o que é seguro sem arriscar mudar o resultado: sempre abre o lado ESQUERDO de cada
+// operador (é a "espinha" da conta, já foi calculado da esquerda pra direita) e só abre o lado
+// DIREITO quando ele tem o MESMO nível de precedência do operador atual (+/- com +/-, * ou / com
+// * ou /) — nos outros casos (ex.: uma subexpressão "*" dentro de uma soma, tipo "a - b*c"), esse
+// pedaço vira 1 termo só, com o texto original, pra não arriscar trocar o resultado da conta.
+function _tokenizarExpressao(expr){
+    const tokens=[]; let i=0; const n=expr.length;
+    while(i<n){
+        const c=expr[i];
+        if(/\s/.test(c)){ i++; continue; }
+        // Operadores de comparação (usados em condições) — os de 2 caracteres primeiro, senão
+        // ">=" seria lido como ">" seguido de um "=" não reconhecido.
+        if(expr.startsWith('==',i)){ tokens.push({tipo:'==',inicio:i,fim:i+2}); i+=2; continue; }
+        if(expr.startsWith('>=',i)){ tokens.push({tipo:'>=',inicio:i,fim:i+2}); i+=2; continue; }
+        if(expr.startsWith('<=',i)){ tokens.push({tipo:'<=',inicio:i,fim:i+2}); i+=2; continue; }
+        if(c==='>'||c==='<'){ tokens.push({tipo:c,inicio:i,fim:i+1}); i++; continue; }
+        if('()+-*/'.includes(c)){ tokens.push({tipo:c,inicio:i,fim:i+1}); i++; continue; }
+        if(expr.startsWith("obt('",i)){
+            const fimAspas=expr.indexOf("')",i+5);
+            if(fimAspas===-1)return null;
+            tokens.push({tipo:'obt',inicio:i,fim:fimAspas+2});
+            i=fimAspas+2; continue;
+        }
+        // Mesma coisa com aspas duplas — ambas funcionam na regra, então o tokenizador aceita as
+        // duas direto (além da normalização já feita antes em _parseRegraParaBlocos).
+        if(expr.startsWith('obt("',i)){
+            const fimAspas=expr.indexOf('")',i+5);
+            if(fimAspas===-1)return null;
+            tokens.push({tipo:'obt',inicio:i,fim:fimAspas+2});
+            i=fimAspas+2; continue;
+        }
+        const mNum=/^\d+(\.\d+)?/.exec(expr.slice(i));
+        if(mNum){ tokens.push({tipo:'num',inicio:i,fim:i+mNum[0].length}); i+=mNum[0].length; continue; }
+        return null; // caractere não reconhecido — quem chamou cai no fallback (1 termo só)
+    }
+    return tokens;
+}
+function _parseExpressaoAST(tokens){
+    let pos=0;
+    const ver=()=>tokens[pos];
+    const pega=(tipo)=>{ const t=tokens[pos]; if(!t||(tipo&&t.tipo!==tipo))return null; pos++; return t; };
+    function parseFactor(){
+        const t=ver(); if(!t)return null;
+        if(t.tipo==='-'){ pega('-'); const f=parseFactor(); if(!f)return null; return {tipo:'folha',inicio:t.inicio,fim:f.fim}; }
+        if(t.tipo==='('){ pega('('); const e=parseExpr(); if(!e)return null; if(!pega(')'))return null; return e; }
+        if(t.tipo==='obt'||t.tipo==='num'){ pega(t.tipo); return {tipo:'folha',inicio:t.inicio,fim:t.fim}; }
+        return null;
+    }
+    function parseTerm(){
+        let no=parseFactor(); if(!no)return null;
+        while(ver()&&(ver().tipo==='*'||ver().tipo==='/')){
+            const opTok=pega(ver().tipo); const direita=parseFactor(); if(!direita)return null;
+            no={tipo:'binop',op:opTok.tipo,esquerda:no,direita,inicio:no.inicio,fim:direita.fim};
+        }
+        return no;
+    }
+    function parseExpr(){
+        let no=parseTerm(); if(!no)return null;
+        while(ver()&&(ver().tipo==='+'||ver().tipo==='-')){
+            const opTok=pega(ver().tipo); const direita=parseTerm(); if(!direita)return null;
+            no={tipo:'binop',op:opTok.tipo,esquerda:no,direita,inicio:no.inicio,fim:direita.fim};
+        }
+        return no;
+    }
+    // Nível de condição: no máximo UMA comparação (>, <, ==, >=, <=) no topo — é assim que as
+    // condições dos "if" são escritas nas regras (não há encadeamento tipo "a < b < c").
+    function parseCondExpr(){
+        let no=parseExpr(); if(!no)return null;
+        if(ver()&&['>','<','==','>=','<='].includes(ver().tipo)){
+            const opTok=pega(ver().tipo); const direita=parseExpr(); if(!direita)return null;
+            no={tipo:'binop',op:opTok.tipo,esquerda:no,direita,inicio:no.inicio,fim:direita.fim};
+        }
+        return no;
+    }
+    const raiz=parseCondExpr();
+    if(!raiz||pos!==tokens.length)return null; // sobrou token não consumido -> sintaxe não coberta
+    return raiz;
+}
+// Reconstrói o texto de uma subárvore do zero, sempre com parênteses explícitos em cada lado —
+// NUNCA fatia o texto original pra isso (fatiar pode incluir parênteses "soltos" que sobraram de
+// um agrupamento interno já resolvido pelo parser, corrompendo o texto). Garante um texto válido
+// que pode ser embutido em qualquer lugar sem mudar o resultado.
+function _renderizarNode(node, expr){
+    if(node.tipo==='folha') return expr.slice(node.inicio,node.fim).trim();
+    return `(${_renderizarNode(node.esquerda,expr)}) ${node.op} (${_renderizarNode(node.direita,expr)})`;
+}
+// Verdadeiro só nas combinações comprovadamente seguras pra abrir o lado direito em 2 itens ao
+// invés de 1 (ver _achatarNoAST): "+" por fora com "+" ou "-" por dentro, ou "*" por fora com "*"
+// ou "/" por dentro — em QUALQUER outra combinação (ex.: "-" por fora, ou "*" por fora com "+"
+// por dentro) reabrir troca o resultado da conta (testado e confirmado com valores reais).
+function _seguroAbrirUmNivel(op, opDireita){
+    return (op==='+' && (opDireita==='+'||opDireita==='-'))
+        || (op==='*' && (opDireita==='*'||opDireita==='/'));
+}
+// Decompõe uma árvore em termos individuais: sempre abre o lado ESQUERDO por completo (é a
+// "espinha" da conta, sempre seguro — é assim que a conta já foi calculada da esquerda pra
+// direita). O lado DIREITO normalmente vira só 1 item — uma folha fica com seu texto puro,
+// qualquer coisa mais complexa (outra conta) é reconstruída já entre parênteses, como um bloco
+// fechado — EXCETO quando _seguroAbrirUmNivel confirma que dá pra abrir esse lado direito em 2
+// itens sem mudar o resultado (ex.: "baseCalculo * (aliquota/100)" vira 3 itens ao invés de 2).
+// Só abre 1 nível de cada vez (não desce recursivamente dentro do que acabou de abrir) — isso é
+// proposital: já foram encontrados casos reais onde abrir mais fundo trocava o resultado, então
+// aqui fica só no que já foi verificado matematicamente como seguro.
+function _achatarNoAST(node, expr, saida){
+    if(node.tipo==='folha'){ saida.push({termo:expr.slice(node.inicio,node.fim).trim(), acao:null}); return; }
+    _achatarNoAST(node.esquerda, expr, saida);
+    if(node.direita.tipo==='binop' && _seguroAbrirUmNivel(node.op, node.direita.op)){
+        const {esquerda:esqD, direita:dirD, op:opD}=node.direita;
+        const termoEsqD=esqD.tipo==='folha' ? expr.slice(esqD.inicio,esqD.fim).trim() : `(${_renderizarNode(esqD,expr)})`;
+        const termoDirD=dirD.tipo==='folha' ? expr.slice(dirD.inicio,dirD.fim).trim() : `(${_renderizarNode(dirD,expr)})`;
+        saida.push({termo:termoEsqD, acao:node.op});
+        saida.push({termo:termoDirD, acao:opD});
+        return;
+    }
+    const termoDireita=node.direita.tipo==='folha'
+        ? expr.slice(node.direita.inicio,node.direita.fim).trim()
+        : `(${_renderizarNode(node.direita,expr)})`;
+    saida.push({termo:termoDireita, acao:node.op});
+}
+// Ponto de entrada: tenta decompor 'expr' em termos individuais; se a sintaxe não for reconhecida
+// devolve null e quem chamou usa a expressão inteira como 1 termo só (mais seguro que arriscar
+// montar errado).
+function _decomporExpressao(expr){
+    if(!expr)return null;
+    const tokens=_tokenizarExpressao(expr);
+    if(!tokens||!tokens.length)return null;
+    const ast=_parseExpressaoAST(tokens);
+    if(!ast)return null;
+    const saida=[];
+    _achatarNoAST(ast, expr, saida);
+    return saida;
+}
+// Blocos vindos de uma regra pré-definida (ver _parseRegraParaBlocos) chegam só com "expr" —
+// não foram montados arrastando, então não têm "termos". Sem isso, arrastar algo novo pra esse
+// campo recalculava expr só a partir do novo item e apagava o valor original da regra.
+// Aqui a expressão original é decomposta nos campos/valores individuais que a compõem — cada um
+// vira seu próprio item na área de montagem, editável e removível igual a qualquer campo
+// arrastado — e arrastar algo novo passa a ACRESCENTAR, não apagar.
+function _seedTermosBase(bloco){
+    if(!bloco.termos||!bloco.termos.length){
+        bloco.termos = bloco.expr ? (_decomporExpressao(bloco.expr) || [{termo:bloco.expr, acao:null}]) : [];
+    }
+    // Idem pra condição: quando ela vem de um "if (...) def(...)" reconhecido pelo parser
+    // (ver _tentarIfDef), decompõe nos campos/valores individuais também, editáveis do mesmo jeito.
+    if(bloco.condicaoRaw && (!bloco.condicao || !bloco.condicao.termos || !bloco.condicao.termos.length)){
+        bloco.condicao = { termos: _decomporExpressao(bloco.condicaoRaw) || [{termo:bloco.condicaoRaw, acao:null}], expr: bloco.condicaoRaw };
+    }
+    return bloco;
+}
+// Renderiza a lista de blocos (um por campo a definir) a partir de window._fatBlocos.
+// Cada bloco tem seu campo de destino (verde, aceita digitar OU arrastar) e sua própria
+// área de montagem — vira uma linha def("destino", expressao); na regra final.
+function _fatRenderBlocos(){
+    const cont=document.getElementById('wFatBlocosContainer');
+    if(!cont)return;
+    cont.innerHTML=window._fatBlocos.map((bloco,idx)=>{
+        let canvasConteudo;
+        if(bloco.termos&&bloco.termos.length){
+            canvasConteudo=bloco.termos.map((t,tIdx)=>{
+                const sep=tIdx>0?`<span style="font-size:13px;color:#059669;font-weight:700;margin:0 3px;">${escapeHtml(t.acao||'')}</span>`:'';
+                const label=_termoParaLabel(t.termo);
+                return `${sep}<span title="${escapeHtml(t.termo)}" style="display:inline-flex;align-items:center;gap:3px;padding:3px 4px 3px 9px;margin:2px 0;background:white;border:1px solid #6ee7b7;border-radius:12px;font-size:11.5px;font-family:monospace;color:#065f46;">${escapeHtml(label)}<button onclick="_fatRemoverTermo(${idx},${tIdx})" title="Remover este item" style="border:none;background:none;color:#059669;cursor:pointer;font-size:13px;padding:0 4px;line-height:1;font-weight:700;">✕</button></span>`;
+            }).join('');
+        }else if(bloco.expr){
+            canvasConteudo=`<span style="font-family:monospace;font-size:12.5px;color:#065f46;word-break:break-all;">${escapeHtml(bloco.expr)}</span>`;
+        }else{
+            canvasConteudo=`<span style="color:#9ca3af;font-size:12px;">Arraste campos aqui</span>`;
+        }
+        const btnLimparExpr=bloco.expr
+            ?`<div style="text-align:right;margin-top:4px;"><button onclick="_fatLimparExprBloco(${idx})" title="Remover tudo o que foi arrastado aqui (mantém o nome do campo)" style="padding:3px 8px;background:none;border:1px dashed #6ee7b7;border-radius:6px;color:#059669;cursor:pointer;font-size:10.5px;">🧹 limpar o que foi arrastado</button></div>`
+            :'';
+        const btnRemover=window._fatBlocos.length>1
+            ?`<button onclick="_fatRemoverBloco(${idx})" title="Remover esta definição" style="padding:7px 10px;background:#fef2f2;color:#991b1b;border:1.5px solid #fecaca;border-radius:6px;cursor:pointer;font-size:12px;">🗑️</button>`
+            :'';
+        let condSecao=`<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:#92400e;cursor:pointer;margin:6px 0 8px;">
+                <input type="checkbox" ${bloco.temCondicao?'checked':''} onchange="_fatToggleCondicao(${idx},this.checked)"> Definir condição?
+            </label>`;
+        if(bloco.temCondicao){
+            const condTermos=(bloco.condicao&&bloco.condicao.termos)||[];
+            const condConteudo=condTermos.length
+                ?condTermos.map((t,tIdx)=>{
+                    const sep=tIdx>0?`<span style="font-size:13px;color:#b45309;font-weight:700;margin:0 3px;">${escapeHtml(t.acao||'')}</span>`:'';
+                    const label=_termoParaLabel(t.termo);
+                    return `${sep}<span title="${escapeHtml(t.termo)}" style="display:inline-flex;align-items:center;gap:3px;padding:3px 4px 3px 9px;margin:2px 0;background:white;border:1px solid #fcd34d;border-radius:12px;font-size:11.5px;font-family:monospace;color:#92400e;">${escapeHtml(label)}<button onclick="_fatRemoverTermoCondicao(${idx},${tIdx})" title="Remover este item" style="border:none;background:none;color:#b45309;cursor:pointer;font-size:13px;padding:0 4px;line-height:1;font-weight:700;">✕</button></span>`;
+                }).join('')
+                :`<span style="color:#b45309;font-size:12px;">Arraste campos aqui pra montar a condição</span>`;
+            condSecao+=`<div style="margin:0 0 10px;padding-left:8px;border-left:3px solid #fbbf24;">
+                <div style="font-size:10.5px;color:#92400e;margin-bottom:4px;">Condição — SE isso for verdade, o campo é definido:</div>
+                <div ondragover="_fatCanvasDragOver(event)" ondrop="_fatCondicaoDrop(event,${idx})" style="min-height:44px;padding:8px;border:1.5px dashed #f59e0b;border-radius:8px;background:#fffbeb;display:flex;align-items:center;flex-wrap:wrap;">
+                    ${condConteudo}
+                </div>
+            </div>`;
+        }
+        return `<div style="border:1.5px solid #e5e7eb;border-radius:8px;padding:10px;margin-bottom:10px;">
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+                <label style="font-size:11px;color:#374151;white-space:nowrap;">Campo a definir:</label>
+                <input type="text" value="${escapeHtml(bloco.destino)}" placeholder="digite ou arraste um campo aqui"
+                    ondragover="_fatDestinoDragOver(event)" ondrop="_fatDestinoDrop(event,${idx})" oninput="_fatDestinoInput(event,${idx})"
+                    style="flex:1;padding:7px 10px;border:1.5px solid #10b981;border-radius:6px;font-size:12px;font-family:monospace;background:#f0fdf4;color:#065f46;font-weight:600;outline:none;">
+                ${btnRemover}
+            </div>
+            ${condSecao}
+            <div ondragover="_fatCanvasDragOver(event)" ondrop="_fatCanvasDrop(event,${idx})" style="min-height:50px;padding:10px;border:1.5px dashed #10b981;border-radius:8px;background:#f0fdf4;display:flex;align-items:center;flex-wrap:wrap;">
+                ${canvasConteudo}
+            </div>
+            ${btnLimparExpr}
+        </div>`;
+    }).join('');
+    _fatRenderExtras();
+    _fatAtualizarPreview();
+}
+function _fatCanvasDragOver(e){e.preventDefault();e.dataTransfer.dropEffect='copy';}
+function _fatCanvasDrop(e,idx){
+    e.preventDefault();
+    const raw=e.dataTransfer.getData('text/plain');
+    if(!raw)return;
+    const termo=_fatTermoParaExpressao(raw);
+    if(termo===null)return;
+    const bloco=window._fatBlocos[idx];
+    _seedTermosBase(bloco);
+    bloco.termos.push({termo, acao: bloco.termos.length?(window._fatAcaoSel||'+'):null});
+    _recalcExprDeTermos(bloco);
+    _fatRenderBlocos();
+}
+// Liga/desliga a condição de um campo — ao ligar, cria a área de montagem da condição (vazia se
+// for a primeira vez); ao desligar, só esconde (não perde o que já tinha montado, caso reative).
+function _fatToggleCondicao(idx,marcado){
+    const bloco=window._fatBlocos[idx];
+    if(!bloco)return;
+    bloco.temCondicao=marcado;
+    if(marcado&&!bloco.condicao)bloco.condicao={termos:[],expr:null};
+    _fatRenderBlocos();
+}
+// Arrastar campo/valor pra área de montagem da CONDIÇÃO (mesmo mecanismo do valor, só que guarda
+// em bloco.condicao ao invés de no próprio bloco) — usa a mesma ação selecionada (>, <, ==, etc.).
+function _fatCondicaoDrop(e,idx){
+    e.preventDefault();
+    const raw=e.dataTransfer.getData('text/plain');
+    if(!raw)return;
+    const termo=_fatTermoParaExpressao(raw);
+    if(termo===null)return;
+    const bloco=window._fatBlocos[idx];
+    if(!bloco.condicao)bloco.condicao={termos:[],expr:null};
+    bloco.condicao.termos.push({termo, acao: bloco.condicao.termos.length?(window._fatAcaoSel||'+'):null});
+    _recalcExprDeTermos(bloco.condicao);
+    _fatRenderBlocos();
+}
+function _fatRemoverTermoCondicao(idx,termoIdx){
+    const bloco=window._fatBlocos[idx];
+    if(!bloco||!bloco.condicao||!bloco.condicao.termos)return;
+    bloco.condicao.termos.splice(termoIdx,1);
+    _recalcExprDeTermos(bloco.condicao);
+    _fatRenderBlocos();
+}
+function _fatDestinoDragOver(e){e.preventDefault();e.dataTransfer.dropEffect='copy';}
+function _fatDestinoDrop(e,idx){
+    e.preventDefault();
+    const raw=e.dataTransfer.getData('text/plain');
+    if(!raw)return;
+    const nome=raw.startsWith('campo:')?raw.slice(6):raw.startsWith('valor:')?raw.slice(6):raw;
+    window._fatBlocos[idx].destino=nome;
+    _fatRenderBlocos();
+}
+function _fatDestinoInput(e,idx){
+    window._fatBlocos[idx].destino=e.target.value;
+    _fatAtualizarPreview();
+}
+function _fatAdicionarBloco(){
+    window._fatBlocos.push({destino:'',expr:null});
+    _fatRenderBlocos();
+}
+function _fatRemoverBloco(idx){
+    if(window._fatBlocos.length<=1)return;
+    window._fatBlocos.splice(idx,1);
+    _fatRenderBlocos();
+}
+// Remove só um item arrastado dentro do campo — o resto do que já estava montado continua intacto.
+function _fatRemoverTermo(idx,termoIdx){
+    const bloco=window._fatBlocos[idx];
+    if(!bloco||!bloco.termos)return;
+    bloco.termos.splice(termoIdx,1);
+    _recalcExprDeTermos(bloco);
+    _fatRenderBlocos();
+}
+// Limpa só o que foi arrastado num campo (mantém o nome do "Campo a definir" e os demais campos).
+function _fatLimparExprBloco(idx){
+    const bloco=window._fatBlocos[idx];
+    if(!bloco)return;
+    bloco.expr=null;
+    bloco.termos=[];
+    _fatRenderBlocos();
+}
+// Linhas "extras" vêm de uma regra colada/pré-definida carregada no canvas (ver _parseRegraParaBlocos)
+// que não cabem no modelo campo=expressão (chamada de método, bloco if) — mostradas como estão,
+// só de leitura, com a posição onde entram na regra final (antes de qual campo, ou no final).
+function _fatRenderExtras(){
+    const cont=document.getElementById('wFatExtrasContainer');
+    if(!cont)return;
+    const extras=window._fatExtras||[];
+    if(!extras.length){ cont.innerHTML=''; return; }
+    cont.innerHTML=extras.map((ex,idx)=>{
+        const posLabel=ex.antesDe?`executa antes de definir <b>"${escapeHtml(ex.antesDe)}"</b>`:'executa no final da regra';
+        return `<div style="border:1.5px dashed #f59e0b;border-radius:8px;padding:8px 10px;margin-bottom:8px;background:#fffbeb;">
+            <div style="font-size:10.5px;color:#92400e;margin-bottom:4px;">⚡ Linha extra da regra original (mantida como está — ${posLabel}):</div>
+            <pre style="margin:0 0 6px;font-family:monospace;font-size:11.5px;color:#78350f;white-space:pre-wrap;word-break:break-all;">${escapeHtml(ex.linha)}</pre>
+            <button onclick="_fatRemoverExtra(${idx})" style="padding:4px 10px;background:#fef2f2;color:#991b1b;border:1px solid #fecaca;border-radius:6px;cursor:pointer;font-size:11px;">🗑️ Remover esta linha</button>
+        </div>`;
+    }).join('');
+}
+function _fatRemoverExtra(idx){
+    if(!window._fatExtras)return;
+    window._fatExtras.splice(idx,1);
+    _fatRenderExtras();
+    _fatAtualizarPreview();
+}
+function _fatLinhasValidas(){
+    const extras=window._fatExtras||[];
+    const usadas=new Set(); // evita repetir a mesma extra quando 2 campos têm o mesmo nome — cada
+    // extra só entra uma vez, na primeira ocorrência ainda não usada daquele nome, na ordem em que
+    // apareciam na regra.
+    const linhas=[];
+    window._fatBlocos.forEach(b=>{
+        if(b.destino&&b.destino.trim()){
+            const idxExtra=extras.findIndex((ex,i)=>!usadas.has(i)&&ex.antesDe===b.destino.trim());
+            if(idxExtra!==-1){ linhas.push(extras[idxExtra].linha); usadas.add(idxExtra); }
+        }
+        if(b.destino&&b.destino.trim()&&b.expr){
+            const linhaDef=`def("${b.destino.trim()}", ${b.expr});`;
+            if(b.temCondicao&&b.condicao&&b.condicao.expr){
+                linhas.push(`if (${b.condicao.expr}) {`);
+                linhas.push(`    ${linhaDef}`);
+                linhas.push(`}`);
+            }else{
+                linhas.push(linhaDef);
+            }
+        }
+    });
+    extras.forEach((ex,i)=>{ if(!usadas.has(i)) linhas.push(ex.linha); });
+    return linhas;
+}
+function _fatAtualizarPreview(){
+    const linhas=_fatLinhasValidas();
+    const preview=document.getElementById('wFatPreview');
+    if(preview)preview.textContent=linhas.length?linhas.join('\n'):'// defina um campo (nome + arraste algo pra área de montagem)';
+}
+function _fatLimparCanvas(){
+    window._fatBlocos=[{destino:'totalPrestacao',expr:null}];
+    window._fatExtras=[];
+    const colar=document.getElementById('wFatColarRegra');
+    if(colar)colar.value='';
+    _fatRenderBlocos();
+}
+function _fatGerarRegraCustom(){
+    const linhas=_fatLinhasValidas();
+    if(linhas.length===0){alert('Defina ao menos um campo: dê um nome e arraste ao menos um campo pra área de montagem dele.');return;}
+    _renderizarCardRegraSemIA(linhas.join('\n'));
+}
+// Preenche o canvas com a regra padrão ao invés de já gerar o resultado — o usuário parte dessa
+// base pronta e edita/adiciona o que precisar (mesmo tratamento do Contrato de Frete).
+function _fatUsarPredefinida(){
+    const colar=document.getElementById('wFatColarRegra');
+    if(colar)colar.value=FATURAMENTO_REGRA_PADRAO; // mantém o campo de colar em sincronia
+    const {blocos,extras}=_parseRegraParaBlocos(FATURAMENTO_REGRA_PADRAO);
+    window._fatBlocos=(blocos.length?blocos:[{destino:'totalPrestacao',expr:null}]).map(_seedTermosBase);
+    window._fatExtras=extras;
+    _fatRenderBlocos();
+}
+// Campo "colar regra existente" — a cada edição (colar, digitar, apagar), reprocessa o texto e
+// já monta os campos/definições na área de montagem, ao vivo, sem precisar clicar em nada.
+function _fatColarRegraInput(){
+    const texto=(document.getElementById('wFatColarRegra')?.value||'').trim();
+    if(!texto){
+        window._fatBlocos=[{destino:'totalPrestacao',expr:null}];
+        window._fatExtras=[];
+        _fatRenderBlocos();
+        return;
+    }
+    const {blocos,extras}=_parseRegraParaBlocos(texto);
+    window._fatBlocos=(blocos.length?blocos:[{destino:'totalPrestacao',expr:null}]).map(_seedTermosBase);
+    window._fatExtras=extras;
+    _fatRenderBlocos();
+}
+function _renderizarCardRegraSemIA(codigo){
+    const wCard=document.getElementById('wizardFaturamentoCard');
+    const _estadoForm=wCard?_capturarEstadoForm(wCard):null;
+    const _fatExtra={acaoSel:window._fatAcaoSel,blocos:_clonarBlocos(window._fatBlocos),extras:(window._fatExtras||[]).map(e=>({...e}))};
+    if(wCard)wCard.remove();
+    const s=document.getElementById('chatStream');
+    const c=document.createElement('div');c.className='answer-card';
+    const ts=Date.now();
+    c.id='_regraResultCard_'+ts;
+    window['_regraVoltar_'+ts]={tipo:'faturamento',query:_wizardFaturamentoQuery,estadoForm:_estadoForm,fatExtra:_fatExtra};
+    const escaped=codigo.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    let h=`<div style="background:#ecfdf5;padding:8px 15px;border-bottom:1px solid #a7f3d0;font-size:11px;color:#065f46;font-weight:600;">💰 Regra de Faturamento — montada sem IA</div>`;
+    h+=`<div class="answer-section"><div class="section-content"><div style="position:relative;margin:8px 0;"><pre class="regra-code">${escaped}</pre><button onclick="copiarRegra(this)" style="position:absolute;top:8px;right:8px;background:#313244;color:#a6e3a1;border:none;border-radius:5px;padding:3px 10px;font-size:11px;cursor:pointer;font-weight:600;">📋 Copiar</button></div></div></div>`;
+    h+=`<div class="feedback-area"><button onclick="_voltarParaWizardRegra(${ts})" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border:1.5px solid #1e40af;border-radius:8px;background:white;color:#1e40af;cursor:pointer;font-size:13px;font-weight:600;">🔙 Voltar</button><button onclick="novaConversa()" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);cursor:pointer;font-size:13px;font-weight:500;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='var(--primary)';this.style.background='var(--primary-light)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface)'">➕ Nova conversa</button></div>`;
+    c.innerHTML=h;
+    s.appendChild(c);
+    scrollToBottom(true);
+    adicionarMensagemNaConversa('ai',codigo);
+    logSearch('Criar Regra Faturamento (montada sem IA)',true);
+}
+
+async function enviarWizardFaturamento(){
+    const btn=document.getElementById('wFatBtnEnviar');
+    if(btn){btn.disabled=true;btn.textContent='⏳ Gerando...';}
+    const regraCola=(document.getElementById('wFatRegraCola')?.value||'').trim();
+    const descricao=(document.getElementById('wFatDescricao')?.value||'').trim();
+    const configTxt=[
+        regraCola?'REGRA EXISTENTE PARA EDITAR:\n'+regraCola:'',
+        descricao?'\nSOLICITACAO: '+descricao:'',
+        _wizardFaturamentoQuery?'\nCONTEXTO: '+_wizardFaturamentoQuery:''
+    ].filter(Boolean).join('\n');
+    const sysMsg='Voce e um especialista em regras de Faturamento do Bsoft TMS.\nGere APENAS o codigo da regra pronto para uso, entre triple backticks, seguindo EXATAMENTE a sintaxe documentada abaixo (metodo $V para campos texto, metodo obt para campos valor). Use APENAS os campos documentados — NAO invente campos que nao estejam listados.\n\nDOCUMENTACAO:\n'+CONTEXTO_FATURAMENTO;
+    const wCard=document.getElementById('wizardFaturamentoCard');
+    const _estadoForm=wCard?_capturarEstadoForm(wCard):null;
+    if(wCard)wCard.remove();
+    appendMessage('system','💰 <strong>Gerando regra de Faturamento...</strong>');
+    const ld=appendLoadingCard('💰 Elaborando regra de faturamento...');
+    const li=Date.now();
+    try{
+        const result=await callMCPSemPensamento([{role:'system',content:sysMsg},{role:'user',content:'Monte a regra conforme a solicitacao abaixo.\n'+configTxt}],{temperature:0.15,maxTokens:3000});
+        ld.remove();
+        renderizarCardRegra(result.text,li,result._iaUsada,result._iaModelo,'faturamento',{query:_wizardFaturamentoQuery,estadoForm:_estadoForm});
         adicionarMensagemNaConversa('ai',result.text);
     }catch(e){ld.remove();appendMessage('ai','❌ Erro ao gerar regra. Tente novamente.');}
 }
@@ -3901,7 +5497,94 @@ async function gerarRespostaCriacaoRegra(pergunta) {
     }
 }
 
-function renderizarCardRegra(texto, li, iaUsada, iaModelo) {
+// ─── "Voltar" nos wizards de Criar Regra — captura/restaura o formulário inteiro ───
+// Captura todo input/textarea/select dentro de um container: por id (texto/textarea/select)
+// e por name+value (radio/checkbox marcados). Arquivos (type=file) não dá pra restaurar
+// por limitação do navegador — tratados à parte (ver extra do CT-e, com o base64 já lido).
+function _capturarEstadoForm(containerEl) {
+    const estado = { porId: {}, radios: {}, checkboxes: [] };
+    if (!containerEl) return estado;
+    containerEl.querySelectorAll('input,textarea,select').forEach(el => {
+        if (el.type === 'radio') {
+            if (el.checked) estado.radios[el.name] = el.value;
+        } else if (el.type === 'checkbox') {
+            if (el.checked) estado.checkboxes.push(el.id ? ('#' + el.id) : (el.name + '=' + el.value));
+        } else if (el.type === 'file') {
+            // ignorado — restaurado à parte quando aplicável (ex: imagens do CT-e)
+        } else if (el.id) {
+            estado.porId[el.id] = el.value;
+        }
+    });
+    return estado;
+}
+function _restaurarEstadoForm(containerEl, estado) {
+    if (!containerEl || !estado) return;
+    // Radios primeiro — dispara 'change' pra abrir/fechar seções dependentes (wOnRegraPreChange etc.)
+    Object.entries(estado.radios || {}).forEach(([name, val]) => {
+        const el = containerEl.querySelector(`input[name="${name}"][value="${CSS.escape(val)}"]`);
+        if (el) { el.checked = true; el.dispatchEvent(new Event('change', { bubbles: true })); }
+    });
+    (estado.checkboxes || []).forEach(chave => {
+        let el;
+        if (chave.startsWith('#')) el = document.getElementById(chave.slice(1));
+        else { const [name, value] = chave.split('='); el = containerEl.querySelector(`input[name="${name}"][value="${CSS.escape(value)}"]`); }
+        if (el) el.checked = true;
+    });
+    Object.entries(estado.porId || {}).forEach(([id, val]) => {
+        const el = document.getElementById(id);
+        if (el) el.value = val;
+    });
+}
+// Reabre o wizard de origem (cte/contrato/faturamento) com tudo que o usuário tinha
+// preenchido, pra não perder o trabalho parcial caso precise ajustar algo.
+function _voltarParaWizardRegra(ts) {
+    const dados = window['_regraVoltar_' + ts];
+    if (!dados) return;
+    const cardResultado = document.getElementById('_regraResultCard_' + ts); if (cardResultado) cardResultado.remove();
+    const mapaCardId = { cte: 'wizardRegraCard', 'cte-dnd': 'wizardRegraDndCard', contrato: 'wizardContratoCard', 'contrato-dnd': 'wizardContratoDndCard', faturamento: 'wizardFaturamentoCard' };
+    if (dados.tipo === 'cte') mostrarWizardRegra(dados.query || '');
+    else if (dados.tipo === 'cte-dnd') mostrarWizardRegraDnd(dados.query || '');
+    else if (dados.tipo === 'contrato') mostrarWizardContrato(dados.query || '');
+    else if (dados.tipo === 'contrato-dnd') mostrarWizardContratoDnd(dados.query || '');
+    else if (dados.tipo === 'faturamento') mostrarWizardFaturamento(dados.query || '');
+    else return;
+    const wCard = document.getElementById(mapaCardId[dados.tipo]);
+    if (wCard) _restaurarEstadoForm(wCard, dados.estadoForm);
+    if (dados.tipo === 'cte' && dados.cteExtra) {
+        if (dados.cteExtra.cteB64) {
+            _wizardCteBase64 = dados.cteExtra.cteB64;
+            const zone = document.getElementById('wCteZone'), prev = document.getElementById('wCtePreview');
+            if (zone) zone.style.borderColor = '#16a34a';
+            if (prev) prev.innerHTML = `<img src="${dados.cteExtra.cteB64}" style="max-width:100%;max-height:130px;border-radius:6px;margin-top:6px;">`;
+        }
+        if (dados.cteExtra.tabelaB64) {
+            _wizardTabelaBase64 = dados.cteExtra.tabelaB64;
+            const zone = document.getElementById('wTabelaZone'), prev = document.getElementById('wTabelaPreview');
+            if (zone) zone.style.borderColor = '#16a34a';
+            if (prev) prev.innerHTML = `<img src="${dados.cteExtra.tabelaB64}" style="max-width:100%;max-height:130px;border-radius:6px;margin-top:6px;">`;
+        }
+    }
+    if (dados.tipo === 'cte-dnd' && dados.cteExtraDnd) {
+        window._cteBlocos = (dados.cteExtraDnd.blocos && dados.cteExtraDnd.blocos.length) ? _clonarBlocos(dados.cteExtraDnd.blocos) : [{destino:'totalPrestacao',expr:null}];
+        window._cteExtras = (dados.cteExtraDnd.extras || []).map(e => ({...e}));
+        _cteSelecionarAcao(dados.cteExtraDnd.acaoSel || '+');
+        _cteRenderBlocos();
+    }
+    if (dados.tipo === 'contrato-dnd' && dados.cfdExtra) {
+        window._cfdBlocos = (dados.cfdExtra.blocos && dados.cfdExtra.blocos.length) ? _clonarBlocos(dados.cfdExtra.blocos) : [{destino:'freteLiquido',expr:null}];
+        window._cfdExtras = (dados.cfdExtra.extras || []).map(e => ({...e}));
+        _cfdSelecionarAcao(dados.cfdExtra.acaoSel || '+');
+        _cfdRenderBlocos();
+    }
+    if (dados.tipo === 'faturamento' && dados.fatExtra) {
+        window._fatBlocos = (dados.fatExtra.blocos && dados.fatExtra.blocos.length) ? _clonarBlocos(dados.fatExtra.blocos) : [{destino:'totalPrestacao',expr:null}];
+        window._fatExtras = (dados.fatExtra.extras || []).map(e => ({...e}));
+        _fatSelecionarAcao(dados.fatExtra.acaoSel || '+');
+        _fatRenderBlocos();
+    }
+}
+
+function renderizarCardRegra(texto, li, iaUsada, iaModelo, tipoRegra, estadoVoltar) {
     const s = document.getElementById('chatStream');
     const c = document.createElement('div');
     c.className = 'answer-card';
@@ -3919,9 +5602,12 @@ function renderizarCardRegra(texto, li, iaUsada, iaModelo) {
         ? {emoji:'🔌',color:'#059669',bg:'#f0fdf4',border:'#bbf7d0'}
         : {emoji:'⚡',color:'#0369a1',bg:'#f0f9ff',border:'#bae6fd'};
     const badge = `<span style="font-size:10px;color:${_rBadgeCfg.color};background:${_rBadgeCfg.bg};padding:2px 7px;border-radius:10px;border:1px solid ${_rBadgeCfg.border};font-weight:600;">${_rBadgeCfg.emoji} ${iaUsada||'OpenRouter'}${modelo?' · '+modelo:''}</span>`;
+    const ts = Date.now();
+    if (tipoRegra && estadoVoltar) { c.id = '_regraResultCard_' + ts; window['_regraVoltar_' + ts] = { tipo: tipoRegra, ...estadoVoltar }; }
+    const btnVoltar = (tipoRegra && estadoVoltar) ? `<button onclick="_voltarParaWizardRegra(${ts})" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border:1.5px solid #1e40af;border-radius:8px;background:white;color:#1e40af;cursor:pointer;font-size:13px;font-weight:600;">🔙 Voltar</button>` : '';
     let h = `<div style="background:#f0fdf4;padding:8px 15px;border-bottom:1px solid #bbf7d0;font-size:11px;color:#166534;font-weight:600;">⚙️ Assistente de Criação de Regras — Bsoft TMS</div>`;
     h += `<div class="answer-section"><div class="section-content">${formatado}</div></div>`;
-    h += `<div class="feedback-area"><span>Ajudou?</span><button class="feedback-btn" onclick="saveFeedback(${li},'positivo',this)">👍</button><button class="feedback-btn" onclick="saveFeedback(${li},'negativo',this)">👎</button><button onclick="novaConversa()" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);cursor:pointer;font-size:13px;font-weight:500;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='var(--primary)';this.style.background='var(--primary-light)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface)'">➕ Nova conversa</button><span style="margin-left:auto;">${badge}</span></div>`;
+    h += `<div class="feedback-area"><span>Ajudou?</span><button class="feedback-btn" onclick="saveFeedback(${li},'positivo',this)">👍</button><button class="feedback-btn" onclick="saveFeedback(${li},'negativo',this)">👎</button>${btnVoltar}<button onclick="novaConversa()" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);cursor:pointer;font-size:13px;font-weight:500;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='var(--primary)';this.style.background='var(--primary-light)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface)'">➕ Nova conversa</button><span style="margin-left:auto;">${badge}</span></div>`;
     c.innerHTML = h;
     s.appendChild(c);
     scrollToBottom(true);
