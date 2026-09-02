@@ -3519,7 +3519,10 @@ function _resolverModoCte(modo){const c=document.getElementById('modoCteCard');i
 // de prints) disponível pra quem já está acostumado, ao lado do novo montador de arrastar campos.
 function perguntarModoCte(){return new Promise(resolve=>{_modoCteResolve=resolve;const s=document.getElementById('chatStream');const card=document.createElement('div');card.id='modoCteCard';card.className='answer-card';card.innerHTML=`<div style="background:#eff6ff;padding:8px 15px;border-bottom:1px solid #bfdbfe;font-size:11px;color:#1e40af;font-weight:600;">📄 Ct-e / Conhecimento</div><div class="answer-section"><div class="section-content"><div style="font-size:13px;color:#374151;margin-bottom:10px;">Como prefere montar a regra?</div><div style="display:flex;gap:10px;flex-wrap:wrap;"><button onclick="_resolverModoCte('dnd')" style="flex:1;min-width:180px;padding:10px 16px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">🧩 Nova forma — arrastar campos</button><button onclick="_resolverModoCte('classico')" style="flex:1;min-width:180px;padding:10px 16px;background:#6b7280;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">📋 Formulário clássico</button></div></div></div>`;s.appendChild(card);scrollToBottom(true);});}
 
-const REGRAS_PREDEFINIDAS_CODE={
+// Base ESTÁVEL usada só pelo assistente clássico (o formulário antigo, mantido à parte como
+// alternativa) — não muda conforme a lista de botões da ferramenta nova (arrastar campos) é
+// curada/reorganizada, pra não quebrar silenciosamente as opções predefinidas de lá.
+const REGRAS_PREDEFINIDAS_CODE_CLASSICA={
     icms_demo:`def("tarifaCalculada",0);\nif ( obt("tarifaDigitada") > 0)\n   def("valorFrete", (obt("merc_quantKg[]")) * obt("tarifaDigitada")/1000);\nif ( obt("aliquota") > 0)\n   def("baseCalculo", (obt("valorFrete")));\nif ( obt("aliquota") < 1)\n   def("baseCalculo",0);\nvalor = obt("baseCalculo") * (obt("aliquota")/100);\ndef("valorICMS",valor);\ndef("totalPrestacao",  (obt("valorFrete")));`,
     simples:`def("tarifaCalculada",0);\nif ( obt("tarifaDigitada") > 0)\n   def("valorFrete", (obt("merc_quantKg[]")) * obt("tarifaDigitada"));\ndef("totalPrestacao",  (obt("valorFrete")));`,
     inverso:`def("tarifaCalculada",0);\nif ( obt("tarifaDigitada") > 0)\n   def("valorFrete", (obt("merc_quantKg[]")) * obt("tarifaDigitada"));\nvar inverso = ((100 - obt("aliquota")) /100)\nif ( obt("aliquota") > 0)\n   def("baseCalculo", ((obt("valorFrete") + obt("valoresOutros")) / inverso));\nif ( obt("aliquota") < 1)\n   def("baseCalculo", 0);\nvalor = obt("baseCalculo") * (obt("aliquota")/100);\ndef("valorICMS",valor);\ndef("totalPrestacao",  (obt("valorFrete") + obt("valorICMS")));`,
@@ -3527,6 +3530,18 @@ const REGRAS_PREDEFINIDAS_CODE={
     peso_cubado_gris:`var pesoReal = obt("merc_quantKg[]");\nvar pesoCubado = obt("merc_cubagem[]") * 150;\nvar pesoDeUso = 0;\n\nif (pesoCubado > pesoReal) {\n    pesoDeUso = pesoCubado;\n} else {\n    pesoDeUso = pesoReal;\n}\n\nvar freteBaseTabela = tabelaPrecos.valorFrete;\nvar valorFinalFrete = 0;\n\nif (pesoDeUso > 150) {\n    var kgExcedente = pesoDeUso - 150;\n    var valorDoExcesso = kgExcedente * tabelaPrecos.valorExcesso;\n    valorFinalFrete = freteBaseTabela + valorDoExcesso;\n} else {\n    valorFinalFrete = freteBaseTabela;\n}\n\ndef("valorFrete", valorFinalFrete);\n\nvar vGris = obt("merc_valor[]") * (0.2 / 100);\ndef("Gris", vGris);\n\ndef("totalPrestacao", (\n    obt("valorFrete") + \n    obt("valoresOutros") + \n    obt("valorSeguro") + \n    obt("valorPedagioConhecimento") + \n    obt("diaria") +\n    obt("Gris")\n));`,
     tabela_simples:`def("aliquota", 0);\ndef("baseCalculo", 0);\ndef("valorICMS", 0);\n\nif (obt("tarifaDigitada") > 0)\ndef("valorFrete", (obt("tarifaDigitada")) * obt("merc_quantKg[]")/1000);\n\ndef('totalPrestacao', obt('valorFrete'));`,
     tabela_icms_demo:`if (obt("tarifaDigitada") > 0)\ndef("valorFrete", (obt("tarifaDigitada")) * obt("merc_quantKg[]")/1000);\n\nif ( obt("aliquota") > 0)\ndef("baseCalculo", (obt("valorFrete")));\n\nif ( obt("aliquota") < 1)\ndef("baseCalculo",0);\n\ndef("valorICMS", obt("baseCalculo") * (obt("aliquota")/100));\n\ndef("totalPrestacao",  (obt("valorFrete")));`
+};
+// Lista curada usada só pela ferramenta nova (arrastar campos) — evolui conforme pedido, sem
+// afetar o assistente clássico acima.
+// Código-base compartilhado pelas 3 variações "REGRA BASE PARA: ..." abaixo — o texto é IDÊNTICO
+// nas 3; a única diferença entre elas é qual opção do grupo "Cálculo do ICMS" já vem marcada ao
+// selecionar cada uma (ver CTE_REGRA_PRE_OPCAO, em _cteUsarPredefinida).
+const _CTE_CODIGO_REGRA_BASE=`//CÁLCULO DO VALOR FRETE\n//EM CIMA DO PESO TONELADA\nvar valorcalculado = (obt("tarifaDigitada") * obt("merc_quantKg[]")/1000);\nif (obt("tarifaDigitada") > 0)\ndef("valorFrete", valorcalculado);\n//FIM CÁLCULO DO FRETE\n\n//CÁLCULO FRETE MÍNIMO\nif (valorcalculado < tabelaPrecos.valorFreteMinimo)\ndef("valorFrete", tabelaPrecos.valorFreteMinimo);\n//FIM CÁLCULO FRETE MÍNIMO\n\n//CÁLCULO DO ICMS\nif ( obt("aliquota") == 0)\ndef("baseCalculo",0);\nif ( obt("aliquota") > 0)\ndef("baseCalculo", (obt("valorFrete")));\ndef("valorICMS", obt("baseCalculo") * (obt("aliquota")/100));\n//FIM CÁLCULO DO ICMS\n\n//CÁLCULO TOTAL PRESTAÇÃO\ndef('totalPrestacao', obt('valorFrete') + obt("valoresOutros") + obt('valoresOutros') + obt('valorPedagioConhecimento') + obt('Gris') + obt('valorSeguro') + obt('diaria'));\n//FIM CÁLCULO TOTAL PRESTAÇÃO\n\n//CÁLCULO TOTAL SERVIÇO\ndef('totalServico', obt('totalPrestacao')); \n//FIM CÁLCULO TOTAL SERVICO\n\nmontaObs()`;
+const REGRAS_PREDEFINIDAS_CODE={
+    regra_base_icms_demo:_CTE_CODIGO_REGRA_BASE,
+    regra_base_icms_inverso:_CTE_CODIGO_REGRA_BASE,
+    regra_base_icms_somar:_CTE_CODIGO_REGRA_BASE,
+    peso_cubado_gris:`var pesoReal = obt("merc_quantKg[]");\nvar pesoCubado = obt("merc_cubagem[]") * 150;\nvar pesoDeUso = 0;\n\nif (pesoCubado > pesoReal) {\n    pesoDeUso = pesoCubado;\n} else {\n    pesoDeUso = pesoReal;\n}\n\nvar freteBaseTabela = tabelaPrecos.valorFrete;\nvar valorFinalFrete = 0;\n\nif (pesoDeUso > 150) {\n    var kgExcedente = pesoDeUso - 150;\n    var valorDoExcesso = kgExcedente * tabelaPrecos.valorExcesso;\n    valorFinalFrete = freteBaseTabela + valorDoExcesso;\n} else {\n    valorFinalFrete = freteBaseTabela;\n}\n\ndef("valorFrete", valorFinalFrete);\n\nvar vGris = obt("merc_valor[]") * (0.2 / 100);\ndef("Gris", vGris);\n\ndef("totalPrestacao", (\n    obt("valorFrete") + \n    obt("valoresOutros") + \n    obt("valorSeguro") + \n    obt("valorPedagioConhecimento") + \n    obt("diaria") +\n    obt("Gris")\n));`
 };
 const CALC_FRETE_MAP={
     nenhum:'Usuario digitara o valorFrete manualmente — NAO gere def("valorFrete") nem def("tarifaCalculada")',
@@ -3742,7 +3757,7 @@ async function enviarWizardRegra(){
     const descricao=(document.getElementById('wDescricao')?.value||'').trim();
     let regraBase='';
     if(regraCola)regraBase='REGRA EXISTENTE PARA EDITAR:\n'+regraCola;
-    else if(regraPre&&REGRAS_PREDEFINIDAS_CODE[regraPre])regraBase='REGRA BASE ('+regraPre+'):\n'+REGRAS_PREDEFINIDAS_CODE[regraPre];
+    else if(regraPre&&REGRAS_PREDEFINIDAS_CODE_CLASSICA[regraPre])regraBase='REGRA BASE ('+regraPre+'):\n'+REGRAS_PREDEFINIDAS_CODE_CLASSICA[regraPre];
     // Bug fix: gerar fórmula real em vez de descrição para que a IA copie exatamente
     const pParts=[...prestCbs.map(f=>'obt("'+f+'")')];
     if(prestTodosOutros)pParts.push('[identificar no print do CT-e TODOS os campos personalizados outros visíveis e incluir obt("nomeinterno") de cada um]');
@@ -3839,7 +3854,69 @@ const CTE_CAMPOS=[
     {label:'Total Prestação',campo:'totalPrestacao'},
     {label:'Valor total das notas fiscais',campo:'merc_valor[]'},
     {label:'Valor total do peso das Notas fiscais',campo:'merc_quantKg[]'},
-    {label:'Quantidade total das Notas fiscais',campo:'merc_quant[]'}
+    {label:'Quantidade total das Notas fiscais',campo:'merc_quant[]'},
+    {label:'KM',campo:'km'},
+    {label:'Número de Eixos',campo:'freteMinimo_nroEixos'},
+    {label:'CST (Situação Tributária)',campo:'CST'}
+];
+// Campos da Tabela de Preços (objeto externo "tabelaPrecos", ver peso_cubado_gris/CTE_OPCOES_MONTAGEM)
+// — mostrados na MESMA área de arrastar dos campos de Ct-e acima, mas entram na regra SEM obt()
+// (é acesso direto à propriedade, ex.: "tabelaPrecos.percSeguro") — só os campos do Ct-e (lista
+// acima) usam obt('campo'); a diferença é feita em _fatTermoParaExpressao (pelo "." no nome).
+const TABELA_PRECOS_CAMPOS=[
+    {label:'Tarifa Digitada',campo:'tabelaPrecos.tarifaDigitada'},
+    {label:'Outros Valores',campo:'tabelaPrecos.valoresOutros'},
+    {label:'Frete Mínimo',campo:'tabelaPrecos.valorFreteMinimo'},
+    {label:'Diária',campo:'tabelaPrecos.diaria'},
+    {label:'Valor Frete',campo:'tabelaPrecos.valorFrete'},
+    {label:'Total Prestação',campo:'tabelaPrecos.totalPrestacao'},
+    {label:'Pedágio',campo:'tabelaPrecos.valorPedagioConhecimento'},
+    {label:'% Pedágio',campo:'tabelaPrecos.percentualPedagio'},
+    {label:'Valor Fração',campo:'tabelaPrecos.valorFracao'},
+    {label:'Valor Seguro',campo:'tabelaPrecos.valorSeguro'},
+    {label:'% Seguro',campo:'tabelaPrecos.percentualSeguro'},
+    {label:'Seguro Aduaneiro',campo:'tabelaPrecos.valorSeguroAduaneiro'},
+    {label:'Gris',campo:'tabelaPrecos.Gris'},
+    {label:'% Gris',campo:'tabelaPrecos.percentualGris'},
+    {label:'Valor Excesso',campo:'tabelaPrecos.valorExcesso'},
+    {label:'Excedente',campo:'tabelaPrecos.excedente'}
+];
+// Opções prontas (checkbox) que podem ser mescladas na área de montagem — cada uma cobre um jeito
+// diferente de calcular o mesmo campo (ex.: valorFrete por tonelada, por KG ou por valor dos
+// documentos). Marcar uma sobrepõe, sem duplicar, o que já estiver montado pro(s) mesmo(s)
+// "Campo a definir" (ver _cteAplicarOpcionais/_mesclarOpcaoRegra).
+const CTE_OPCOES_MONTAGEM=[
+    {titulo:'💰 Cálculo do Valor Frete', itens:[
+        {id:'frete_tonelada', label:'Em cima do peso (tonelada)', codigo:'var valorcalculado = (obt("tarifaDigitada") * obt("merc_quantKg[]")/1000);\nif (obt("tarifaDigitada") > 0)\ndef("valorFrete", valorcalculado);'},
+        {id:'frete_kg', label:'Em cima do peso (KG)', codigo:'var valorcalculado = (obt("tarifaDigitada") * obt("merc_quantKg[]"));\nif (obt("tarifaDigitada") > 0)\ndef("valorFrete", valorcalculado);'},
+        {id:'frete_valor_docs', label:'Em cima do valor total dos documentos', codigo:'var valorcalculado = ((obt("tarifaDigitada")/100) * obt("merc_valor[]"));\nif (obt("tarifaDigitada") > 0)\ndef("valorFrete", valorcalculado);'}
+    ]},
+    {titulo:'📊 Cálculo do ICMS', itens:[
+        {id:'icms_demonstrativo', label:'ICMS Demonstrativo', codigo:'if ( obt("aliquota") == 0)\ndef("baseCalculo",0);\nif ( obt("aliquota") > 0)\ndef("baseCalculo", (obt("valorFrete")));\ndef("valorICMS", obt("baseCalculo") * (obt("aliquota")/100));'},
+        {id:'icms_inverso', label:'Cálculo Inverso (ICMS por dentro)', codigo:'if ( obt("aliquota") == 0)\ndef("baseCalculo",0);\nif ( obt("aliquota") > 0) \ndef("baseCalculo", ((obt("valorFrete")) / ((100 - obt("aliquota")) /100)));\ndef("valorICMS", obt("baseCalculo") * (obt("aliquota")/100));'},
+        // Não é um jeito de CALCULAR o ICMS (por isso tem "grupoExclusivo" próprio, abaixo — não
+        // entra na exclusividade de 1-por-grupo com as 2 opções acima): é um acréscimo, soma o
+        // valorICMS já calculado (por qualquer uma das 2 opções acima, ou já definido de outro
+        // jeito) no total da prestação — combinável com qualquer uma delas.
+        {id:'icms_somar', label:'Somar ICMS no Total Prestação', grupoExclusivo:'icms_somar', modo:'somar', campoAlvo:'totalPrestacao', termoNovo:{termo:"obt('valorICMS')", acao:'+'}}
+    ]},
+    {titulo:'📋 Tabela de Preços — Fração do Pedágio', itens:[
+        {id:'pedagio_peso', label:'Em cima do peso', codigo:'let qtdVezesMultiplica = Math.ceil(obt("merc_quantKg[]") / 100);\nlet vPedagio = tabelaPrecos.percentualPedagio * qtdVezesMultiplica;\ndef("valorPedagioConhecimento", vPedagio);'},
+        {id:'pedagio_km', label:'Em cima do KM', codigo:'let qtdVezesMultiplica = Math.ceil(obt("km") / 100);\nlet vPedagio = tabelaPrecos.percentualPedagio * qtdVezesMultiplica;\ndef("valorPedagioConhecimento", vPedagio);'},
+        {id:'pedagio_eixo', label:'Por eixo', codigo:'let qtdVezesMultiplica = Math.ceil(obt("freteMinimo_nroEixos") / 100);\nlet vPedagio = tabelaPrecos.percentualPedagio * qtdVezesMultiplica;\ndef("valorPedagioConhecimento", vPedagio);'}
+    ]},
+    {titulo:'📋 Tabela de Preços — Seguro (%)', itens:[
+        {id:'seguro_frete', label:'Em cima do valor frete', codigo:'if (tabelaPrecos.percSeguro > 0)\ndef("valorSeguro", tabelaPrecos.percSeguro * obt("valorFrete"));'},
+        {id:'seguro_prestacao', label:'Em cima do total prestação', codigo:'if (tabelaPrecos.percSeguro > 0)\ndef("valorSeguro", tabelaPrecos.percSeguro * obt("totalPrestacao"));'},
+        {id:'seguro_merc_valor', label:'Em cima do total valor mercadorias', codigo:'if (tabelaPrecos.percSeguro > 0)\ndef("valorSeguro", tabelaPrecos.percSeguro * obt("merc_valor[]"));'},
+        {id:'seguro_merc_peso', label:'Em cima do total peso mercadorias', codigo:'if (tabelaPrecos.percSeguro > 0)\ndef("valorSeguro", tabelaPrecos.percSeguro * obt("merc_quantKg[]"));'}
+    ]},
+    {titulo:'📋 Tabela de Preços — Gris (%)', itens:[
+        {id:'gris_frete', label:'Em cima do valor frete', codigo:'if (tabelaPrecos.percGris > 0)\ndef("Gris", tabelaPrecos.percGris * obt("valorFrete"));'},
+        {id:'gris_prestacao', label:'Em cima do total prestação', codigo:'if (tabelaPrecos.percGris > 0)\ndef("Gris", tabelaPrecos.percGris * obt("totalPrestacao"));'},
+        {id:'gris_merc_valor', label:'Em cima do total valor mercadorias', codigo:'if (tabelaPrecos.percGris > 0)\ndef("Gris", tabelaPrecos.percGris * obt("merc_valor[]"));'},
+        {id:'gris_merc_peso', label:'Em cima do total peso mercadorias', codigo:'if (tabelaPrecos.percGris > 0)\ndef("Gris", tabelaPrecos.percGris * obt("merc_quantKg[]"));'}
+    ]}
 ];
 let _wizardRegraDndQuery='';
 function mostrarWizardRegraDnd(queryOriginal){
@@ -3847,13 +3924,23 @@ function mostrarWizardRegraDnd(queryOriginal){
     window._cteAcaoSel='+';
     window._cteBlocos=[{destino:'totalPrestacao',expr:null}];
     window._cteExtras=[];
+    window._cteOpcionaisBase=null;
     const s=document.getElementById('chatStream');
     const wCard=document.getElementById('wizardRegraDndCard');if(wCard)wCard.remove();
     const card=document.createElement('div');
     card.id='wizardRegraDndCard';
     card.className='answer-card';
     card.style.cssText='max-height:680px;overflow-y:auto;';
-    const chipsHtml=CTE_CAMPOS.map(c=>`<span class="_cte-chip" draggable="true" data-campo="${c.campo}" title="${escapeHtml(c.label)}" ondragstart="_cteDragStart(event)" style="display:inline-block;padding:6px 12px;background:white;border:1.5px solid #d1d5db;border-radius:16px;font-size:12px;font-family:monospace;cursor:grab;user-select:none;">${c.campo}</span>`).join('');
+    const _cteChip=(c,corBorda,corFundo)=>`<span class="_cte-chip" draggable="true" data-campo="${c.campo}" title="${escapeHtml(c.label)}" ondragstart="_cteDragStart(event)" style="display:inline-block;padding:6px 12px;background:${corFundo};border:1.5px solid ${corBorda};border-radius:16px;font-size:12px;font-family:monospace;cursor:grab;user-select:none;">${c.campo}</span>`;
+    const chipsHtml=CTE_CAMPOS.map(c=>_cteChip(c,'#d1d5db','white')).join('')
+        +`<span style="width:100%;font-size:10px;color:#9ca3af;font-weight:700;margin:4px 0 2px;">📋 Tabela de Preços (usa direto, sem obt):</span>`
+        +TABELA_PRECOS_CAMPOS.map(c=>_cteChip(c,'#fbbf24','#fffbeb')).join('');
+    const opcoesHtml=CTE_OPCOES_MONTAGEM.map((grupo,grupoIdx)=>`<div style="margin-bottom:8px;">
+      <div style="font-size:10.5px;color:#6b7280;font-weight:700;margin:6px 0 3px;">${grupo.titulo}</div>
+      ${grupo.itens.map(item=>`<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#374151;padding:4px 8px;cursor:pointer;border-radius:6px;">
+        <input type="checkbox" id="wCteOpc_${item.id}" class="wCteOpcCheckbox" data-grupo="${item.grupoExclusivo||grupoIdx}" onchange="_cteOpcaoClicada(this)">${escapeHtml(item.label)}
+      </label>`).join('')}
+    </div>`).join('');
     card.innerHTML=`<div style="background:#eff6ff;padding:10px 15px;border-bottom:1px solid #bfdbfe;font-size:12px;color:#1e40af;font-weight:700;">📄 Assistente — Ct-e / Conhecimento <span style="font-weight:500;">(arrastar campos)</span></div>
 <div style="padding:12px 15px 4px;">
   <div class="wizard-section">
@@ -3865,14 +3952,16 @@ function mostrarWizardRegraDnd(queryOriginal){
     <div class="wizard-label">📋 Regras pré-existentes (padrão)</div>
     <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Clique pra gerar direto, sem IA:</div>
     <div style="display:flex;flex-direction:column;gap:6px;">
-      <button onclick="_cteUsarPredefinida('icms_demo')" style="width:100%;text-align:left;padding:9px 12px;background:#f9fafb;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12.5px;color:#374151;font-weight:600;">📐 ICMS Demonstrativo</button>
-      <button onclick="_cteUsarPredefinida('simples')" style="width:100%;text-align:left;padding:9px 12px;background:#f9fafb;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12.5px;color:#374151;font-weight:600;">📐 Simples Nacional</button>
-      <button onclick="_cteUsarPredefinida('inverso')" style="width:100%;text-align:left;padding:9px 12px;background:#f9fafb;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12.5px;color:#374151;font-weight:600;">📐 Cálculo Inverso (ICMS por dentro)</button>
-      <button onclick="_cteUsarPredefinida('soma_icms')" style="width:100%;text-align:left;padding:9px 12px;background:#f9fafb;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12.5px;color:#374151;font-weight:600;">📐 Somar ICMS no Total</button>
+      <button onclick="_cteUsarPredefinida('regra_base_icms_demo')" style="width:100%;text-align:left;padding:9px 12px;background:#f9fafb;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12.5px;color:#374151;font-weight:600;">👑 REGRA BASE PARA: ICMS DEMONSTRATIVO, SIMPLES NACIONAL, SEM TABELA, COM TABELA</button>
+      <button onclick="_cteUsarPredefinida('regra_base_icms_inverso')" style="width:100%;text-align:left;padding:9px 12px;background:#f9fafb;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12.5px;color:#374151;font-weight:600;">👑 REGRA BASE PARA: CÁLCULO INVERSO, SIMPLES NACIONAL, SEM TABELA, COM TABELA</button>
+      <button onclick="_cteUsarPredefinida('regra_base_icms_somar')" style="width:100%;text-align:left;padding:9px 12px;background:#f9fafb;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12.5px;color:#374151;font-weight:600;">👑 REGRA BASE PARA: SOMAR ICMS, SIMPLES NACIONAL, SEM TABELA, COM TABELA</button>
       <button onclick="_cteUsarPredefinida('peso_cubado_gris')" style="width:100%;text-align:left;padding:9px 12px;background:#f9fafb;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12.5px;color:#374151;font-weight:600;">📐 Frete Calculado Peso KG ou Peso Cubado</button>
-      <button onclick="_cteUsarPredefinida('tabela_simples')" style="width:100%;text-align:left;padding:9px 12px;background:#f9fafb;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12.5px;color:#374151;font-weight:600;">📐 Tabela de Preços (Tarifa × Peso/1000) — Simples Nacional, sem ICMS</button>
-      <button onclick="_cteUsarPredefinida('tabela_icms_demo')" style="width:100%;text-align:left;padding:9px 12px;background:#f9fafb;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12.5px;color:#374151;font-weight:600;">📐 Tabela de Preços (Tarifa × Peso/1000) — ICMS Demonstrativo</button>
     </div>
+  </div>
+  <div class="wizard-section">
+    <div class="wizard-label">🧱 Monte com um clique (opcional)</div>
+    <div style="font-size:11px;color:#6b7280;margin-bottom:4px;">Marque as opções que quiser montar automaticamente na área de montagem abaixo. Marcar sobrepõe (sem duplicar) o que já estiver montado pro mesmo "Campo a definir" — o resto continua intacto.</div>
+    ${opcoesHtml}
   </div>
   <div class="wizard-section" style="border:none;position:sticky;top:0;z-index:2;background:var(--surface);border-bottom:2px solid #bfdbfe;box-shadow:0 4px 8px -6px rgba(0,0,0,.2);">
     <div class="wizard-label">🧩 Monte sua regra arrastando os campos</div>
@@ -3890,7 +3979,7 @@ function mostrarWizardRegraDnd(queryOriginal){
       <button class="_cte-acao-btn" data-acao="<=" onclick="_cteSelecionarAcao('&lt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt;= Menor ou igual</button>
     </div>
     <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">2. Campos disponíveis (arraste para a área abaixo):</div>
-    <div id="wCteCamposPalette" style="display:flex;flex-wrap:wrap;gap:6px;padding:10px;border:1.5px dashed #d1d5db;border-radius:8px;margin-bottom:10px;max-height:110px;overflow-y:auto;">${chipsHtml}</div>
+    <div id="wCteCamposPalette" style="display:flex;flex-wrap:wrap;gap:6px;padding:10px;border:1.5px dashed #d1d5db;border-radius:8px;margin-bottom:10px;max-height:170px;overflow-y:auto;">${chipsHtml}</div>
     <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Ou digite um valor numérico (ex: 100, 0.02) e arraste-o pra área de montagem — útil pra dividir/multiplicar um campo por um número fixo:</div>
     <div style="display:flex;gap:8px;align-items:center;">
       <input type="text" id="wCteValorInput" inputmode="decimal" placeholder="Ex: 100" oninput="_cteValorInputChange()" style="width:110px;padding:7px 10px;border:1.5px solid #d1d5db;border-radius:6px;font-size:12px;font-family:monospace;">
@@ -4096,12 +4185,13 @@ function _cteRenderExtras(){
     const cont=document.getElementById('wCteExtrasContainer');
     if(!cont)return;
     const extras=window._cteExtras||[];
-    if(!extras.length){ cont.innerHTML=''; return; }
-    cont.innerHTML=extras.map((ex,idx)=>{
+    const visiveis=extras.map((ex,idx)=>({ex,idx,texto:_semLinhasComentario(ex.linha)})).filter(({texto})=>texto);
+    if(!visiveis.length){ cont.innerHTML=''; return; }
+    cont.innerHTML=visiveis.map(({ex,idx,texto})=>{
         const posLabel=ex.antesDe?`executa antes de definir <b>"${escapeHtml(ex.antesDe)}"</b>`:'executa no final da regra';
         return `<div style="border:1.5px dashed #f59e0b;border-radius:8px;padding:8px 10px;margin-bottom:8px;background:#fffbeb;">
             <div style="font-size:10.5px;color:#92400e;margin-bottom:4px;">⚡ Linha extra da regra original (mantida como está — ${posLabel}):</div>
-            <pre style="margin:0 0 6px;font-family:monospace;font-size:11.5px;color:#78350f;white-space:pre-wrap;word-break:break-all;">${escapeHtml(ex.linha)}</pre>
+            <pre style="margin:0 0 6px;font-family:monospace;font-size:11.5px;color:#78350f;white-space:pre-wrap;word-break:break-all;">${escapeHtml(texto)}</pre>
             <button onclick="_cteRemoverExtra(${idx})" style="padding:4px 10px;background:#fef2f2;color:#991b1b;border:1px solid #fecaca;border-radius:6px;cursor:pointer;font-size:11px;">🗑️ Remover esta linha</button>
         </div>`;
     }).join('');
@@ -4147,6 +4237,7 @@ function _cteAtualizarPreview(){
 function _cteLimparCanvas(){
     window._cteBlocos=[{destino:'totalPrestacao',expr:null}];
     window._cteExtras=[];
+    window._cteOpcionaisBase=null; _cteDesmarcarOpcionais();
     const colar=document.getElementById('wCteColarRegra');
     if(colar)colar.value='';
     _cteRenderBlocos();
@@ -4158,6 +4249,14 @@ function _cteGerarRegraCustom(){
 }
 // Ao escolher uma regra pré-definida, ao invés de já gerar o resultado final, preenche o canvas
 // com os campos/definições dela — o usuário parte dessa base pronta e edita/adiciona o que precisar.
+// Chave da regra pré-definida -> id da opção (checkbox, ver CTE_OPCOES_MONTAGEM) que já vem
+// marcada ao selecioná-la — as 3 variações "REGRA BASE PARA: ..." usam o MESMO código
+// (_CTE_CODIGO_REGRA_BASE) e só diferem em qual delas já vem ativa.
+const CTE_REGRA_PRE_OPCAO={
+    regra_base_icms_demo:'icms_demonstrativo',
+    regra_base_icms_inverso:'icms_inverso',
+    regra_base_icms_somar:'icms_somar'
+};
 function _cteUsarPredefinida(chave){
     const codigo=REGRAS_PREDEFINIDAS_CODE[chave];
     if(!codigo)return;
@@ -4166,7 +4265,15 @@ function _cteUsarPredefinida(chave){
     const {blocos,extras}=_parseRegraParaBlocos(codigo);
     window._cteBlocos=(blocos.length?blocos:[{destino:'totalPrestacao',expr:null}]).map(_seedTermosBase);
     window._cteExtras=extras;
-    _cteRenderBlocos();
+    window._cteOpcionaisBase=null; _cteDesmarcarOpcionais();
+    const opcaoPreMarcada=CTE_REGRA_PRE_OPCAO[chave];
+    const chkPre=opcaoPreMarcada?document.getElementById('wCteOpc_'+opcaoPreMarcada):null;
+    if(chkPre){
+        chkPre.checked=true;
+        _cteAplicarOpcionais(); // já mescla a opção marcada em cima da base recém-carregada e renderiza
+    }else{
+        _cteRenderBlocos();
+    }
     const cont=document.getElementById('wCteBlocosContainer');
     if(cont)cont.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
@@ -4182,6 +4289,53 @@ function _cteColarRegraInput(){
     }
     const {blocos,extras}=_parseRegraParaBlocos(texto);
     window._cteBlocos=(blocos.length?blocos:[{destino:'totalPrestacao',expr:null}]).map(_seedTermosBase);
+    window._cteExtras=extras;
+    window._cteOpcionaisBase=null; _cteDesmarcarOpcionais();
+    _cteRenderBlocos();
+}
+// Desmarca as opções (checkbox) de "monte com um clique" e esquece a base salva pra elas — chamado
+// sempre que o canvas é substituído por inteiro (regra pré-definida, colar regra, limpar), pra não
+// deixar um checkbox marcado "mentindo" sobre o que está na área de montagem.
+function _cteDesmarcarOpcionais(){
+    document.querySelectorAll('.wCteOpcCheckbox').forEach(c=>{c.checked=false;});
+}
+// Chamado ao clicar em qualquer checkbox de "monte com um clique" — no máximo 1 marcado por
+// grupo (ex.: só pode ter 1 jeito de calcular o valorFrete ativo por vez), pra não correr o risco
+// de marcar 2 opções que mexem no mesmo campo sem querer e quebrar o cálculo. Continua sendo
+// possível deixar um grupo inteiro sem nada marcado (clicando de novo desmarca), já que isso aqui
+// é sempre opcional.
+function _cteOpcaoClicada(chk){
+    if(chk.checked){
+        document.querySelectorAll('.wCteOpcCheckbox[data-grupo="'+chk.dataset.grupo+'"]').forEach(irmao=>{
+            if(irmao!==chk) irmao.checked=false;
+        });
+    }
+    _cteAplicarOpcionais();
+}
+// Aplica (mescla) todas as opções marcadas em cima de uma base — a primeira vez que isso roda
+// depois de um "canvas novo" (regra pré-definida/colar/limpar), a base é o que estava no canvas
+// naquele momento; daí em diante, marcar/desmarcar qualquer checkbox sempre recalcula do zero a
+// partir dessa MESMA base + o conjunto atual de marcados — assim o resultado nunca depende da
+// ordem em que os checkboxes foram clicados, só de quais estão marcados agora.
+function _cteAplicarOpcionais(){
+    if(!window._cteOpcionaisBase){
+        window._cteOpcionaisBase={blocos:_clonarBlocos(window._cteBlocos||[]), extras:(window._cteExtras||[]).map(e=>({...e}))};
+    }
+    let blocos=_clonarBlocos(window._cteOpcionaisBase.blocos);
+    let extras=window._cteOpcionaisBase.extras.map(e=>({...e}));
+    CTE_OPCOES_MONTAGEM.forEach(grupo=>{
+        grupo.itens.forEach(item=>{
+            const chk=document.getElementById('wCteOpc_'+item.id);
+            if(chk && chk.checked){
+                if(item.modo==='somar'){
+                    ({blocos,extras}=_aplicarSomaTermo(blocos,extras,item.campoAlvo,item.termoNovo));
+                }else{
+                    ({blocos,extras}=_mesclarOpcaoRegra(blocos,extras,item.codigo));
+                }
+            }
+        });
+    });
+    window._cteBlocos=blocos.length?blocos:[{destino:'totalPrestacao',expr:null}];
     window._cteExtras=extras;
     _cteRenderBlocos();
 }
@@ -4423,6 +4577,17 @@ function _parseRegraParaBlocos(codigo){
     const extras=[];
     let bufferExtra=[];
     let i=0;
+    // Troca nomes de variável temporária conhecidos (tempVars) pelo texto da expressão que eles
+    // guardam — usado tanto pro valor quanto pra condição de um def()/if(), e também ao GRAVAR uma
+    // nova tempVar (assim uma tempVar que usa outra já definida antes fica sempre com o texto já
+    // expandido por completo, sem depender de substituição encadeada em múltiplas passadas).
+    function substituirTempVars(expr){
+        Object.keys(tempVars).forEach(nome=>{
+            if(expr===nome){ expr=tempVars[nome]; }
+            else{ expr=expr.replace(new RegExp('\\b'+nome+'\\b','g'), '('+tempVars[nome]+')'); }
+        });
+        return expr;
+    }
     while(i<linhas.length){
         const linhaOriginal=linhas[i];
         const linha=linhaOriginal.trim();
@@ -4430,22 +4595,20 @@ function _parseRegraParaBlocos(codigo){
         const mDef=linha.match(/^def\(\s*["']([^"']+)["']\s*,\s*(.+)\)\s*;?\s*$/);
         if(mDef){
             const campo=mDef[1];
-            let expr=mDef[2].trim();
-            Object.keys(tempVars).forEach(nome=>{
-                if(expr===nome){ expr=tempVars[nome]; }
-                else{ expr=expr.replace(new RegExp('\\b'+nome+'\\b','g'), '('+tempVars[nome]+')'); }
-            });
+            let expr=substituirTempVars(mDef[2].trim());
             expr=expr.replace(/obt\(\s*"([^"]+)"\s*\)/g, "obt('$1')").trim();
             blocos.push({destino:campo, expr});
             if(bufferExtra.length){ extras.push({antesDe:campo, linha:bufferExtra.join('\n')}); bufferExtra=[]; }
             i++; continue;
         }
-        // Aceita "nome = valor" e também "var nome = valor" (var é comum nas regras de Ct-e,
-        // ex.: "var inverso = ...") — o "var " é só descartado, o resto funciona igual.
-        const mVar=linha.match(/^(?:var\s+)?(\w+)\s*=\s*(.+?);?\s*$/);
+        // Aceita "nome = valor" e também "var nome = valor" / "let nome = valor" / "const nome =
+        // valor" (var é comum nas regras de Ct-e, ex.: "var inverso = ...") — o prefixo é só
+        // descartado, o resto funciona igual.
+        const mVar=linha.match(/^(?:var\s+|let\s+|const\s+)?(\w+)\s*=\s*(.+?);?\s*$/);
         if(mVar && !linha.startsWith('if')){
             const nome=mVar[1];
-            const expr=mVar[2].replace(/;$/,'').trim().replace(/obt\(\s*"([^"]+)"\s*\)/g, "obt('$1')");
+            let expr=substituirTempVars(mVar[2].replace(/;$/,'').trim());
+            expr=expr.replace(/obt\(\s*"([^"]+)"\s*\)/g, "obt('$1')");
             tempVars[nome]=expr;
             i++; continue;
         }
@@ -4454,13 +4617,10 @@ function _parseRegraParaBlocos(codigo){
         if(/^if\s*\(/.test(linha)){
             const ifDef=_tentarIfDef(linhas, i);
             if(ifDef){
-                let expr=ifDef.valorExpr;
-                Object.keys(tempVars).forEach(nome=>{
-                    if(expr===nome){ expr=tempVars[nome]; }
-                    else{ expr=expr.replace(new RegExp('\\b'+nome+'\\b','g'), '('+tempVars[nome]+')'); }
-                });
+                let expr=substituirTempVars(ifDef.valorExpr);
                 expr=expr.replace(/obt\(\s*"([^"]+)"\s*\)/g, "obt('$1')").trim();
-                const condicaoRaw=ifDef.condExpr.replace(/obt\(\s*"([^"]+)"\s*\)/g, "obt('$1')").trim();
+                let condicaoRaw=substituirTempVars(ifDef.condExpr);
+                condicaoRaw=condicaoRaw.replace(/obt\(\s*"([^"]+)"\s*\)/g, "obt('$1')").trim();
                 blocos.push({destino:ifDef.campo, expr, temCondicao:true, condicaoRaw});
                 if(bufferExtra.length){ extras.push({antesDe:ifDef.campo, linha:bufferExtra.join('\n')}); bufferExtra=[]; }
                 i=ifDef.novoIndex; continue;
@@ -4774,12 +4934,13 @@ function _cfdRenderExtras(){
     const cont=document.getElementById('wCfdExtrasContainer');
     if(!cont)return;
     const extras=window._cfdExtras||[];
-    if(!extras.length){ cont.innerHTML=''; return; }
-    cont.innerHTML=extras.map((ex,idx)=>{
+    const visiveis=extras.map((ex,idx)=>({ex,idx,texto:_semLinhasComentario(ex.linha)})).filter(({texto})=>texto);
+    if(!visiveis.length){ cont.innerHTML=''; return; }
+    cont.innerHTML=visiveis.map(({ex,idx,texto})=>{
         const posLabel=ex.antesDe?`executa antes de definir <b>"${escapeHtml(ex.antesDe)}"</b>`:'executa no final da regra';
         return `<div style="border:1.5px dashed #f59e0b;border-radius:8px;padding:8px 10px;margin-bottom:8px;background:#fffbeb;">
             <div style="font-size:10.5px;color:#92400e;margin-bottom:4px;">⚡ Linha extra da regra original (mantida como está — ${posLabel}):</div>
-            <pre style="margin:0 0 6px;font-family:monospace;font-size:11.5px;color:#78350f;white-space:pre-wrap;word-break:break-all;">${escapeHtml(ex.linha)}</pre>
+            <pre style="margin:0 0 6px;font-family:monospace;font-size:11.5px;color:#78350f;white-space:pre-wrap;word-break:break-all;">${escapeHtml(texto)}</pre>
             <button onclick="_cfdRemoverExtra(${idx})" style="padding:4px 10px;background:#fef2f2;color:#991b1b;border:1px solid #fecaca;border-radius:6px;cursor:pointer;font-size:11px;">🗑️ Remover esta linha</button>
         </div>`;
     }).join('');
@@ -5015,7 +5176,12 @@ function _fatValorDragStart(e){
 // Converte o texto recebido no drop em um termo pra expressão: campo vira obt('campo'),
 // valor numérico entra puro (sem obt) — é assim que se divide/multiplica por um número fixo.
 function _fatTermoParaExpressao(raw){
-    if(raw.startsWith('campo:'))return `obt('${raw.slice(6)}')`;
+    if(raw.startsWith('campo:')){
+        const campo=raw.slice(6);
+        // Campo com "." no nome (ex.: "tabelaPrecos.percSeguro") é propriedade externa — entra
+        // como está, sem obt(); só campo do sistema (sem ponto) usa obt('campo').
+        return campo.includes('.') ? campo : `obt('${campo}')`;
+    }
     if(raw.startsWith('valor:')){
         const n=raw.slice(6);
         return /^-?\d+(\.\d+)?$/.test(n)?n:null;
@@ -5028,6 +5194,16 @@ function _fatTermoParaExpressao(raw){
 function _termoParaLabel(termo){
     const m=termo.match(/^obt\(\s*["']([^"']*)["']\s*\)$/);
     return m?m[1]:termo;
+}
+// Tira as linhas de comentário (começam com "//") de uma "linha extra" (ver _parseRegraParaBlocos)
+// — usado só pra EXIBIR dentro da caixa "⚡ Linha extra...": o comentário nunca aparece ali (mesmo
+// quando vem misturado com código de verdade, tipo "//comentário" + "montaObs()" juntos na mesma
+// extra), pra não arriscar o usuário achar que precisa mexer nele e acabar apagando à toa. O
+// comentário continua preservado normalmente na regra final gerada (que usa ex.linha original,
+// sem essa filtragem) — só o que aparece NA TELA muda. Se não sobrar nada (extra 100% comentário),
+// a caixa inteira some.
+function _semLinhasComentario(texto){
+    return (texto||'').split('\n').filter(l=>!l.trim().startsWith('//')).join('\n').trim();
 }
 // Recalcula bloco.expr a partir de bloco.termos (lista de itens arrastados) depois de
 // adicionar ou remover um item — intercala a ação de cada termo com o que já foi acumulado.
@@ -5044,6 +5220,53 @@ function _clonarBlocos(blocos){
         termos: b.termos?b.termos.map(t=>({...t})):b.termos,
         condicao: b.condicao?{...b.condicao, termos:b.condicao.termos?b.condicao.termos.map(t=>({...t})):b.condicao.termos}:b.condicao
     }));
+}
+// Mescla o código de UMA opção (checkbox de "monte com um clique") no acumulado de blocos/extras
+// que já está na área de montagem — sobrepõe (sem duplicar) qualquer definição já existente pro(s)
+// MESMO "Campo a definir": a(s) definição(ões) nova(s) entra(m) bem na posição da primeira
+// ocorrência antiga (não no final), pra manter a ordem de execução da regra — um campo lido mais
+// adiante via obt() precisa continuar sendo definido antes dele, não depois. Genérica (não depende
+// de qual ferramenta chamou) — reaproveitável por Ct-e/Contrato/Faturamento se precisar.
+function _mesclarOpcaoRegra(blocosAcumulados, extrasAcumuladas, codigoOpcao){
+    const {blocos:novosBlocos, extras:novasExtras}=_parseRegraParaBlocos(codigoOpcao);
+    novosBlocos.forEach(_seedTermosBase);
+    const destinos=new Set(novosBlocos.map(b=>b.destino));
+    let blocos=[]; let inserido=false;
+    (blocosAcumulados||[]).forEach(b=>{
+        if(destinos.has(b.destino)){
+            if(!inserido){ blocos.push(...novosBlocos); inserido=true; }
+        }else{ blocos.push(b); }
+    });
+    if(!inserido) blocos.push(...novosBlocos);
+    const novasExtrasLigadas=novasExtras.filter(e=>e.antesDe!==null);
+    const novasExtrasSoltas=novasExtras.filter(e=>e.antesDe===null);
+    let extras=[]; let inseridoExtra=false;
+    (extrasAcumuladas||[]).forEach(e=>{
+        if(e.antesDe!==null && destinos.has(e.antesDe)){
+            if(!inseridoExtra){ extras.push(...novasExtrasLigadas); inseridoExtra=true; }
+        }else{ extras.push(e); }
+    });
+    if(!inseridoExtra) extras.push(...novasExtrasLigadas);
+    extras.push(...novasExtrasSoltas);
+    return {blocos, extras};
+}
+// Acrescenta 1 termo a um campo que já está (ou não) na área de montagem, SEM substituir o que já
+// tiver lá — ao contrário de _mesclarOpcaoRegra (troca o bloco inteiro), aqui é sempre um
+// acréscimo (ex.: "somar obt('valorICMS') no totalPrestacao", mantendo valorFrete/outros/etc. que
+// já estavam montados). Se o termo já estiver presente não duplica; se o campo ainda não existir,
+// cria um bloco novo só com esse termo. Genérica, igual _mesclarOpcaoRegra.
+function _aplicarSomaTermo(blocosAcumulados, extrasAcumuladas, campoAlvo, termoNovo){
+    const idx=(blocosAcumulados||[]).findIndex(b=>b.destino===campoAlvo);
+    if(idx===-1){
+        const novoBloco={destino:campoAlvo, expr:null, termos:[{termo:termoNovo.termo, acao:null}]};
+        _recalcExprDeTermos(novoBloco);
+        return {blocos:[...(blocosAcumulados||[]), novoBloco], extras:extrasAcumuladas};
+    }
+    const blocos=blocosAcumulados.map((b,i)=>i!==idx?b:{...b, termos:(b.termos||[]).map(t=>({...t}))});
+    const jaTem=blocos[idx].termos.some(t=>t.termo===termoNovo.termo);
+    if(!jaTem) blocos[idx].termos.push({...termoNovo});
+    _recalcExprDeTermos(blocos[idx]);
+    return {blocos, extras:extrasAcumuladas};
 }
 // ─── Decompõe uma expressão em termos individuais (usado pra "abrir" o valor de um campo vindo
 // de uma regra pré-definida em chips arrastáveis/removíveis individuais — mesma granularidade de
@@ -5081,7 +5304,33 @@ function _tokenizarExpressao(expr){
         }
         const mNum=/^\d+(\.\d+)?/.exec(expr.slice(i));
         if(mNum){ tokens.push({tipo:'num',inicio:i,fim:i+mNum[0].length}); i+=mNum[0].length; continue; }
-        return null; // caractere não reconhecido — quem chamou cai no fallback (1 termo só)
+        // Qualquer outra coisa — propriedade externa ("tabelaPrecos.percSeguro"), chamada de função
+        // ("Math.ceil(...)"), campo não identificado da regra, etc. — vira 1 termo "livre" só,
+        // igual um obt(...)/número (folha), SEM travar a tokenização inteira: só os operadores
+        // continuam sendo o ponto de separação daqui pra frente, então "obt('a') + campoQualquer"
+        // vira 2 itens mesmo sem reconhecer "campoQualquer". Consome até o próximo operador/espaço
+        // do MESMO nível — rastreia parênteses (profundidade própria) pra não cortar no meio de uma
+        // chamada de função nem "comer" um ")" que fecha um agrupamento de fora (ex.: em
+        // "Math.ceil(x/100) + obt('a')" o "/" de dentro do parêntese não separa nada, só o "+" de
+        // fora separa; o resultado fica com a chamada inteira como 1 termo).
+        let j=i, prof=0;
+        while(j<n){
+            const cj=expr[j];
+            if(cj==='('){ prof++; j++; continue; }
+            if(cj===')'){
+                if(prof===0)break;
+                prof--; j++; continue;
+            }
+            if(prof===0){
+                if(/\s/.test(cj))break;
+                if(expr.startsWith('==',j)||expr.startsWith('>=',j)||expr.startsWith('<=',j))break;
+                if('><+-*/'.includes(cj))break;
+            }
+            j++;
+        }
+        if(j===i)return null; // segurança — não deveria acontecer (sempre avança ao menos 1 char)
+        tokens.push({tipo:'livre',inicio:i,fim:j});
+        i=j; continue;
     }
     return tokens;
 }
@@ -5093,7 +5342,7 @@ function _parseExpressaoAST(tokens){
         const t=ver(); if(!t)return null;
         if(t.tipo==='-'){ pega('-'); const f=parseFactor(); if(!f)return null; return {tipo:'folha',inicio:t.inicio,fim:f.fim}; }
         if(t.tipo==='('){ pega('('); const e=parseExpr(); if(!e)return null; if(!pega(')'))return null; return e; }
-        if(t.tipo==='obt'||t.tipo==='num'){ pega(t.tipo); return {tipo:'folha',inicio:t.inicio,fim:t.fim}; }
+        if(t.tipo==='obt'||t.tipo==='num'||t.tipo==='livre'){ pega(t.tipo); return {tipo:'folha',inicio:t.inicio,fim:t.fim}; }
         return null;
     }
     function parseTerm(){
@@ -5347,12 +5596,13 @@ function _fatRenderExtras(){
     const cont=document.getElementById('wFatExtrasContainer');
     if(!cont)return;
     const extras=window._fatExtras||[];
-    if(!extras.length){ cont.innerHTML=''; return; }
-    cont.innerHTML=extras.map((ex,idx)=>{
+    const visiveis=extras.map((ex,idx)=>({ex,idx,texto:_semLinhasComentario(ex.linha)})).filter(({texto})=>texto);
+    if(!visiveis.length){ cont.innerHTML=''; return; }
+    cont.innerHTML=visiveis.map(({ex,idx,texto})=>{
         const posLabel=ex.antesDe?`executa antes de definir <b>"${escapeHtml(ex.antesDe)}"</b>`:'executa no final da regra';
         return `<div style="border:1.5px dashed #f59e0b;border-radius:8px;padding:8px 10px;margin-bottom:8px;background:#fffbeb;">
             <div style="font-size:10.5px;color:#92400e;margin-bottom:4px;">⚡ Linha extra da regra original (mantida como está — ${posLabel}):</div>
-            <pre style="margin:0 0 6px;font-family:monospace;font-size:11.5px;color:#78350f;white-space:pre-wrap;word-break:break-all;">${escapeHtml(ex.linha)}</pre>
+            <pre style="margin:0 0 6px;font-family:monospace;font-size:11.5px;color:#78350f;white-space:pre-wrap;word-break:break-all;">${escapeHtml(texto)}</pre>
             <button onclick="_fatRemoverExtra(${idx})" style="padding:4px 10px;background:#fef2f2;color:#991b1b;border:1px solid #fecaca;border-radius:6px;cursor:pointer;font-size:11px;">🗑️ Remover esta linha</button>
         </div>`;
     }).join('');
