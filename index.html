@@ -3840,46 +3840,47 @@ async function enviarWizardRegra(){
 // _termoParaLabel, _clonarBlocos, _seedTermosBase, _parseRegraParaBlocos, _decomporExpressao).
 const CTE_CAMPOS=[
     {label:'Tarifa Final',campo:'tarifaDigitada'},
-    {label:'Tarifa Real (calculada)',campo:'tarifaCalculada'},
+    {label:'Tarifa Real',campo:'tarifaCalculada'},
     {label:'Frete Valor',campo:'valorFrete'},
-    {label:'Base Cálculo ICMS',campo:'baseCalculo'},
-    {label:'Alíquota ICMS',campo:'aliquota'},
-    {label:'Valor ICMS',campo:'valorICMS'},
+    {label:'Base de Cálculo',campo:'baseCalculo'},
+    {label:'Alíquota (%)',campo:'aliquota'},
+    {label:'Valor do ICMS',campo:'valorICMS'},
     {label:'Outros',campo:'valoresOutros'},
     {label:'Pedágio',campo:'valorPedagioConhecimento'},
     {label:'Gris',campo:'Gris'},
     {label:'Diária',campo:'diaria'},
     {label:'Seguro',campo:'valorSeguro'},
-    {label:'Total Serviço',campo:'totalServico'},
+    {label:'Seg. Aduaneiro',campo:'valorSeguroAduaneiro'},
+    {label:'Total do Serviço',campo:'totalServico'},
     {label:'Total Prestação',campo:'totalPrestacao'},
-    {label:'Valor total das notas fiscais',campo:'merc_valor[]'},
-    {label:'Valor total do peso das Notas fiscais',campo:'merc_quantKg[]'},
+    {label:'Total Peso (kg) da Nf-e',campo:'merc_quantKg[]'},
+    {label:'Total Valor Produtos da Nf-e',campo:'merc_vProd[]'},
+    {label:'Total Valor das Nf-e',campo:'merc_valor[]'},
+    {label:'Nº Eixos',campo:'freteMinimo_nroEixos'},
     {label:'Quantidade total das Notas fiscais',campo:'merc_quant[]'},
-    {label:'KM',campo:'km'},
-    {label:'Número de Eixos',campo:'freteMinimo_nroEixos'},
-    {label:'CST (Situação Tributária)',campo:'CST'}
+    {label:'KM',campo:'km'}
 ];
 // Campos da Tabela de Preços (objeto externo "tabelaPrecos", ver peso_cubado_gris/CTE_OPCOES_MONTAGEM)
 // — mostrados na MESMA área de arrastar dos campos de Ct-e acima, mas entram na regra SEM obt()
 // (é acesso direto à propriedade, ex.: "tabelaPrecos.percSeguro") — só os campos do Ct-e (lista
 // acima) usam obt('campo'); a diferença é feita em _fatTermoParaExpressao (pelo "." no nome).
 const TABELA_PRECOS_CAMPOS=[
-    {label:'Tarifa Digitada',campo:'tabelaPrecos.tarifaDigitada'},
-    {label:'Outros Valores',campo:'tabelaPrecos.valoresOutros'},
-    {label:'Frete Mínimo',campo:'tabelaPrecos.valorFreteMinimo'},
+    {label:'Tarifa final',campo:'tabelaPrecos.tarifaDigitada'},
+    {label:'Outros',campo:'tabelaPrecos.valoresOutros'},
+    {label:'Frete mínimo',campo:'tabelaPrecos.valorFreteMinimo'},
     {label:'Diária',campo:'tabelaPrecos.diaria'},
-    {label:'Valor Frete',campo:'tabelaPrecos.valorFrete'},
-    {label:'Total Prestação',campo:'tabelaPrecos.totalPrestacao'},
+    {label:'Frete valor',campo:'tabelaPrecos.valorFrete'},
+    {label:'Total prestação',campo:'tabelaPrecos.totalPrestacao'},
     {label:'Pedágio',campo:'tabelaPrecos.valorPedagioConhecimento'},
-    {label:'% Pedágio',campo:'tabelaPrecos.percentualPedagio'},
-    {label:'Valor Fração',campo:'tabelaPrecos.valorFracao'},
-    {label:'Valor Seguro',campo:'tabelaPrecos.valorSeguro'},
-    {label:'% Seguro',campo:'tabelaPrecos.percentualSeguro'},
-    {label:'Seguro Aduaneiro',campo:'tabelaPrecos.valorSeguroAduaneiro'},
+    {label:'Fração pedágio',campo:'tabelaPrecos.percentualPedagio'},
+    {label:'Valor fração',campo:'tabelaPrecos.valorFracao'},
+    {label:'Seguro',campo:'tabelaPrecos.valorSeguro'},
+    {label:'%Seguro',campo:'tabelaPrecos.percentualSeguro'},
+    {label:'Seg. aduaneiro',campo:'tabelaPrecos.valorSeguroAduaneiro'},
     {label:'Gris',campo:'tabelaPrecos.Gris'},
-    {label:'% Gris',campo:'tabelaPrecos.percentualGris'},
-    {label:'Valor Excesso',campo:'tabelaPrecos.valorExcesso'},
-    {label:'Excedente',campo:'tabelaPrecos.excedente'}
+    {label:'%Gris',campo:'tabelaPrecos.percentualGris'},
+    {label:'Excesso',campo:'tabelaPrecos.valorExcesso'},
+    {label:'Limite excedente',campo:'tabelaPrecos.excedente'}
 ];
 // Opções prontas (checkbox) que podem ser mescladas na área de montagem — cada uma cobre um jeito
 // diferente de calcular o mesmo campo (ex.: valorFrete por tonelada, por KG ou por valor dos
@@ -3931,10 +3932,10 @@ function mostrarWizardRegraDnd(queryOriginal){
     card.id='wizardRegraDndCard';
     card.className='answer-card';
     card.style.cssText='max-height:680px;overflow-y:auto;';
-    const _cteChip=(c,corBorda,corFundo)=>`<span class="_cte-chip" draggable="true" data-campo="${c.campo}" title="${escapeHtml(c.label)}" ondragstart="_cteDragStart(event)" style="display:inline-block;padding:6px 12px;background:${corFundo};border:1.5px solid ${corBorda};border-radius:16px;font-size:12px;font-family:monospace;cursor:grab;user-select:none;">${c.campo}</span>`;
-    const chipsHtml=CTE_CAMPOS.map(c=>_cteChip(c,'#d1d5db','white')).join('')
+    const _cteChip=(c,corBorda,corFundo,corTexto)=>`<span class="_cte-chip" draggable="true" data-campo="${c.campo}" title="${escapeHtml(c.campo)}" ondragstart="_cteDragStart(event)" style="display:inline-block;padding:6px 12px;background:${corFundo};border:1.5px solid ${corBorda};border-radius:16px;font-size:12px;cursor:grab;user-select:none;color:${corTexto};">${escapeHtml(c.label)}</span>`;
+    const chipsHtml=CTE_CAMPOS.map(c=>_cteChip(c,'#86efac','#f0fdf4','#166534')).join('')
         +`<span style="width:100%;font-size:10px;color:#9ca3af;font-weight:700;margin:4px 0 2px;">📋 Tabela de Preços (usa direto, sem obt):</span>`
-        +TABELA_PRECOS_CAMPOS.map(c=>_cteChip(c,'#fbbf24','#fffbeb')).join('');
+        +TABELA_PRECOS_CAMPOS.map(c=>_cteChip(c,'#fbbf24','#fffbeb','#92400e')).join('');
     const opcoesHtml=CTE_OPCOES_MONTAGEM.map((grupo,grupoIdx)=>`<div style="margin-bottom:8px;">
       <div style="font-size:10.5px;color:#6b7280;font-weight:700;margin:6px 0 3px;">${grupo.titulo}</div>
       ${grupo.itens.map(item=>`<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#374151;padding:4px 8px;cursor:pointer;border-radius:6px;">
@@ -4046,7 +4047,9 @@ function _cteRenderBlocos(){
             canvasConteudo=bloco.termos.map((t,tIdx)=>{
                 const sep=tIdx>0?`<span style="font-size:13px;color:#2563eb;font-weight:700;margin:0 3px;">${escapeHtml(t.acao||'')}</span>`:'';
                 const label=_termoParaLabel(t.termo);
-                return `${sep}<span title="${escapeHtml(t.termo)}" style="display:inline-flex;align-items:center;gap:3px;padding:3px 4px 3px 9px;margin:2px 0;background:white;border:1px solid #93c5fd;border-radius:12px;font-size:11.5px;font-family:monospace;color:#1e40af;">${escapeHtml(label)}<button onclick="_cteRemoverTermo(${idx},${tIdx})" title="Remover este item" style="border:none;background:none;color:#2563eb;cursor:pointer;font-size:13px;padding:0 4px;line-height:1;font-weight:700;">✕</button></span>`;
+                const daTabela=_ehCampoTabelaPrecos(t.termo), daCte=_ehCampoCte(t.termo);
+                const corBorda=daTabela?'#fbbf24':daCte?'#86efac':'#93c5fd', corFundo=daTabela?'#fffbeb':daCte?'#f0fdf4':'white', corTexto=daTabela?'#92400e':daCte?'#166534':'#1e40af', corX=daTabela?'#b45309':daCte?'#15803d':'#2563eb';
+                return `${sep}<span title="${escapeHtml(t.termo)}" style="display:inline-flex;align-items:center;gap:3px;padding:3px 4px 3px 9px;margin:2px 0;background:${corFundo};border:1px solid ${corBorda};border-radius:12px;font-size:11.5px;font-family:monospace;color:${corTexto};">${escapeHtml(label)}<button onclick="_cteRemoverTermo(${idx},${tIdx})" title="Remover este item" style="border:none;background:none;color:${corX};cursor:pointer;font-size:13px;padding:0 4px;line-height:1;font-weight:700;">✕</button></span>`;
             }).join('');
         }else if(bloco.expr){
             canvasConteudo=`<span style="font-family:monospace;font-size:12.5px;color:#1e40af;word-break:break-all;">${escapeHtml(bloco.expr)}</span>`;
@@ -4068,7 +4071,9 @@ function _cteRenderBlocos(){
                 ?condTermos.map((t,tIdx)=>{
                     const sep=tIdx>0?`<span style="font-size:13px;color:#b45309;font-weight:700;margin:0 3px;">${escapeHtml(t.acao||'')}</span>`:'';
                     const label=_termoParaLabel(t.termo);
-                    return `${sep}<span title="${escapeHtml(t.termo)}" style="display:inline-flex;align-items:center;gap:3px;padding:3px 4px 3px 9px;margin:2px 0;background:white;border:1px solid #fcd34d;border-radius:12px;font-size:11.5px;font-family:monospace;color:#92400e;">${escapeHtml(label)}<button onclick="_cteRemoverTermoCondicao(${idx},${tIdx})" title="Remover este item" style="border:none;background:none;color:#b45309;cursor:pointer;font-size:13px;padding:0 4px;line-height:1;font-weight:700;">✕</button></span>`;
+                    const daTabela=_ehCampoTabelaPrecos(t.termo), daCte=_ehCampoCte(t.termo);
+                    const corBorda=daTabela?'#fbbf24':daCte?'#86efac':'#fcd34d', corFundo=daTabela?'#fef3c7':daCte?'#dcfce7':'white', corTexto=daCte?'#166534':'#92400e', corX=daCte?'#15803d':'#b45309';
+                    return `${sep}<span title="${escapeHtml(t.termo)}" style="display:inline-flex;align-items:center;gap:3px;padding:3px 4px 3px 9px;margin:2px 0;background:${corFundo};border:1px solid ${corBorda};border-radius:12px;font-size:11.5px;font-family:monospace;color:${corTexto};">${escapeHtml(label)}<button onclick="_cteRemoverTermoCondicao(${idx},${tIdx})" title="Remover este item" style="border:none;background:none;color:${corX};cursor:pointer;font-size:13px;padding:0 4px;line-height:1;font-weight:700;">✕</button></span>`;
                 }).join('')
                 :`<span style="color:#b45309;font-size:12px;">Arraste campos aqui pra montar a condição</span>`;
             condSecao+=`<div style="margin:0 0 10px;padding-left:8px;border-left:3px solid #fbbf24;">
@@ -4695,7 +4700,7 @@ function mostrarWizardContratoDnd(queryOriginal){
     card.id='wizardContratoDndCard';
     card.className='answer-card';
     card.style.cssText='max-height:680px;overflow-y:auto;';
-    const chipsHtml=CONTRATO_FRETE_CAMPOS.map(c=>`<span class="_cfd-chip" draggable="true" data-campo="${c.campo}" title="${escapeHtml(c.label)}" ondragstart="_cfdDragStart(event)" style="display:inline-block;padding:6px 12px;background:white;border:1.5px solid #d1d5db;border-radius:16px;font-size:12px;font-family:monospace;cursor:grab;user-select:none;">${c.campo}</span>`).join('');
+    const chipsHtml=CONTRATO_FRETE_CAMPOS.map(c=>`<span class="_cfd-chip" draggable="true" data-campo="${c.campo}" title="${escapeHtml(c.campo)}" ondragstart="_cfdDragStart(event)" style="display:inline-block;padding:6px 12px;background:white;border:1.5px solid #d1d5db;border-radius:16px;font-size:12px;cursor:grab;user-select:none;">${escapeHtml(c.label)}</span>`).join('');
     card.innerHTML=`<div style="background:#f5f3ff;padding:10px 15px;border-bottom:1px solid #ddd6fe;font-size:12px;color:#5b21b6;font-weight:700;">🚛 Assistente — Contrato de Frete <span style="font-weight:500;">(arrastar campos)</span></div>
 <div style="padding:12px 15px 4px;">
   <div class="wizard-section">
@@ -5190,9 +5195,35 @@ function _fatTermoParaExpressao(raw){
 // Extrai o nome pra mostrar num chip da área de montagem: obt('campo') ou obt("campo") vira só
 // "campo" (aceita as duas aspas — ambas funcionam na regra), valor numérico fica como está —
 // usado tanto no Contrato de Frete quanto no Faturamento.
+// Mapa único campo->rótulo amigável, juntando as listas de campos de cada ferramenta (Ct-e,
+// Tabela de Preços, Contrato de Frete) — usado só pra EXIBIR um nome mais fácil de entender na
+// área de montagem; o nome interno (o que realmente monta a regra, dentro de obt('...') ou puro
+// tipo "tabelaPrecos.x") nunca muda. Nenhum campo se repete entre as listas, então um mapa só
+// (sem separar por ferramenta) é seguro.
+const _ROTULOS_CAMPOS=(()=>{
+    const mapa={};
+    [CTE_CAMPOS, TABELA_PRECOS_CAMPOS, CONTRATO_FRETE_CAMPOS].forEach(lista=>{
+        (lista||[]).forEach(c=>{ mapa[c.campo]=c.label; });
+    });
+    return mapa;
+})();
 function _termoParaLabel(termo){
     const m=termo.match(/^obt\(\s*["']([^"']*)["']\s*\)$/);
-    return m?m[1]:termo;
+    const nome=m?m[1]:termo;
+    return _ROTULOS_CAMPOS[nome]||nome;
+}
+// Um termo de campo da Tabela de Preços entra puro na regra, sem obt() (ver _fatTermoParaExpressao)
+// — usado pra destacar esses chips com a mesma cor âmbar da paleta "Campos disponíveis", separando
+// visualmente dos campos do Ct-e (que continuam azuis) na área de montagem.
+function _ehCampoTabelaPrecos(termo){
+    return termo.startsWith('tabelaPrecos.');
+}
+// Um termo limpo tipo obt('campo') ou obt("campo") — SÓ isso, nada mais junto — é um campo do
+// Ct-e "puro"; usado junto com _ehCampoTabelaPrecos pra colorir o chip (verde) na área de
+// montagem igual a paleta. Número solto, expressão composta (ex.: "(100) - (obt('x'))") ou campo
+// não identificado ficam de fora dos dois — não são um campo só, então continuam neutros.
+function _ehCampoCte(termo){
+    return /^obt\(\s*["'][^"']*["']\s*\)$/.test(termo);
 }
 // Tira as linhas de comentário (começam com "//") de uma "linha extra" (ver _parseRegraParaBlocos)
 // — usado só pra EXIBIR dentro da caixa "⚡ Linha extra...": o comentário nunca aparece ali (mesmo
