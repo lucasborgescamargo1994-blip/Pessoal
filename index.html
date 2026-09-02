@@ -4253,9 +4253,9 @@ function _cteGerarRegraCustom(){
 // marcada ao selecioná-la — as 3 variações "REGRA BASE PARA: ..." usam o MESMO código
 // (_CTE_CODIGO_REGRA_BASE) e só diferem em qual delas já vem ativa.
 const CTE_REGRA_PRE_OPCAO={
-    regra_base_icms_demo:'icms_demonstrativo',
-    regra_base_icms_inverso:'icms_inverso',
-    regra_base_icms_somar:'icms_somar'
+    regra_base_icms_demo:['frete_tonelada','icms_demonstrativo'],
+    regra_base_icms_inverso:['frete_tonelada','icms_inverso'],
+    regra_base_icms_somar:['frete_tonelada','icms_somar']
 };
 function _cteUsarPredefinida(chave){
     const codigo=REGRAS_PREDEFINIDAS_CODE[chave];
@@ -4266,11 +4266,10 @@ function _cteUsarPredefinida(chave){
     window._cteBlocos=(blocos.length?blocos:[{destino:'totalPrestacao',expr:null}]).map(_seedTermosBase);
     window._cteExtras=extras;
     window._cteOpcionaisBase=null; _cteDesmarcarOpcionais();
-    const opcaoPreMarcada=CTE_REGRA_PRE_OPCAO[chave];
-    const chkPre=opcaoPreMarcada?document.getElementById('wCteOpc_'+opcaoPreMarcada):null;
-    if(chkPre){
-        chkPre.checked=true;
-        _cteAplicarOpcionais(); // já mescla a opção marcada em cima da base recém-carregada e renderiza
+    const opcoesPreMarcadas=(CTE_REGRA_PRE_OPCAO[chave]||[]).filter(id=>document.getElementById('wCteOpc_'+id));
+    if(opcoesPreMarcadas.length){
+        opcoesPreMarcadas.forEach(id=>{ document.getElementById('wCteOpc_'+id).checked=true; });
+        _cteAplicarOpcionais(); // já mescla as opções marcadas em cima da base recém-carregada e renderiza
     }else{
         _cteRenderBlocos();
     }
