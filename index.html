@@ -6588,9 +6588,9 @@ function _relRenderColunas() {
         const btnRemover = window._relColunas.length > 1
             ? `<button onclick="_relRemoverColuna(${idx})" title="Remover esta coluna" style="padding:7px 10px;background:#fef2f2;color:#991b1b;border:1.5px solid #fecaca;border-radius:6px;cursor:pointer;font-size:12px;">🗑️</button>`
             : '';
-        return `<div style="border:1.5px solid #e5e7eb;border-radius:8px;padding:10px;margin-bottom:8px;">
-            <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
-                <input type="text" class="wRelNomeColunaInput" value="${escapeHtml(col.nomeColuna)}" oninput="_relNomeColunaInput(${idx}, this.value)" placeholder="Nome da coluna *" style="flex:1;padding:7px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;outline:none;box-sizing:border-box;">
+        return `<div style="flex:0 0 190px;width:190px;border:1.5px solid #e5e7eb;border-radius:8px;padding:10px;box-sizing:border-box;">
+            <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;">
+                <input type="text" class="wRelNomeColunaInput" value="${escapeHtml(col.nomeColuna)}" oninput="_relNomeColunaInput(${idx}, this.value)" placeholder="Nome da coluna *" style="flex:1;min-width:0;padding:7px 8px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;outline:none;box-sizing:border-box;">
                 ${btnRemover}
             </div>
             <div ondragover="_relDropZoneDragOver(event)" ondrop="_relDropZoneDrop(event,${idx})" style="min-height:36px;padding:8px 10px;border:1.5px dashed #93c5fd;border-radius:8px;background:#eff6ff;display:flex;align-items:center;flex-wrap:wrap;">
@@ -6628,7 +6628,7 @@ function mostrarWizardRelatorio(nomePrefill, camposPrefill, origemPrefill) {
       <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Pesquise pelo nome do campo e arraste o resultado pra dentro da coluna desejada.</div>
       <input type="text" id="wRelBusca" oninput="_relRenderResultadosBusca()" placeholder="Pesquisar campos... (ex: agência, placa, valor frete)" style="width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:12.5px;outline:none;box-sizing:border-box;margin-bottom:8px;">
       <div id="wRelResultadosBusca" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;min-height:0;"></div>
-      <div id="wRelColunasContainer"></div>
+      <div id="wRelColunasContainer" style="display:flex;align-items:flex-start;gap:8px;overflow-x:auto;padding:2px 2px 10px;margin-bottom:4px;"></div>
       <button onclick="_relAdicionarColuna()" style="width:100%;padding:8px;background:white;border:1.5px dashed #3b82f6;border-radius:8px;color:#1e40af;cursor:pointer;font-size:12.5px;font-weight:700;">➕ Adicionar coluna</button>
     </div>
     <div class="wizard-section" style="border:none;">
@@ -7477,13 +7477,14 @@ function handleFileUpload(file) {
 }
 // ═══════════════════════════════════════════════════════════
 // CHAMADA DE VOZ — conversa por voz com a IA (ouvir → pensar → falar → ouvir de novo)
-// Voz da IA: deepgram/flux-tts:free via OpenRouter (grátis). Só tem vozes em inglês (todas com
-// sufixo "-en" no catálogo do modelo) — lê texto em pt-BR com sotaque estrangeiro, mas de forma
-// natural. Se a chamada à Flux TTS falhar por qualquer motivo (rede, limite, provedor fora do ar),
-// cai automaticamente pra voz nativa do navegador em pt-BR, pra chamada nunca ficar muda.
+// Voz da IA: hexgrad/kokoro-82m via OpenRouter — tem voz de verdade em português ("pf_dora" e
+// "pm_alex", nomes de voz do catálogo do modelo). Não é grátis feito o Flux TTS, mas o custo é
+// irrisório (bem menos de um centavo por resposta). Se a chamada falhar por qualquer motivo (rede,
+// limite, provedor fora do ar), cai automaticamente pra voz nativa do navegador em pt-BR, pra
+// chamada nunca ficar muda.
 // ═══════════════════════════════════════════════════════════
-const VOICE_CALL_MODEL = 'deepgram/flux-tts:free';
-const VOICE_CALL_VOICE = 'flux-marcelo-en';
+const VOICE_CALL_MODEL = 'hexgrad/kokoro-82m';
+const VOICE_CALL_VOICE = 'pf_dora';
 let callFase = 'ouvindo'; // 'ouvindo' | 'pensando' | 'falando' | 'encerrada'
 let callAudioAtual = null; // <audio> da fala da IA tocando agora, se houver
 let _callFalaAcumulada = ''; // junta os pedaços finais de uma fala longa (com pausas) antes de enviar
