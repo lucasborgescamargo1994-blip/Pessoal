@@ -424,7 +424,18 @@
         .result-item { background: var(--bg); padding: 12px; border-left: 4px solid var(--primary); margin-bottom: 12px; border-radius: 7px; font-size: 13px; color: var(--text); }
 
         #voiceCallPanel { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,5,0,0.95); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; color: white; transition: all 0.3s ease; }
-        .call-avatar { width: 110px; height: 110px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); display: flex; align-items: center; justify-content: center; margin-bottom: 18px; box-shadow: 0 0 40px rgba(249,115,22,0.5); }
+        .call-avatar { width: 110px; height: 110px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); display: flex; align-items: center; justify-content: center; margin-bottom: 18px; box-shadow: 0 0 40px rgba(249,115,22,0.5); transition: box-shadow .2s ease; }
+        .call-avatar.call-avatar-falando { animation: callAvatarFalando 1.1s ease-in-out infinite; }
+        @keyframes callAvatarFalando { 0%,100% { box-shadow: 0 0 40px rgba(249,115,22,0.5); } 50% { box-shadow: 0 0 60px rgba(249,115,22,0.85); } }
+        @media (prefers-reduced-motion: reduce) { .call-avatar.call-avatar-falando { animation: none; } }
+        /* Minimizada: vira uma pastilha no canto — a chamada continua rodando por trás, só sai
+           do caminho da tela cheia pra dar pra usar o resto do sistema durante a ligação. */
+        #voiceCallPanel.minimized { top: auto; left: auto; bottom: 18px; right: 18px; width: auto; height: auto; min-width: 220px; flex-direction: row; align-items: center; justify-content: flex-start; gap: 10px; padding: 10px 14px; border-radius: 999px; background: rgba(15,5,0,0.92); box-shadow: 0 10px 30px rgba(0,0,0,.45); cursor: pointer; }
+        #voiceCallPanel.minimized .call-avatar { width: 38px; height: 38px; margin-bottom: 0; flex-shrink: 0; }
+        #voiceCallPanel.minimized .call-avatar span { font-size: 18px; }
+        #voiceCallPanel.minimized #callStatus { font-size: 13px; margin: 0; }
+        #voiceCallPanel.minimized #callTranscript, #voiceCallPanel.minimized #endCallBtn { display: none; }
+        #voiceCallPanel.minimized #minimizeCallBtn { position: static; padding: 6px 8px; font-size: 11px; margin-left: auto; }
 
         @media (max-width: 768px) {
             .sidebar { position: fixed; left: -100%; top: 0; height: 100%; z-index: 1000; transition: left 0.3s ease; border-radius: 0; }
@@ -1217,8 +1228,8 @@
             </div>
         </header>
 
-        <div id="voiceCallPanel">
-            <button onclick="toggleMinimizeCall()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.1);border:none;color:white;padding:9px 13px;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600;font-size:13px;"><span id="minimizeIcon">🔳 Minimizar</span></button>
+        <div id="voiceCallPanel" onclick="if(this.classList.contains('minimized')) toggleMinimizeCall()">
+            <button id="minimizeCallBtn" onclick="event.stopPropagation();toggleMinimizeCall()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.1);border:none;color:white;padding:9px 13px;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600;font-size:13px;"><span id="minimizeIcon">🔳 Minimizar</span></button>
             <div class="call-avatar" id="callAvatar"><span style="font-size:46px;">🤖</span></div>
             <h2 id="callStatus" style="font-size:1.8em;margin-bottom:6px;">Ouvindo...</h2>
             <p id="callTranscript" style="color:#d97706;margin-bottom:36px;font-style:italic;text-align:center;padding:0 20px;font-size:14px;">(Diga sua dúvida)</p>
@@ -2872,6 +2883,7 @@ INSTRUÇÕES:
         if (document.hidden) {
             _enviarNotificacaoNavegador('🤖 Suporte Bsoft TMS respondeu', finalText.replace(/[*_#`]/g, '').trim(), 'bsoft-ia-resposta');
         }
+        if (isCallActive) { speak(finalText); }
     } catch(e) {
         if (_pfCard) {
             const ce = _pfCard.querySelector('.section-content');
@@ -3302,6 +3314,7 @@ async function handleChat() {
         if (document.hidden) {
             _enviarNotificacaoNavegador('🤖 Suporte Bsoft TMS respondeu', finalText.replace(/[*_#`]/g, '').trim(), 'bsoft-ia-resposta');
         }
+        if (isCallActive) { speak(finalText); }
 
     } catch (e) {
         if (_streamCard) {
@@ -7462,13 +7475,211 @@ function handleFileUpload(file) {
     };
     r.readAsDataURL(file);
 }
-function speak(text) { if (isCallActive) { window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text.replace(/<[^>]*>/g, '')); u.lang = 'pt-BR'; u.onend = () => { if (isCallActive) recognition.start(); }; window.speechSynthesis.speak(u); } }
-function toggleVoice() { isCallActive = true; document.getElementById('voiceCallPanel').style.display = 'flex'; document.getElementById('callStatus').innerText = "Ouvindo..."; recognition.start(); }
-function endVoiceCall() { isCallActive = false; recognition.stop(); window.speechSynthesis.cancel(); document.getElementById('voiceCallPanel').style.display = 'none'; }
-function toggleMinimizeCall() { }
+// ═══════════════════════════════════════════════════════════
+// CHAMADA DE VOZ — conversa por voz com a IA (ouvir → pensar → falar → ouvir de novo)
+// Voz da IA: deepgram/flux-tts:free via OpenRouter (grátis). Só tem vozes em inglês (todas com
+// sufixo "-en" no catálogo do modelo) — lê texto em pt-BR com sotaque estrangeiro, mas de forma
+// natural. Se a chamada à Flux TTS falhar por qualquer motivo (rede, limite, provedor fora do ar),
+// cai automaticamente pra voz nativa do navegador em pt-BR, pra chamada nunca ficar muda.
+// ═══════════════════════════════════════════════════════════
+const VOICE_CALL_MODEL = 'deepgram/flux-tts:free';
+const VOICE_CALL_VOICE = 'flux-marcelo-en';
+let callFase = 'ouvindo'; // 'ouvindo' | 'pensando' | 'falando' | 'encerrada'
+let callAudioAtual = null; // <audio> da fala da IA tocando agora, se houver
+let _callFalaAcumulada = ''; // junta os pedaços finais de uma fala longa (com pausas) antes de enviar
+let _callPrimeiraPergunta = true; // controla a saudação de abertura ("Olá, espero que esteja bem...") só na 1ª pergunta da chamada
+let _callAudioGeracao = 0; // conta qual foi a última fala pedida — descarta em silêncio uma fala que
+// termine de gerar atrasada (ex: a de espera) depois que uma mais nova (a resposta de verdade) já
+// tiver assumido, pra nunca atropelar ou tocar por cima de outra.
+
+function _callSetFase(fase, textoParaMostrar) {
+    callFase = fase;
+    const st = document.getElementById('callStatus');
+    if (st) st.textContent = fase === 'ouvindo' ? 'Ouvindo...' : fase === 'pensando' ? 'Pensando...' : fase === 'falando' ? 'Falando...' : '';
+    const av = document.getElementById('callAvatar');
+    if (av) av.classList.toggle('call-avatar-falando', fase === 'falando');
+    if (textoParaMostrar !== undefined) {
+        const tr = document.getElementById('callTranscript');
+        if (tr) tr.innerText = textoParaMostrar ? (textoParaMostrar.length > 220 ? textoParaMostrar.slice(0, 217) + '...' : textoParaMostrar) : '(Diga sua dúvida)';
+    }
+}
+
+// Tira marcação (negrito, código, tags) do texto antes de mandar pra voz — sem isso a IA "leria"
+// os símbolos em voz alta. Bloco de código vira um aviso curto em vez de ser lido palavra por palavra.
+function _prepararTextoParaFala(texto) {
+    return String(texto || '')
+        .replace(/```[\s\S]*?```/g, ' Trecho de código, veja na tela. ')
+        .replace(/<[^>]*>/g, '')
+        .replace(/[*_#`]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+// Núcleo comum de "gera e toca" — manda `texto` pra Flux TTS e toca o áudio que voltar, sempre com
+// a MESMA voz (o motivo de existir essa função em vez de repetir o fetch em cada lugar que fala é
+// justamente esse: fala de espera e resposta de verdade usam sempre a voz da OpenRouter, nunca a do
+// navegador, pra não trocar de "pessoa" no meio da ligação). Se enquanto essa chamada de rede
+// estava em andamento uma fala MAIS NOVA foi pedida (ex: a resposta de verdade chegou enquanto a
+// fala de espera ainda estava sendo gerada), essa aqui se descarta sozinha sem tocar nada.
+// Devolve true se chegou a tocar, false se falhou (chamador decide se quer reserva).
+async function _gerarEFalar(texto, aoTerminarVoltarAOuvir) {
+    const minhaGeracao = ++_callAudioGeracao;
+    try {
+        const resp = await fetch(`${DEFAULT_MCP_CONFIG.baseUrl.replace(/\/+$/, '')}/audio/speech`, {
+            method: 'POST',
+            headers: PROVIDER_PRESETS.openrouter.headers(DEFAULT_MCP_CONFIG.apiKey),
+            body: JSON.stringify({ model: VOICE_CALL_MODEL, input: texto, voice: VOICE_CALL_VOICE, response_format: 'mp3' })
+        });
+        if (!resp.ok) {
+            let msg = `HTTP ${resp.status}`;
+            try { const j = await resp.json(); msg = j?.error?.message || msg; } catch (e) {}
+            throw new Error(msg);
+        }
+        const blob = await resp.blob();
+        if (!isCallActive || minhaGeracao !== _callAudioGeracao) return true; // chamada encerrou, ou outra fala mais nova já assumiu — não é falha, só descarta
+        const url = URL.createObjectURL(blob);
+        if (callAudioAtual) { try { callAudioAtual.pause(); } catch (e) {} }
+        callAudioAtual = new Audio(url);
+        callAudioAtual.onended = () => { URL.revokeObjectURL(url); callAudioAtual = null; if (aoTerminarVoltarAOuvir) _callVoltarAOuvir(); };
+        callAudioAtual.onerror = () => { URL.revokeObjectURL(url); callAudioAtual = null; if (aoTerminarVoltarAOuvir) _callVoltarAOuvir(); };
+        await callAudioAtual.play();
+        return true;
+    } catch (e) {
+        console.warn('[chamada de voz] Flux TTS falhou:', e.message);
+        return false;
+    }
+}
+
+// Fala curta e imediata assim que a pergunta chega, ENQUANTO a resposta de verdade ainda está
+// sendo buscada (embedding + busca vetorial + streaming da IA, que pode levar vários segundos) —
+// tira a sensação de demora, tipo um atendente humano dizendo "só um instante, já verifico". Se a
+// Flux TTS falhar aqui, não tem problema: fica sem fala de espera nessa vez, mas a resposta de
+// verdade (que tem reserva pra voz do navegador) continua chegando normalmente. Não conta como
+// "voltar a ouvir": a fase continua 'pensando' até a resposta de verdade chegar e falar de verdade.
+async function _falarPreencherEspera(pergunta) {
+    if (!isCallActive) return;
+    const assunto = pergunta.length > 140 ? pergunta.slice(0, 140) + '...' : pergunta;
+    const texto = _callPrimeiraPergunta
+        ? `Olá! Espero que esteja tudo bem. Vou pesquisar sobre ${assunto}. Aguarde um momento enquanto verifico no sistema pra trazer sua resposta.`
+        : `Certo, vou verificar sobre ${assunto}. Só um momento.`;
+    _callPrimeiraPergunta = false;
+    const tr = document.getElementById('callTranscript');
+    if (tr) tr.innerText = texto;
+    await _gerarEFalar(texto, false);
+}
+
+async function speak(texto) {
+    if (!isCallActive) return;
+    const textoLimpo = _prepararTextoParaFala(texto).slice(0, 4000);
+    if (!textoLimpo) { _callVoltarAOuvir(); return; }
+    _callSetFase('falando', textoLimpo);
+    const ok = await _gerarEFalar(textoLimpo, true);
+    if (!ok) {
+        console.warn('[chamada de voz] caindo pra voz do navegador nessa resposta');
+        _speakComVozDoNavegador(textoLimpo);
+    }
+}
+
+function _speakComVozDoNavegador(texto) {
+    if (!isCallActive || !('speechSynthesis' in window)) { _callVoltarAOuvir(); return; }
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(texto);
+    u.lang = 'pt-BR';
+    u.onend = _callVoltarAOuvir;
+    u.onerror = _callVoltarAOuvir;
+    window.speechSynthesis.speak(u);
+}
+
+// Volta a ouvir depois de falar (ou depois de um erro) — só se a chamada continuar ativa.
+function _callVoltarAOuvir() {
+    if (!isCallActive) return;
+    _callSetFase('ouvindo', '');
+    try { recognition.start(); } catch (e) {} // já pode estar rodando — ignora o erro nesse caso
+}
+
+function toggleVoice() {
+    if (!(window.SpeechRecognition || window.webkitSpeechRecognition)) {
+        alert('Seu navegador não tem suporte a reconhecimento de voz. Tente pelo Google Chrome no computador ou celular.');
+        return;
+    }
+    isCallActive = true;
+    _callFalaAcumulada = '';
+    _callPrimeiraPergunta = true;
+    const painel = document.getElementById('voiceCallPanel');
+    painel.style.display = 'flex';
+    painel.classList.remove('minimized');
+    const mi = document.getElementById('minimizeIcon'); if (mi) mi.textContent = '🔳 Minimizar';
+    _callSetFase('ouvindo', '');
+    try { recognition.start(); } catch (e) {}
+}
+
+function endVoiceCall() {
+    isCallActive = false;
+    callFase = 'encerrada';
+    clearTimeout(silenceTimer);
+    try { recognition.stop(); } catch (e) {}
+    window.speechSynthesis.cancel();
+    if (callAudioAtual) { try { callAudioAtual.pause(); } catch (e) {} callAudioAtual = null; }
+    const painel = document.getElementById('voiceCallPanel');
+    painel.style.display = 'none';
+    painel.classList.remove('minimized');
+}
+
+// Minimiza pra uma pastilha no canto — a chamada continua ouvindo/falando normalmente por trás,
+// só a tela cheia sai do caminho pra dar pra usar o resto do sistema durante a ligação.
+function toggleMinimizeCall() {
+    const painel = document.getElementById('voiceCallPanel');
+    const minimizado = painel.classList.toggle('minimized');
+    const mi = document.getElementById('minimizeIcon'); if (mi) mi.textContent = minimizado ? '🔼 Restaurar' : '🔳 Minimizar';
+}
+
 recognition.onspeechstart = () => { clearTimeout(silenceTimer); };
-recognition.onresult = (event) => { const t = event.results[event.results.length - 1][0].transcript.trim(); document.getElementById('callTranscript').innerText = `"${t}"`; clearTimeout(silenceTimer); silenceTimer = setTimeout(() => { processarFalaFinal(t); }, 2000); };
-function processarFalaFinal(t) { if (["tchau", "encerrar", "obrigado"].some(x => t.toLowerCase().includes(x))) { endVoiceCall(); } else { recognition.stop(); document.getElementById('searchInput').value = t; handleChat(); } }
+// Modo "continuous" finaliza cada pausa da fala como um resultado separado — se só olhasse o
+// último (como antes), uma frase com uma pausa no meio perdia o começo. Agora acumula todo pedaço
+// final até dar silêncio de verdade, e mostra prévia ao vivo (interim) enquanto a pessoa ainda fala.
+recognition.onresult = (event) => {
+    let interim = '';
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+        const r = event.results[i];
+        if (r.isFinal) _callFalaAcumulada += r[0].transcript;
+        else interim += r[0].transcript;
+    }
+    _callSetFase('ouvindo', (_callFalaAcumulada + interim).trim());
+    clearTimeout(silenceTimer);
+    silenceTimer = setTimeout(() => {
+        const t = _callFalaAcumulada.trim();
+        _callFalaAcumulada = '';
+        if (t) processarFalaFinal(t);
+    }, 2000);
+};
+// SpeechRecognition às vezes para sozinho (silêncio prolongado, limite do navegador) mesmo sem
+// ninguém ter mandado parar — se isso acontecer enquanto devia estar ouvindo, reinicia sozinho
+// pra chamada não morrer silenciosamente.
+recognition.onend = () => { if (isCallActive && callFase === 'ouvindo') { try { recognition.start(); } catch (e) {} } };
+recognition.onerror = (event) => {
+    if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+        alert('Permissão de microfone negada — libere o microfone pro navegador pra usar a chamada de voz.');
+        endVoiceCall();
+    }
+    // 'no-speech' e outros erros passageiros: só deixa o onend cuidar de reiniciar.
+};
+
+function processarFalaFinal(t) {
+    const texto = (t || '').trim();
+    if (!texto) { _callVoltarAOuvir(); return; }
+    const norm = texto.toLowerCase();
+    const FRASES_ENCERRAR = ['tchau', 'até mais', 'até logo', 'encerrar a chamada', 'encerrar chamada', 'finalizar chamada', 'desligar a chamada', 'pode desligar'];
+    if (FRASES_ENCERRAR.some(f => norm.includes(f))) { endVoiceCall(); return; }
+    recognition.stop();
+    _callSetFase('pensando', texto);
+    // Sem timer de "desistir" aqui de propósito — a resposta às vezes demora mesmo (busca +
+    // streaming da IA), e cortar por tempo já mandou aviso errado em respostas que só estavam
+    // lentas. Se a pergunta cair num fluxo que realmente não fala de volta (abre um assistente
+    // visual que não dá pra usar por voz), a chamada fica esperando; "Encerrar Chamada" resolve.
+    _falarPreencherEspera(texto); // fala "só um momento" na hora, sem esperar a IA — roda em paralelo com o handleChat abaixo
+    document.getElementById('searchInput').value = texto;
+    handleChat();
+}
 
 // ═══════════════════════════════════════════════════════════
 //  PAINÉIS LATERAIS
