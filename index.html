@@ -1103,8 +1103,9 @@
             <h3>🔔 Novidades</h3>
             <button class="news-lock-btn" id="newsLockBtn" onclick="toggleNewsAdminPrompt()" title="Área administrativa">🔒</button>
         </div>
-        <!-- Toast de notificação in-panel -->
-        <div class="panel-notif-toast" id="panelNotifToast" onclick="_clicarNotifToast()">
+        <!-- Toast de notificação in-panel — exclusivo do chat ao vivo (aba oculta por enquanto,
+             ver botão "Chat" logo abaixo). Pra reativar: remover o style="display:none" dos dois. -->
+        <div class="panel-notif-toast" id="panelNotifToast" onclick="_clicarNotifToast()" style="display:none;">
             <button class="panel-notif-close" onclick="event.stopPropagation();_fecharNotifToast()">✕</button>
             <div class="panel-notif-title" id="panelNotifTitle"></div>
             <div class="panel-notif-body"  id="panelNotifBody"></div>
@@ -1115,7 +1116,8 @@
         </div>
         <div class="news-tab-bar">
             <button class="news-tab-btn active" data-tab="novidades" onclick="switchNewsTab('novidades')">📢 Novidades</button>
-            <button class="news-tab-btn" data-tab="chat" onclick="switchNewsTab('chat')">
+            <!-- Aba Chat oculta por enquanto — remover o style="display:none" abaixo pra reativar -->
+            <button class="news-tab-btn" data-tab="chat" onclick="switchNewsTab('chat')" style="display:none;">
                 💬 Chat
                 <span class="chat-unread-badge" id="chatUnreadBadge"></span>
             </button>
@@ -2867,6 +2869,9 @@ INSTRUÇÕES:
         feedbackEl.style.display = 'flex';
         scrollToBottom(true);
         adicionarMensagemNaConversa('ai', finalText.replace(/\*\*(.*?)\*\*/g, '$1'));
+        if (document.hidden) {
+            _enviarNotificacaoNavegador('🤖 Suporte Bsoft TMS respondeu', finalText.replace(/[*_#`]/g, '').trim(), 'bsoft-ia-resposta');
+        }
     } catch(e) {
         if (_pfCard) {
             const ce = _pfCard.querySelector('.section-content');
@@ -3292,6 +3297,11 @@ async function handleChat() {
         feedbackEl.style.display = 'flex';
         scrollToBottom(true);
         adicionarMensagemNaConversa('ai', finalText.replace(/\*\*(.*?)\*\*/g, '$1'));
+        // Resposta pode demorar — se a pessoa saiu da aba/janela nesse meio tempo, avisa que já
+        // terminou (só quando não está olhando; quem está vendo o streaming não precisa de aviso).
+        if (document.hidden) {
+            _enviarNotificacaoNavegador('🤖 Suporte Bsoft TMS respondeu', finalText.replace(/[*_#`]/g, '').trim(), 'bsoft-ia-resposta');
+        }
 
     } catch (e) {
         if (_streamCard) {
@@ -3920,6 +3930,41 @@ const CTE_OPCOES_MONTAGEM=[
     ]}
 ];
 let _wizardRegraDndQuery='';
+function _cteChip(c,corBorda,corFundo,corTexto){
+    return `<span class="_cte-chip" draggable="true" data-campo="${c.campo}" title="${escapeHtml(c.campo)}" ondragstart="_cteDragStart(event)" style="display:inline-block;padding:6px 12px;background:${corFundo};border:1.5px solid ${corBorda};border-radius:16px;font-size:12px;cursor:grab;user-select:none;color:${corTexto};">${escapeHtml(c.label)}</span>`;
+}
+// Nomes digitados no campo "Utiliza Valores outros" (separados por vírgula) — só valem se o
+// checkbox estiver marcado. Cada nome vira um campo arrastável obt('outrosValores[nome]').
+function _cteNomesOutrosValores(){
+    const chk=document.getElementById('wCteOutrosValoresCheck');
+    if(!chk||!chk.checked)return [];
+    const raw=document.getElementById('wCteOutrosValoresInput')?.value||'';
+    return raw.split(',').map(s=>s.trim()).filter(Boolean);
+}
+function _cteMontarPaletteHtml(){
+    return CTE_CAMPOS.map(c=>_cteChip(c,'#86efac','#f0fdf4','#166534')).join('')
+        +`<span style="width:100%;font-size:10px;color:#9ca3af;font-weight:700;margin:4px 0 2px;">📋 Tabela de Preços (usa direto, sem obt):</span>`
+        +TABELA_PRECOS_CAMPOS.map(c=>_cteChip(c,'#fbbf24','#fffbeb','#92400e')).join('');
+}
+// Chips dos campos personalizados ("Utiliza Valores outros") — ficam numa área PRÓPRIA, logo
+// abaixo do campo onde a pessoa acabou de digitar os nomes (não dentro da paleta grande lá em
+// cima), pra arrastar sem precisar rolar até achar o que acabou de criar.
+function _cteMontarChipsOutrosHtml(){
+    return _cteNomesOutrosValores().map(nome=>_cteChip({label:nome,campo:'outrosValores['+nome+']'},'#f9a8d4','#fdf2f8','#9d174d')).join('');
+}
+// Reconstrói a paleta "Campos disponíveis" e os chips de "outros valores" — chamada ao
+// marcar/desmarcar o checkbox de "Utiliza Valores outros" e a cada edição do campo de nomes.
+function _cteRenderPalette(){
+    const wrap=document.getElementById('wCteCamposPalette');
+    if(wrap)wrap.innerHTML=_cteMontarPaletteHtml();
+    const chipsOutros=document.getElementById('wCteOutrosValoresChips');
+    if(chipsOutros)chipsOutros.innerHTML=_cteMontarChipsOutrosHtml();
+}
+function _cteToggleOutrosValores(marcado){
+    const wrap=document.getElementById('wCteOutrosValoresWrap');
+    if(wrap)wrap.style.display=marcado?'block':'none';
+    _cteRenderPalette();
+}
 function mostrarWizardRegraDnd(queryOriginal){
     _wizardRegraDndQuery=queryOriginal;
     window._cteAcaoSel='+';
@@ -3932,10 +3977,7 @@ function mostrarWizardRegraDnd(queryOriginal){
     card.id='wizardRegraDndCard';
     card.className='answer-card';
     card.style.cssText='max-height:680px;overflow-y:auto;';
-    const _cteChip=(c,corBorda,corFundo,corTexto)=>`<span class="_cte-chip" draggable="true" data-campo="${c.campo}" title="${escapeHtml(c.campo)}" ondragstart="_cteDragStart(event)" style="display:inline-block;padding:6px 12px;background:${corFundo};border:1.5px solid ${corBorda};border-radius:16px;font-size:12px;cursor:grab;user-select:none;color:${corTexto};">${escapeHtml(c.label)}</span>`;
-    const chipsHtml=CTE_CAMPOS.map(c=>_cteChip(c,'#86efac','#f0fdf4','#166534')).join('')
-        +`<span style="width:100%;font-size:10px;color:#9ca3af;font-weight:700;margin:4px 0 2px;">📋 Tabela de Preços (usa direto, sem obt):</span>`
-        +TABELA_PRECOS_CAMPOS.map(c=>_cteChip(c,'#fbbf24','#fffbeb','#92400e')).join('');
+    const chipsHtml=_cteMontarPaletteHtml();
     const opcoesHtml=CTE_OPCOES_MONTAGEM.map((grupo,grupoIdx)=>`<div style="margin-bottom:8px;">
       <div style="font-size:10.5px;color:#6b7280;font-weight:700;margin:6px 0 3px;">${grupo.titulo}</div>
       ${grupo.itens.map(item=>`<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#374151;padding:4px 8px;cursor:pointer;border-radius:6px;">
@@ -3966,6 +4008,13 @@ function mostrarWizardRegraDnd(queryOriginal){
   </div>
   <div class="wizard-section" style="border:none;position:sticky;top:0;z-index:2;background:var(--surface);border-bottom:2px solid #bfdbfe;box-shadow:0 4px 8px -6px rgba(0,0,0,.2);">
     <div class="wizard-label">🧩 Monte sua regra arrastando os campos</div>
+    <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#374151;cursor:pointer;margin-bottom:8px;font-weight:600;">
+      <input type="checkbox" id="wCteOutrosValoresCheck" onchange="_cteToggleOutrosValores(this.checked)"> Utiliza Valores outros (campos personalizados)?
+    </label>
+    <div id="wCteOutrosValoresWrap" style="display:none;margin-bottom:10px;">
+      <input type="text" id="wCteOutrosValoresInput" oninput="_cteRenderPalette()" placeholder="coloque aqui o nome interno dos campos separados por vírgula" style="width:100%;padding:7px 10px;border:1.5px solid #f9a8d4;border-radius:6px;font-size:12px;font-family:monospace;background:#fdf2f8;color:#9d174d;">
+      <div id="wCteOutrosValoresChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;max-height:70px;overflow-y:auto;"></div>
+    </div>
     <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">1. Selecione a ação:</div>
     <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
       <button class="_cte-acao-btn" data-acao="+" onclick="_cteSelecionarAcao('+')" style="padding:8px 14px;background:var(--primary);color:white;border:2px solid var(--primary);border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➕ Somar</button>
@@ -4047,8 +4096,8 @@ function _cteRenderBlocos(){
             canvasConteudo=bloco.termos.map((t,tIdx)=>{
                 const sep=tIdx>0?`<span style="font-size:13px;color:#2563eb;font-weight:700;margin:0 3px;">${escapeHtml(t.acao||'')}</span>`:'';
                 const label=_termoParaLabel(t.termo);
-                const daTabela=_ehCampoTabelaPrecos(t.termo), daCte=_ehCampoCte(t.termo);
-                const corBorda=daTabela?'#fbbf24':daCte?'#86efac':'#93c5fd', corFundo=daTabela?'#fffbeb':daCte?'#f0fdf4':'white', corTexto=daTabela?'#92400e':daCte?'#166534':'#1e40af', corX=daTabela?'#b45309':daCte?'#15803d':'#2563eb';
+                const daTabela=_ehCampoTabelaPrecos(t.termo), daCte=_ehCampoCte(t.termo), daOutros=_ehCampoOutrosValores(t.termo);
+                const corBorda=daOutros?'#f9a8d4':daTabela?'#fbbf24':daCte?'#86efac':'#93c5fd', corFundo=daOutros?'#fdf2f8':daTabela?'#fffbeb':daCte?'#f0fdf4':'white', corTexto=daOutros?'#9d174d':daTabela?'#92400e':daCte?'#166534':'#1e40af', corX=daOutros?'#be185d':daTabela?'#b45309':daCte?'#15803d':'#2563eb';
                 return `${sep}<span title="${escapeHtml(t.termo)}" style="display:inline-flex;align-items:center;gap:3px;padding:3px 4px 3px 9px;margin:2px 0;background:${corFundo};border:1px solid ${corBorda};border-radius:12px;font-size:11.5px;font-family:monospace;color:${corTexto};">${escapeHtml(label)}<button onclick="_cteRemoverTermo(${idx},${tIdx})" title="Remover este item" style="border:none;background:none;color:${corX};cursor:pointer;font-size:13px;padding:0 4px;line-height:1;font-weight:700;">✕</button></span>`;
             }).join('');
         }else if(bloco.expr){
@@ -4071,8 +4120,8 @@ function _cteRenderBlocos(){
                 ?condTermos.map((t,tIdx)=>{
                     const sep=tIdx>0?`<span style="font-size:13px;color:#b45309;font-weight:700;margin:0 3px;">${escapeHtml(t.acao||'')}</span>`:'';
                     const label=_termoParaLabel(t.termo);
-                    const daTabela=_ehCampoTabelaPrecos(t.termo), daCte=_ehCampoCte(t.termo);
-                    const corBorda=daTabela?'#fbbf24':daCte?'#86efac':'#fcd34d', corFundo=daTabela?'#fef3c7':daCte?'#dcfce7':'white', corTexto=daCte?'#166534':'#92400e', corX=daCte?'#15803d':'#b45309';
+                    const daTabela=_ehCampoTabelaPrecos(t.termo), daCte=_ehCampoCte(t.termo), daOutros=_ehCampoOutrosValores(t.termo);
+                    const corBorda=daOutros?'#f9a8d4':daTabela?'#fbbf24':daCte?'#86efac':'#fcd34d', corFundo=daOutros?'#fce7f3':daTabela?'#fef3c7':daCte?'#dcfce7':'white', corTexto=daOutros?'#9d174d':daCte?'#166534':'#92400e', corX=daOutros?'#be185d':daCte?'#15803d':'#b45309';
                     return `${sep}<span title="${escapeHtml(t.termo)}" style="display:inline-flex;align-items:center;gap:3px;padding:3px 4px 3px 9px;margin:2px 0;background:${corFundo};border:1px solid ${corBorda};border-radius:12px;font-size:11.5px;font-family:monospace;color:${corTexto};">${escapeHtml(label)}<button onclick="_cteRemoverTermoCondicao(${idx},${tIdx})" title="Remover este item" style="border:none;background:none;color:${corX};cursor:pointer;font-size:13px;padding:0 4px;line-height:1;font-weight:700;">✕</button></span>`;
                 }).join('')
                 :`<span style="color:#b45309;font-size:12px;">Arraste campos aqui pra montar a condição</span>`;
@@ -4689,6 +4738,34 @@ const CONTRATO_FRETE_CAMPOS=[
     {label:'Total Prestação (3ª aba)',campo:'totalPrestacaoTerceiraAba'}
 ];
 let _wizardContratoDndQuery='';
+function _cfdChip(c,corBorda,corFundo,corTexto){
+    return `<span class="_cfd-chip" draggable="true" data-campo="${c.campo}" title="${escapeHtml(c.campo)}" ondragstart="_cfdDragStart(event)" style="display:inline-block;padding:6px 12px;background:${corFundo};border:1.5px solid ${corBorda};border-radius:16px;font-size:12px;cursor:grab;user-select:none;color:${corTexto};">${escapeHtml(c.label)}</span>`;
+}
+function _cfdNomesOutrosValores(){
+    const chk=document.getElementById('wCfdOutrosValoresCheck');
+    if(!chk||!chk.checked)return [];
+    const raw=document.getElementById('wCfdOutrosValoresInput')?.value||'';
+    return raw.split(',').map(s=>s.trim()).filter(Boolean);
+}
+function _cfdMontarPaletteHtml(){
+    return CONTRATO_FRETE_CAMPOS.map(c=>_cfdChip(c,'#d1d5db','white','#374151')).join('');
+}
+// Chips dos campos personalizados ("Utiliza Valores outros") — ficam numa área PRÓPRIA, logo
+// abaixo do campo onde a pessoa acabou de digitar os nomes, sem precisar rolar a paleta grande.
+function _cfdMontarChipsOutrosHtml(){
+    return _cfdNomesOutrosValores().map(nome=>_cfdChip({label:nome,campo:'outrosValores['+nome+']'},'#f9a8d4','#fdf2f8','#9d174d')).join('');
+}
+function _cfdRenderPalette(){
+    const wrap=document.getElementById('wCfdCamposPalette');
+    if(wrap)wrap.innerHTML=_cfdMontarPaletteHtml();
+    const chipsOutros=document.getElementById('wCfdOutrosValoresChips');
+    if(chipsOutros)chipsOutros.innerHTML=_cfdMontarChipsOutrosHtml();
+}
+function _cfdToggleOutrosValores(marcado){
+    const wrap=document.getElementById('wCfdOutrosValoresWrap');
+    if(wrap)wrap.style.display=marcado?'block':'none';
+    _cfdRenderPalette();
+}
 function mostrarWizardContratoDnd(queryOriginal){
     _wizardContratoDndQuery=queryOriginal;
     window._cfdAcaoSel='+';
@@ -4700,7 +4777,7 @@ function mostrarWizardContratoDnd(queryOriginal){
     card.id='wizardContratoDndCard';
     card.className='answer-card';
     card.style.cssText='max-height:680px;overflow-y:auto;';
-    const chipsHtml=CONTRATO_FRETE_CAMPOS.map(c=>`<span class="_cfd-chip" draggable="true" data-campo="${c.campo}" title="${escapeHtml(c.campo)}" ondragstart="_cfdDragStart(event)" style="display:inline-block;padding:6px 12px;background:white;border:1.5px solid #d1d5db;border-radius:16px;font-size:12px;cursor:grab;user-select:none;">${escapeHtml(c.label)}</span>`).join('');
+    const chipsHtml=_cfdMontarPaletteHtml();
     card.innerHTML=`<div style="background:#f5f3ff;padding:10px 15px;border-bottom:1px solid #ddd6fe;font-size:12px;color:#5b21b6;font-weight:700;">🚛 Assistente — Contrato de Frete <span style="font-weight:500;">(arrastar campos)</span></div>
 <div style="padding:12px 15px 4px;">
   <div class="wizard-section">
@@ -4718,6 +4795,13 @@ function mostrarWizardContratoDnd(queryOriginal){
   </div>
   <div class="wizard-section" style="border:none;position:sticky;top:0;z-index:2;background:var(--surface);border-bottom:2px solid #ddd6fe;box-shadow:0 4px 8px -6px rgba(0,0,0,.2);">
     <div class="wizard-label">🧩 Monte sua regra arrastando os campos</div>
+    <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#374151;cursor:pointer;margin-bottom:8px;font-weight:600;">
+      <input type="checkbox" id="wCfdOutrosValoresCheck" onchange="_cfdToggleOutrosValores(this.checked)"> Utiliza Valores outros (campos personalizados)?
+    </label>
+    <div id="wCfdOutrosValoresWrap" style="display:none;margin-bottom:10px;">
+      <input type="text" id="wCfdOutrosValoresInput" oninput="_cfdRenderPalette()" placeholder="coloque aqui o nome interno dos campos separados por vírgula" style="width:100%;padding:7px 10px;border:1.5px solid #f9a8d4;border-radius:6px;font-size:12px;font-family:monospace;background:#fdf2f8;color:#9d174d;">
+      <div id="wCfdOutrosValoresChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;max-height:70px;overflow-y:auto;"></div>
+    </div>
     <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">1. Selecione a ação:</div>
     <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
       <button class="_cfd-acao-btn" data-acao="+" onclick="_cfdSelecionarAcao('+')" style="padding:8px 14px;background:var(--primary);color:white;border:2px solid var(--primary);border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➕ Somar</button>
@@ -4799,7 +4883,9 @@ function _cfdRenderBlocos(){
             canvasConteudo=bloco.termos.map((t,tIdx)=>{
                 const sep=tIdx>0?`<span style="font-size:13px;color:#7c3aed;font-weight:700;margin:0 3px;">${escapeHtml(t.acao||'')}</span>`:'';
                 const label=_termoParaLabel(t.termo);
-                return `${sep}<span title="${escapeHtml(t.termo)}" style="display:inline-flex;align-items:center;gap:3px;padding:3px 4px 3px 9px;margin:2px 0;background:white;border:1px solid #c4b5fd;border-radius:12px;font-size:11.5px;font-family:monospace;color:#5b21b6;">${escapeHtml(label)}<button onclick="_cfdRemoverTermo(${idx},${tIdx})" title="Remover este item" style="border:none;background:none;color:#9333ea;cursor:pointer;font-size:13px;padding:0 4px;line-height:1;font-weight:700;">✕</button></span>`;
+                const daOutros=_ehCampoOutrosValores(t.termo);
+                const corBorda=daOutros?'#f9a8d4':'#c4b5fd', corFundo=daOutros?'#fdf2f8':'white', corTexto=daOutros?'#9d174d':'#5b21b6', corX=daOutros?'#be185d':'#9333ea';
+                return `${sep}<span title="${escapeHtml(t.termo)}" style="display:inline-flex;align-items:center;gap:3px;padding:3px 4px 3px 9px;margin:2px 0;background:${corFundo};border:1px solid ${corBorda};border-radius:12px;font-size:11.5px;font-family:monospace;color:${corTexto};">${escapeHtml(label)}<button onclick="_cfdRemoverTermo(${idx},${tIdx})" title="Remover este item" style="border:none;background:none;color:${corX};cursor:pointer;font-size:13px;padding:0 4px;line-height:1;font-weight:700;">✕</button></span>`;
             }).join('');
         }else if(bloco.expr){
             canvasConteudo=`<span style="font-family:monospace;font-size:12.5px;color:#5b21b6;word-break:break-all;">${escapeHtml(bloco.expr)}</span>`;
@@ -4821,7 +4907,9 @@ function _cfdRenderBlocos(){
                 ?condTermos.map((t,tIdx)=>{
                     const sep=tIdx>0?`<span style="font-size:13px;color:#b45309;font-weight:700;margin:0 3px;">${escapeHtml(t.acao||'')}</span>`:'';
                     const label=_termoParaLabel(t.termo);
-                    return `${sep}<span title="${escapeHtml(t.termo)}" style="display:inline-flex;align-items:center;gap:3px;padding:3px 4px 3px 9px;margin:2px 0;background:white;border:1px solid #fcd34d;border-radius:12px;font-size:11.5px;font-family:monospace;color:#92400e;">${escapeHtml(label)}<button onclick="_cfdRemoverTermoCondicao(${idx},${tIdx})" title="Remover este item" style="border:none;background:none;color:#b45309;cursor:pointer;font-size:13px;padding:0 4px;line-height:1;font-weight:700;">✕</button></span>`;
+                    const daOutros=_ehCampoOutrosValores(t.termo);
+                    const corBorda=daOutros?'#f9a8d4':'#fcd34d', corFundo=daOutros?'#fce7f3':'white', corTexto=daOutros?'#9d174d':'#92400e', corX=daOutros?'#be185d':'#b45309';
+                    return `${sep}<span title="${escapeHtml(t.termo)}" style="display:inline-flex;align-items:center;gap:3px;padding:3px 4px 3px 9px;margin:2px 0;background:${corFundo};border:1px solid ${corBorda};border-radius:12px;font-size:11.5px;font-family:monospace;color:${corTexto};">${escapeHtml(label)}<button onclick="_cfdRemoverTermoCondicao(${idx},${tIdx})" title="Remover este item" style="border:none;background:none;color:${corX};cursor:pointer;font-size:13px;padding:0 4px;line-height:1;font-weight:700;">✕</button></span>`;
                 }).join('')
                 :`<span style="color:#b45309;font-size:12px;">Arraste campos aqui pra montar a condição</span>`;
             condSecao+=`<div style="margin:0 0 10px;padding-left:8px;border-left:3px solid #fbbf24;">
@@ -5075,6 +5163,34 @@ const FATURAMENTO_CAMPOS=['notaFiscal','freteValor','valorICMS','valoresOutros',
 const FATURAMENTO_REGRA_PADRAO=`def("totalPrestacao", obt('freteValor') + obt('valorICMS'));`;
 
 let _wizardFaturamentoQuery='';
+function _fatChip(c,corBorda,corFundo,corTexto){
+    return `<span class="_fat-chip" draggable="true" data-campo="${c.campo}" title="${escapeHtml(c.campo)}" ondragstart="_fatDragStart(event)" style="display:inline-block;padding:6px 12px;background:${corFundo};border:1.5px solid ${corBorda};border-radius:16px;font-size:12px;font-family:monospace;cursor:grab;user-select:none;color:${corTexto};">${escapeHtml(c.label)}</span>`;
+}
+function _fatNomesOutrosValores(){
+    const chk=document.getElementById('wFatOutrosValoresCheck');
+    if(!chk||!chk.checked)return [];
+    const raw=document.getElementById('wFatOutrosValoresInput')?.value||'';
+    return raw.split(',').map(s=>s.trim()).filter(Boolean);
+}
+function _fatMontarPaletteHtml(){
+    return FATURAMENTO_CAMPOS.map(c=>_fatChip({label:c,campo:c},'#d1d5db','white','#374151')).join('');
+}
+// Chips dos campos personalizados ("Utiliza Valores outros") — ficam numa área PRÓPRIA, logo
+// abaixo do campo onde a pessoa acabou de digitar os nomes, sem precisar rolar a paleta grande.
+function _fatMontarChipsOutrosHtml(){
+    return _fatNomesOutrosValores().map(nome=>_fatChip({label:nome,campo:'outrosValores['+nome+']'},'#f9a8d4','#fdf2f8','#9d174d')).join('');
+}
+function _fatRenderPalette(){
+    const wrap=document.getElementById('wFatCamposPalette');
+    if(wrap)wrap.innerHTML=_fatMontarPaletteHtml();
+    const chipsOutros=document.getElementById('wFatOutrosValoresChips');
+    if(chipsOutros)chipsOutros.innerHTML=_fatMontarChipsOutrosHtml();
+}
+function _fatToggleOutrosValores(marcado){
+    const wrap=document.getElementById('wFatOutrosValoresWrap');
+    if(wrap)wrap.style.display=marcado?'block':'none';
+    _fatRenderPalette();
+}
 function mostrarWizardFaturamento(queryOriginal){
     _wizardFaturamentoQuery=queryOriginal;
     window._fatAcaoSel='+';
@@ -5086,7 +5202,7 @@ function mostrarWizardFaturamento(queryOriginal){
     card.id='wizardFaturamentoCard';
     card.className='answer-card';
     card.style.cssText='max-height:680px;overflow-y:auto;';
-    const chipsHtml=FATURAMENTO_CAMPOS.map(c=>`<span class="_fat-chip" draggable="true" data-campo="${c}" ondragstart="_fatDragStart(event)" style="display:inline-block;padding:6px 12px;background:white;border:1.5px solid #d1d5db;border-radius:16px;font-size:12px;font-family:monospace;cursor:grab;user-select:none;">${c}</span>`).join('');
+    const chipsHtml=_fatMontarPaletteHtml();
     card.innerHTML=`<div style="background:#ecfdf5;padding:10px 15px;border-bottom:1px solid #a7f3d0;font-size:12px;color:#065f46;font-weight:700;">💰 Assistente — Regra de Faturamento</div>
 <div style="padding:12px 15px 4px;">
   <div class="wizard-section">
@@ -5100,6 +5216,13 @@ function mostrarWizardFaturamento(queryOriginal){
   </div>
   <div class="wizard-section" style="border:none;position:sticky;top:0;z-index:2;background:var(--surface);border-bottom:2px solid #a7f3d0;box-shadow:0 4px 8px -6px rgba(0,0,0,.2);">
     <div class="wizard-label">🧩 Monte sua regra arrastando os campos</div>
+    <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#374151;cursor:pointer;margin-bottom:8px;font-weight:600;">
+      <input type="checkbox" id="wFatOutrosValoresCheck" onchange="_fatToggleOutrosValores(this.checked)"> Utiliza Valores outros (campos personalizados)?
+    </label>
+    <div id="wFatOutrosValoresWrap" style="display:none;margin-bottom:10px;">
+      <input type="text" id="wFatOutrosValoresInput" oninput="_fatRenderPalette()" placeholder="coloque aqui o nome interno dos campos separados por vírgula" style="width:100%;padding:7px 10px;border:1.5px solid #f9a8d4;border-radius:6px;font-size:12px;font-family:monospace;background:#fdf2f8;color:#9d174d;">
+      <div id="wFatOutrosValoresChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;max-height:70px;overflow-y:auto;"></div>
+    </div>
     <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">1. Selecione a ação:</div>
     <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
       <button class="_fat-acao-btn" data-acao="+" onclick="_fatSelecionarAcao('+')" style="padding:8px 14px;background:var(--primary);color:white;border:2px solid var(--primary);border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➕ Somar</button>
@@ -5210,7 +5333,12 @@ const _ROTULOS_CAMPOS=(()=>{
 function _termoParaLabel(termo){
     const m=termo.match(/^obt\(\s*["']([^"']*)["']\s*\)$/);
     const nome=m?m[1]:termo;
-    return _ROTULOS_CAMPOS[nome]||nome;
+    if(_ROTULOS_CAMPOS[nome])return _ROTULOS_CAMPOS[nome];
+    // "outrosValores[nomeInterno]" (campo personalizado, ver checkbox "Utiliza Valores outros")
+    // mostra só o nome interno no chip — o resto ("outrosValores[...]") já fica visível no title.
+    const mOutros=nome.match(/^outrosValores\[([^\]]*)\]$/);
+    if(mOutros)return mOutros[1];
+    return nome;
 }
 // Um termo de campo da Tabela de Preços entra puro na regra, sem obt() (ver _fatTermoParaExpressao)
 // — usado pra destacar esses chips com a mesma cor âmbar da paleta "Campos disponíveis", separando
@@ -5224,6 +5352,13 @@ function _ehCampoTabelaPrecos(termo){
 // não identificado ficam de fora dos dois — não são um campo só, então continuam neutros.
 function _ehCampoCte(termo){
     return /^obt\(\s*["'][^"']*["']\s*\)$/.test(termo);
+}
+// Campo personalizado digitado pelo usuário no checkbox "Utiliza Valores outros" — monta
+// obt('outrosValores[nomeInterno]'). Checar ANTES de _ehCampoCte nos templates de chip: como é
+// um obt(...) limpo também, bateria nos dois; esse aqui é mais específico e tem prioridade —
+// usa uma cor própria (rosa) igual nas 3 ferramentas, diferente da cor nativa de cada uma.
+function _ehCampoOutrosValores(termo){
+    return /^obt\(\s*["']outrosValores\[[^\]]*\]["']\s*\)$/.test(termo);
 }
 // Tira as linhas de comentário (começam com "//") de uma "linha extra" (ver _parseRegraParaBlocos)
 // — usado só pra EXIBIR dentro da caixa "⚡ Linha extra...": o comentário nunca aparece ali (mesmo
@@ -5488,7 +5623,9 @@ function _fatRenderBlocos(){
             canvasConteudo=bloco.termos.map((t,tIdx)=>{
                 const sep=tIdx>0?`<span style="font-size:13px;color:#059669;font-weight:700;margin:0 3px;">${escapeHtml(t.acao||'')}</span>`:'';
                 const label=_termoParaLabel(t.termo);
-                return `${sep}<span title="${escapeHtml(t.termo)}" style="display:inline-flex;align-items:center;gap:3px;padding:3px 4px 3px 9px;margin:2px 0;background:white;border:1px solid #6ee7b7;border-radius:12px;font-size:11.5px;font-family:monospace;color:#065f46;">${escapeHtml(label)}<button onclick="_fatRemoverTermo(${idx},${tIdx})" title="Remover este item" style="border:none;background:none;color:#059669;cursor:pointer;font-size:13px;padding:0 4px;line-height:1;font-weight:700;">✕</button></span>`;
+                const daOutros=_ehCampoOutrosValores(t.termo);
+                const corBorda=daOutros?'#f9a8d4':'#6ee7b7', corFundo=daOutros?'#fdf2f8':'white', corTexto=daOutros?'#9d174d':'#065f46', corX=daOutros?'#be185d':'#059669';
+                return `${sep}<span title="${escapeHtml(t.termo)}" style="display:inline-flex;align-items:center;gap:3px;padding:3px 4px 3px 9px;margin:2px 0;background:${corFundo};border:1px solid ${corBorda};border-radius:12px;font-size:11.5px;font-family:monospace;color:${corTexto};">${escapeHtml(label)}<button onclick="_fatRemoverTermo(${idx},${tIdx})" title="Remover este item" style="border:none;background:none;color:${corX};cursor:pointer;font-size:13px;padding:0 4px;line-height:1;font-weight:700;">✕</button></span>`;
             }).join('');
         }else if(bloco.expr){
             canvasConteudo=`<span style="font-family:monospace;font-size:12.5px;color:#065f46;word-break:break-all;">${escapeHtml(bloco.expr)}</span>`;
@@ -5510,7 +5647,9 @@ function _fatRenderBlocos(){
                 ?condTermos.map((t,tIdx)=>{
                     const sep=tIdx>0?`<span style="font-size:13px;color:#b45309;font-weight:700;margin:0 3px;">${escapeHtml(t.acao||'')}</span>`:'';
                     const label=_termoParaLabel(t.termo);
-                    return `${sep}<span title="${escapeHtml(t.termo)}" style="display:inline-flex;align-items:center;gap:3px;padding:3px 4px 3px 9px;margin:2px 0;background:white;border:1px solid #fcd34d;border-radius:12px;font-size:11.5px;font-family:monospace;color:#92400e;">${escapeHtml(label)}<button onclick="_fatRemoverTermoCondicao(${idx},${tIdx})" title="Remover este item" style="border:none;background:none;color:#b45309;cursor:pointer;font-size:13px;padding:0 4px;line-height:1;font-weight:700;">✕</button></span>`;
+                    const daOutros=_ehCampoOutrosValores(t.termo);
+                    const corBorda=daOutros?'#f9a8d4':'#fcd34d', corFundo=daOutros?'#fce7f3':'white', corTexto=daOutros?'#9d174d':'#92400e', corX=daOutros?'#be185d':'#b45309';
+                    return `${sep}<span title="${escapeHtml(t.termo)}" style="display:inline-flex;align-items:center;gap:3px;padding:3px 4px 3px 9px;margin:2px 0;background:${corFundo};border:1px solid ${corBorda};border-radius:12px;font-size:11.5px;font-family:monospace;color:${corTexto};">${escapeHtml(label)}<button onclick="_fatRemoverTermoCondicao(${idx},${tIdx})" title="Remover este item" style="border:none;background:none;color:${corX};cursor:pointer;font-size:13px;padding:0 4px;line-height:1;font-weight:700;">✕</button></span>`;
                 }).join('')
                 :`<span style="color:#b45309;font-size:12px;">Arraste campos aqui pra montar a condição</span>`;
             condSecao+=`<div style="margin:0 0 10px;padding-left:8px;border-left:3px solid #fbbf24;">
@@ -7852,6 +7991,12 @@ function _subscribeNovidades() {
             if (!feed) return;
             empty.style.display = 'none';
             feed.insertBefore(_renderNovidadeItem(payload.new), feed.firstChild);
+            // Notifica no navegador só quando a aba não está em primeiro plano — quem já está
+            // olhando vê o item aparecer no painel na hora, não precisa de aviso duplicado.
+            if (document.hidden) {
+                const _t = _newsTypeMap[payload.new.tipo] || _newsTypeMap.info;
+                _enviarNotificacaoNavegador(`${_t.label} — Bsoft TMS`, payload.new.titulo, 'bsoft-novidade');
+            }
         })
         .on('postgres_changes', { event: 'DELETE', schema: 'public', table: NOVIDADES_TABLE }, payload => {
             document.querySelector(`[data-news-id="${payload.old.id}"]`)?.remove();
@@ -8172,19 +8317,23 @@ function _tocarSomNotificacao() {
     } catch(e) {}
 }
 
-function _enviarNotificacaoChat(titulo, corpo) {
+// Genérica — usada pelo chat ao vivo (tag 'bsoft-chat'), pelas novidades (tag 'bsoft-novidade')
+// e pela resposta da IA no chat principal (tag 'bsoft-ia-resposta). Cada gatilho usa sua própria
+// tag pra uma notificação não substituir/apagar outra ainda não vista na bandeja do sistema.
+function _enviarNotificacaoNavegador(titulo, corpo, tag) {
     _tocarSomNotificacao();
     if (!('Notification' in window)) return;
-    const texto = corpo.substring(0, 100);
+    const texto = (corpo || '').substring(0, 100);
+    const _tag = tag || 'bsoft-geral';
+    const disparar = () => { try { new Notification(titulo, { body: texto, tag: _tag, renotify: true }); } catch(e) {} };
     if (Notification.permission === 'granted') {
-        try { new Notification(titulo, { body: texto, tag: 'bsoft-chat', renotify: true }); } catch(e) {}
+        disparar();
     } else if (Notification.permission !== 'denied') {
-        Notification.requestPermission().then(p => {
-            if (p === 'granted') {
-                try { new Notification(titulo, { body: texto, tag: 'bsoft-chat', renotify: true }); } catch(e) {}
-            }
-        });
+        Notification.requestPermission().then(p => { if (p === 'granted') disparar(); });
     }
+}
+function _enviarNotificacaoChat(titulo, corpo) {
+    _enviarNotificacaoNavegador(titulo, corpo, 'bsoft-chat');
 }
 
 function _subscribeAdminGlobal() {
