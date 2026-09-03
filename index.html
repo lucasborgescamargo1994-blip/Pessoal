@@ -6439,8 +6439,152 @@ function _relSelecionarOrigem(origem) {
     });
     const step2 = document.getElementById('wRelStep2');
     if (step2) step2.style.display = 'block';
+    // Cada origem tem seu próprio catálogo de campos — troca de origem reinicia a busca e as
+    // colunas já montadas (senão ficaria coluna com campo de uma origem diferente da escolhida agora).
+    window._relColunas = [{ nomeColuna: '', campo: null }];
+    const busca = document.getElementById('wRelBusca'); if (busca) busca.value = '';
+    _relRenderResultadosBusca();
+    _relRenderColunas();
     setTimeout(() => { if (!document.getElementById('wRelNome')?.value) document.getElementById('wRelNome')?.focus(); }, 80);
     scrollToBottom(true);
+}
+// Busca por nome do campo com pontuação por semelhança — substring completo do rótulo pontua mais
+// (melhor ainda quanto mais cedo aparece), senão soma por palavra da busca encontrada no rótulo,
+// no grupo (categoria) ou na expressão interna. Sem IA — instantâneo a cada tecla digitada.
+// Grupos de termos equivalentes pra busca — pesquisar um encontra campos do(s) outro(s) do mesmo
+// grupo, nos dois sentidos (ex.: buscar "conhecimento" acha campos do grupo "Ct-e", e buscar
+// "ct-e" também acha os que só têm "conhecimento" no rótulo — e vice-versa). Todos os termos já
+// em minúsculo/sem acento, no mesmo formato que _relCamposFiltrados normaliza a busca digitada.
+const _REL_SINONIMOS_BUSCA = [
+    ['ct-e', 'cte', 'conhecimento'],
+    ['mdf-e', 'mdfe', 'manifesto'],
+    ['numero', 'nro', 'nº'],
+    // abreviações de campo comuns no catálogo (ex.: cte.tpCTe, cte.dtEmissao, cte.percGris) —
+    // batem tanto com o nome técnico abreviado quanto com o rótulo em português por extenso.
+    ['tipo', 'tp'],
+    ['valor', 'vlr'],
+    ['data', 'dt'],
+    ['codigo', 'cod'],
+    ['observacao', 'observacoes', 'obs'],
+    ['documento', 'doc'],
+    ['quantidade', 'qtd', 'quant'],
+    ['transporte', 'transportador', 'transp'],
+];
+function _relTermosEquivalentes(termo) {
+    for (const grupo of _REL_SINONIMOS_BUSCA) { if (grupo.includes(termo)) return grupo; }
+    return [termo];
+}
+// acha `termo` dentro de `texto` (ambos já normalizados) respeitando borda de palavra quando o
+// termo é curto (até 4 letras) — sem isso, abreviações como "cod" batem no meio de nomes colados
+// por acaso (ex.: "enderecoDestinatario" tem "co"+"d" bem no meio, sem nenhuma relação com
+// "código"). Termos com 5+ letras dificilmente colidem por acaso, então continuam batendo em
+// qualquer posição, como antes.
+function _relIndexOfComBorda(texto, termo) {
+    if (termo.length > 4) return texto.indexOf(termo);
+    let idx = texto.indexOf(termo);
+    while (idx !== -1) {
+        const antes = idx === 0 ? '' : texto[idx - 1];
+        if (!/[a-z0-9]/.test(antes)) return idx;
+        idx = texto.indexOf(termo, idx + 1);
+    }
+    return -1;
+}
+function _relCamposFiltrados(origemSel, query) {
+    const catalogo = CATALOGO_RELATORIOS[origemSel] || CATALOGO_RELATORIOS.CTe;
+    const norm = t => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    const q = norm(query).trim();
+    if (!q) return [];
+    const palavras = q.split(/\s+/).filter(Boolean);
+    // cada palavra digitada já expande em si mesma + os sinônimos dela — a pontuação testa
+    // qualquer um desses termos equivalentes, não só o que foi literalmente digitado.
+    const palavrasEquiv = palavras.map(_relTermosEquivalentes);
+    const qEquiv = _relTermosEquivalentes(q);
+    const pontuados = catalogo.map(c => {
+        const labelN = norm(c.label), grupoN = norm(c.grupo), expN = norm(c.exp);
+        let pontos = 0;
+        const termoCompletoBatido = qEquiv.find(t => _relIndexOfComBorda(labelN, t) !== -1);
+        if (termoCompletoBatido) pontos += 100 - _relIndexOfComBorda(labelN, termoCompletoBatido);
+        else {
+            const acertos = palavrasEquiv.filter(equivs => equivs.some(t => _relIndexOfComBorda(labelN, t) !== -1 || _relIndexOfComBorda(grupoN, t) !== -1 || _relIndexOfComBorda(expN, t) !== -1)).length;
+            pontos = (acertos / palavrasEquiv.length) * 60;
+        }
+        if (qEquiv.some(t => _relIndexOfComBorda(grupoN, t) !== -1)) pontos += 15;
+        return { c, pontos };
+    }).filter(x => x.pontos > 0).sort((a, b) => b.pontos - a.pontos);
+    return pontuados.slice(0, 14).map(x => x.c);
+}
+function _relRenderResultadosBusca() {
+    const cont = document.getElementById('wRelResultadosBusca');
+    if (!cont) return;
+    const query = document.getElementById('wRelBusca')?.value || '';
+    const resultados = _relCamposFiltrados(window._relOrigemSel, query);
+    if (!query.trim()) { cont.innerHTML = ''; return; }
+    cont.innerHTML = resultados.length
+        ? resultados.map(c => `<span class="_rel-chip" draggable="true" data-exp="${escapeHtml(c.exp)}" data-label="${escapeHtml(c.label)}" ondragstart="_relCampoDragStart(event)" title="${escapeHtml(c.grupo)} · ${escapeHtml(c.exp)}" style="display:inline-flex;align-items:center;padding:6px 12px;background:white;border:1.5px solid #93c5fd;border-radius:16px;font-size:12px;color:#1e40af;cursor:grab;user-select:none;">${escapeHtml(c.label)}</span>`).join('')
+        : `<span style="font-size:11.5px;color:#9ca3af;">Nenhum campo encontrado pra "${escapeHtml(query)}".</span>`;
+}
+function _relCampoDragStart(e) {
+    e.dataTransfer.setData('text/plain', JSON.stringify({ exp: e.target.dataset.exp, label: e.target.dataset.label }));
+    e.dataTransfer.effectAllowed = 'copy';
+}
+function _relDropZoneDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; }
+// Solta SEMPRE substitui o que já estava (1 campo por coluna, não é pra somar vários) — se o
+// "Nome coluna" ainda estiver vazio, sugere o rótulo do campo arrastado (o usuário pode reescrever).
+function _relDropZoneDrop(e, idx) {
+    e.preventDefault();
+    let dados; try { dados = JSON.parse(e.dataTransfer.getData('text/plain')); } catch (err) { return; }
+    if (!dados || !dados.exp) return;
+    const col = window._relColunas[idx]; if (!col) return;
+    col.campo = dados;
+    if (!col.nomeColuna.trim()) col.nomeColuna = dados.label;
+    _relRenderColunas();
+}
+function _relNomeColunaInput(idx, valor) {
+    if (window._relColunas[idx]) window._relColunas[idx].nomeColuna = valor;
+}
+function _relLimparCampoColuna(idx) {
+    if (window._relColunas[idx]) window._relColunas[idx].campo = null;
+    _relRenderColunas();
+}
+function _relRemoverColuna(idx) {
+    if (window._relColunas.length <= 1) return;
+    window._relColunas.splice(idx, 1);
+    _relRenderColunas();
+}
+// "Nome coluna" é obrigatório pra liberar uma nova — sem isso o usuário poderia empilhar várias
+// colunas em branco sem querer.
+function _relAdicionarColuna() {
+    const ultima = window._relColunas[window._relColunas.length - 1];
+    if (!ultima.nomeColuna || !ultima.nomeColuna.trim()) {
+        const inputs = document.querySelectorAll('.wRelNomeColunaInput');
+        const alvo = inputs[inputs.length - 1];
+        if (alvo) { alvo.style.borderColor = '#ef4444'; alvo.focus(); setTimeout(() => { alvo.style.borderColor = ''; }, 1200); }
+        return;
+    }
+    window._relColunas.push({ nomeColuna: '', campo: null });
+    _relRenderColunas();
+    setTimeout(() => { const inputs = document.querySelectorAll('.wRelNomeColunaInput'); inputs[inputs.length - 1]?.focus(); }, 30);
+}
+function _relRenderColunas() {
+    const cont = document.getElementById('wRelColunasContainer');
+    if (!cont) return;
+    cont.innerHTML = window._relColunas.map((col, idx) => {
+        const campoHtml = col.campo
+            ? `<span title="${escapeHtml(col.campo.exp)}" style="display:inline-flex;align-items:center;gap:5px;padding:4px 4px 4px 10px;background:white;border:1px solid #93c5fd;border-radius:12px;font-size:11.5px;color:#1e40af;">${escapeHtml(col.campo.label)}<button onclick="_relLimparCampoColuna(${idx})" title="Remover campo" style="border:none;background:none;color:#2563eb;cursor:pointer;font-size:13px;padding:0 4px;line-height:1;font-weight:700;">✕</button></span>`
+            : `<span style="color:#9ca3af;font-size:12px;">arraste um campo aqui</span>`;
+        const btnRemover = window._relColunas.length > 1
+            ? `<button onclick="_relRemoverColuna(${idx})" title="Remover esta coluna" style="padding:7px 10px;background:#fef2f2;color:#991b1b;border:1.5px solid #fecaca;border-radius:6px;cursor:pointer;font-size:12px;">🗑️</button>`
+            : '';
+        return `<div style="border:1.5px solid #e5e7eb;border-radius:8px;padding:10px;margin-bottom:8px;">
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+                <input type="text" class="wRelNomeColunaInput" value="${escapeHtml(col.nomeColuna)}" oninput="_relNomeColunaInput(${idx}, this.value)" placeholder="Nome da coluna *" style="flex:1;padding:7px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;outline:none;box-sizing:border-box;">
+                ${btnRemover}
+            </div>
+            <div ondragover="_relDropZoneDragOver(event)" ondrop="_relDropZoneDrop(event,${idx})" style="min-height:36px;padding:8px 10px;border:1.5px dashed #93c5fd;border-radius:8px;background:#eff6ff;display:flex;align-items:center;flex-wrap:wrap;">
+                ${campoHtml}
+            </div>
+        </div>`;
+    }).join('');
 }
 
 function mostrarWizardRelatorio(nomePrefill, camposPrefill, origemPrefill) {
@@ -6466,9 +6610,17 @@ function mostrarWizardRelatorio(nomePrefill, camposPrefill, origemPrefill) {
       <div class="wizard-label">📝 Nome do relatório</div>
       <input id="wRelNome" type="text" placeholder="Ex: Relatório de CT-e por região" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;">
     </div>
+    <div class="wizard-section">
+      <div class="wizard-label">🧩 Colunas do relatório</div>
+      <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Pesquise pelo nome do campo e arraste o resultado pra dentro da coluna desejada.</div>
+      <input type="text" id="wRelBusca" oninput="_relRenderResultadosBusca()" placeholder="Pesquisar campos... (ex: agência, placa, valor frete)" style="width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:12.5px;outline:none;box-sizing:border-box;margin-bottom:8px;">
+      <div id="wRelResultadosBusca" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;min-height:0;"></div>
+      <div id="wRelColunasContainer"></div>
+      <button onclick="_relAdicionarColuna()" style="width:100%;padding:8px;background:white;border:1.5px dashed #3b82f6;border-radius:8px;color:#1e40af;cursor:pointer;font-size:12.5px;font-weight:700;">➕ Adicionar coluna</button>
+    </div>
     <div class="wizard-section" style="border:none;">
-      <div class="wizard-label">📋 Quais dados você quer no relatório? <span style="font-size:10px;color:#9ca3af;font-weight:400;">(descreva em texto livre — a IA identifica os campos)</span></div>
-      <textarea id="wRelCampos" class="wizard-textarea" placeholder="Ex: Agência, Ano emissão, Cancelado e CFOP" style="min-height:90px;"></textarea>
+      <div class="wizard-label">✏️ Ou descreva em texto livre <span style="font-size:10px;color:#9ca3af;font-weight:400;">(opcional — a IA identifica os campos, inclusive colunas calculadas tipo "Frete vezes 0,02")</span></div>
+      <textarea id="wRelCampos" class="wizard-textarea" placeholder="Ex: Agência, Ano emissão, Cancelado e CFOP" style="min-height:70px;"></textarea>
       <div style="font-size:11px;color:#6b7280;margin-top:6px;">Campos disponíveis: dados do conhecimento, composição do frete, veículos, seguro, documentos, conteineres, cliente, emissor, motorista, remetente, destinatário e mais.</div>
     </div>
     <div style="padding:12px 0 8px;">
@@ -6481,7 +6633,7 @@ function mostrarWizardRelatorio(nomePrefill, camposPrefill, origemPrefill) {
     if (nomePrefill) document.getElementById('wRelNome').value = nomePrefill;
     if (camposPrefill) document.getElementById('wRelCampos').value = camposPrefill;
     if (origemPrefill) {
-        // Reabrindo via "Tentar novamente" — já sabemos a origem usada, pula a seleção manual.
+        // Reabrindo via "Voltar" — já sabemos a origem usada, pula a seleção manual.
         _relSelecionarOrigem(origemPrefill);
         setTimeout(() => document.getElementById('wRelCampos')?.focus(), 80);
     } else {
@@ -6489,20 +6641,27 @@ function mostrarWizardRelatorio(nomePrefill, camposPrefill, origemPrefill) {
     }
 }
 
-function _tentarNovamenteRelatorio(ts) {
+// Reabre o wizard com tudo que o usuário já tinha preenchido (nome, descrição livre e as colunas
+// montadas arrastando), pra não perder o trabalho já feito caso precise ajustar algo antes de
+// gerar de novo — mesma ideia do botão Voltar dos assistentes de criação de regra.
+function _voltarParaWizardRelatorio(ts) {
     const dados = window['_relatorioDat_' + ts];
     if (!dados) return;
     const card = document.getElementById('_relatorioResultCard_' + ts); if (card) card.remove();
     mostrarWizardRelatorio(dados.nome, dados.camposTxt, dados.origemSel);
+    if (dados.colunasRascunho && dados.colunasRascunho.length) {
+        window._relColunas = dados.colunasRascunho.map(c => ({ nomeColuna: c.nomeColuna, campo: c.campo ? { ...c.campo } : null }));
+        _relRenderColunas();
+    }
 }
 
-function _renderizarCardResultadoRelatorio(nomeRelatorio, camposTxt, encontrados, naoEncontrados, conteudoSerializado, nomeArquivoSugerido, origemSel) {
+function _renderizarCardResultadoRelatorio(nomeRelatorio, camposTxt, encontrados, naoEncontrados, conteudoSerializado, nomeArquivoSugerido, origemSel, colunasRascunho) {
     const s = document.getElementById('chatStream');
     const card = document.createElement('div');
     card.className = 'answer-card';
     const listaOk = encontrados.map(c => `<li><b>${escapeHtml(c.label)}</b> <span style="color:#6b7280;font-family:monospace;font-size:11.5px;">(${escapeHtml(c.exp)})</span></li>`).join('');
     const listaNok = naoEncontrados.length
-        ? `<div class="answer-section"><div class="section-label path">⚠️ Não identificado</div><div class="section-content">Não encontrei campo correspondente para: <b>${naoEncontrados.map(escapeHtml).join(', ')}</b>. Você pode baixar mesmo assim e adicionar manualmente pelo sistema, ou clicar em "Tentar novamente" pra reformular.</div></div>`
+        ? `<div class="answer-section"><div class="section-label path">⚠️ Não identificado</div><div class="section-content">Não encontrei campo correspondente para: <b>${naoEncontrados.map(escapeHtml).join(', ')}</b>. Você pode baixar mesmo assim e adicionar manualmente pelo sistema, ou clicar em "Voltar" pra reformular.</div></div>`
         : '';
     const comoUsar = `<div class="answer-section"><div class="section-label tip"><div class="section-icon tip">📥</div>Como importar no sistema</div><div class="section-content"><ol style="margin:0;padding-left:18px;line-height:1.9;">
         <li>Clique em <b>⬇️ Baixar</b> abaixo para salvar o arquivo <code style="background:#f4f4f4;padding:1px 5px;border-radius:3px;font-family:monospace;font-size:12px;color:#c0392b;">.dat</code>.</li>
@@ -6513,14 +6672,14 @@ function _renderizarCardResultadoRelatorio(nomeRelatorio, camposTxt, encontrados
     </ol></div></div>`;
     const ts = Date.now();
     card.id = '_relatorioResultCard_' + ts;
-    window['_relatorioDat_' + ts] = { conteudo: conteudoSerializado, nomeArquivo: nomeArquivoSugerido, nome: nomeRelatorio, camposTxt, origemSel };
+    window['_relatorioDat_' + ts] = { conteudo: conteudoSerializado, nomeArquivo: nomeArquivoSugerido, nome: nomeRelatorio, camposTxt, origemSel, colunasRascunho };
     card.innerHTML = `<div style="background:#eff6ff;padding:8px 15px;border-bottom:1px solid #bfdbfe;font-size:11px;color:#1e40af;font-weight:600;">📊 Assistente de Relatórios — Bsoft TMS</div>
 <div class="answer-section"><div class="section-label how">✅ Campos identificados (${encontrados.length})</div><div class="section-content"><ul style="margin:0;padding-left:18px;">${listaOk || '<li>Nenhum</li>'}</ul></div></div>
 ${comoUsar}
 ${listaNok}
 <div class="feedback-area">
   <button onclick="_baixarDatRelatorio(window['_relatorioDat_${ts}'].conteudo, window['_relatorioDat_${ts}'].nomeArquivo)" style="display:flex;align-items:center;gap:6px;padding:8px 16px;border:none;border-radius:8px;background:#1e40af;color:white;cursor:pointer;font-size:13px;font-weight:700;">⬇️ Baixar ${escapeHtml(nomeArquivoSugerido)}</button>
-  <button onclick="_tentarNovamenteRelatorio(${ts})" style="display:flex;align-items:center;gap:6px;padding:8px 16px;border:1.5px solid #1e40af;border-radius:8px;background:white;color:#1e40af;cursor:pointer;font-size:13px;font-weight:700;">🔄 Tentar novamente</button>
+  <button onclick="_voltarParaWizardRelatorio(${ts})" style="display:flex;align-items:center;gap:6px;padding:8px 16px;border:1.5px solid #1e40af;border-radius:8px;background:white;color:#1e40af;cursor:pointer;font-size:13px;font-weight:700;">🔙 Voltar</button>
   <button onclick="novaConversa()" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);cursor:pointer;font-size:13px;font-weight:500;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='var(--primary)';this.style.background='var(--primary-light)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface)'">➕ Nova conversa</button>
 </div>`;
     s.appendChild(card);
@@ -6556,42 +6715,63 @@ async function enviarWizardRelatorio() {
     if (!origemSel) { scrollToBottom(true); return; }
     const nome = (document.getElementById('wRelNome')?.value || '').trim();
     const camposTxt = (document.getElementById('wRelCampos')?.value || '').trim();
-    if (!nome || !camposTxt) {
+    // Colunas montadas arrastando (nome da coluna + campo, os dois obrigatórios pra contar) — vão
+    // pro relatório final direto, sem precisar de IA nenhuma pra elas.
+    const colunasEstruturadas = (window._relColunas || [])
+        .filter(c => c.nomeColuna && c.nomeColuna.trim() && c.campo && c.campo.exp)
+        .map(c => ({ exp: c.campo.exp, label: c.nomeColuna.trim() }));
+    // Guarda uma cópia de TODAS as colunas (inclusive as ainda incompletas) só pro botão Voltar
+    // conseguir devolver a tela exatamente como o usuário deixou, mesmo com coluna pela metade.
+    const colunasRascunho = (window._relColunas || []).map(c => ({ nomeColuna: c.nomeColuna, campo: c.campo ? { ...c.campo } : null }));
+    if (!nome || (!camposTxt && colunasEstruturadas.length === 0)) {
         if (!nome) document.getElementById('wRelNome')?.focus();
-        else document.getElementById('wRelCampos')?.focus();
+        else document.getElementById('wRelBusca')?.focus();
         return;
     }
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Identificando campos...'; }
 
     const catalogo = CATALOGO_RELATORIOS[origemSel] || CATALOGO_RELATORIOS.CTe;
-    const catalogoTxt = catalogo.map(c => `${c.label} => ${c.exp}`).join('\n');
-    const sysMsg = `Você identifica campos de relatório do Bsoft TMS a partir de uma descrição em português.\nAbaixo está o catálogo de campos disponíveis (rótulo => expressão). Use APENAS expressões desse catálogo, nunca invente uma expressão que não esteja listada.\n\nCATÁLOGO:\n${catalogoTxt}\n\n⚠️ REGRA ABSOLUTA — NÃO ADICIONE CAMPOS NÃO PEDIDOS: Inclua em "encontrados" SOMENTE campos que correspondem a algo que o usuário mencionou EXPLICITAMENTE no pedido — mesmo que o termo usado seja sinônimo, abreviado ou levemente diferente do rótulo do catálogo. É PROIBIDO incluir campos "relacionados", "que costumam aparecer junto", ou que pareçam úteis para o contexto do relatório, se o usuário não pediu por eles. Exemplo: se o usuário pediu "CFOP e Chave", a resposta deve conter exatamente esses 2 campos — nunca adicione um terceiro campo (como Agência ou Data Emissão) só porque é comum em relatórios de CT-e. Conte quantos itens distintos o usuário pediu e garanta que "encontrados" não tenha mais itens que isso (um pedido pode gerar menos itens, se algo não for encontrado, mas nunca mais).\n\n📐 COLUNAS CALCULADAS (contas): o usuário pode pedir uma coluna que é o resultado de uma conta (soma, subtração, multiplicação ou divisão) envolvendo um campo do catálogo e um número, ou dois campos do catálogo. Nesse caso, em vez de uma expressão simples do catálogo, monte a fórmula matemática como "exp", seguindo ESTAS DUAS REGRAS OBRIGATÓRIAS do sistema:\n1. Separador decimal SEMPRE ponto, NUNCA vírgula — o sistema TMS não aceita vírgula. Se o usuário disser "vezes 0,02", escreva 0.02.\n2. Todo campo do catálogo usado dentro de uma conta DEVE ficar entre parênteses — se não ficar entre parênteses, o relatório retorna null nessa coluna. Use APENAS parênteses ao redor do campo, nunca ao redor do número.\nExemplo real: pedido "a coluna Comissão seja o Total prestação do Ct-e vezes 0,02" → {"label":"Comissão","exp":"(composicaoFrete.totalPrestacao)*0.02"}. Outro exemplo com dois campos: "Frete mais pedágio" → {"label":"Frete mais pedágio","exp":"(composicaoFrete.freteValor)+(composicaoFrete.pedagio)"}. Toda expressão dentro dos parênteses tem que ser uma expressão EXATA do catálogo acima — nunca invente uma.\n\nResponda APENAS um JSON válido (sem texto antes ou depois, sem markdown), no formato:\n{"encontrados":[{"label":"<rótulo do catálogo, ou o nome da coluna calculada pedida pelo usuário>","exp":"<expressão exata do catálogo, ou a fórmula de conta seguindo as regras acima>"}],"naoEncontrados":["<termo do pedido do usuário que não bateu com nenhum campo>"]}\nNão repita o mesmo campo duas vezes. Em "naoEncontrados", liste os termos pedidos que não têm nenhum campo correspondente no catálogo.`;
-    const userMsg = `Pedido do usuário: "${camposTxt}"`;
 
     try {
-        const result = await callMCPSemPensamento(
-            [{ role: 'system', content: sysMsg }, { role: 'user', content: userMsg }],
-            { temperature: 0.1, maxTokens: 2000 }
-        );
-        let raw = (result.text || '').trim();
-        raw = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
-        const jsonMatch = raw.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) throw new Error('IA não retornou JSON válido.');
-        const parsed = JSON.parse(jsonMatch[0]);
+        let encontradosIA = [], naoEncontrados = [];
+        // Só chama a IA se sobrou descrição em texto livre pra ela interpretar — colunas montadas
+        // 100% arrastando não precisam disso, e pular a chamada deixa esse caminho instantâneo.
+        if (camposTxt) {
+            const catalogoTxt = catalogo.map(c => `${c.label} => ${c.exp}`).join('\n');
+            const sysMsg = `Você identifica campos de relatório do Bsoft TMS a partir de uma descrição em português.\nAbaixo está o catálogo de campos disponíveis (rótulo => expressão). Use APENAS expressões desse catálogo, nunca invente uma expressão que não esteja listada.\n\nCATÁLOGO:\n${catalogoTxt}\n\n⚠️ REGRA ABSOLUTA — NÃO ADICIONE CAMPOS NÃO PEDIDOS: Inclua em "encontrados" SOMENTE campos que correspondem a algo que o usuário mencionou EXPLICITAMENTE no pedido — mesmo que o termo usado seja sinônimo, abreviado ou levemente diferente do rótulo do catálogo. É PROIBIDO incluir campos "relacionados", "que costumam aparecer junto", ou que pareçam úteis para o contexto do relatório, se o usuário não pediu por eles. Exemplo: se o usuário pediu "CFOP e Chave", a resposta deve conter exatamente esses 2 campos — nunca adicione um terceiro campo (como Agência ou Data Emissão) só porque é comum em relatórios de CT-e. Conte quantos itens distintos o usuário pediu e garanta que "encontrados" não tenha mais itens que isso (um pedido pode gerar menos itens, se algo não for encontrado, mas nunca mais).\n\n📐 COLUNAS CALCULADAS (contas): o usuário pode pedir uma coluna que é o resultado de uma conta (soma, subtração, multiplicação ou divisão) envolvendo um campo do catálogo e um número, ou dois campos do catálogo. Nesse caso, em vez de uma expressão simples do catálogo, monte a fórmula matemática como "exp", seguindo ESTAS DUAS REGRAS OBRIGATÓRIAS do sistema:\n1. Separador decimal SEMPRE ponto, NUNCA vírgula — o sistema TMS não aceita vírgula. Se o usuário disser "vezes 0,02", escreva 0.02.\n2. Todo campo do catálogo usado dentro de uma conta DEVE ficar entre parênteses — se não ficar entre parênteses, o relatório retorna null nessa coluna. Use APENAS parênteses ao redor do campo, nunca ao redor do número.\nExemplo real: pedido "a coluna Comissão seja o Total prestação do Ct-e vezes 0,02" → {"label":"Comissão","exp":"(composicaoFrete.totalPrestacao)*0.02"}. Outro exemplo com dois campos: "Frete mais pedágio" → {"label":"Frete mais pedágio","exp":"(composicaoFrete.freteValor)+(composicaoFrete.pedagio)"}. Toda expressão dentro dos parênteses tem que ser uma expressão EXATA do catálogo acima — nunca invente uma.\n\nResponda APENAS um JSON válido (sem texto antes ou depois, sem markdown), no formato:\n{"encontrados":[{"label":"<rótulo do catálogo, ou o nome da coluna calculada pedida pelo usuário>","exp":"<expressão exata do catálogo, ou a fórmula de conta seguindo as regras acima>"}],"naoEncontrados":["<termo do pedido do usuário que não bateu com nenhum campo>"]}\nNão repita o mesmo campo duas vezes. Em "naoEncontrados", liste os termos pedidos que não têm nenhum campo correspondente no catálogo.`;
+            const userMsg = `Pedido do usuário: "${camposTxt}"`;
 
-        const expsValidas = new Set(catalogo.map(c => c.exp));
-        const porExp = new Map(catalogo.map(c => [c.exp, c]));
+            const result = await callMCPSemPensamento(
+                [{ role: 'system', content: sysMsg }, { role: 'user', content: userMsg }],
+                { temperature: 0.1, maxTokens: 2000 }
+            );
+            let raw = (result.text || '').trim();
+            raw = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
+            const jsonMatch = raw.match(/\{[\s\S]*\}/);
+            if (!jsonMatch) throw new Error('IA não retornou JSON válido.');
+            const parsed = JSON.parse(jsonMatch[0]);
+
+            const expsValidas = new Set(catalogo.map(c => c.exp));
+            const porExp = new Map(catalogo.map(c => [c.exp, c]));
+            const vistos = new Set();
+            (parsed.encontrados || []).forEach(item => {
+                if (!item) return;
+                const expNorm = _normalizarExpressaoRelatorio(item.exp, expsValidas);
+                if (expNorm === null || vistos.has(expNorm)) return;
+                vistos.add(expNorm);
+                const cat = porExp.get(expNorm);
+                encontradosIA.push({ exp: expNorm, label: (item.label || (cat ? cat.label : expNorm)) });
+            });
+            naoEncontrados = Array.isArray(parsed.naoEncontrados) ? parsed.naoEncontrados.filter(Boolean) : [];
+        }
+
+        // Junta as colunas montadas arrastando com o que a IA achou no texto livre, sem repetir o
+        // mesmo campo — a coluna montada arrastando vale sobre o que a IA achou pro mesmo campo,
+        // já que o nome dela foi escolhido de propósito pelo usuário.
+        const vistosFinal = new Set();
         const encontrados = [];
-        const vistos = new Set();
-        (parsed.encontrados || []).forEach(item => {
-            if (!item) return;
-            const expNorm = _normalizarExpressaoRelatorio(item.exp, expsValidas);
-            if (expNorm === null || vistos.has(expNorm)) return;
-            vistos.add(expNorm);
-            const cat = porExp.get(expNorm);
-            encontrados.push({ exp: expNorm, label: (item.label || (cat ? cat.label : expNorm)) });
-        });
-        const naoEncontrados = Array.isArray(parsed.naoEncontrados) ? parsed.naoEncontrados.filter(Boolean) : [];
+        colunasEstruturadas.forEach(c => { if (!vistosFinal.has(c.exp)) { vistosFinal.add(c.exp); encontrados.push(c); } });
+        encontradosIA.forEach(c => { if (!vistosFinal.has(c.exp)) { vistosFinal.add(c.exp); encontrados.push(c); } });
 
         const wCard = document.getElementById('wizardRelatorioCard'); if (wCard) wCard.remove();
 
@@ -6608,7 +6788,7 @@ async function enviarWizardRelatorio() {
         const origemValorDat = _ORIGEM_VALOR_DAT[origemSel] || origemSel;
         const conteudo = _gerarConteudoDatRelatorio({ nome, nomeArquivo: '', origem: origemValorDat, tamanhoRelatorio: '27cm', campos: encontrados });
 
-        _renderizarCardResultadoRelatorio(nome, camposTxt, encontrados, naoEncontrados, conteudo, nomeArquivoDat, origemSel);
+        _renderizarCardResultadoRelatorio(nome, camposTxt, encontrados, naoEncontrados, conteudo, nomeArquivoDat, origemSel, colunasRascunho);
         adicionarMensagemNaConversa('ai', `Relatório "${nome}" gerado com ${encontrados.length} campo(s): ${encontrados.map(c => c.label).join(', ')}.`);
         logSearch('Assistente de Relatórios - ' + nome, true);
     } catch (e) {
