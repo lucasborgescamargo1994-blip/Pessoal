@@ -1966,20 +1966,29 @@ const GEMINI_FALLBACK_KEY=gf1+gf2+gf3;
 const GEMINI_FALLBACK_MODEL="gemma-4-26b-a4b-it";
 const j1="jina_59e554b4ce3e4bfba5f7550ddb515ec7",j2="O3wfZe11iXINaz3azhRgd0-xpE5L";
 const JINA_KEY=j1+j2;
-const DEFAULT_MCP_CONFIG = { provider:'openrouter', model:'nvidia/nemotron-3-nano-30b-a3b:free', apiKey:o1+o2+o3, baseUrl:'https://openrouter.ai/api/v1' };
+// nemotron-3-nano-30b-a3b:free saiu do catálogo grátis da OpenRouter (só sobrou a versão paga) —
+// trocado por nemotron-3.5-lightning:free, testado ao vivo (responde em ~1s, texto limpo, sem
+// custo). Ver comentário mais abaixo (MODEL_LABELS) sobre os outros modelos também trocados.
+const DEFAULT_MCP_CONFIG = { provider:'openrouter', model:'nvidia/nemotron-3.5-lightning:free', apiKey:o1+o2+o3, baseUrl:'https://openrouter.ai/api/v1' };
 const PROVIDER_PRESETS = {
-    openrouter: { baseUrl:'https://openrouter.ai/api/v1', models:['nvidia/nemotron-3-nano-30b-a3b:free','north-mini-code:free','nvidia/nemotron-3-ultra-550b-a55b:free','nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free','z-ai/glm-4.5-air:free','meta-llama/llama-3.3-70b-instruct:free','deepseek/deepseek-r1:free'], defaultModel:'nvidia/nemotron-3-nano-30b-a3b:free', chatEndpoint:'/chat/completions', headers:(k)=>({Authorization:`Bearer ${k}`,'Content-Type':'application/json','HTTP-Referer':window.location.origin,'X-Title':'Bsoft TMS Suporte'}), formatRequestBody:(m,msgs,c={})=>({model:m,messages:msgs,temperature:c.temperature||0.3,max_tokens:c.maxTokens||4096,...(c.responseFormat?{response_format:c.responseFormat}:{})}), parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro OpenRouter');return{text:d.choices?.[0]?.message?.content||'',finishReason:d.choices?.[0]?.finish_reason||'',full:d};} },
+    openrouter: { baseUrl:'https://openrouter.ai/api/v1', models:['inclusionai/ling-3.0-flash-fin:free','cohere/north-mini-code:free','nvidia/nemotron-3.5-lightning:free','nvidia/nemotron-3-ultra-550b-a55b:free','nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free','google/gemma-4-31b-it:free','nvidia/nemotron-3-super-120b-a12b:free','thinkingmachines/inkling:free'], defaultModel:'inclusionai/ling-3.0-flash-fin:free', chatEndpoint:'/chat/completions', headers:(k)=>({Authorization:`Bearer ${k}`,'Content-Type':'application/json','HTTP-Referer':window.location.origin,'X-Title':'Bsoft TMS Suporte'}), formatRequestBody:(m,msgs,c={})=>({model:m,messages:msgs,temperature:c.temperature||0.3,max_tokens:c.maxTokens||4096,...(c.responseFormat?{response_format:c.responseFormat}:{})}), parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro OpenRouter');return{text:d.choices?.[0]?.message?.content||'',finishReason:d.choices?.[0]?.finish_reason||'',full:d};} },
     google: { baseUrl:'https://generativelanguage.googleapis.com/v1beta', models:['gemma-4-26b-a4b-it','gemini-2.0-flash','gemini-2.0-flash-lite','gemini-2.5-flash'], defaultModel:'gemma-4-26b-a4b-it', chatEndpoint:'/models/{model}:generateContent', headers:()=>({'Content-Type':'application/json'}), formatRequestBody:(m,msgs,c={})=>{const cnt=msgs.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:typeof m.content==='string'?m.content:JSON.stringify(m.content)}]}));return{contents:cnt,generationConfig:{temperature:c.temperature||0.3,maxOutputTokens:c.maxTokens||4096,...(c.responseFormat?.type==='json_object'?{responseMimeType:'application/json'}:{})}};}, parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro Google');const p=d.candidates?.[0]?.content?.parts||[];return{text:p.filter(p=>p.text).map(p=>p.text).join(''),finishReason:d.candidates?.[0]?.finishReason||'',full:d};}, buildUrl:(b,m,e)=>`${b}${e.replace('{model}',m)}` },
     custom: { baseUrl:'',models:[],defaultModel:'',chatEndpoint:'/chat/completions', headers:(k)=>({Authorization:`Bearer ${k}`,'Content-Type':'application/json'}), formatRequestBody:(m,msgs,c={})=>({model:m,messages:msgs,temperature:c.temperature||0.3,max_tokens:c.maxTokens||4096,...(c.responseFormat?{response_format:c.responseFormat}:{})}), parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro API');return{text:d.choices?.[0]?.message?.content||'',finishReason:d.choices?.[0]?.finish_reason||'',full:d};} }
 };
+// 08/09/2026: conferi ao vivo no catálogo da OpenRouter e vários modelos grátis usados aqui
+// tinham saído do ar (a versão :free foi descontinuada, ou o nome mudou) — por isso a chamada de
+// fallback dava 404. Troquei pelos que confirmei funcionando de verdade (chamada real, resposta
+// válida) nessa mesma data. Como o catálogo grátis da OpenRouter muda com frequência, se algum
+// desses parar de funcionar de novo no futuro, é só repetir essa conferência.
 const MODEL_LABELS = {
+    'inclusionai/ling-3.0-flash-fin:free':            'Ling 3.0 Flash Fin ⭐ (principal)',
     'nvidia/nemotron-3-super-120b-a12b:free':         'Nemotron 3 Super (secundário)',
-    'north-mini-code:free':                           'North Mini Code (terceiro)',
-    'nvidia/nemotron-3-ultra-550b-a55b:free':         'Nemotron Ultra 550B ⭐ (primário)',
+    'cohere/north-mini-code:free':                    'North Mini Code (terceiro)',
+    'nvidia/nemotron-3-ultra-550b-a55b:free':         'Nemotron Ultra 550B (quarto/último fallback)',
     'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free': 'Nemotron Nano 30B Reasoning',
-    'z-ai/glm-4.5-air:free':                          'GLM-4.5 Air',
-    'meta-llama/llama-3.3-70b-instruct:free':         'Llama 3.3 70B Instruct',
-    'deepseek/deepseek-r1:free':                      'DeepSeek R1',
+    'nvidia/nemotron-3.5-lightning:free':             'Nemotron 3.5 Lightning (rápido)',
+    'google/gemma-4-31b-it:free':                     'Gemma 4 31B',
+    'thinkingmachines/inkling:free':                  'Inkling',
     'gemma-4-26b-a4b-it':                             'Gemma 4 26B (fallback padrão)',
     'gemini-2.0-flash':                               'Gemini 2.0 Flash',
     'gemini-2.0-flash-lite':                          'Gemini 2.0 Flash Lite',
@@ -2032,8 +2041,14 @@ async function callMCPAPI(provider,model,apiKey,baseUrl,messages,config={}){
 }
 
 async function callCurrentMCP(messages,config={}){
-    const ULTRA_MODEL='nvidia/nemotron-3-ultra-550b-a55b:free';
+    // Ordem 09/09/2026, a pedido: Ling 3.0 Flash Fin (principal) → North Mini (secundário) →
+    // Nano/Lightning (terceiro) → Ultra 550B (quarto, último fallback). Testei o Ling ao vivo antes
+    // de colocar aqui: responde certo em pt-BR, ~2-4s (ele "pensa" antes de responder — normal,
+    // só precisa de orçamento de tokens suficiente, o que este app já usa).
+    const LING_MODEL='inclusionai/ling-3.0-flash-fin:free';
+    const MINI_MODEL='cohere/north-mini-code:free';
     const NANO_MODEL=DEFAULT_MCP_CONFIG.model; // padrão fixo do código
+    const ULTRA_MODEL='nvidia/nemotron-3-ultra-550b-a55b:free';
     // modelo configurado pelo usuário — tem prioridade se for diferente do padrão
     const CUSTOM_MODEL = mcpConfig.model !== NANO_MODEL ? mcpConfig.model : null;
     const _providerLabel = mcpConfig.provider==='google'?'Google':mcpConfig.provider==='custom'?'Custom':'OpenRouter';
@@ -2057,52 +2072,71 @@ async function callCurrentMCP(messages,config={}){
                 _tlog(CUSTOM_MODEL,t,0,`❌ erro (${e.status||e.message?.substring(0,40)||'?'})`);
             }
         }
-        console.warn(`[Config] ${CUSTOM_MODEL} falhou → entrando no fluxo padrão (Ultra → Nano → NorthMini)...`);
+        console.warn(`[Config] ${CUSTOM_MODEL} falhou → entrando no fluxo padrão (Ling → NorthMini → Nano → Ultra)...`);
     }
 
-    // ── 1º: Primário (Ultra 550B) — 2 tentativas ──
-    console.log(`%c⏱️ [IA] Tentando primário (Ultra 550B: ${ULTRA_MODEL})...`,'color:#7c3aed;font-weight:600');
+    // ── 1º: Principal (Ling 3.0 Flash Fin) — 2 tentativas ──
+    console.log(`%c⏱️ [IA] Tentando principal (${LING_MODEL})...`,'color:#7c3aed;font-weight:600');
     for(let t=1;t<=2;t++){
         try{
-            if(t>1){console.warn('[Primário] retry 2/2...');await new Promise(r=>setTimeout(r,1500));}
+            if(t>1){console.warn('[Principal] retry 2/2...');await new Promise(r=>setTimeout(r,1500));}
             const _tm=performance.now();
-            const res=await callMCPAPI(mcpConfig.provider,ULTRA_MODEL,mcpConfig.apiKey,mcpConfig.baseUrl,messages,config);
-            _tlog('Primário',t,performance.now()-_tm,'✅ OK',` — modelo real: ${ULTRA_MODEL}`);
-            return{...res,_iaUsada:_providerLabel,_iaModelo:ULTRA_MODEL};
+            // Fixo da OpenRouter — sempre credenciais padrão da OpenRouter aqui, mesmo que o
+            // usuário tenha configurado outro provedor. Usar mcpConfig aqui gerava uma URL quebrada
+            // (ex.: modelo da OpenRouter colado na URL do Google), que o navegador reportava como
+            // erro de CORS.
+            const res=await callMCPAPI(DEFAULT_MCP_CONFIG.provider,LING_MODEL,DEFAULT_MCP_CONFIG.apiKey,DEFAULT_MCP_CONFIG.baseUrl,messages,config);
+            _tlog('Principal',t,performance.now()-_tm,'✅ OK',` — modelo real: ${LING_MODEL}`);
+            return{...res,_iaUsada:'OpenRouter',_iaModelo:LING_MODEL};
         }catch(e){
-            _tlog('Primário',t,0,`❌ erro (${e.status||e.message?.substring(0,40)||'?'})`);
+            _tlog('Principal',t,0,`❌ erro (${e.status||e.message?.substring(0,40)||'?'})`);
         }
     }
 
-    // ── 2º: Nano 30B (secundário) — 2 tentativas ──
-    if(CUSTOM_MODEL !== NANO_MODEL && ULTRA_MODEL !== NANO_MODEL){
-        console.log(`%c⏱️ [IA] Primário falhou → tentando Nano 30B (${NANO_MODEL})...`,'color:#7c3aed;font-weight:600');
-        for(let t=1;t<=2;t++){
-            try{
-                if(t>1){console.warn('[Nano] retry 2/2...');await new Promise(r=>setTimeout(r,1500));}
-                const _tm=performance.now();
-                const res=await callMCPAPI(DEFAULT_MCP_CONFIG.provider,NANO_MODEL,DEFAULT_MCP_CONFIG.apiKey,DEFAULT_MCP_CONFIG.baseUrl,messages,config);
-                _tlog('Nano',t,performance.now()-_tm,'✅ OK',` — modelo real: ${NANO_MODEL}`);
-                return{...res,_iaUsada:_providerLabel,_iaModelo:NANO_MODEL};
-            }catch(e){
-                _tlog('Nano',t,0,`❌ erro (${e.status||e.message?.substring(0,40)||'?'})`);
-            }
-        }
-    }
-
-    // ── 3º: North Mini Code — 2 tentativas ──
-    const MINI_MODEL = 'north-mini-code:free';
-    if(CUSTOM_MODEL !== MINI_MODEL && ULTRA_MODEL !== MINI_MODEL && NANO_MODEL !== MINI_MODEL){
-        console.log(`%c⏱️ [IA] Falhou → tentando ${MINI_MODEL}...`,'color:#ea6a0a;font-weight:600');
+    // ── 2º: North Mini Code (secundário) — 2 tentativas ──
+    if(CUSTOM_MODEL !== MINI_MODEL && LING_MODEL !== MINI_MODEL){
+        console.log(`%c⏱️ [IA] Principal falhou → tentando ${MINI_MODEL}...`,'color:#7c3aed;font-weight:600');
         for(let t=1;t<=2;t++){
             try{
                 if(t>1){console.warn('[NorthMini] retry 2/2...');await new Promise(r=>setTimeout(r,1500));}
                 const _tm=performance.now();
                 const res=await callMCPAPI(DEFAULT_MCP_CONFIG.provider,MINI_MODEL,DEFAULT_MCP_CONFIG.apiKey,DEFAULT_MCP_CONFIG.baseUrl,messages,config);
                 _tlog('NorthMini',t,performance.now()-_tm,'✅ OK',` — modelo real: ${MINI_MODEL}`);
-                return{...res,_iaUsada:_providerLabel,_iaModelo:MINI_MODEL};
+                return{...res,_iaUsada:'OpenRouter',_iaModelo:MINI_MODEL};
             }catch(e){
                 _tlog('NorthMini',t,0,`❌ erro (${e.status||e.message?.substring(0,40)||'?'})`);
+            }
+        }
+    }
+
+    // ── 3º: Nano/Lightning (terceiro) — 2 tentativas ──
+    if(CUSTOM_MODEL !== NANO_MODEL && LING_MODEL !== NANO_MODEL && MINI_MODEL !== NANO_MODEL){
+        console.log(`%c⏱️ [IA] Falhou → tentando Nano (${NANO_MODEL})...`,'color:#ea6a0a;font-weight:600');
+        for(let t=1;t<=2;t++){
+            try{
+                if(t>1){console.warn('[Nano] retry 2/2...');await new Promise(r=>setTimeout(r,1500));}
+                const _tm=performance.now();
+                const res=await callMCPAPI(DEFAULT_MCP_CONFIG.provider,NANO_MODEL,DEFAULT_MCP_CONFIG.apiKey,DEFAULT_MCP_CONFIG.baseUrl,messages,config);
+                _tlog('Nano',t,performance.now()-_tm,'✅ OK',` — modelo real: ${NANO_MODEL}`);
+                return{...res,_iaUsada:'OpenRouter',_iaModelo:NANO_MODEL};
+            }catch(e){
+                _tlog('Nano',t,0,`❌ erro (${e.status||e.message?.substring(0,40)||'?'})`);
+            }
+        }
+    }
+
+    // ── 4º: Ultra 550B (último fallback) — 2 tentativas ──
+    if(CUSTOM_MODEL !== ULTRA_MODEL && LING_MODEL !== ULTRA_MODEL && MINI_MODEL !== ULTRA_MODEL && NANO_MODEL !== ULTRA_MODEL){
+        console.log(`%c⏱️ [IA] Falhou → tentando Ultra 550B (${ULTRA_MODEL})...`,'color:#ea6a0a;font-weight:600');
+        for(let t=1;t<=2;t++){
+            try{
+                if(t>1){console.warn('[Ultra] retry 2/2...');await new Promise(r=>setTimeout(r,1500));}
+                const _tm=performance.now();
+                const res=await callMCPAPI(DEFAULT_MCP_CONFIG.provider,ULTRA_MODEL,DEFAULT_MCP_CONFIG.apiKey,DEFAULT_MCP_CONFIG.baseUrl,messages,config);
+                _tlog('Ultra',t,performance.now()-_tm,'✅ OK',` — modelo real: ${ULTRA_MODEL}`);
+                return{...res,_iaUsada:'OpenRouter',_iaModelo:ULTRA_MODEL};
+            }catch(e){
+                _tlog('Ultra',t,0,`❌ erro (${e.status||e.message?.substring(0,40)||'?'})`);
             }
         }
     }
@@ -2111,10 +2145,12 @@ async function callCurrentMCP(messages,config={}){
 }
 
 // Modelos gratuitos com suporte a visão (multimodal) — para "analisar tela" e análise de imagem
+// llama-4-scout/maverick :free saíram do catálogo grátis da OpenRouter — trocados pelas 2 variações
+// do Gemma 4 (confirmadas ao vivo em 08/09/2026), que também têm suporte a imagem.
 const _VISION_MODELS = [
     'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free',
-    'meta-llama/llama-4-scout:free',
-    'meta-llama/llama-4-maverick:free',
+    'google/gemma-4-26b-a4b-it:free',
+    'google/gemma-4-31b-it:free',
 ];
 
 async function callMCPVision(messages, config = {}) {
@@ -2444,15 +2480,22 @@ async function forcarAtualizacaoRepositorio() {
 // Chamada rápida — sem retry. Usada em tempo real (handleChat).
 // Usa Jina AI (jina-embeddings-v3, 1024 dims) — limite de 1M tokens/mês grátis, sem 429.
 async function gerarEmbedding(texto) {
+    // Antes não tinha limite de tempo nenhum aqui — se a Jina travasse, o handleChat ficava
+    // esperando indefinidamente ANTES até de tentar a busca por palavra-chave (que não depende
+    // disso). 8s é folgado (embedding normalmente volta em bem menos que 1s) — só existe pra
+    // cortar caso de trava, caindo pro fallback por palavra-chave em vez de ficar parado.
+    const _ac = new AbortController();
+    const _tid = setTimeout(() => _ac.abort(), 8000);
     try {
         const r = await fetch('https://api.jina.ai/v1/embeddings', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${JINA_KEY}` },
-            body: JSON.stringify({ model: 'jina-embeddings-v3', input: [texto] })
+            body: JSON.stringify({ model: 'jina-embeddings-v3', input: [texto] }),
+            signal: _ac.signal
         });
         const d = await r.json();
         if (r.ok && d.data?.[0]?.embedding) return d.data[0].embedding;
-    } catch(e) {}
+    } catch(e) {} finally { clearTimeout(_tid); }
     return null;
 }
 
@@ -2849,22 +2892,12 @@ INSTRUÇÕES:
 
         const contentEl = document.getElementById('_pf' + ts);
         const feedbackEl = document.getElementById('_pff' + ts);
-        let rafPending = false, lastVis = '', streamDone = false;
+        const _revelacao = _criarRevelacaoFluida(contentEl); // ritmo fluido de exibição, independente da velocidade real do modelo
 
         const { finishReason: _pfFR } = await _readSSEStream(_resp, _pr, chunk => {
-            lastVis = _pfFilter.push(chunk);
-            if (!rafPending) {
-                rafPending = true;
-                requestAnimationFrame(() => {
-                    rafPending = false;
-                    if (streamDone) return;
-                    contentEl.innerHTML = renderMd(lastVis) + '<span class="stream-cursor"></span>';
-                    scrollToBottom(false);
-                });
-            }
+            _revelacao.atualizar(_pfFilter.push(chunk));
         });
 
-        streamDone = true;
         const _pfRaw = _pfFilter.finish();
         const finalText = _pfRaw.replace(/#finalizado\s*/gi, '').trim();
         // Truncado = API sinalizou limit de tokens. Ausência de #finalizado não é critério.
@@ -2876,7 +2909,8 @@ INSTRUÇÕES:
             scrollToBottom(true);
             return;
         }
-        contentEl.innerHTML = renderMd(finalText);
+        _revelacao.atualizar(finalText);
+        _revelacao.finalizar();
         feedbackEl.style.display = 'flex';
         scrollToBottom(true);
         adicionarMensagemNaConversa('ai', finalText.replace(/\*\*(.*?)\*\*/g, '$1'));
@@ -2927,6 +2961,32 @@ function _makeThinkingFilter() {
     };
 }
 
+// Revela o texto acumulado num ritmo constante de caracteres por segundo, independente de quão
+// rápido a IA manda os pedaços — com um modelo rápido, o stream de rede pode chegar quase todo de
+// uma vez, e sem isso o texto "pula" pronto na tela em vez de aparecer fluido. atualizar() é
+// chamado com o texto completo até agora (não só o pedaço novo) a cada chunk que chega; o ritmo
+// nunca ultrapassa CPS, mas também nunca fica pra trás de quão rápido o texto real já chegou —
+// se a IA está digitando devagar de verdade, a revelação acompanha no ritmo dela, sem esperar à
+// toa. finalizar() avisa que não vem mais nada novo, só terminar de revelar o que ainda falta.
+function _criarRevelacaoFluida(contentEl, opts = {}) {
+    const CPS = opts.cps || 220; // caracteres por segundo — rápido de ler, mas dá pra acompanhar
+    let textoCompleto = '', revelados = 0, streamAcabou = false, ultimoTs = null, animando = false;
+    function passo(ts) {
+        if (ultimoTs === null) ultimoTs = ts;
+        revelados = Math.min(textoCompleto.length, revelados + ((ts - ultimoTs) / 1000) * CPS);
+        ultimoTs = ts;
+        const falta = revelados < textoCompleto.length;
+        contentEl.innerHTML = renderMd(textoCompleto.slice(0, Math.floor(revelados))) + (falta || !streamAcabou ? '<span class="stream-cursor"></span>' : '');
+        scrollToBottom(false);
+        if (falta || !streamAcabou) { requestAnimationFrame(passo); } else { animando = false; }
+    }
+    function garantirAnimando() { if (!animando) { animando = true; ultimoTs = null; requestAnimationFrame(passo); } }
+    return {
+        atualizar(novoTextoCompleto) { textoCompleto = novoTextoCompleto; garantirAnimando(); },
+        finalizar() { streamAcabou = true; garantirAnimando(); }
+    };
+}
+
 async function _readSSEStream(resp, provider, onChunk) {
     const reader = resp.body.getReader();
     const dec = new TextDecoder();
@@ -2961,8 +3021,12 @@ async function _readSSEStream(resp, provider, onChunk) {
 }
 
 async function callCurrentMCPStream(messages, config = {}) {
-    const ULTRA_MODEL = 'nvidia/nemotron-3-ultra-550b-a55b:free';
+    // Ordem 09/09/2026, a pedido: Ling 3.0 Flash Fin (principal) → North Mini (secundário) →
+    // Nano/Lightning (terceiro) → Ultra 550B (quarto, último fallback).
+    const LING_MODEL = 'inclusionai/ling-3.0-flash-fin:free';
+    const MINI_MODEL = 'cohere/north-mini-code:free';
     const NANO_MODEL = DEFAULT_MCP_CONFIG.model;
+    const ULTRA_MODEL = 'nvidia/nemotron-3-ultra-550b-a55b:free';
     const CUSTOM_MODEL = mcpConfig.model !== NANO_MODEL ? mcpConfig.model : null;
     const _pLabel = mcpConfig.provider==='google'?'Google':mcpConfig.provider==='custom'?'Custom':'OpenRouter';
 
@@ -2995,13 +3059,17 @@ async function callCurrentMCPStream(messages, config = {}) {
         return resp;
     };
 
-    // Chain: Custom → ULTRA (primário) → Nano30B (secundário) → NorthMini (terceiro)
-    const MINI_MODEL = 'north-mini-code:free';
+    // Chain: Custom → Ling 3.0 Flash Fin (principal) → North Mini (secundário) → Nano/Lightning
+    // (terceiro) → Ultra 550B (quarto, último fallback).
     const chain = [];
     if (CUSTOM_MODEL) chain.push({ model: CUSTOM_MODEL, provider: mcpConfig.provider, apiKey: mcpConfig.apiKey, baseUrl: mcpConfig.baseUrl, label: _pLabel });
-    if (CUSTOM_MODEL !== ULTRA_MODEL) chain.push({ model: ULTRA_MODEL, provider: mcpConfig.provider, apiKey: mcpConfig.apiKey, baseUrl: mcpConfig.baseUrl, label: _pLabel });
-    if (ULTRA_MODEL !== NANO_MODEL && CUSTOM_MODEL !== NANO_MODEL) chain.push({ model: NANO_MODEL, provider: DEFAULT_MCP_CONFIG.provider, apiKey: DEFAULT_MCP_CONFIG.apiKey, baseUrl: DEFAULT_MCP_CONFIG.baseUrl, label: 'OpenRouter' });
-    if (ULTRA_MODEL !== MINI_MODEL && NANO_MODEL !== MINI_MODEL && CUSTOM_MODEL !== MINI_MODEL) chain.push({ model: MINI_MODEL, provider: DEFAULT_MCP_CONFIG.provider, apiKey: DEFAULT_MCP_CONFIG.apiKey, baseUrl: DEFAULT_MCP_CONFIG.baseUrl, label: 'OpenRouter' });
+    // Todos fixos da OpenRouter — sempre credenciais padrão da OpenRouter aqui (nunca as do
+    // provedor configurado pelo usuário), senão vira uma URL quebrada tipo modelo da OpenRouter
+    // colado na URL do Google, que o navegador só reporta como erro de CORS.
+    if (CUSTOM_MODEL !== LING_MODEL) chain.push({ model: LING_MODEL, provider: DEFAULT_MCP_CONFIG.provider, apiKey: DEFAULT_MCP_CONFIG.apiKey, baseUrl: DEFAULT_MCP_CONFIG.baseUrl, label: 'OpenRouter' });
+    if (LING_MODEL !== MINI_MODEL && CUSTOM_MODEL !== MINI_MODEL) chain.push({ model: MINI_MODEL, provider: DEFAULT_MCP_CONFIG.provider, apiKey: DEFAULT_MCP_CONFIG.apiKey, baseUrl: DEFAULT_MCP_CONFIG.baseUrl, label: 'OpenRouter' });
+    if (LING_MODEL !== NANO_MODEL && MINI_MODEL !== NANO_MODEL && CUSTOM_MODEL !== NANO_MODEL) chain.push({ model: NANO_MODEL, provider: DEFAULT_MCP_CONFIG.provider, apiKey: DEFAULT_MCP_CONFIG.apiKey, baseUrl: DEFAULT_MCP_CONFIG.baseUrl, label: 'OpenRouter' });
+    if (LING_MODEL !== ULTRA_MODEL && MINI_MODEL !== ULTRA_MODEL && NANO_MODEL !== ULTRA_MODEL && CUSTOM_MODEL !== ULTRA_MODEL) chain.push({ model: ULTRA_MODEL, provider: DEFAULT_MCP_CONFIG.provider, apiKey: DEFAULT_MCP_CONFIG.apiKey, baseUrl: DEFAULT_MCP_CONFIG.baseUrl, label: 'OpenRouter' });
 
     const _skipModels = config.skipModels || [];
     const _activeChain = _skipModels.length ? chain.filter(c => !_skipModels.includes(c.model)) : chain;
@@ -3016,6 +3084,24 @@ async function callCurrentMCPStream(messages, config = {}) {
             if (i === _activeChain.length - 1) throw new Error('Todos os provedores falharam.');
         }
     }
+}
+
+// Saudação/agradecimento/despedida "pura" — responde na hora, sem gastar embedding nem chamada de
+// IA nenhuma (nem precisa de um modelo pequeno pra isso: já sabe a resposta de cara). Só entra em
+// ação quando a mensagem inteira é basicamente só isso — uma pergunta de verdade que comece com
+// "bom dia, como eu..." continua indo pro fluxo normal, sem risco de ser interceptada à toa.
+const _SAUDACOES_RAPIDAS = ['oi', 'ola', 'opa', 'eae', 'e ai', 'bom dia', 'boa tarde', 'boa noite', 'tudo bem', 'tudo bom', 'como vai', 'blz', 'beleza'];
+const _AGRADECIMENTOS_RAPIDOS = ['obrigado', 'obrigada', 'brigado', 'brigada', 'valeu', 'vlw'];
+const _DESPEDIDAS_RAPIDAS = ['tchau', 'ate mais', 'ate logo', 'falou', 'flw'];
+function _respostaInstantanea(query) {
+    const norm = query.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[!?.,]/g, '').trim();
+    if (!norm || norm.length > 30) return null; // frase curta o bastante pra ser "só isso" e nada mais
+    const bate = lista => lista.some(f => norm === f || norm.startsWith(f + ' ') || norm.endsWith(' ' + f));
+    const info = obterSaudacao();
+    if (bate(_AGRADECIMENTOS_RAPIDOS)) return `De nada! 😊 Qualquer outra dúvida, é só perguntar.`;
+    if (bate(_DESPEDIDAS_RAPIDAS)) return `Até mais! ${info.emoji} Precisando, é só voltar aqui.`;
+    if (bate(_SAUDACOES_RAPIDAS)) return `${info.emoji} ${info.saudacao}! Como posso te ajudar hoje?`;
+    return null;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -3078,6 +3164,15 @@ async function handleChat() {
     }
 
     if (ehAssistenteRelatorios(query)) { mostrarWizardRelatorio(); return; }
+
+    const _respostaRapida = _respostaInstantanea(query);
+    if (_respostaRapida) {
+        appendMessage('ai', _respostaRapida);
+        adicionarMensagemNaConversa('ai', _respostaRapida);
+        if (document.hidden) { _enviarNotificacaoNavegador('🤖 Suporte Bsoft TMS respondeu', _respostaRapida, 'bsoft-ia-resposta'); }
+        if (isCallActive) { speak(_respostaRapida); }
+        return;
+    }
 
     const _t0 = performance.now();
     const _tp = (label, from) => console.log(`%c⏱️ [handleChat] ${label}: ${(performance.now()-from).toFixed(0)}ms`, 'color:#f97316;font-weight:600;');
@@ -3199,14 +3294,61 @@ async function handleChat() {
     }
 
     let _streamCard = null;
+    let _mainStreamConectado = false; // só vira true depois que o modelo grande conecta de fato — usado no catch pra decidir a mensagem de erro certa
     const _filter = _makeThinkingFilter();
+    // Rascunho rápido de um modelo menor (Nano), disparado em paralelo com o modelo grande — só é
+    // mostrado se o modelo grande ainda não tiver começado a responder (tira a sensação de tela
+    // parada enquanto ele processa/conecta). Assim que a resposta de verdade do modelo grande
+    // começa a chegar, ela substitui o rascunho normalmente — o rascunho nunca vira a resposta
+    // salva, notificada ou falada na chamada, é só pra ocupar a espera. Se o Nano falhar, sem
+    // problema: simplesmente não aparece nada antes da resposta de verdade.
+    const _rascunhoPromise = callMCPAPI(DEFAULT_MCP_CONFIG.provider, DEFAULT_MCP_CONFIG.model, DEFAULT_MCP_CONFIG.apiKey, DEFAULT_MCP_CONFIG.baseUrl, _apiMessages, { temperature: 0.2, maxTokens: 12000 })
+        .then(r => (r.text || '').replace(/#finalizado\s*/gi, '').trim())
+        .catch(() => '');
+
+    // O card é criado JÁ DE CARA, antes mesmo de esperar o modelo grande conectar — senão o
+    // rascunho não teria onde aparecer enquanto essa conexão ainda está rolando (que é bem a hora
+    // em que ele mais ajuda). O selo de qual IA respondeu (canto inferior direito) começa vazio e
+    // só é preenchido depois, quando o modelo grande conecta de verdade.
+    const ts = Date.now();
+    const card = document.createElement('div'); card.className = 'answer-card'; _streamCard = card;
+    card.innerHTML = `<div class="answer-section"><div class="section-content" id="_sc${ts}"><span class="stream-thinking">💭 Pensando e formando resposta...</span><span class="stream-cursor"></span></div></div>
+        <div class="feedback-area" id="_sf${ts}" style="display:none">
+            <span class="feedback-util">Esta resposta foi útil?</span>
+            <button class="feedback-btn" onclick="saveFeedback(${ts},'positivo',this)">👍</button>
+            <button class="feedback-btn" onclick="saveFeedback(${ts},'negativo',this)">👎</button>
+            <button onclick="novaConversa()" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);cursor:pointer;font-size:13px;font-weight:500;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='var(--primary)';this.style.background='var(--primary-light)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface)'">➕ Nova conversa</button>
+            <button class="btn-pesquisa-avancada" style="background:linear-gradient(135deg, #10b981, #059669);" onclick="toggleCiotPanel()">🗺️ CIOT</button>
+            <button class="btn-pesquisa-avancada" style="background:linear-gradient(135deg, #dc2626, #991b1b);" onclick="toggleBlogPanel();document.getElementById('blogSearchInput').value='${query.replace(/'/g, "\\'")}';pesquisarNoBlog();">📝 Blog</button>
+            <button class="btn-pesquisa-avancada" style="background:linear-gradient(135deg, #2563eb, #1d4ed8);" onclick="toggleManualPanel();">📘 Manual</button>
+            <button class="btn-pesquisa-avancada" style="background:linear-gradient(135deg, #ff0000, #cc0000);" onclick="toggleYTPanel();document.getElementById('ytSearchInput').value='${query.replace(/'/g, "\\'")}';pesquisarNoYT();">🎬 YouTube</button>
+			<button class="btn-pesquisa-avancada" style="background:linear-gradient(135deg, var(--central-color), var(--central-dark));" onclick="toggleCentralPanel();document.getElementById('centralSearchInput').value='${query.replace(/'/g, "\\'")}';pesquisarNaCentral();">📚 Central</button>
+            ${filaSolucoes.length > 0 ? `<button class="feedback-btn next" onclick="fillAndSend('Próximo')">➡️ Próxima</button>` : ''}
+            <span style="margin-left:auto;" id="_ib${ts}"></span>
+        </div>`;
+    document.getElementById('chatStream').appendChild(card);
+    ld.remove();
+    scrollToBottom(true);
+
+    const contentEl = document.getElementById('_sc' + ts);
+    const feedbackEl = document.getElementById('_sf' + ts);
+    let lastVis = '', streamDone = false;
+    const _revelacao = _criarRevelacaoFluida(contentEl); // ritmo fluido de exibição, independente da velocidade real do modelo
+
+    _rascunhoPromise.then(rascunho => {
+        if (rascunho && !streamDone && !lastVis.trim()) {
+            contentEl.innerHTML = `<div style="font-size:10.5px;color:#0369a1;margin-bottom:8px;">⚡ Resposta rápida — aprimorando com o modelo avançado...</div>` + renderMd(rascunho);
+            scrollToBottom(false);
+        }
+    });
+
     try {
         const _t5 = performance.now();
         const { resp: _resp, provider: _pr, iaUsada: _iu, iaModelo: _im } = await callCurrentMCPStream(
             _apiMessages, { temperature: 0.2, maxTokens: 12000 }
         );
         _tp('callCurrentMCPStream (conectado)', _t5);
-        ld.remove();
+        _mainStreamConectado = true;
 
         const iaUsada = _iu || 'OpenRouter';
         const iaModelo = (_im || '').split('/').pop();
@@ -3216,40 +3358,12 @@ async function handleChat() {
             ? {emoji:'🔌',color:'#059669',bg:'#f0fdf4',border:'#bbf7d0'}
             : {emoji:'⚡',color:'#0369a1',bg:'#f0f9ff',border:'#bae6fd'};
         const iaBadge = `<span style="font-size:10px;color:${_iaBadgeCfg.color};background:${_iaBadgeCfg.bg};padding:2px 7px;border-radius:10px;border:1px solid ${_iaBadgeCfg.border};font-weight:600;">${_iaBadgeCfg.emoji} ${iaUsada}${iaModelo?' · '+iaModelo:''}</span>`;
-        const ts = Date.now();
-        const card = document.createElement('div'); card.className = 'answer-card'; _streamCard = card;
-        card.innerHTML = `<div class="answer-section"><div class="section-content" id="_sc${ts}"><span class="stream-thinking">💭 Pensando e formando resposta...</span><span class="stream-cursor"></span></div></div>
-            <div class="feedback-area" id="_sf${ts}" style="display:none">
-                <span class="feedback-util">Esta resposta foi útil?</span>
-                <button class="feedback-btn" onclick="saveFeedback(${ts},'positivo',this)">👍</button>
-                <button class="feedback-btn" onclick="saveFeedback(${ts},'negativo',this)">👎</button>
-                <button onclick="novaConversa()" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);cursor:pointer;font-size:13px;font-weight:500;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='var(--primary)';this.style.background='var(--primary-light)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface)'">➕ Nova conversa</button>
-                <button class="btn-pesquisa-avancada" style="background:linear-gradient(135deg, #10b981, #059669);" onclick="toggleCiotPanel()">🗺️ CIOT</button>
-                <button class="btn-pesquisa-avancada" style="background:linear-gradient(135deg, #dc2626, #991b1b);" onclick="toggleBlogPanel();document.getElementById('blogSearchInput').value='${query.replace(/'/g, "\\'")}';pesquisarNoBlog();">📝 Blog</button>
-                <button class="btn-pesquisa-avancada" style="background:linear-gradient(135deg, #2563eb, #1d4ed8);" onclick="toggleManualPanel();">📘 Manual</button>
-                <button class="btn-pesquisa-avancada" style="background:linear-gradient(135deg, #ff0000, #cc0000);" onclick="toggleYTPanel();document.getElementById('ytSearchInput').value='${query.replace(/'/g, "\\'")}';pesquisarNoYT();">🎬 YouTube</button>
-				<button class="btn-pesquisa-avancada" style="background:linear-gradient(135deg, var(--central-color), var(--central-dark));" onclick="toggleCentralPanel();document.getElementById('centralSearchInput').value='${query.replace(/'/g, "\\'")}';pesquisarNaCentral();">📚 Central</button>
-                ${filaSolucoes.length > 0 ? `<button class="feedback-btn next" onclick="fillAndSend('Próximo')">➡️ Próxima</button>` : ''}
-                <span style="margin-left:auto;">${iaBadge}</span>
-            </div>`;
-        document.getElementById('chatStream').appendChild(card);
-        scrollToBottom(true);
-
-        const contentEl = document.getElementById('_sc' + ts);
-        const feedbackEl = document.getElementById('_sf' + ts);
-        let rafPending = false, lastVis = '', streamDone = false;
+        const _ibEl = document.getElementById('_ib' + ts);
+        if (_ibEl) _ibEl.innerHTML = iaBadge;
 
         const { finishReason: _hcFR } = await _readSSEStream(_resp, _pr, chunk => {
             lastVis = _filter.push(chunk);
-            if (!rafPending) {
-                rafPending = true;
-                requestAnimationFrame(() => {
-                    rafPending = false;
-                    if (streamDone) return; // don't overwrite renderMd final render
-                    contentEl.innerHTML = renderMd(lastVis) + '<span class="stream-cursor"></span>';
-                    scrollToBottom(false);
-                });
-            }
+            _revelacao.atualizar(lastVis);
         });
 
         streamDone = true;
@@ -3267,20 +3381,9 @@ async function handleChat() {
                 const { resp: _resp2, provider: _pr2 } = await callCurrentMCPStream(
                     _apiMessages, { temperature: 0.4, maxTokens: 3000, skipModels: [_im] }
                 );
-                let _rafPending2 = false, _streamDone2 = false;
                 await _readSSEStream(_resp2, _pr2, chunk => {
-                    const _vis2 = _filter2.push(chunk);
-                    if (!_rafPending2) {
-                        _rafPending2 = true;
-                        requestAnimationFrame(() => {
-                            _rafPending2 = false;
-                            if (_streamDone2) return;
-                            contentEl.innerHTML = renderMd(_vis2) + '<span class="stream-cursor"></span>';
-                            scrollToBottom(false);
-                        });
-                    }
+                    _revelacao.atualizar(_filter2.push(chunk));
                 });
-                _streamDone2 = true;
                 finalText = _filter2.finish();
                 _fbOk = !!finalText.trim();
             } catch(e) { console.warn('[handleChat] Fallback também falhou:', e); }
@@ -3305,7 +3408,11 @@ async function handleChat() {
             return;
         }
 
-        contentEl.innerHTML = renderMd(finalText);
+        // Entrega o texto final pra fila de revelação em vez de estampar tudo de uma vez — assim
+        // o final da resposta continua aparecendo no mesmo ritmo fluido, mesmo que o modelo tenha
+        // sido rápido o bastante pra já ter mandado tudo de uma vez só.
+        _revelacao.atualizar(finalText);
+        _revelacao.finalizar();
         feedbackEl.style.display = 'flex';
         scrollToBottom(true);
         adicionarMensagemNaConversa('ai', finalText.replace(/\*\*(.*?)\*\*/g, '$1'));
@@ -3317,14 +3424,19 @@ async function handleChat() {
         if (isCallActive) { speak(finalText); }
 
     } catch (e) {
-        if (_streamCard) {
+        if (_mainStreamConectado) {
+            // conectou, mas quebrou no meio do stream — mantém o que já tinha (rascunho ou parcial
+            // do modelo grande) na tela em vez de sumir com tudo, e avisa que interrompeu.
             const partial = _filter.finish();
             const ce = _streamCard.querySelector('.section-content');
             const fe = _streamCard.querySelector('.feedback-area');
-            if (ce) ce.innerHTML = (partial ? renderMd(partial) : '') + '<p style="color:#dc2626;font-size:12px;margin-top:8px">⚠️ Resposta interrompida. Tente novamente.</p>';
+            if (ce) ce.innerHTML = (partial ? renderMd(partial) : ce.innerHTML) + '<p style="color:#dc2626;font-size:12px;margin-top:8px">⚠️ Resposta interrompida. Tente novamente.</p>';
             if (fe) fe.style.display = 'flex';
         } else {
-            ld.remove();
+            // o modelo grande nunca chegou a conectar — o card só tinha o "Pensando..." (ou, no
+            // máximo, o rascunho do modelo pequeno) e nada disso é uma resposta de verdade pra
+            // manter na tela. Remove e mostra a mensagem padrão de "não encontrei", como sempre foi.
+            if (_streamCard) _streamCard.remove();
             appendMessage('ai', '😕 <b>Não encontrei</b> esta informação no manual. Por favor, tente <b>reformular a pergunta</b> ou pergunte sobre outro assunto do Bsoft TMS.');
             adicionarMensagemNaConversa('ai', 'Não encontrei esta informação no manual. Por favor, reformule a pergunta ou pergunte sobre outro assunto.');
         }
@@ -3533,14 +3645,16 @@ function _resolverTipoRegra(tipo){const c=document.getElementById('tipoRegraCard
 function perguntarTipoRegra(){return new Promise(resolve=>{_tipoRegraResolve=resolve;const s=document.getElementById('chatStream');const card=document.createElement('div');card.id='tipoRegraCard';card.className='answer-card';card.innerHTML=`<div style="background:#f5f3ff;padding:8px 15px;border-bottom:1px solid #ddd6fe;font-size:11px;color:#5b21b6;font-weight:600;">⚙️ Tipo de Regra</div><div class="answer-section"><div class="section-content"><div style="font-size:13px;color:#374151;margin-bottom:10px;">Para qual tipo de regra precisa de auxílio?</div><div style="display:flex;gap:10px;"><button onclick="_resolverTipoRegra('cte')" style="flex:1;padding:10px 16px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">📄 Ct-e / Conhecimento</button><button onclick="_resolverTipoRegra('contrato')" style="flex:1;padding:10px 16px;background:#7c3aed;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">🚛 Contrato de Frete</button><button onclick="_resolverTipoRegra('faturamento')" style="flex:1;padding:10px 16px;background:#059669;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">💰 Faturamento</button></div></div></div>`;s.appendChild(card);scrollToBottom(true);});}
 let _modoContratoResolve=null;
 function _resolverModoContrato(modo){const c=document.getElementById('modoContratoCard');if(c)c.remove();if(_modoContratoResolve){_modoContratoResolve(modo);_modoContratoResolve=null;}}
-// Pergunta se o usuário quer o montador novo (arrastar campos) ou o formulário clássico de
-// Contrato de Frete — mantém os dois caminhos pra quem já está acostumado com o antigo.
-function perguntarModoContrato(){return new Promise(resolve=>{_modoContratoResolve=resolve;const s=document.getElementById('chatStream');const card=document.createElement('div');card.id='modoContratoCard';card.className='answer-card';card.innerHTML=`<div style="background:#f5f3ff;padding:8px 15px;border-bottom:1px solid #ddd6fe;font-size:11px;color:#5b21b6;font-weight:600;">🚛 Contrato de Frete</div><div class="answer-section"><div class="section-content"><div style="font-size:13px;color:#374151;margin-bottom:10px;">Como prefere montar a regra?</div><div style="display:flex;gap:10px;flex-wrap:wrap;"><button onclick="_resolverModoContrato('dnd')" style="flex:1;min-width:180px;padding:10px 16px;background:#7c3aed;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">🧩 Nova forma — arrastar campos</button><button onclick="_resolverModoContrato('classico')" style="flex:1;min-width:180px;padding:10px 16px;background:#6b7280;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">📋 Formulário clássico</button></div></div></div>`;s.appendChild(card);scrollToBottom(true);});}
+// 09/09/2026, a pedido: formulário clássico de Contrato de Frete desativado — vai direto pro
+// montador novo (arrastar campos), sem perguntar mais o modo. O código do clássico continua no
+// arquivo (mostrarWizardContrato e afins), só ficou inalcançável por segurança, caso precise
+// reativar; não removi de vez pra não arriscar quebrar algo referenciado noutro lugar.
+function perguntarModoContrato(){return Promise.resolve('dnd');}
 let _modoCteResolve=null;
 function _resolverModoCte(modo){const c=document.getElementById('modoCteCard');if(c)c.remove();if(_modoCteResolve){_modoCteResolve(modo);_modoCteResolve=null;}}
-// Mesma escolha do Contrato de Frete, agora pro Ct-e — mantém o formulário clássico (com anexo
-// de prints) disponível pra quem já está acostumado, ao lado do novo montador de arrastar campos.
-function perguntarModoCte(){return new Promise(resolve=>{_modoCteResolve=resolve;const s=document.getElementById('chatStream');const card=document.createElement('div');card.id='modoCteCard';card.className='answer-card';card.innerHTML=`<div style="background:#eff6ff;padding:8px 15px;border-bottom:1px solid #bfdbfe;font-size:11px;color:#1e40af;font-weight:600;">📄 Ct-e / Conhecimento</div><div class="answer-section"><div class="section-content"><div style="font-size:13px;color:#374151;margin-bottom:10px;">Como prefere montar a regra?</div><div style="display:flex;gap:10px;flex-wrap:wrap;"><button onclick="_resolverModoCte('dnd')" style="flex:1;min-width:180px;padding:10px 16px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">🧩 Nova forma — arrastar campos</button><button onclick="_resolverModoCte('classico')" style="flex:1;min-width:180px;padding:10px 16px;background:#6b7280;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">📋 Formulário clássico</button></div></div></div>`;s.appendChild(card);scrollToBottom(true);});}
+// 09/09/2026, a pedido: formulário clássico de Ct-e desativado — mesma ideia do Contrato de Frete
+// acima (vai direto pro montador novo, código antigo mantido mas inalcançável).
+function perguntarModoCte(){return Promise.resolve('dnd');}
 
 // Base ESTÁVEL usada só pelo assistente clássico (o formulário antigo, mantido à parte como
 // alternativa) — não muda conforme a lista de botões da ferramenta nova (arrastar campos) é
@@ -4428,14 +4542,22 @@ function _renderizarCardRegraCteDndSemIA(codigo){
 async function enviarWizardRegraDnd(){
     const btn=document.getElementById('wCteBtnEnviar');
     if(btn){btn.disabled=true;btn.textContent='⏳ Gerando...';}
+    // Antes só lia o campo "regra existente" (wCteRegraCola) e a descrição — o que já estava
+    // montado na área de arrastar campos (via drag, checkboxes "monte com um clique", ou uma
+    // regra base carregada) nunca ia pra IA, então ela gerava do zero e esse trabalho se perdia.
+    // Agora manda os DOIS: o estado de verdade da área de montagem (_cteLinhasValidas — a mesma
+    // fonte usada pelo "Gerar Regra Montada" sem IA) e o campo separado de colar regra (que é um
+    // campo à parte, não ligado à área de montagem), com instrução pra IA unir tudo.
     const regraCola=(document.getElementById('wCteRegraCola')?.value||'').trim();
     const descricao=(document.getElementById('wCteDescricao')?.value||'').trim();
+    const canvasTxt=_cteLinhasValidas().join('\n');
     const configTxt=[
-        regraCola?'REGRA EXISTENTE PARA EDITAR:\n'+regraCola:'',
+        canvasTxt?'REGRA JA MONTADA NA AREA DE ARRASTAR CAMPOS (una com a solicitacao abaixo -- NAO descarte o que ja foi montado, so ajuste/complete conforme pedido):\n'+canvasTxt:'',
+        regraCola?'\nREGRA EXISTENTE PARA EDITAR (colada separadamente):\n'+regraCola:'',
         descricao?'\nSOLICITACAO: '+descricao:'',
         _wizardRegraDndQuery?'\nCONTEXTO: '+_wizardRegraDndQuery:''
     ].filter(Boolean).join('\n');
-    const sysMsg='Voce e um especialista em regras de Ct-e / Conhecimento do Bsoft TMS.\nGere APENAS o codigo da regra pronto para uso, entre triple backticks.\n\nDEFINICAO DE CAMPOS OCULTOS ($SV):\nPara definir um campo oculto sem gerar erro de "campo nao encontrado", SEMPRE verifique se o elemento existe antes de usar $SV():\nif (document.getElementsByName(\'NOMECAMPO\').length > 0) {\n   $SV(\'NOMECAMPO\', obt("nomeInterno"));\n}\nNUNCA use $SV() direto sem essa verificacao.\n\nDOCUMENTACAO:\n'+CONTEXTO_REGRAS;
+    const sysMsg='Voce e um especialista em regras de Ct-e / Conhecimento do Bsoft TMS.\nGere APENAS o codigo da regra pronto para uso, entre triple backticks.\n\nUNIR REGRA JA MONTADA COM A SOLICITACAO:\nSe a mensagem do usuario tiver uma secao "REGRA JA MONTADA NA AREA DE ARRASTAR CAMPOS", essa e a regra que o usuario ja construiu manualmente (arrastando campos, marcando opcoes, carregando uma regra base) -- ela e o PONTO DE PARTIDA. NUNCA descarte nem reescreva do zero o que ja esta montado. Una com a "SOLICITACAO": mantenha tudo que ja esta la e so adicione, ajuste ou complete exatamente o que foi pedido. O resultado final tem que conter TANTO o que ja estava montado QUANTO o que foi solicitado, numa unica regra coerente.\n\nDEFINICAO DE CAMPOS OCULTOS ($SV):\nPara definir um campo oculto sem gerar erro de "campo nao encontrado", SEMPRE verifique se o elemento existe antes de usar $SV():\nif (document.getElementsByName(\'NOMECAMPO\').length > 0) {\n   $SV(\'NOMECAMPO\', obt("nomeInterno"));\n}\nNUNCA use $SV() direto sem essa verificacao.\n\nITERAR SOBRE NOTAS/MERCADORIAS SEM SABER A QUANTIDADE (try/catch):\nPara somar, filtrar ou ajustar algo em cima de cada nota/mercadoria do Ct-e SEM SABER quantas existem (o Ct-e pode ter 1 ou varias notas), percorra os indices de 1 ate um numero alto (ex.: 50) dentro de um try/catch -- o catch simplesmente ignora os indices que nao existem, sem gerar erro nem travar a regra numa quantidade fixa de notas. Exemplo real (desconta do peso as mercadorias da especie 23, seja qual for a quantidade de notas):\npeso = obt("merc_quantKg[]");\nfor (i = 1; i <= 50; i++) {\n   try {\n      if ( obt("merc_especie[" + i + "]") == 23 ) peso = peso - obt("merc_quantKg[" + i + "]");\n   } catch (e) { }\n}\nUse esse padrao sempre que precisar iterar sobre campos indexados (ex.: merc_*[i]) sem travar o resultado a uma quantidade fixa de notas.\n\nDOCUMENTACAO:\n'+CONTEXTO_REGRAS;
     const wCard=document.getElementById('wizardRegraDndCard');
     const _estadoForm=wCard?_capturarEstadoForm(wCard):null;
     if(wCard)wCard.remove();
@@ -5150,14 +5272,19 @@ function _renderizarCardRegraContratoDndSemIA(codigo){
 async function enviarWizardContratoDnd(){
     const btn=document.getElementById('wCfdBtnEnviar');
     if(btn){btn.disabled=true;btn.textContent='⏳ Gerando...';}
+    // Idem Ct-e: manda os DOIS — o estado de verdade da área de montagem (_cfdLinhasValidas) E o
+    // campo separado "regra existente" (wCfdRegraCola, não ligado à área de montagem) — senão
+    // qualquer um dos dois que o usuário tivesse preenchido se perdia ao gerar com IA.
     const regraCola=(document.getElementById('wCfdRegraCola')?.value||'').trim();
     const descricao=(document.getElementById('wCfdDescricao')?.value||'').trim();
+    const canvasTxt=_cfdLinhasValidas().join('\n');
     const configTxt=[
-        regraCola?'REGRA EXISTENTE PARA EDITAR:\n'+regraCola:'',
+        canvasTxt?'REGRA JA MONTADA NA AREA DE ARRASTAR CAMPOS (una com a solicitacao abaixo -- NAO descarte o que ja foi montado, so ajuste/complete conforme pedido):\n'+canvasTxt:'',
+        regraCola?'\nREGRA EXISTENTE PARA EDITAR (colada separadamente):\n'+regraCola:'',
         descricao?'\nSOLICITACAO: '+descricao:'',
         _wizardContratoDndQuery?'\nCONTEXTO: '+_wizardContratoDndQuery:''
     ].filter(Boolean).join('\n');
-    const sysMsg='Voce e um especialista em regras de Contrato de Frete do Bsoft TMS.\nGere APENAS o codigo da regra pronto para uso, entre triple backticks.\n\nDEFINICAO DE CAMPOS OCULTOS ($SV):\nPara definir um campo oculto sem gerar erro de "campo nao encontrado", SEMPRE verifique se o elemento existe antes de usar $SV():\nif (document.getElementsByName(\'NOMECAMPO\').length > 0) {\n   $SV(\'NOMECAMPO\', obt("nomeInterno"));\n}\nNUNCA use $SV() direto sem essa verificacao.\n\nDOCUMENTACAO:\n'+CONTEXTO_CONTRATO_FRETE;
+    const sysMsg='Voce e um especialista em regras de Contrato de Frete do Bsoft TMS.\nGere APENAS o codigo da regra pronto para uso, entre triple backticks.\n\nUNIR REGRA JA MONTADA COM A SOLICITACAO:\nSe a mensagem do usuario tiver uma secao "REGRA JA MONTADA NA AREA DE ARRASTAR CAMPOS", essa e a regra que o usuario ja construiu manualmente (arrastando campos, marcando opcoes, carregando uma regra base) -- ela e o PONTO DE PARTIDA. NUNCA descarte nem reescreva do zero o que ja esta montado. Una com a "SOLICITACAO": mantenha tudo que ja esta la e so adicione, ajuste ou complete exatamente o que foi pedido. O resultado final tem que conter TANTO o que ja estava montado QUANTO o que foi solicitado, numa unica regra coerente.\n\nDEFINICAO DE CAMPOS OCULTOS ($SV):\nPara definir um campo oculto sem gerar erro de "campo nao encontrado", SEMPRE verifique se o elemento existe antes de usar $SV():\nif (document.getElementsByName(\'NOMECAMPO\').length > 0) {\n   $SV(\'NOMECAMPO\', obt("nomeInterno"));\n}\nNUNCA use $SV() direto sem essa verificacao.\n\nDOCUMENTACAO:\n'+CONTEXTO_CONTRATO_FRETE;
     const wCard=document.getElementById('wizardContratoDndCard');
     const _estadoForm=wCard?_capturarEstadoForm(wCard):null;
     if(wCard)wCard.remove();
@@ -5894,14 +6021,20 @@ function _renderizarCardRegraSemIA(codigo){
 async function enviarWizardFaturamento(){
     const btn=document.getElementById('wFatBtnEnviar');
     if(btn){btn.disabled=true;btn.textContent='⏳ Gerando...';}
+    // Idem Ct-e/Contrato de Frete: manda os DOIS — o estado de verdade da área de montagem
+    // (_fatLinhasValidas) E o campo separado "regra existente" (wFatRegraCola, não ligado à área
+    // de montagem) — senão qualquer um dos dois que o usuário tivesse preenchido se perdia ao
+    // gerar com IA.
     const regraCola=(document.getElementById('wFatRegraCola')?.value||'').trim();
     const descricao=(document.getElementById('wFatDescricao')?.value||'').trim();
+    const canvasTxt=_fatLinhasValidas().join('\n');
     const configTxt=[
-        regraCola?'REGRA EXISTENTE PARA EDITAR:\n'+regraCola:'',
+        canvasTxt?'REGRA JA MONTADA NA AREA DE ARRASTAR CAMPOS (una com a solicitacao abaixo -- NAO descarte o que ja foi montado, so ajuste/complete conforme pedido):\n'+canvasTxt:'',
+        regraCola?'\nREGRA EXISTENTE PARA EDITAR (colada separadamente):\n'+regraCola:'',
         descricao?'\nSOLICITACAO: '+descricao:'',
         _wizardFaturamentoQuery?'\nCONTEXTO: '+_wizardFaturamentoQuery:''
     ].filter(Boolean).join('\n');
-    const sysMsg='Voce e um especialista em regras de Faturamento do Bsoft TMS.\nGere APENAS o codigo da regra pronto para uso, entre triple backticks, seguindo EXATAMENTE a sintaxe documentada abaixo (metodo $V para campos texto, metodo obt para campos valor). Use APENAS os campos documentados — NAO invente campos que nao estejam listados.\n\nDOCUMENTACAO:\n'+CONTEXTO_FATURAMENTO;
+    const sysMsg='Voce e um especialista em regras de Faturamento do Bsoft TMS.\nGere APENAS o codigo da regra pronto para uso, entre triple backticks, seguindo EXATAMENTE a sintaxe documentada abaixo (metodo $V para campos texto, metodo obt para campos valor). Use APENAS os campos documentados — NAO invente campos que nao estejam listados.\n\nUNIR REGRA JA MONTADA COM A SOLICITACAO:\nSe a mensagem do usuario tiver uma secao "REGRA JA MONTADA NA AREA DE ARRASTAR CAMPOS", essa e a regra que o usuario ja construiu manualmente -- ela e o PONTO DE PARTIDA. NUNCA descarte nem reescreva do zero o que ja esta montado. Una com a "SOLICITACAO": mantenha tudo que ja esta la e so adicione, ajuste ou complete exatamente o que foi pedido.\n\nDOCUMENTACAO:\n'+CONTEXTO_FATURAMENTO;
     const wCard=document.getElementById('wizardFaturamentoCard');
     const _estadoForm=wCard?_capturarEstadoForm(wCard):null;
     if(wCard)wCard.remove();
