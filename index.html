@@ -337,6 +337,39 @@
         }
         .central-overlay.active { display: block; }
 
+        /* Modal do criador de regras — ocupa a tela inteira pra caber palette de campos + área de
+           montagem lado a lado sem espremer. O menu lateral (esquerda) e a área de montagem
+           (direita) rolam CADA UM na sua própria barra, de forma independente. */
+        .builder-modal-overlay {
+            position: fixed; inset: 0; background: rgba(15,23,42,0.55); z-index: 2500;
+            display: none; align-items: center; justify-content: center; padding: 0;
+        }
+        .builder-modal-overlay.active { display: flex; }
+        .builder-modal-box {
+            background: var(--surface); width: 100vw; height: 100vh;
+            display: flex; flex-direction: column; overflow: hidden; position: relative;
+        }
+        .builder-modal-close {
+            position: absolute; top: 12px; right: 12px; z-index: 6;
+            width: 32px; height: 32px; border-radius: 50%; border: none;
+            background: rgba(255,255,255,0.92); color: #374151; font-size: 15px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.18); transition: all .15s;
+        }
+        .builder-modal-close:hover { background: #ef4444; color: white; transform: scale(1.08); }
+        .builder-modal-body { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+        .builder-card { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+        .builder-grid { display: grid; grid-template-columns: 300px 1fr; flex: 1; min-height: 0; }
+        .builder-grid-side {
+            padding: 14px 16px; border-right: 1px solid var(--border); background: #fafafa;
+            overflow-y: auto; min-height: 0;
+        }
+        .builder-grid-main { padding: 14px 20px; min-width: 0; overflow-y: auto; min-height: 0; }
+        @media (max-width: 860px) {
+            .builder-grid { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+            .builder-grid-side { border-right: none; border-bottom: 1px solid var(--border); max-height: 38vh; }
+        }
+
         .central-panel, .blog-panel, .manual-panel, .repo-panel, .ciot-panel {
             position: fixed; right: -580px; top: 0; width: 550px; height: 100vh;
             background: white; box-shadow: -5px 0 30px rgba(0,0,0,0.2);
@@ -929,6 +962,14 @@
 
 <!-- Overlay -->
 <div class="central-overlay" id="centralOverlay" onclick="fecharTodosPaineis()"></div>
+
+<!-- Modal amplo do criador de regras (Ct-e / Contrato de Frete / Faturamento) -->
+<div class="builder-modal-overlay" id="builderModalOverlay" onclick="_fecharBuilderModal()">
+    <div class="builder-modal-box" onclick="event.stopPropagation()">
+        <button class="builder-modal-close" onclick="_fecharBuilderModal()" title="Fechar">✕</button>
+        <div class="builder-modal-body" id="builderModalBody"></div>
+    </div>
+</div>
 
 
 
@@ -4130,18 +4171,29 @@ function _cteToggleOutrosValores(marcado){
     if(wrap)wrap.style.display=marcado?'block':'none';
     _cteRenderPalette();
 }
+// Abre/fecha o modal amplo compartilhado pelos 3 criadores de regra (Ct-e, Contrato de Frete,
+// Faturamento) -- cada um só injeta seu próprio conteúdo em #builderModalBody, o modal em si
+// (moldura, overlay, botão fechar) é único e reaproveitado pelos três.
+function _abrirBuilderModal(){
+    document.getElementById('builderModalOverlay')?.classList.add('active');
+    // menu lateral e área de montagem rolam cada um na sua própria barra -- zera as duas ao abrir
+    document.querySelectorAll('#builderModalBody .builder-grid-side, #builderModalBody .builder-grid-main').forEach(el=>{el.scrollTop=0;});
+    document.body.style.overflow='hidden';
+}
+function _fecharBuilderModal(){
+    document.getElementById('builderModalOverlay')?.classList.remove('active');
+    document.body.style.overflow='';
+}
 function mostrarWizardRegraDnd(queryOriginal){
     _wizardRegraDndQuery=queryOriginal;
     window._cteAcaoSel='+';
-    window._cteBlocos=[{destino:'totalPrestacao',expr:null}];
+    window._cteBlocos=[{destino:'',expr:null}];
     window._cteExtras=[];
     window._cteOpcionaisBase=null;
-    const s=document.getElementById('chatStream');
-    const wCard=document.getElementById('wizardRegraDndCard');if(wCard)wCard.remove();
+    document.getElementById('builderModalBody').innerHTML='';
     const card=document.createElement('div');
     card.id='wizardRegraDndCard';
-    card.className='answer-card';
-    card.style.cssText='max-height:680px;overflow-y:auto;';
+    card.className='builder-card';
     const chipsHtml=_cteMontarPaletteHtml();
     const opcoesHtml=CTE_OPCOES_MONTAGEM.map((grupo,grupoIdx)=>`<div style="margin-bottom:8px;">
       <div style="font-size:10.5px;color:#6b7280;font-weight:700;margin:6px 0 3px;">${grupo.titulo}</div>
@@ -4149,80 +4201,84 @@ function mostrarWizardRegraDnd(queryOriginal){
         <input type="checkbox" id="wCteOpc_${item.id}" class="wCteOpcCheckbox" data-grupo="${item.grupoExclusivo||grupoIdx}" onchange="_cteOpcaoClicada(this)">${escapeHtml(item.label)}
       </label>`).join('')}
     </div>`).join('');
-    card.innerHTML=`<div style="background:#eff6ff;padding:10px 15px;border-bottom:1px solid #bfdbfe;font-size:12px;color:#1e40af;font-weight:700;">📄 Assistente — Ct-e / Conhecimento <span style="font-weight:500;">(arrastar campos)</span></div>
-<div style="padding:12px 15px 4px;">
-  <div class="wizard-section">
-    <div class="wizard-label">📋 Colar regra existente do sistema</div>
-    <textarea id="wCteColarRegra" class="wizard-textarea" placeholder="Cole aqui uma regra já pronta do sistema..." style="min-height:90px;font-family:monospace;font-size:11.5px;" oninput="_cteColarRegraInput()"></textarea>
-    <div style="font-size:10.5px;color:#2563eb;margin-top:4px;">🔄 A área de montagem abaixo é atualizada automaticamente conforme você cola ou edita aqui.</div>
-  </div>
-  <div class="wizard-section">
-    <div class="wizard-label">📋 Regras pré-existentes (padrão)</div>
-    <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Clique pra gerar direto, sem IA:</div>
-    <div style="display:flex;flex-direction:column;gap:6px;">
-      <button onclick="_cteUsarPredefinida('regra_base_icms_demo')" style="width:100%;text-align:left;padding:9px 12px;background:#f9fafb;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12.5px;color:#374151;font-weight:600;">👑 REGRA BASE PARA: ICMS DEMONSTRATIVO, SIMPLES NACIONAL, SEM TABELA, COM TABELA</button>
-      <button onclick="_cteUsarPredefinida('regra_base_icms_inverso')" style="width:100%;text-align:left;padding:9px 12px;background:#f9fafb;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12.5px;color:#374151;font-weight:600;">👑 REGRA BASE PARA: CÁLCULO INVERSO, SIMPLES NACIONAL, SEM TABELA, COM TABELA</button>
-      <button onclick="_cteUsarPredefinida('regra_base_icms_somar')" style="width:100%;text-align:left;padding:9px 12px;background:#f9fafb;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12.5px;color:#374151;font-weight:600;">👑 REGRA BASE PARA: SOMAR ICMS, SIMPLES NACIONAL, SEM TABELA, COM TABELA</button>
-      <button onclick="_cteUsarPredefinida('peso_cubado_gris')" style="width:100%;text-align:left;padding:9px 12px;background:#f9fafb;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12.5px;color:#374151;font-weight:600;">📐 Frete Calculado Peso KG ou Peso Cubado</button>
+    card.innerHTML=`<div style="flex-shrink:0;background:#eff6ff;padding:10px 15px;border-bottom:1px solid #bfdbfe;font-size:12px;color:#1e40af;font-weight:700;">📄 Assistente — Ct-e / Conhecimento <span style="font-weight:500;">(arrastar campos)</span></div>
+<div class="builder-grid">
+  <div class="builder-grid-side">
+    <div class="wizard-section">
+      <div class="wizard-label">📋 Colar regra existente do sistema</div>
+      <textarea id="wCteColarRegra" class="wizard-textarea" placeholder="Cole aqui uma regra já pronta do sistema..." style="min-height:90px;font-family:monospace;font-size:11.5px;" oninput="_cteColarRegraInput()"></textarea>
+      <div style="font-size:10.5px;color:#2563eb;margin-top:4px;">🔄 A área de montagem ao lado é atualizada automaticamente conforme você cola ou edita aqui.</div>
+    </div>
+    <div class="wizard-section">
+      <div class="wizard-label">📋 Regras pré-existentes (padrão)</div>
+      <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Clique pra gerar direto, sem IA:</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <button onclick="_cteUsarPredefinida('regra_base_icms_demo')" style="width:100%;text-align:left;padding:9px 12px;background:#f9fafb;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12.5px;color:#374151;font-weight:600;">👑 REGRA BASE PARA: ICMS DEMONSTRATIVO, SIMPLES NACIONAL, SEM TABELA, COM TABELA</button>
+        <button onclick="_cteUsarPredefinida('regra_base_icms_inverso')" style="width:100%;text-align:left;padding:9px 12px;background:#f9fafb;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12.5px;color:#374151;font-weight:600;">👑 REGRA BASE PARA: CÁLCULO INVERSO, SIMPLES NACIONAL, SEM TABELA, COM TABELA</button>
+        <button onclick="_cteUsarPredefinida('regra_base_icms_somar')" style="width:100%;text-align:left;padding:9px 12px;background:#f9fafb;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12.5px;color:#374151;font-weight:600;">👑 REGRA BASE PARA: SOMAR ICMS, SIMPLES NACIONAL, SEM TABELA, COM TABELA</button>
+        <button onclick="_cteUsarPredefinida('peso_cubado_gris')" style="width:100%;text-align:left;padding:9px 12px;background:#f9fafb;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12.5px;color:#374151;font-weight:600;">📐 Frete Calculado Peso KG ou Peso Cubado</button>
+      </div>
+    </div>
+    <div class="wizard-section">
+      <div class="wizard-label">🧱 Monte com um clique (opcional)</div>
+      <div style="font-size:11px;color:#6b7280;margin-bottom:4px;">Marque as opções que quiser montar automaticamente na área de montagem. Marcar sobrepõe (sem duplicar) o que já estiver montado pro mesmo "Campo a definir" — o resto continua intacto.</div>
+      ${opcoesHtml}
+    </div>
+    <div class="wizard-section" style="border:none;">
+      <div class="wizard-label">✏️ Ou descreva em texto livre <span style="font-size:10px;color:#9ca3af;font-weight:400;">(a IA monta — use pra editar uma regra existente ou algo fora do padrão de contas simples)</span></div>
+      <textarea id="wCteRegraCola" class="wizard-textarea" placeholder="Cole aqui a regra existente que deseja editar (opcional)..." style="min-height:60px;"></textarea>
+      <textarea id="wCteDescricao" class="wizard-textarea" placeholder="Descreva o que necessita..." style="min-height:70px;margin-top:8px;"></textarea>
+      <button id="wCteBtnEnviar" class="wizard-submit" onclick="enviarWizardRegraDnd()" style="margin-top:8px;">🚀 Gerar com IA</button>
     </div>
   </div>
-  <div class="wizard-section">
-    <div class="wizard-label">🧱 Monte com um clique (opcional)</div>
-    <div style="font-size:11px;color:#6b7280;margin-bottom:4px;">Marque as opções que quiser montar automaticamente na área de montagem abaixo. Marcar sobrepõe (sem duplicar) o que já estiver montado pro mesmo "Campo a definir" — o resto continua intacto.</div>
-    ${opcoesHtml}
-  </div>
-  <div class="wizard-section" style="border:none;position:sticky;top:0;z-index:2;background:var(--surface);border-bottom:2px solid #bfdbfe;box-shadow:0 4px 8px -6px rgba(0,0,0,.2);">
-    <div class="wizard-label">🧩 Monte sua regra arrastando os campos</div>
-    <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#374151;cursor:pointer;margin-bottom:8px;font-weight:600;">
-      <input type="checkbox" id="wCteOutrosValoresCheck" onchange="_cteToggleOutrosValores(this.checked)"> Utiliza Valores outros (campos personalizados)?
-    </label>
-    <div id="wCteOutrosValoresWrap" style="display:none;margin-bottom:10px;">
-      <input type="text" id="wCteOutrosValoresInput" oninput="_cteRenderPalette()" placeholder="coloque aqui o nome interno dos campos separados por vírgula" style="width:100%;padding:7px 10px;border:1.5px solid #f9a8d4;border-radius:6px;font-size:12px;font-family:monospace;background:#fdf2f8;color:#9d174d;">
-      <div id="wCteOutrosValoresChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;max-height:70px;overflow-y:auto;"></div>
+  <div class="builder-grid-main">
+    <div class="wizard-section" style="border:none;position:sticky;top:0;z-index:2;background:var(--surface);border-bottom:2px solid #bfdbfe;box-shadow:0 4px 8px -6px rgba(0,0,0,.2);">
+      <div class="wizard-label">🧩 Monte sua regra arrastando os campos</div>
+      <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#374151;cursor:pointer;margin-bottom:8px;font-weight:600;">
+        <input type="checkbox" id="wCteOutrosValoresCheck" onchange="_cteToggleOutrosValores(this.checked)"> Utiliza Valores outros (campos personalizados)?
+      </label>
+      <div id="wCteOutrosValoresWrap" style="display:none;margin-bottom:10px;">
+        <input type="text" id="wCteOutrosValoresInput" oninput="_cteRenderPalette()" placeholder="coloque aqui o nome interno dos campos separados por vírgula" style="width:100%;padding:7px 10px;border:1.5px solid #f9a8d4;border-radius:6px;font-size:12px;font-family:monospace;background:#fdf2f8;color:#9d174d;">
+        <div id="wCteOutrosValoresChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;max-height:70px;overflow-y:auto;"></div>
+      </div>
+      <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">1. Selecione a ação:</div>
+      <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
+        <button class="_cte-acao-btn" data-acao="+" onclick="_cteSelecionarAcao('+')" style="padding:8px 14px;background:var(--primary);color:white;border:2px solid var(--primary);border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➕ Somar</button>
+        <button class="_cte-acao-btn" data-acao="-" onclick="_cteSelecionarAcao('-')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➖ Subtrair</button>
+        <button class="_cte-acao-btn" data-acao="*" onclick="_cteSelecionarAcao('*')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">✖️ Multiplicar</button>
+        <button class="_cte-acao-btn" data-acao="/" onclick="_cteSelecionarAcao('/')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➗ Dividir</button>
+        <span style="width:1px;background:#e5e7eb;margin:2px 2px;"></span>
+        <button class="_cte-acao-btn" data-acao=">" onclick="_cteSelecionarAcao('&gt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt; Maior que</button>
+        <button class="_cte-acao-btn" data-acao="<" onclick="_cteSelecionarAcao('&lt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt; Menor que</button>
+        <button class="_cte-acao-btn" data-acao="==" onclick="_cteSelecionarAcao('==')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">== Igual</button>
+        <button class="_cte-acao-btn" data-acao=">=" onclick="_cteSelecionarAcao('&gt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt;= Maior ou igual</button>
+        <button class="_cte-acao-btn" data-acao="<=" onclick="_cteSelecionarAcao('&lt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt;= Menor ou igual</button>
+      </div>
+      <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">2. Campos disponíveis (arraste para a área abaixo):</div>
+      <div id="wCteCamposPalette" style="display:flex;flex-wrap:wrap;gap:6px;padding:10px;border:1.5px dashed #d1d5db;border-radius:8px;margin-bottom:10px;max-height:170px;overflow-y:auto;">${chipsHtml}</div>
+      <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Ou digite um valor numérico (ex: 100, 0.02) e arraste-o pra área de montagem — útil pra dividir/multiplicar um campo por um número fixo:</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="text" id="wCteValorInput" inputmode="decimal" placeholder="Ex: 100" oninput="_cteValorInputChange()" style="width:110px;padding:7px 10px;border:1.5px solid #d1d5db;border-radius:6px;font-size:12px;font-family:monospace;">
+        <span id="wCteValorChip" draggable="true" ondragstart="_cteValorDragStart(event)" style="display:inline-flex;align-items:center;gap:4px;padding:7px 12px;background:#fff7ed;border:1.5px solid #fdba74;border-radius:16px;font-size:12px;font-family:monospace;cursor:not-allowed;user-select:none;color:#9a3412;opacity:.4;transition:opacity .15s;">🔢 Arrastar valor</span>
+      </div>
     </div>
-    <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">1. Selecione a ação:</div>
-    <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
-      <button class="_cte-acao-btn" data-acao="+" onclick="_cteSelecionarAcao('+')" style="padding:8px 14px;background:var(--primary);color:white;border:2px solid var(--primary);border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➕ Somar</button>
-      <button class="_cte-acao-btn" data-acao="-" onclick="_cteSelecionarAcao('-')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➖ Subtrair</button>
-      <button class="_cte-acao-btn" data-acao="*" onclick="_cteSelecionarAcao('*')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">✖️ Multiplicar</button>
-      <button class="_cte-acao-btn" data-acao="/" onclick="_cteSelecionarAcao('/')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➗ Dividir</button>
-      <span style="width:1px;background:#e5e7eb;margin:2px 2px;"></span>
-      <button class="_cte-acao-btn" data-acao=">" onclick="_cteSelecionarAcao('&gt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt; Maior que</button>
-      <button class="_cte-acao-btn" data-acao="<" onclick="_cteSelecionarAcao('&lt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt; Menor que</button>
-      <button class="_cte-acao-btn" data-acao="==" onclick="_cteSelecionarAcao('==')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">== Igual</button>
-      <button class="_cte-acao-btn" data-acao=">=" onclick="_cteSelecionarAcao('&gt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt;= Maior ou igual</button>
-      <button class="_cte-acao-btn" data-acao="<=" onclick="_cteSelecionarAcao('&lt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt;= Menor ou igual</button>
+    <div class="wizard-section" style="border:none;">
+      <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">3. Área de montagem — arraste um campo (ou valor) sobre outro pra combinar com a ação selecionada:</div>
+      <div id="wCteBlocosContainer"></div>
+      <button onclick="_cteAdicionarBloco()" style="width:100%;padding:8px;background:white;border:1.5px dashed #3b82f6;border-radius:8px;color:#1e40af;cursor:pointer;font-size:12.5px;font-weight:700;margin-bottom:12px;">➕ Definir mais um campo</button>
+      <div id="wCteExtrasContainer"></div>
+      <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Prévia da regra (uma linha por campo definido):</div>
+      <div id="wCteRegraPreview" style="padding:8px 10px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;font-family:monospace;font-size:11.5px;color:#374151;margin-bottom:10px;white-space:pre-wrap;word-break:break-all;">// defina um campo (nome + arraste algo pra área de montagem)</div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="_cteLimparCanvas()" style="padding:8px 14px;background:#fef2f2;color:#991b1b;border:1.5px solid #fecaca;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:600;">🗑️ Limpar tudo</button>
+        <button onclick="_cteGerarRegraCustom()" style="flex:1;padding:8px 14px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;">🚀 Gerar Regra Montada</button>
+      </div>
     </div>
-    <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">2. Campos disponíveis (arraste para a área abaixo):</div>
-    <div id="wCteCamposPalette" style="display:flex;flex-wrap:wrap;gap:6px;padding:10px;border:1.5px dashed #d1d5db;border-radius:8px;margin-bottom:10px;max-height:170px;overflow-y:auto;">${chipsHtml}</div>
-    <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Ou digite um valor numérico (ex: 100, 0.02) e arraste-o pra área de montagem — útil pra dividir/multiplicar um campo por um número fixo:</div>
-    <div style="display:flex;gap:8px;align-items:center;">
-      <input type="text" id="wCteValorInput" inputmode="decimal" placeholder="Ex: 100" oninput="_cteValorInputChange()" style="width:110px;padding:7px 10px;border:1.5px solid #d1d5db;border-radius:6px;font-size:12px;font-family:monospace;">
-      <span id="wCteValorChip" draggable="true" ondragstart="_cteValorDragStart(event)" style="display:inline-flex;align-items:center;gap:4px;padding:7px 12px;background:#fff7ed;border:1.5px solid #fdba74;border-radius:16px;font-size:12px;font-family:monospace;cursor:not-allowed;user-select:none;color:#9a3412;opacity:.4;transition:opacity .15s;">🔢 Arrastar valor</span>
-    </div>
-  </div>
-  <div class="wizard-section" style="border:none;">
-    <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">3. Área de montagem — arraste um campo (ou valor) sobre outro pra combinar com a ação selecionada:</div>
-    <div id="wCteBlocosContainer"></div>
-    <button onclick="_cteAdicionarBloco()" style="width:100%;padding:8px;background:white;border:1.5px dashed #3b82f6;border-radius:8px;color:#1e40af;cursor:pointer;font-size:12.5px;font-weight:700;margin-bottom:12px;">➕ Definir mais um campo</button>
-    <div id="wCteExtrasContainer"></div>
-    <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Prévia da regra (uma linha por campo definido):</div>
-    <div id="wCteRegraPreview" style="padding:8px 10px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;font-family:monospace;font-size:11.5px;color:#374151;margin-bottom:10px;white-space:pre-wrap;word-break:break-all;">def("totalPrestacao", );</div>
-    <div style="display:flex;gap:8px;">
-      <button onclick="_cteLimparCanvas()" style="padding:8px 14px;background:#fef2f2;color:#991b1b;border:1.5px solid #fecaca;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:600;">🗑️ Limpar tudo</button>
-      <button onclick="_cteGerarRegraCustom()" style="flex:1;padding:8px 14px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;">🚀 Gerar Regra Montada</button>
-    </div>
-  </div>
-  <div class="wizard-section" style="border:none;border-top:1px solid #e5e7eb;padding-top:14px;">
-    <div class="wizard-label">✏️ Ou descreva em texto livre <span style="font-size:10px;color:#9ca3af;font-weight:400;">(a IA monta — use pra editar uma regra existente ou algo fora do padrão de contas simples)</span></div>
-    <textarea id="wCteRegraCola" class="wizard-textarea" placeholder="Cole aqui a regra existente que deseja editar (opcional)..." style="min-height:60px;"></textarea>
-    <textarea id="wCteDescricao" class="wizard-textarea" placeholder="Descreva o que necessita..." style="min-height:70px;margin-top:8px;"></textarea>
-    <button id="wCteBtnEnviar" class="wizard-submit" onclick="enviarWizardRegraDnd()" style="margin-top:8px;">🚀 Gerar com IA</button>
   </div>
 </div>`;
-    s.appendChild(card);
+    document.getElementById('builderModalBody').appendChild(card);
     _cteRenderBlocos();
-    scrollToBottom(true);
+    _abrirBuilderModal();
 }
 function _cteSelecionarAcao(acao){
     window._cteAcaoSel=acao;
@@ -4300,7 +4356,7 @@ function _cteRenderBlocos(){
         return `<div style="border:1.5px solid #e5e7eb;border-radius:8px;padding:10px;margin-bottom:10px;">
             <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
                 <label style="font-size:11px;color:#374151;white-space:nowrap;">Campo a definir:</label>
-                <input type="text" value="${escapeHtml(bloco.destino)}" placeholder="digite ou arraste um campo aqui"
+                <input type="text" value="${escapeHtml(_termoParaLabel(bloco.destino))}" title="${escapeHtml(bloco.destino)}" placeholder="digite ou arraste um campo aqui"
                     ondragover="_cteDestinoDragOver(event)" ondrop="_cteDestinoDrop(event,${idx})" oninput="_cteDestinoInput(event,${idx})"
                     style="flex:1;padding:7px 10px;border:1.5px solid #3b82f6;border-radius:6px;font-size:12px;font-family:monospace;background:#eff6ff;color:#1e40af;font-weight:600;outline:none;">
                 ${btnRemover}
@@ -4368,7 +4424,7 @@ function _cteDestinoDrop(e,idx){
     _cteRenderBlocos();
 }
 function _cteDestinoInput(e,idx){
-    window._cteBlocos[idx].destino=e.target.value;
+    window._cteBlocos[idx].destino=_labelParaTermoInterno(e.target.value);
     _cteAtualizarPreview();
 }
 function _cteAdicionarBloco(){
@@ -4454,7 +4510,7 @@ function _cteAtualizarPreview(){
     if(preview)preview.textContent=linhas.length?linhas.join('\n'):'// defina um campo (nome + arraste algo pra área de montagem)';
 }
 function _cteLimparCanvas(){
-    window._cteBlocos=[{destino:'totalPrestacao',expr:null}];
+    window._cteBlocos=[{destino:'',expr:null}];
     window._cteExtras=[];
     window._cteOpcionaisBase=null; _cteDesmarcarOpcionais();
     const colar=document.getElementById('wCteColarRegra');
@@ -4482,7 +4538,7 @@ function _cteUsarPredefinida(chave){
     const colar=document.getElementById('wCteColarRegra');
     if(colar)colar.value=codigo; // mantém o campo de colar em sincronia com o que foi carregado
     const {blocos,extras}=_parseRegraParaBlocos(codigo);
-    window._cteBlocos=(blocos.length?blocos:[{destino:'totalPrestacao',expr:null}]).map(_seedTermosBase);
+    window._cteBlocos=(blocos.length?blocos:[{destino:'',expr:null}]).map(_seedTermosBase);
     window._cteExtras=extras;
     window._cteOpcionaisBase=null; _cteDesmarcarOpcionais();
     const opcoesPreMarcadas=(CTE_REGRA_PRE_OPCAO[chave]||[]).filter(id=>document.getElementById('wCteOpc_'+id));
@@ -4500,13 +4556,13 @@ function _cteUsarPredefinida(chave){
 function _cteColarRegraInput(){
     const texto=(document.getElementById('wCteColarRegra')?.value||'').trim();
     if(!texto){
-        window._cteBlocos=[{destino:'totalPrestacao',expr:null}];
+        window._cteBlocos=[{destino:'',expr:null}];
         window._cteExtras=[];
         _cteRenderBlocos();
         return;
     }
     const {blocos,extras}=_parseRegraParaBlocos(texto);
-    window._cteBlocos=(blocos.length?blocos:[{destino:'totalPrestacao',expr:null}]).map(_seedTermosBase);
+    window._cteBlocos=(blocos.length?blocos:[{destino:'',expr:null}]).map(_seedTermosBase);
     window._cteExtras=extras;
     window._cteOpcionaisBase=null; _cteDesmarcarOpcionais();
     _cteRenderBlocos();
@@ -4553,7 +4609,7 @@ function _cteAplicarOpcionais(){
             }
         });
     });
-    window._cteBlocos=blocos.length?blocos:[{destino:'totalPrestacao',expr:null}];
+    window._cteBlocos=blocos.length?blocos:[{destino:'',expr:null}];
     window._cteExtras=extras;
     _cteRenderBlocos();
 }
@@ -4562,6 +4618,7 @@ function _renderizarCardRegraCteDndSemIA(codigo){
     const _estadoForm=wCard?_capturarEstadoForm(wCard):null;
     const _cteExtraVoltar={acaoSel:window._cteAcaoSel,blocos:_clonarBlocos(window._cteBlocos),extras:(window._cteExtras||[]).map(e=>({...e}))};
     if(wCard)wCard.remove();
+    _fecharBuilderModal();
     const s=document.getElementById('chatStream');
     const c=document.createElement('div');c.className='answer-card';
     const ts=Date.now();
@@ -4599,6 +4656,7 @@ async function enviarWizardRegraDnd(){
     const wCard=document.getElementById('wizardRegraDndCard');
     const _estadoForm=wCard?_capturarEstadoForm(wCard):null;
     if(wCard)wCard.remove();
+    _fecharBuilderModal();
     appendMessage('system','📄 <strong>Gerando regra de Ct-e...</strong>');
     const ld=appendLoadingCard('📄 Elaborando regra de Ct-e...');
     const li=Date.now();
@@ -4942,82 +5000,84 @@ function _cfdToggleOutrosValores(marcado){
 function mostrarWizardContratoDnd(queryOriginal){
     _wizardContratoDndQuery=queryOriginal;
     window._cfdAcaoSel='+';
-    window._cfdBlocos=[{destino:'freteLiquido',expr:null}];
+    window._cfdBlocos=[{destino:'',expr:null}];
     window._cfdExtras=[];
-    const s=document.getElementById('chatStream');
-    const wCard=document.getElementById('wizardContratoDndCard');if(wCard)wCard.remove();
+    document.getElementById('builderModalBody').innerHTML='';
     const card=document.createElement('div');
     card.id='wizardContratoDndCard';
-    card.className='answer-card';
-    card.style.cssText='max-height:680px;overflow-y:auto;';
+    card.className='builder-card';
     const chipsHtml=_cfdMontarPaletteHtml();
-    card.innerHTML=`<div style="background:#f5f3ff;padding:10px 15px;border-bottom:1px solid #ddd6fe;font-size:12px;color:#5b21b6;font-weight:700;">🚛 Assistente — Contrato de Frete <span style="font-weight:500;">(arrastar campos)</span></div>
-<div style="padding:12px 15px 4px;">
-  <div class="wizard-section">
-    <div class="wizard-label">📋 Colar regra existente do sistema</div>
-    <textarea id="wCfdColarRegra" class="wizard-textarea" placeholder="Cole aqui uma regra já pronta do sistema..." style="min-height:90px;font-family:monospace;font-size:11.5px;" oninput="_cfdColarRegraInput()"></textarea>
-    <div style="font-size:10.5px;color:#7c3aed;margin-top:4px;">🔄 A área de montagem abaixo é atualizada automaticamente conforme você cola ou edita aqui.</div>
-  </div>
-  <div class="wizard-section">
-    <div class="wizard-label">📋 Regras pré-existentes (padrão)</div>
-    <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Clique pra gerar direto, sem IA:</div>
-    <div style="display:flex;flex-direction:column;gap:6px;">
-      <button onclick="_cfdUsarPredefinida('combinado_motorista')" style="width:100%;text-align:left;padding:9px 12px;background:#f9fafb;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12.5px;color:#374151;font-weight:600;">🤝 Combinado Motorista</button>
-      <button onclick="_cfdUsarPredefinida('combinado_motorista_frete_minimo')" style="width:100%;text-align:left;padding:9px 12px;background:#f9fafb;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12.5px;color:#374151;font-weight:600;">🤝 Combinado Motorista — com alerta e bloqueio abaixo do frete mínimo</button>
+    card.innerHTML=`<div style="flex-shrink:0;background:#f5f3ff;padding:10px 15px;border-bottom:1px solid #ddd6fe;font-size:12px;color:#5b21b6;font-weight:700;">🚛 Assistente — Contrato de Frete <span style="font-weight:500;">(arrastar campos)</span></div>
+<div class="builder-grid">
+  <div class="builder-grid-side">
+    <div class="wizard-section">
+      <div class="wizard-label">📋 Colar regra existente do sistema</div>
+      <textarea id="wCfdColarRegra" class="wizard-textarea" placeholder="Cole aqui uma regra já pronta do sistema..." style="min-height:90px;font-family:monospace;font-size:11.5px;" oninput="_cfdColarRegraInput()"></textarea>
+      <div style="font-size:10.5px;color:#7c3aed;margin-top:4px;">🔄 A área de montagem ao lado é atualizada automaticamente conforme você cola ou edita aqui.</div>
+    </div>
+    <div class="wizard-section">
+      <div class="wizard-label">📋 Regras pré-existentes (padrão)</div>
+      <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Clique pra gerar direto, sem IA:</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <button onclick="_cfdUsarPredefinida('combinado_motorista')" style="width:100%;text-align:left;padding:9px 12px;background:#f9fafb;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12.5px;color:#374151;font-weight:600;">🤝 Combinado Motorista</button>
+        <button onclick="_cfdUsarPredefinida('combinado_motorista_frete_minimo')" style="width:100%;text-align:left;padding:9px 12px;background:#f9fafb;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12.5px;color:#374151;font-weight:600;">🤝 Combinado Motorista — com alerta e bloqueio abaixo do frete mínimo</button>
+      </div>
+    </div>
+    <div class="wizard-section" style="border:none;">
+      <div class="wizard-label">✏️ Ou descreva em texto livre <span style="font-size:10px;color:#9ca3af;font-weight:400;">(a IA monta — use pra editar uma regra existente ou algo fora do padrão de contas simples)</span></div>
+      <textarea id="wCfdRegraCola" class="wizard-textarea" placeholder="Cole aqui a regra existente que deseja editar (opcional)..." style="min-height:60px;"></textarea>
+      <textarea id="wCfdDescricao" class="wizard-textarea" placeholder="Descreva o que necessita..." style="min-height:70px;margin-top:8px;"></textarea>
+      <button id="wCfdBtnEnviar" class="wizard-submit" onclick="enviarWizardContratoDnd()" style="margin-top:8px;">🚀 Gerar com IA</button>
     </div>
   </div>
-  <div class="wizard-section" style="border:none;position:sticky;top:0;z-index:2;background:var(--surface);border-bottom:2px solid #ddd6fe;box-shadow:0 4px 8px -6px rgba(0,0,0,.2);">
-    <div class="wizard-label">🧩 Monte sua regra arrastando os campos</div>
-    <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#374151;cursor:pointer;margin-bottom:8px;font-weight:600;">
-      <input type="checkbox" id="wCfdOutrosValoresCheck" onchange="_cfdToggleOutrosValores(this.checked)"> Utiliza Valores outros (campos personalizados)?
-    </label>
-    <div id="wCfdOutrosValoresWrap" style="display:none;margin-bottom:10px;">
-      <input type="text" id="wCfdOutrosValoresInput" oninput="_cfdRenderPalette()" placeholder="coloque aqui o nome interno dos campos separados por vírgula" style="width:100%;padding:7px 10px;border:1.5px solid #f9a8d4;border-radius:6px;font-size:12px;font-family:monospace;background:#fdf2f8;color:#9d174d;">
-      <div id="wCfdOutrosValoresChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;max-height:70px;overflow-y:auto;"></div>
+  <div class="builder-grid-main">
+    <div class="wizard-section" style="border:none;position:sticky;top:0;z-index:2;background:var(--surface);border-bottom:2px solid #ddd6fe;box-shadow:0 4px 8px -6px rgba(0,0,0,.2);">
+      <div class="wizard-label">🧩 Monte sua regra arrastando os campos</div>
+      <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#374151;cursor:pointer;margin-bottom:8px;font-weight:600;">
+        <input type="checkbox" id="wCfdOutrosValoresCheck" onchange="_cfdToggleOutrosValores(this.checked)"> Utiliza Valores outros (campos personalizados)?
+      </label>
+      <div id="wCfdOutrosValoresWrap" style="display:none;margin-bottom:10px;">
+        <input type="text" id="wCfdOutrosValoresInput" oninput="_cfdRenderPalette()" placeholder="coloque aqui o nome interno dos campos separados por vírgula" style="width:100%;padding:7px 10px;border:1.5px solid #f9a8d4;border-radius:6px;font-size:12px;font-family:monospace;background:#fdf2f8;color:#9d174d;">
+        <div id="wCfdOutrosValoresChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;max-height:70px;overflow-y:auto;"></div>
+      </div>
+      <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">1. Selecione a ação:</div>
+      <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
+        <button class="_cfd-acao-btn" data-acao="+" onclick="_cfdSelecionarAcao('+')" style="padding:8px 14px;background:var(--primary);color:white;border:2px solid var(--primary);border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➕ Somar</button>
+        <button class="_cfd-acao-btn" data-acao="-" onclick="_cfdSelecionarAcao('-')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➖ Subtrair</button>
+        <button class="_cfd-acao-btn" data-acao="*" onclick="_cfdSelecionarAcao('*')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">✖️ Multiplicar</button>
+        <button class="_cfd-acao-btn" data-acao="/" onclick="_cfdSelecionarAcao('/')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➗ Dividir</button>
+        <span style="width:1px;background:#e5e7eb;margin:2px 2px;"></span>
+        <button class="_cfd-acao-btn" data-acao=">" onclick="_cfdSelecionarAcao('&gt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt; Maior que</button>
+        <button class="_cfd-acao-btn" data-acao="<" onclick="_cfdSelecionarAcao('&lt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt; Menor que</button>
+        <button class="_cfd-acao-btn" data-acao="==" onclick="_cfdSelecionarAcao('==')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">== Igual</button>
+        <button class="_cfd-acao-btn" data-acao=">=" onclick="_cfdSelecionarAcao('&gt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt;= Maior ou igual</button>
+        <button class="_cfd-acao-btn" data-acao="<=" onclick="_cfdSelecionarAcao('&lt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt;= Menor ou igual</button>
+      </div>
+      <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">2. Campos disponíveis (arraste para a área abaixo):</div>
+      <div id="wCfdCamposPalette" style="display:flex;flex-wrap:wrap;gap:6px;padding:10px;border:1.5px dashed #d1d5db;border-radius:8px;margin-bottom:10px;max-height:170px;overflow-y:auto;">${chipsHtml}</div>
+      <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Ou digite um valor numérico (ex: 100, 0.02) e arraste-o pra área de montagem — útil pra dividir/multiplicar um campo por um número fixo:</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="text" id="wCfdValorInput" inputmode="decimal" placeholder="Ex: 100" oninput="_cfdValorInputChange()" style="width:110px;padding:7px 10px;border:1.5px solid #d1d5db;border-radius:6px;font-size:12px;font-family:monospace;">
+        <span id="wCfdValorChip" draggable="true" ondragstart="_cfdValorDragStart(event)" style="display:inline-flex;align-items:center;gap:4px;padding:7px 12px;background:#fff7ed;border:1.5px solid #fdba74;border-radius:16px;font-size:12px;font-family:monospace;cursor:not-allowed;user-select:none;color:#9a3412;opacity:.4;transition:opacity .15s;">🔢 Arrastar valor</span>
+      </div>
     </div>
-    <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">1. Selecione a ação:</div>
-    <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
-      <button class="_cfd-acao-btn" data-acao="+" onclick="_cfdSelecionarAcao('+')" style="padding:8px 14px;background:var(--primary);color:white;border:2px solid var(--primary);border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➕ Somar</button>
-      <button class="_cfd-acao-btn" data-acao="-" onclick="_cfdSelecionarAcao('-')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➖ Subtrair</button>
-      <button class="_cfd-acao-btn" data-acao="*" onclick="_cfdSelecionarAcao('*')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">✖️ Multiplicar</button>
-      <button class="_cfd-acao-btn" data-acao="/" onclick="_cfdSelecionarAcao('/')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➗ Dividir</button>
-      <span style="width:1px;background:#e5e7eb;margin:2px 2px;"></span>
-      <button class="_cfd-acao-btn" data-acao=">" onclick="_cfdSelecionarAcao('&gt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt; Maior que</button>
-      <button class="_cfd-acao-btn" data-acao="<" onclick="_cfdSelecionarAcao('&lt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt; Menor que</button>
-      <button class="_cfd-acao-btn" data-acao="==" onclick="_cfdSelecionarAcao('==')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">== Igual</button>
-      <button class="_cfd-acao-btn" data-acao=">=" onclick="_cfdSelecionarAcao('&gt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt;= Maior ou igual</button>
-      <button class="_cfd-acao-btn" data-acao="<=" onclick="_cfdSelecionarAcao('&lt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt;= Menor ou igual</button>
+    <div class="wizard-section" style="border:none;">
+      <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">3. Área de montagem — arraste um campo (ou valor) sobre outro pra combinar com a ação selecionada:</div>
+      <div id="wCfdBlocosContainer"></div>
+      <button onclick="_cfdAdicionarBloco()" style="width:100%;padding:8px;background:white;border:1.5px dashed #7c3aed;border-radius:8px;color:#5b21b6;cursor:pointer;font-size:12.5px;font-weight:700;margin-bottom:12px;">➕ Definir mais um campo</button>
+      <div id="wCfdExtrasContainer"></div>
+      <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Prévia da regra (uma linha por campo definido):</div>
+      <div id="wCfdPreview" style="padding:8px 10px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;font-family:monospace;font-size:11.5px;color:#374151;margin-bottom:10px;white-space:pre-wrap;word-break:break-all;">// defina um campo (nome + arraste algo pra área de montagem)</div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="_cfdLimparCanvas()" style="padding:8px 14px;background:#fef2f2;color:#991b1b;border:1.5px solid #fecaca;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:600;">🗑️ Limpar tudo</button>
+        <button onclick="_cfdGerarRegraCustom()" style="flex:1;padding:8px 14px;background:#7c3aed;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;">🚀 Gerar Regra Montada</button>
+      </div>
     </div>
-    <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">2. Campos disponíveis (arraste para a área abaixo):</div>
-    <div id="wCfdCamposPalette" style="display:flex;flex-wrap:wrap;gap:6px;padding:10px;border:1.5px dashed #d1d5db;border-radius:8px;margin-bottom:10px;max-height:110px;overflow-y:auto;">${chipsHtml}</div>
-    <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Ou digite um valor numérico (ex: 100, 0.02) e arraste-o pra área de montagem — útil pra dividir/multiplicar um campo por um número fixo:</div>
-    <div style="display:flex;gap:8px;align-items:center;">
-      <input type="text" id="wCfdValorInput" inputmode="decimal" placeholder="Ex: 100" oninput="_cfdValorInputChange()" style="width:110px;padding:7px 10px;border:1.5px solid #d1d5db;border-radius:6px;font-size:12px;font-family:monospace;">
-      <span id="wCfdValorChip" draggable="true" ondragstart="_cfdValorDragStart(event)" style="display:inline-flex;align-items:center;gap:4px;padding:7px 12px;background:#fff7ed;border:1.5px solid #fdba74;border-radius:16px;font-size:12px;font-family:monospace;cursor:not-allowed;user-select:none;color:#9a3412;opacity:.4;transition:opacity .15s;">🔢 Arrastar valor</span>
-    </div>
-  </div>
-  <div class="wizard-section" style="border:none;">
-    <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">3. Área de montagem — arraste um campo (ou valor) sobre outro pra combinar com a ação selecionada:</div>
-    <div id="wCfdBlocosContainer"></div>
-    <button onclick="_cfdAdicionarBloco()" style="width:100%;padding:8px;background:white;border:1.5px dashed #7c3aed;border-radius:8px;color:#5b21b6;cursor:pointer;font-size:12.5px;font-weight:700;margin-bottom:12px;">➕ Definir mais um campo</button>
-    <div id="wCfdExtrasContainer"></div>
-    <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Prévia da regra (uma linha por campo definido):</div>
-    <div id="wCfdPreview" style="padding:8px 10px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;font-family:monospace;font-size:11.5px;color:#374151;margin-bottom:10px;white-space:pre-wrap;word-break:break-all;">def("freteLiquido", );</div>
-    <div style="display:flex;gap:8px;">
-      <button onclick="_cfdLimparCanvas()" style="padding:8px 14px;background:#fef2f2;color:#991b1b;border:1.5px solid #fecaca;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:600;">🗑️ Limpar tudo</button>
-      <button onclick="_cfdGerarRegraCustom()" style="flex:1;padding:8px 14px;background:#7c3aed;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;">🚀 Gerar Regra Montada</button>
-    </div>
-  </div>
-  <div class="wizard-section" style="border:none;border-top:1px solid #e5e7eb;padding-top:14px;">
-    <div class="wizard-label">✏️ Ou descreva em texto livre <span style="font-size:10px;color:#9ca3af;font-weight:400;">(a IA monta — use pra editar uma regra existente ou algo fora do padrão de contas simples)</span></div>
-    <textarea id="wCfdRegraCola" class="wizard-textarea" placeholder="Cole aqui a regra existente que deseja editar (opcional)..." style="min-height:60px;"></textarea>
-    <textarea id="wCfdDescricao" class="wizard-textarea" placeholder="Descreva o que necessita..." style="min-height:70px;margin-top:8px;"></textarea>
-    <button id="wCfdBtnEnviar" class="wizard-submit" onclick="enviarWizardContratoDnd()" style="margin-top:8px;">🚀 Gerar com IA</button>
   </div>
 </div>`;
-    s.appendChild(card);
+    document.getElementById('builderModalBody').appendChild(card);
     _cfdRenderBlocos();
-    scrollToBottom(true);
+    _abrirBuilderModal();
 }
 function _cfdSelecionarAcao(acao){
     window._cfdAcaoSel=acao;
@@ -5095,7 +5155,7 @@ function _cfdRenderBlocos(){
         return `<div style="border:1.5px solid #e5e7eb;border-radius:8px;padding:10px;margin-bottom:10px;">
             <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
                 <label style="font-size:11px;color:#374151;white-space:nowrap;">Campo a definir:</label>
-                <input type="text" value="${escapeHtml(bloco.destino)}" placeholder="digite ou arraste um campo aqui"
+                <input type="text" value="${escapeHtml(_termoParaLabel(bloco.destino))}" title="${escapeHtml(bloco.destino)}" placeholder="digite ou arraste um campo aqui"
                     ondragover="_cfdDestinoDragOver(event)" ondrop="_cfdDestinoDrop(event,${idx})" oninput="_cfdDestinoInput(event,${idx})"
                     style="flex:1;padding:7px 10px;border:1.5px solid #7c3aed;border-radius:6px;font-size:12px;font-family:monospace;background:#f5f3ff;color:#5b21b6;font-weight:600;outline:none;">
                 ${btnRemover}
@@ -5163,7 +5223,7 @@ function _cfdDestinoDrop(e,idx){
     _cfdRenderBlocos();
 }
 function _cfdDestinoInput(e,idx){
-    window._cfdBlocos[idx].destino=e.target.value;
+    window._cfdBlocos[idx].destino=_labelParaTermoInterno(e.target.value);
     _cfdAtualizarPreview();
 }
 function _cfdAdicionarBloco(){
@@ -5247,7 +5307,7 @@ function _cfdAtualizarPreview(){
     if(preview)preview.textContent=linhas.length?linhas.join('\n'):'// defina um campo (nome + arraste algo pra área de montagem)';
 }
 function _cfdLimparCanvas(){
-    window._cfdBlocos=[{destino:'freteLiquido',expr:null}];
+    window._cfdBlocos=[{destino:'',expr:null}];
     window._cfdExtras=[];
     const colar=document.getElementById('wCfdColarRegra');
     if(colar)colar.value='';
@@ -5266,7 +5326,7 @@ function _cfdUsarPredefinida(chave){
     const colar=document.getElementById('wCfdColarRegra');
     if(colar)colar.value=codigo; // mantém o campo de colar em sincronia com o que foi carregado
     const {blocos,extras}=_parseRegraParaBlocos(codigo);
-    window._cfdBlocos=(blocos.length?blocos:[{destino:'freteLiquido',expr:null}]).map(_seedTermosBase);
+    window._cfdBlocos=(blocos.length?blocos:[{destino:'',expr:null}]).map(_seedTermosBase);
     window._cfdExtras=extras;
     _cfdRenderBlocos();
     const cont=document.getElementById('wCfdBlocosContainer');
@@ -5277,13 +5337,13 @@ function _cfdUsarPredefinida(chave){
 function _cfdColarRegraInput(){
     const texto=(document.getElementById('wCfdColarRegra')?.value||'').trim();
     if(!texto){
-        window._cfdBlocos=[{destino:'freteLiquido',expr:null}];
+        window._cfdBlocos=[{destino:'',expr:null}];
         window._cfdExtras=[];
         _cfdRenderBlocos();
         return;
     }
     const {blocos,extras}=_parseRegraParaBlocos(texto);
-    window._cfdBlocos=(blocos.length?blocos:[{destino:'freteLiquido',expr:null}]).map(_seedTermosBase);
+    window._cfdBlocos=(blocos.length?blocos:[{destino:'',expr:null}]).map(_seedTermosBase);
     window._cfdExtras=extras;
     _cfdRenderBlocos();
 }
@@ -5292,6 +5352,7 @@ function _renderizarCardRegraContratoDndSemIA(codigo){
     const _estadoForm=wCard?_capturarEstadoForm(wCard):null;
     const _cfdExtra={acaoSel:window._cfdAcaoSel,blocos:_clonarBlocos(window._cfdBlocos),extras:(window._cfdExtras||[]).map(e=>({...e}))};
     if(wCard)wCard.remove();
+    _fecharBuilderModal();
     const s=document.getElementById('chatStream');
     const c=document.createElement('div');c.className='answer-card';
     const ts=Date.now();
@@ -5326,6 +5387,7 @@ async function enviarWizardContratoDnd(){
     const wCard=document.getElementById('wizardContratoDndCard');
     const _estadoForm=wCard?_capturarEstadoForm(wCard):null;
     if(wCard)wCard.remove();
+    _fecharBuilderModal();
     appendMessage('system','🚛 <strong>Gerando regra de Contrato de Frete...</strong>');
     const ld=appendLoadingCard('🚛 Elaborando regra de contrato...');
     const li=Date.now();
@@ -5372,78 +5434,80 @@ function _fatToggleOutrosValores(marcado){
 function mostrarWizardFaturamento(queryOriginal){
     _wizardFaturamentoQuery=queryOriginal;
     window._fatAcaoSel='+';
-    window._fatBlocos=[{destino:'totalPrestacao',expr:null}];
+    window._fatBlocos=[{destino:'',expr:null}];
     window._fatExtras=[];
-    const s=document.getElementById('chatStream');
-    const wCard=document.getElementById('wizardFaturamentoCard');if(wCard)wCard.remove();
+    document.getElementById('builderModalBody').innerHTML='';
     const card=document.createElement('div');
     card.id='wizardFaturamentoCard';
-    card.className='answer-card';
-    card.style.cssText='max-height:680px;overflow-y:auto;';
+    card.className='builder-card';
     const chipsHtml=_fatMontarPaletteHtml();
-    card.innerHTML=`<div style="background:#ecfdf5;padding:10px 15px;border-bottom:1px solid #a7f3d0;font-size:12px;color:#065f46;font-weight:700;">💰 Assistente — Regra de Faturamento</div>
-<div style="padding:12px 15px 4px;">
-  <div class="wizard-section">
-    <div class="wizard-label">📋 Colar regra existente do sistema</div>
-    <textarea id="wFatColarRegra" class="wizard-textarea" placeholder="Cole aqui uma regra já pronta do sistema..." style="min-height:90px;font-family:monospace;font-size:11.5px;" oninput="_fatColarRegraInput()"></textarea>
-    <div style="font-size:10.5px;color:#059669;margin-top:4px;">🔄 A área de montagem abaixo é atualizada automaticamente conforme você cola ou edita aqui.</div>
-  </div>
-  <div class="wizard-section">
-    <div class="wizard-label">📋 Regra pré-existente (padrão)</div>
-    <button onclick="_fatUsarPredefinida()" style="width:100%;text-align:left;padding:10px 12px;background:#f9fafb;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-family:monospace;font-size:11.5px;color:#374151;">${FATURAMENTO_REGRA_PADRAO}</button>
-  </div>
-  <div class="wizard-section" style="border:none;position:sticky;top:0;z-index:2;background:var(--surface);border-bottom:2px solid #a7f3d0;box-shadow:0 4px 8px -6px rgba(0,0,0,.2);">
-    <div class="wizard-label">🧩 Monte sua regra arrastando os campos</div>
-    <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#374151;cursor:pointer;margin-bottom:8px;font-weight:600;">
-      <input type="checkbox" id="wFatOutrosValoresCheck" onchange="_fatToggleOutrosValores(this.checked)"> Utiliza Valores outros (campos personalizados)?
-    </label>
-    <div id="wFatOutrosValoresWrap" style="display:none;margin-bottom:10px;">
-      <input type="text" id="wFatOutrosValoresInput" oninput="_fatRenderPalette()" placeholder="coloque aqui o nome interno dos campos separados por vírgula" style="width:100%;padding:7px 10px;border:1.5px solid #f9a8d4;border-radius:6px;font-size:12px;font-family:monospace;background:#fdf2f8;color:#9d174d;">
-      <div id="wFatOutrosValoresChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;max-height:70px;overflow-y:auto;"></div>
+    card.innerHTML=`<div style="flex-shrink:0;background:#ecfdf5;padding:10px 15px;border-bottom:1px solid #a7f3d0;font-size:12px;color:#065f46;font-weight:700;">💰 Assistente — Regra de Faturamento</div>
+<div class="builder-grid">
+  <div class="builder-grid-side">
+    <div class="wizard-section">
+      <div class="wizard-label">📋 Colar regra existente do sistema</div>
+      <textarea id="wFatColarRegra" class="wizard-textarea" placeholder="Cole aqui uma regra já pronta do sistema..." style="min-height:90px;font-family:monospace;font-size:11.5px;" oninput="_fatColarRegraInput()"></textarea>
+      <div style="font-size:10.5px;color:#059669;margin-top:4px;">🔄 A área de montagem ao lado é atualizada automaticamente conforme você cola ou edita aqui.</div>
     </div>
-    <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">1. Selecione a ação:</div>
-    <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
-      <button class="_fat-acao-btn" data-acao="+" onclick="_fatSelecionarAcao('+')" style="padding:8px 14px;background:var(--primary);color:white;border:2px solid var(--primary);border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➕ Somar</button>
-      <button class="_fat-acao-btn" data-acao="-" onclick="_fatSelecionarAcao('-')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➖ Subtrair</button>
-      <button class="_fat-acao-btn" data-acao="*" onclick="_fatSelecionarAcao('*')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">✖️ Multiplicar</button>
-      <button class="_fat-acao-btn" data-acao="/" onclick="_fatSelecionarAcao('/')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➗ Dividir</button>
-      <span style="width:1px;background:#e5e7eb;margin:2px 2px;"></span>
-      <button class="_fat-acao-btn" data-acao=">" onclick="_fatSelecionarAcao('&gt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt; Maior que</button>
-      <button class="_fat-acao-btn" data-acao="<" onclick="_fatSelecionarAcao('&lt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt; Menor que</button>
-      <button class="_fat-acao-btn" data-acao="==" onclick="_fatSelecionarAcao('==')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">== Igual</button>
-      <button class="_fat-acao-btn" data-acao=">=" onclick="_fatSelecionarAcao('&gt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt;= Maior ou igual</button>
-      <button class="_fat-acao-btn" data-acao="<=" onclick="_fatSelecionarAcao('&lt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt;= Menor ou igual</button>
+    <div class="wizard-section">
+      <div class="wizard-label">📋 Regra pré-existente (padrão)</div>
+      <button onclick="_fatUsarPredefinida()" style="width:100%;text-align:left;padding:10px 12px;background:#f9fafb;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-family:monospace;font-size:11.5px;color:#374151;">${FATURAMENTO_REGRA_PADRAO}</button>
     </div>
-    <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">2. Campos disponíveis (arraste para a área abaixo):</div>
-    <div id="wFatCamposPalette" style="display:flex;flex-wrap:wrap;gap:6px;padding:10px;border:1.5px dashed #d1d5db;border-radius:8px;margin-bottom:10px;max-height:110px;overflow-y:auto;">${chipsHtml}</div>
-    <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Ou digite um valor numérico (ex: 100, 0.02) e arraste-o pra área de montagem — útil pra dividir/multiplicar um campo por um número fixo:</div>
-    <div style="display:flex;gap:8px;align-items:center;">
-      <input type="text" id="wFatValorInput" inputmode="decimal" placeholder="Ex: 100" oninput="_fatValorInputChange()" style="width:110px;padding:7px 10px;border:1.5px solid #d1d5db;border-radius:6px;font-size:12px;font-family:monospace;">
-      <span id="wFatValorChip" draggable="true" ondragstart="_fatValorDragStart(event)" style="display:inline-flex;align-items:center;gap:4px;padding:7px 12px;background:#fff7ed;border:1.5px solid #fdba74;border-radius:16px;font-size:12px;font-family:monospace;cursor:not-allowed;user-select:none;color:#9a3412;opacity:.4;transition:opacity .15s;">🔢 Arrastar valor</span>
+    <div class="wizard-section" style="border:none;">
+      <div class="wizard-label">✏️ Ou descreva em texto livre <span style="font-size:10px;color:#9ca3af;font-weight:400;">(a IA monta — use pra editar uma regra existente ou algo fora do padrão de contas simples)</span></div>
+      <textarea id="wFatRegraCola" class="wizard-textarea" placeholder="Cole aqui a regra existente que deseja editar (opcional)..." style="min-height:60px;"></textarea>
+      <textarea id="wFatDescricao" class="wizard-textarea" placeholder="Descreva o que necessita..." style="min-height:70px;margin-top:8px;"></textarea>
+      <button id="wFatBtnEnviar" class="wizard-submit" onclick="enviarWizardFaturamento()" style="margin-top:8px;">🚀 Gerar com IA</button>
     </div>
   </div>
-  <div class="wizard-section" style="border:none;">
-    <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">3. Área de montagem — arraste um campo (ou valor) sobre outro pra combinar com a ação selecionada:</div>
-    <div id="wFatBlocosContainer"></div>
-    <button onclick="_fatAdicionarBloco()" style="width:100%;padding:8px;background:white;border:1.5px dashed #10b981;border-radius:8px;color:#059669;cursor:pointer;font-size:12.5px;font-weight:700;margin-bottom:12px;">➕ Definir mais um campo</button>
-    <div id="wFatExtrasContainer"></div>
-    <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Prévia da regra (uma linha por campo definido):</div>
-    <div id="wFatPreview" style="padding:8px 10px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;font-family:monospace;font-size:11.5px;color:#374151;margin-bottom:10px;white-space:pre-wrap;word-break:break-all;">def("totalPrestacao", );</div>
-    <div style="display:flex;gap:8px;">
-      <button onclick="_fatLimparCanvas()" style="padding:8px 14px;background:#fef2f2;color:#991b1b;border:1.5px solid #fecaca;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:600;">🗑️ Limpar tudo</button>
-      <button onclick="_fatGerarRegraCustom()" style="flex:1;padding:8px 14px;background:#059669;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;">🚀 Gerar Regra Montada</button>
+  <div class="builder-grid-main">
+    <div class="wizard-section" style="border:none;position:sticky;top:0;z-index:2;background:var(--surface);border-bottom:2px solid #a7f3d0;box-shadow:0 4px 8px -6px rgba(0,0,0,.2);">
+      <div class="wizard-label">🧩 Monte sua regra arrastando os campos</div>
+      <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#374151;cursor:pointer;margin-bottom:8px;font-weight:600;">
+        <input type="checkbox" id="wFatOutrosValoresCheck" onchange="_fatToggleOutrosValores(this.checked)"> Utiliza Valores outros (campos personalizados)?
+      </label>
+      <div id="wFatOutrosValoresWrap" style="display:none;margin-bottom:10px;">
+        <input type="text" id="wFatOutrosValoresInput" oninput="_fatRenderPalette()" placeholder="coloque aqui o nome interno dos campos separados por vírgula" style="width:100%;padding:7px 10px;border:1.5px solid #f9a8d4;border-radius:6px;font-size:12px;font-family:monospace;background:#fdf2f8;color:#9d174d;">
+        <div id="wFatOutrosValoresChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;max-height:70px;overflow-y:auto;"></div>
+      </div>
+      <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">1. Selecione a ação:</div>
+      <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
+        <button class="_fat-acao-btn" data-acao="+" onclick="_fatSelecionarAcao('+')" style="padding:8px 14px;background:var(--primary);color:white;border:2px solid var(--primary);border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➕ Somar</button>
+        <button class="_fat-acao-btn" data-acao="-" onclick="_fatSelecionarAcao('-')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➖ Subtrair</button>
+        <button class="_fat-acao-btn" data-acao="*" onclick="_fatSelecionarAcao('*')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">✖️ Multiplicar</button>
+        <button class="_fat-acao-btn" data-acao="/" onclick="_fatSelecionarAcao('/')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➗ Dividir</button>
+        <span style="width:1px;background:#e5e7eb;margin:2px 2px;"></span>
+        <button class="_fat-acao-btn" data-acao=">" onclick="_fatSelecionarAcao('&gt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt; Maior que</button>
+        <button class="_fat-acao-btn" data-acao="<" onclick="_fatSelecionarAcao('&lt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt; Menor que</button>
+        <button class="_fat-acao-btn" data-acao="==" onclick="_fatSelecionarAcao('==')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">== Igual</button>
+        <button class="_fat-acao-btn" data-acao=">=" onclick="_fatSelecionarAcao('&gt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt;= Maior ou igual</button>
+        <button class="_fat-acao-btn" data-acao="<=" onclick="_fatSelecionarAcao('&lt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt;= Menor ou igual</button>
+      </div>
+      <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">2. Campos disponíveis (arraste para a área abaixo):</div>
+      <div id="wFatCamposPalette" style="display:flex;flex-wrap:wrap;gap:6px;padding:10px;border:1.5px dashed #d1d5db;border-radius:8px;margin-bottom:10px;max-height:170px;overflow-y:auto;">${chipsHtml}</div>
+      <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Ou digite um valor numérico (ex: 100, 0.02) e arraste-o pra área de montagem — útil pra dividir/multiplicar um campo por um número fixo:</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="text" id="wFatValorInput" inputmode="decimal" placeholder="Ex: 100" oninput="_fatValorInputChange()" style="width:110px;padding:7px 10px;border:1.5px solid #d1d5db;border-radius:6px;font-size:12px;font-family:monospace;">
+        <span id="wFatValorChip" draggable="true" ondragstart="_fatValorDragStart(event)" style="display:inline-flex;align-items:center;gap:4px;padding:7px 12px;background:#fff7ed;border:1.5px solid #fdba74;border-radius:16px;font-size:12px;font-family:monospace;cursor:not-allowed;user-select:none;color:#9a3412;opacity:.4;transition:opacity .15s;">🔢 Arrastar valor</span>
+      </div>
     </div>
-  </div>
-  <div class="wizard-section" style="border:none;border-top:1px solid #e5e7eb;padding-top:14px;">
-    <div class="wizard-label">✏️ Ou descreva em texto livre <span style="font-size:10px;color:#9ca3af;font-weight:400;">(a IA monta — use pra editar uma regra existente ou algo fora do padrão de contas simples)</span></div>
-    <textarea id="wFatRegraCola" class="wizard-textarea" placeholder="Cole aqui a regra existente que deseja editar (opcional)..." style="min-height:60px;"></textarea>
-    <textarea id="wFatDescricao" class="wizard-textarea" placeholder="Descreva o que necessita..." style="min-height:70px;margin-top:8px;"></textarea>
-    <button id="wFatBtnEnviar" class="wizard-submit" onclick="enviarWizardFaturamento()" style="margin-top:8px;">🚀 Gerar com IA</button>
+    <div class="wizard-section" style="border:none;">
+      <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">3. Área de montagem — arraste um campo (ou valor) sobre outro pra combinar com a ação selecionada:</div>
+      <div id="wFatBlocosContainer"></div>
+      <button onclick="_fatAdicionarBloco()" style="width:100%;padding:8px;background:white;border:1.5px dashed #10b981;border-radius:8px;color:#059669;cursor:pointer;font-size:12.5px;font-weight:700;margin-bottom:12px;">➕ Definir mais um campo</button>
+      <div id="wFatExtrasContainer"></div>
+      <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Prévia da regra (uma linha por campo definido):</div>
+      <div id="wFatPreview" style="padding:8px 10px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;font-family:monospace;font-size:11.5px;color:#374151;margin-bottom:10px;white-space:pre-wrap;word-break:break-all;">// defina um campo (nome + arraste algo pra área de montagem)</div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="_fatLimparCanvas()" style="padding:8px 14px;background:#fef2f2;color:#991b1b;border:1.5px solid #fecaca;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:600;">🗑️ Limpar tudo</button>
+        <button onclick="_fatGerarRegraCustom()" style="flex:1;padding:8px 14px;background:#059669;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;">🚀 Gerar Regra Montada</button>
+      </div>
+    </div>
   </div>
 </div>`;
-    s.appendChild(card);
+    document.getElementById('builderModalBody').appendChild(card);
     _fatRenderBlocos();
-    scrollToBottom(true);
+    _abrirBuilderModal();
 }
 
 // ─── Montador visual (arrastar e soltar) da regra de Faturamento ───
@@ -5517,6 +5581,15 @@ function _termoParaLabel(termo){
     const mOutros=nome.match(/^outrosValores\[([^\]]*)\]$/);
     if(mOutros)return mOutros[1];
     return nome;
+}
+// Caminho inverso de _termoParaLabel -- usado no campo "Campo a definir", que mostra o rótulo
+// amigável mas continua guardando o nome interno (o que realmente vai pro def(...) da regra).
+// Se o texto digitado bater EXATAMENTE com o rótulo de algum campo conhecido, resolve pro nome
+// interno; senão mantém o texto como está (permite digitar um nome de campo customizado, que não
+// tem rótulo nenhum pra "traduzir").
+function _labelParaTermoInterno(texto){
+    const achou=Object.keys(_ROTULOS_CAMPOS).find(k=>_ROTULOS_CAMPOS[k]===texto);
+    return achou||texto;
 }
 // Um termo de campo da Tabela de Preços entra puro na regra, sem obt() (ver _fatTermoParaExpressao)
 // — usado pra destacar esses chips com a mesma cor âmbar da paleta "Campos disponíveis", separando
@@ -5848,7 +5921,7 @@ function _fatRenderBlocos(){
         return `<div style="border:1.5px solid #e5e7eb;border-radius:8px;padding:10px;margin-bottom:10px;">
             <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
                 <label style="font-size:11px;color:#374151;white-space:nowrap;">Campo a definir:</label>
-                <input type="text" value="${escapeHtml(bloco.destino)}" placeholder="digite ou arraste um campo aqui"
+                <input type="text" value="${escapeHtml(_termoParaLabel(bloco.destino))}" title="${escapeHtml(bloco.destino)}" placeholder="digite ou arraste um campo aqui"
                     ondragover="_fatDestinoDragOver(event)" ondrop="_fatDestinoDrop(event,${idx})" oninput="_fatDestinoInput(event,${idx})"
                     style="flex:1;padding:7px 10px;border:1.5px solid #10b981;border-radius:6px;font-size:12px;font-family:monospace;background:#f0fdf4;color:#065f46;font-weight:600;outline:none;">
                 ${btnRemover}
@@ -5916,7 +5989,7 @@ function _fatDestinoDrop(e,idx){
     _fatRenderBlocos();
 }
 function _fatDestinoInput(e,idx){
-    window._fatBlocos[idx].destino=e.target.value;
+    window._fatBlocos[idx].destino=_labelParaTermoInterno(e.target.value);
     _fatAtualizarPreview();
 }
 function _fatAdicionarBloco(){
@@ -5999,7 +6072,7 @@ function _fatAtualizarPreview(){
     if(preview)preview.textContent=linhas.length?linhas.join('\n'):'// defina um campo (nome + arraste algo pra área de montagem)';
 }
 function _fatLimparCanvas(){
-    window._fatBlocos=[{destino:'totalPrestacao',expr:null}];
+    window._fatBlocos=[{destino:'',expr:null}];
     window._fatExtras=[];
     const colar=document.getElementById('wFatColarRegra');
     if(colar)colar.value='';
@@ -6016,7 +6089,7 @@ function _fatUsarPredefinida(){
     const colar=document.getElementById('wFatColarRegra');
     if(colar)colar.value=FATURAMENTO_REGRA_PADRAO; // mantém o campo de colar em sincronia
     const {blocos,extras}=_parseRegraParaBlocos(FATURAMENTO_REGRA_PADRAO);
-    window._fatBlocos=(blocos.length?blocos:[{destino:'totalPrestacao',expr:null}]).map(_seedTermosBase);
+    window._fatBlocos=(blocos.length?blocos:[{destino:'',expr:null}]).map(_seedTermosBase);
     window._fatExtras=extras;
     _fatRenderBlocos();
 }
@@ -6025,13 +6098,13 @@ function _fatUsarPredefinida(){
 function _fatColarRegraInput(){
     const texto=(document.getElementById('wFatColarRegra')?.value||'').trim();
     if(!texto){
-        window._fatBlocos=[{destino:'totalPrestacao',expr:null}];
+        window._fatBlocos=[{destino:'',expr:null}];
         window._fatExtras=[];
         _fatRenderBlocos();
         return;
     }
     const {blocos,extras}=_parseRegraParaBlocos(texto);
-    window._fatBlocos=(blocos.length?blocos:[{destino:'totalPrestacao',expr:null}]).map(_seedTermosBase);
+    window._fatBlocos=(blocos.length?blocos:[{destino:'',expr:null}]).map(_seedTermosBase);
     window._fatExtras=extras;
     _fatRenderBlocos();
 }
@@ -6040,6 +6113,7 @@ function _renderizarCardRegraSemIA(codigo){
     const _estadoForm=wCard?_capturarEstadoForm(wCard):null;
     const _fatExtra={acaoSel:window._fatAcaoSel,blocos:_clonarBlocos(window._fatBlocos),extras:(window._fatExtras||[]).map(e=>({...e}))};
     if(wCard)wCard.remove();
+    _fecharBuilderModal();
     const s=document.getElementById('chatStream');
     const c=document.createElement('div');c.className='answer-card';
     const ts=Date.now();
@@ -6076,6 +6150,7 @@ async function enviarWizardFaturamento(){
     const wCard=document.getElementById('wizardFaturamentoCard');
     const _estadoForm=wCard?_capturarEstadoForm(wCard):null;
     if(wCard)wCard.remove();
+    _fecharBuilderModal();
     appendMessage('system','💰 <strong>Gerando regra de Faturamento...</strong>');
     const ld=appendLoadingCard('💰 Elaborando regra de faturamento...');
     const li=Date.now();
@@ -6176,19 +6251,19 @@ function _voltarParaWizardRegra(ts) {
         }
     }
     if (dados.tipo === 'cte-dnd' && dados.cteExtraDnd) {
-        window._cteBlocos = (dados.cteExtraDnd.blocos && dados.cteExtraDnd.blocos.length) ? _clonarBlocos(dados.cteExtraDnd.blocos) : [{destino:'totalPrestacao',expr:null}];
+        window._cteBlocos = (dados.cteExtraDnd.blocos && dados.cteExtraDnd.blocos.length) ? _clonarBlocos(dados.cteExtraDnd.blocos) : [{destino:'',expr:null}];
         window._cteExtras = (dados.cteExtraDnd.extras || []).map(e => ({...e}));
         _cteSelecionarAcao(dados.cteExtraDnd.acaoSel || '+');
         _cteRenderBlocos();
     }
     if (dados.tipo === 'contrato-dnd' && dados.cfdExtra) {
-        window._cfdBlocos = (dados.cfdExtra.blocos && dados.cfdExtra.blocos.length) ? _clonarBlocos(dados.cfdExtra.blocos) : [{destino:'freteLiquido',expr:null}];
+        window._cfdBlocos = (dados.cfdExtra.blocos && dados.cfdExtra.blocos.length) ? _clonarBlocos(dados.cfdExtra.blocos) : [{destino:'',expr:null}];
         window._cfdExtras = (dados.cfdExtra.extras || []).map(e => ({...e}));
         _cfdSelecionarAcao(dados.cfdExtra.acaoSel || '+');
         _cfdRenderBlocos();
     }
     if (dados.tipo === 'faturamento' && dados.fatExtra) {
-        window._fatBlocos = (dados.fatExtra.blocos && dados.fatExtra.blocos.length) ? _clonarBlocos(dados.fatExtra.blocos) : [{destino:'totalPrestacao',expr:null}];
+        window._fatBlocos = (dados.fatExtra.blocos && dados.fatExtra.blocos.length) ? _clonarBlocos(dados.fatExtra.blocos) : [{destino:'',expr:null}];
         window._fatExtras = (dados.fatExtra.extras || []).map(e => ({...e}));
         _fatSelecionarAcao(dados.fatExtra.acaoSel || '+');
         _fatRenderBlocos();
@@ -8370,6 +8445,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     const searchInput = document.getElementById('searchInput');
     const sendBtn = document.getElementById('sendBtn');
     document.getElementById('chatStream')?.addEventListener('scroll', () => _atualizarBotaoScrollDown());
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && document.getElementById('builderModalOverlay')?.classList.contains('active')) _fecharBuilderModal(); });
     searchInput.disabled = false;
     searchInput.placeholder = "Carregando banco de dados... (digite sua pergunta enquanto carrega)";
     sendBtn.disabled = true;
