@@ -370,6 +370,60 @@
             .builder-grid-side { border-right: none; border-bottom: 1px solid var(--border); max-height: 38vh; }
         }
 
+        /* Tutorial passo a passo do criador de regras — botão que abre, mais o "tour" guiado em si
+           (painéis escurecendo tudo menos o alvo do passo atual, selo numerado, seta piscando e o
+           cartão de explicação). Tudo position:fixed calculado a partir do getBoundingClientRect()
+           do alvo, então funciona certinho mesmo com o menu lateral e a área de montagem rolando
+           cada um na sua própria barra. */
+        .tour-btn-abrir {
+            width: 100%; margin-bottom: 12px; padding: 10px 14px; border: none; border-radius: 10px;
+            background: linear-gradient(135deg, #7c3aed, #5b21b6); color: white; font-family: inherit;
+            font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: 0 3px 10px rgba(124,58,237,0.35);
+            transition: transform .15s, box-shadow .15s;
+        }
+        .tour-btn-abrir:hover { transform: translateY(-1px); box-shadow: 0 5px 14px rgba(124,58,237,0.45); }
+        .tour-dim { position: fixed; background: rgba(15,23,42,0.72); z-index: 2610; pointer-events: none; transition: all .25s ease; }
+        .tour-alvo-ativo {
+            outline: 3px solid #7c3aed !important; outline-offset: 3px !important;
+            border-radius: 10px !important; position: relative; z-index: 2611;
+            animation: tourPulseAlvo 1.4s ease-in-out infinite;
+        }
+        @keyframes tourPulseAlvo {
+            0%,100% { outline-color: #7c3aed; }
+            50% { outline-color: #c4b5fd; }
+        }
+        .tour-badge {
+            position: fixed; z-index: 2612; min-width: 28px; height: 28px; padding: 0 6px; border-radius: 14px;
+            background: #7c3aed; color: white; font-weight: 800; font-size: 14px; font-family: inherit;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.35); border: 3px solid white;
+            transition: all .25s ease;
+        }
+        .tour-arrow {
+            position: fixed; z-index: 2612; font-size: 26px; color: #7c3aed; pointer-events: none;
+            animation: tourArrowBounce 1s ease-in-out infinite; transition: all .25s ease;
+            filter: drop-shadow(0 1px 0 white) drop-shadow(0 -1px 0 white) drop-shadow(1px 0 0 white) drop-shadow(-1px 0 0 white) drop-shadow(0 3px 6px rgba(0,0,0,0.4));
+        }
+        @keyframes tourArrowBounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(7px); } }
+        .tour-arrow.dir-up { animation-name: tourArrowBounceUp; }
+        @keyframes tourArrowBounceUp { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+        .tour-card {
+            position: fixed; z-index: 2613; width: 320px; max-width: 92vw; background: white;
+            border-radius: 14px; box-shadow: 0 20px 55px rgba(0,0,0,0.45); padding: 16px 18px;
+            font-family: inherit; transition: all .25s ease;
+        }
+        .tour-card-passo { font-size: 10.5px; font-weight: 800; color: #7c3aed; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+        .tour-card-titulo { font-size: 14.5px; font-weight: 800; color: #1f2937; margin-bottom: 8px; }
+        .tour-card-texto { font-size: 13px; line-height: 1.55; color: #374151; margin-bottom: 12px; white-space: pre-line; }
+        .tour-card-naomostrar { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #6b7280; margin-bottom: 12px; cursor: pointer; }
+        .tour-card-rodape { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .tour-card-pular { background: none; border: none; color: #9ca3af; font-size: 12px; cursor: pointer; font-family: inherit; text-decoration: underline; padding: 4px; }
+        .tour-card-nav { display: flex; gap: 6px; }
+        .tour-card-btn { padding: 7px 14px; border-radius: 8px; font-size: 12.5px; font-weight: 700; cursor: pointer; font-family: inherit; border: none; }
+        .tour-card-btn.voltar { background: #f3f4f6; color: #374151; }
+        .tour-card-btn.proximo { background: #7c3aed; color: white; }
+        .tour-card-fechar { position: absolute; top: 8px; right: 10px; background: none; border: none; color: #9ca3af; font-size: 15px; cursor: pointer; padding: 4px; }
+
         .central-panel, .blog-panel, .manual-panel, .repo-panel, .ciot-panel {
             position: fixed; right: -580px; top: 0; width: 550px; height: 100vh;
             background: white; box-shadow: -5px 0 30px rgba(0,0,0,0.2);
@@ -4174,15 +4228,173 @@ function _cteToggleOutrosValores(marcado){
 // Abre/fecha o modal amplo compartilhado pelos 3 criadores de regra (Ct-e, Contrato de Frete,
 // Faturamento) -- cada um só injeta seu próprio conteúdo em #builderModalBody, o modal em si
 // (moldura, overlay, botão fechar) é único e reaproveitado pelos três.
-function _abrirBuilderModal(){
+function _abrirBuilderModal(tipoTour){
     document.getElementById('builderModalOverlay')?.classList.add('active');
     // menu lateral e área de montagem rolam cada um na sua própria barra -- zera as duas ao abrir
     document.querySelectorAll('#builderModalBody .builder-grid-side, #builderModalBody .builder-grid-main').forEach(el=>{el.scrollTop=0;});
     document.body.style.overflow='hidden';
+    let tourJaVisto=false;
+    try { tourJaVisto=!!localStorage.getItem(_TOUR_LOCALSTORAGE_KEY); } catch(e){}
+    if(tipoTour && !tourJaVisto){ setTimeout(()=>_iniciarTourBuilder(tipoTour), 250); }
 }
 function _fecharBuilderModal(){
     document.getElementById('builderModalOverlay')?.classList.remove('active');
     document.body.style.overflow='';
+    _tourFechar();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  TUTORIAL PASSO A PASSO DO CRIADOR DE REGRAS
+// ═══════════════════════════════════════════════════════════
+// Passo a passo guiado pra quem tem dificuldade de usar o criador de regras (muito leigo em
+// informática entra na empresa) -- destaca um pedaço da tela por vez, com selo numerado, seta
+// piscando e um cartão explicando o que fazer. Abre sozinho na primeira vez que a pessoa entra no
+// criador de regras (controlado pelo localStorage) e sempre pode ser reaberto pelo botão "🎓 Ver
+// tutorial passo a passo". Os mesmos passos servem pros 3 criadores (Ct-e/Contrato/Faturamento) --
+// o prefixo dos ids muda, e um passo cujo alvo não existe na ferramenta atual (ex.: "Monte com um
+// clique" não existe em Contrato de Frete/Faturamento) é pulado automaticamente.
+const _TOUR_LOCALSTORAGE_KEY='bsoft_tour_regra_oculto';
+let _tourEstado=null;
+function _prefixoTour(tipo){ return tipo==='cte'?'Cte':tipo==='cfd'?'Cfd':'Fat'; }
+const _TOUR_PASSOS=[
+    {
+        alvo:p=>[`#w${p}SecaoColar`,`#w${p}SecaoPredefinidas`],
+        titulo:'Comece por aqui',
+        texto:'Cole uma regra que o cliente já usa, ou clique em uma das "Regras pré-existentes" prontas.\n\nIsso já preenche a área de montagem sozinho, prontinho pra ajustar do seu jeito.'
+    },
+    {
+        alvo:p=>[`#w${p}SecaoOpcional`],
+        titulo:'Monte com um clique (opcional)',
+        texto:'Se algum desses cálculos prontos servir pra sua regra, é só marcar a caixinha.\n\nSe nenhum servir, sem problema — pode seguir pro próximo passo sem marcar nada.'
+    },
+    {
+        alvo:p=>[`#w${p}SecaoMontar`,`#w${p}BlocosContainer`],
+        titulo:'Monte sua regra arrastando os campos',
+        texto:'1) Se o "Campo a definir" ainda estiver vazio, arraste um dos "Campos disponíveis" até ele.\n\n2) Escolha uma ação (Somar, Subtrair...) e arraste um campo pro quadro azul — é ali que o cálculo é montado.'
+    },
+    {
+        alvo:()=>['[data-tour="condicao"]'],
+        titulo:'Definir condição? (opcional)',
+        texto:'Use só se o cálculo precisar valer apenas em um caso — por exemplo, "somente se a tarifa for maior que zero".\n\nSe não precisar de condição, deixe desmarcado e siga em frente.'
+    },
+    {
+        alvo:p=>[`#w${p}ValorInput`,`#w${p}ValorChip`],
+        titulo:'Usar um número fixo na regra',
+        texto:'Precisa de um número fixo no cálculo (por exemplo, dividir por 1000)? Digite o número na caixinha e arraste "Arrastar valor" pro quadro azul.'
+    },
+    {
+        alvo:p=>[`#w${p}BtnGerar`],
+        titulo:'Pronto! Gerar a regra',
+        texto:'Clique aqui pra gerar o código da regra.\n\nDepois é só copiar, colar no Bsoft TMS e salvar.'
+    }
+];
+function _iniciarTourBuilder(tipo){
+    const prefixo=_prefixoTour(tipo);
+    const passos=_TOUR_PASSOS
+        .map(p=>({...p, seletores:p.alvo(prefixo)}))
+        .filter(p=>p.seletores.every(sel=>document.querySelector(sel)));
+    if(!passos.length)return;
+    _tourEstado={prefixo, passos, indice:0, naoMostrarNovamente:false};
+    _tourRenderPasso();
+}
+function _tourProximoPasso(){
+    if(!_tourEstado)return;
+    if(_tourEstado.indice>=_tourEstado.passos.length-1){ _tourFechar(); return; }
+    _tourEstado.indice++;
+    _tourRenderPasso();
+}
+function _tourPassoAnterior(){
+    if(!_tourEstado||_tourEstado.indice<=0)return;
+    _tourEstado.indice--;
+    _tourRenderPasso();
+}
+function _tourToggleNaoMostrar(marcado){
+    if(_tourEstado)_tourEstado.naoMostrarNovamente=marcado;
+}
+function _tourLimparDom(){
+    document.querySelectorAll('.tour-alvo-ativo').forEach(el=>el.classList.remove('tour-alvo-ativo'));
+    document.querySelectorAll('.tour-dim, .tour-badge, .tour-arrow, .tour-card').forEach(el=>el.remove());
+}
+function _tourFechar(){
+    if(_tourEstado&&_tourEstado.naoMostrarNovamente){
+        try{ localStorage.setItem(_TOUR_LOCALSTORAGE_KEY,'1'); }catch(e){}
+    }
+    _tourLimparDom();
+    _tourEstado=null;
+}
+function _tourRenderPasso(){
+    _tourLimparDom();
+    if(!_tourEstado)return;
+    const passo=_tourEstado.passos[_tourEstado.indice];
+    const alvos=passo.seletores.map(sel=>document.querySelector(sel)).filter(Boolean);
+    if(!alvos.length){ _tourProximoPasso(); return; } // segurança -- se o alvo sumiu do DOM, pula o passo
+    alvos[0].scrollIntoView({block:'center'});
+    alvos.forEach(el=>el.classList.add('tour-alvo-ativo'));
+
+    const rects=alvos.map(el=>el.getBoundingClientRect());
+    const pad=6;
+    const uniao={
+        left:Math.min(...rects.map(r=>r.left))-pad,
+        top:Math.min(...rects.map(r=>r.top))-pad,
+        right:Math.max(...rects.map(r=>r.right))+pad,
+        bottom:Math.max(...rects.map(r=>r.bottom))+pad
+    };
+    const vw=window.innerWidth, vh=window.innerHeight;
+
+    // 4 painéis escurecem tudo, menos a "janela" ao redor do(s) alvo(s) do passo atual
+    const painel=(l,t,w,h)=>{
+        const d=document.createElement('div');
+        d.className='tour-dim';
+        d.style.cssText=`left:${l}px;top:${t}px;width:${Math.max(0,w)}px;height:${Math.max(0,h)}px;`;
+        document.body.appendChild(d);
+    };
+    painel(0,0,vw,uniao.top);
+    painel(0,uniao.bottom,vw,vh-uniao.bottom);
+    painel(0,uniao.top,uniao.left,uniao.bottom-uniao.top);
+    painel(uniao.right,uniao.top,vw-uniao.right,uniao.bottom-uniao.top);
+
+    // selo numerado no canto do destaque
+    const badgeLeft=Math.max(8,uniao.left-6), badgeTop=Math.max(8,uniao.top-14);
+    const badge=document.createElement('div');
+    badge.className='tour-badge';
+    badge.textContent=String(_tourEstado.indice+1);
+    badge.style.cssText=`left:${badgeLeft}px;top:${badgeTop}px;`;
+    document.body.appendChild(badge);
+
+    // seta piscando apontando pro selo -- em cima se tiver espaço, senão embaixo do destaque
+    const temEspacoAcima=uniao.top>90;
+    const seta=document.createElement('div');
+    seta.className='tour-arrow'+(temEspacoAcima?'':' dir-up');
+    seta.textContent=temEspacoAcima?'▼':'▲';
+    seta.style.cssText=`left:${badgeLeft+2}px;top:${temEspacoAcima?(badgeTop-34):(uniao.bottom+8)}px;`;
+    document.body.appendChild(seta);
+
+    // cartão de explicação -- tenta à direita do destaque, depois esquerda, depois embaixo, depois em cima
+    const totalPassos=_tourEstado.passos.length;
+    const card=document.createElement('div');
+    card.className='tour-card';
+    card.innerHTML=`
+        <button class="tour-card-fechar" onclick="_tourFechar()" title="Fechar tutorial">✕</button>
+        <div class="tour-card-passo">Passo ${_tourEstado.indice+1} de ${totalPassos}</div>
+        <div class="tour-card-titulo">${escapeHtml(passo.titulo)}</div>
+        <div class="tour-card-texto">${escapeHtml(passo.texto)}</div>
+        <label class="tour-card-naomostrar"><input type="checkbox" onchange="_tourToggleNaoMostrar(this.checked)" ${_tourEstado.naoMostrarNovamente?'checked':''}> Não mostrar este tutorial novamente</label>
+        <div class="tour-card-rodape">
+            <button class="tour-card-pular" onclick="_tourFechar()">Pular tutorial</button>
+            <div class="tour-card-nav">
+                ${_tourEstado.indice>0?'<button class="tour-card-btn voltar" onclick="_tourPassoAnterior()">◀ Voltar</button>':''}
+                <button class="tour-card-btn proximo" onclick="_tourProximoPasso()">${_tourEstado.indice>=totalPassos-1?'Concluir ✓':'Próximo ▶'}</button>
+            </div>
+        </div>`;
+    document.body.appendChild(card);
+    const cw=card.offsetWidth, ch=card.offsetHeight, gap=16;
+    let cardLeft, cardTop;
+    if(uniao.right+gap+cw<=vw){ cardLeft=uniao.right+gap; cardTop=Math.min(Math.max(8,uniao.top),vh-ch-8); }
+    else if(uniao.left-gap-cw>=0){ cardLeft=uniao.left-gap-cw; cardTop=Math.min(Math.max(8,uniao.top),vh-ch-8); }
+    else if(uniao.bottom+gap+ch<=vh){ cardLeft=Math.min(Math.max(8,uniao.left),vw-cw-8); cardTop=uniao.bottom+gap; }
+    else { cardLeft=Math.min(Math.max(8,uniao.left),vw-cw-8); cardTop=Math.max(8,uniao.top-gap-ch); }
+    card.style.left=cardLeft+'px';
+    card.style.top=cardTop+'px';
 }
 function mostrarWizardRegraDnd(queryOriginal){
     _wizardRegraDndQuery=queryOriginal;
@@ -4204,12 +4416,13 @@ function mostrarWizardRegraDnd(queryOriginal){
     card.innerHTML=`<div style="flex-shrink:0;background:#eff6ff;padding:10px 15px;border-bottom:1px solid #bfdbfe;font-size:12px;color:#1e40af;font-weight:700;">📄 Assistente — Ct-e / Conhecimento <span style="font-weight:500;">(arrastar campos)</span></div>
 <div class="builder-grid">
   <div class="builder-grid-side">
-    <div class="wizard-section">
+    <button id="wCteBtnTutorial" onclick="_iniciarTourBuilder('cte')" class="tour-btn-abrir">🎓 Ver tutorial passo a passo</button>
+    <div class="wizard-section" id="wCteSecaoColar">
       <div class="wizard-label">📋 Colar regra existente do sistema</div>
       <textarea id="wCteColarRegra" class="wizard-textarea" placeholder="Cole aqui uma regra já pronta do sistema..." style="min-height:90px;font-family:monospace;font-size:11.5px;" oninput="_cteColarRegraInput()"></textarea>
       <div style="font-size:10.5px;color:#2563eb;margin-top:4px;">🔄 A área de montagem ao lado é atualizada automaticamente conforme você cola ou edita aqui.</div>
     </div>
-    <div class="wizard-section">
+    <div class="wizard-section" id="wCteSecaoPredefinidas">
       <div class="wizard-label">📋 Regras pré-existentes (padrão)</div>
       <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Clique pra gerar direto, sem IA:</div>
       <div style="display:flex;flex-direction:column;gap:6px;">
@@ -4219,7 +4432,7 @@ function mostrarWizardRegraDnd(queryOriginal){
         <button onclick="_cteUsarPredefinida('peso_cubado_gris')" style="width:100%;text-align:left;padding:9px 12px;background:#f9fafb;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12.5px;color:#374151;font-weight:600;">📐 Frete Calculado Peso KG ou Peso Cubado</button>
       </div>
     </div>
-    <div class="wizard-section">
+    <div class="wizard-section" id="wCteSecaoOpcional">
       <div class="wizard-label">🧱 Monte com um clique (opcional)</div>
       <div style="font-size:11px;color:#6b7280;margin-bottom:4px;">Marque as opções que quiser montar automaticamente na área de montagem. Marcar sobrepõe (sem duplicar) o que já estiver montado pro mesmo "Campo a definir" — o resto continua intacto.</div>
       ${opcoesHtml}
@@ -4232,7 +4445,7 @@ function mostrarWizardRegraDnd(queryOriginal){
     </div>
   </div>
   <div class="builder-grid-main">
-    <div class="wizard-section" style="border:none;position:sticky;top:0;z-index:2;background:var(--surface);border-bottom:2px solid #bfdbfe;box-shadow:0 4px 8px -6px rgba(0,0,0,.2);">
+    <div class="wizard-section" id="wCteSecaoMontar" style="border:none;position:sticky;top:0;z-index:2;background:var(--surface);border-bottom:2px solid #bfdbfe;box-shadow:0 4px 8px -6px rgba(0,0,0,.2);">
       <div class="wizard-label">🧩 Monte sua regra arrastando os campos</div>
       <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#374151;cursor:pointer;margin-bottom:8px;font-weight:600;">
         <input type="checkbox" id="wCteOutrosValoresCheck" onchange="_cteToggleOutrosValores(this.checked)"> Utiliza Valores outros (campos personalizados)?
@@ -4271,14 +4484,14 @@ function mostrarWizardRegraDnd(queryOriginal){
       <div id="wCteRegraPreview" style="padding:8px 10px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;font-family:monospace;font-size:11.5px;color:#374151;margin-bottom:10px;white-space:pre-wrap;word-break:break-all;">// defina um campo (nome + arraste algo pra área de montagem)</div>
       <div style="display:flex;gap:8px;">
         <button onclick="_cteLimparCanvas()" style="padding:8px 14px;background:#fef2f2;color:#991b1b;border:1.5px solid #fecaca;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:600;">🗑️ Limpar tudo</button>
-        <button onclick="_cteGerarRegraCustom()" style="flex:1;padding:8px 14px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;">🚀 Gerar Regra Montada</button>
+        <button id="wCteBtnGerar" onclick="_cteGerarRegraCustom()" style="flex:1;padding:8px 14px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;">🚀 Gerar Regra Montada</button>
       </div>
     </div>
   </div>
 </div>`;
     document.getElementById('builderModalBody').appendChild(card);
     _cteRenderBlocos();
-    _abrirBuilderModal();
+    _abrirBuilderModal('cte');
 }
 function _cteSelecionarAcao(acao){
     window._cteAcaoSel=acao;
@@ -4333,7 +4546,7 @@ function _cteRenderBlocos(){
             ?`<button onclick="_cteRemoverBloco(${idx})" title="Remover esta definição" style="padding:7px 10px;background:#fef2f2;color:#991b1b;border:1.5px solid #fecaca;border-radius:6px;cursor:pointer;font-size:12px;">🗑️</button>`
             :'';
         let condSecao=`<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:#92400e;cursor:pointer;margin:6px 0 8px;">
-                <input type="checkbox" ${bloco.temCondicao?'checked':''} onchange="_cteToggleCondicao(${idx},this.checked)"> Definir condição?
+                <input type="checkbox" ${idx===0?'data-tour="condicao"':''} ${bloco.temCondicao?'checked':''} onchange="_cteToggleCondicao(${idx},this.checked)"> Definir condição?
             </label>`;
         if(bloco.temCondicao){
             const condTermos=(bloco.condicao&&bloco.condicao.termos)||[];
@@ -5010,12 +5223,13 @@ function mostrarWizardContratoDnd(queryOriginal){
     card.innerHTML=`<div style="flex-shrink:0;background:#f5f3ff;padding:10px 15px;border-bottom:1px solid #ddd6fe;font-size:12px;color:#5b21b6;font-weight:700;">🚛 Assistente — Contrato de Frete <span style="font-weight:500;">(arrastar campos)</span></div>
 <div class="builder-grid">
   <div class="builder-grid-side">
-    <div class="wizard-section">
+    <button id="wCfdBtnTutorial" onclick="_iniciarTourBuilder('cfd')" class="tour-btn-abrir">🎓 Ver tutorial passo a passo</button>
+    <div class="wizard-section" id="wCfdSecaoColar">
       <div class="wizard-label">📋 Colar regra existente do sistema</div>
       <textarea id="wCfdColarRegra" class="wizard-textarea" placeholder="Cole aqui uma regra já pronta do sistema..." style="min-height:90px;font-family:monospace;font-size:11.5px;" oninput="_cfdColarRegraInput()"></textarea>
       <div style="font-size:10.5px;color:#7c3aed;margin-top:4px;">🔄 A área de montagem ao lado é atualizada automaticamente conforme você cola ou edita aqui.</div>
     </div>
-    <div class="wizard-section">
+    <div class="wizard-section" id="wCfdSecaoPredefinidas">
       <div class="wizard-label">📋 Regras pré-existentes (padrão)</div>
       <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Clique pra gerar direto, sem IA:</div>
       <div style="display:flex;flex-direction:column;gap:6px;">
@@ -5031,7 +5245,7 @@ function mostrarWizardContratoDnd(queryOriginal){
     </div>
   </div>
   <div class="builder-grid-main">
-    <div class="wizard-section" style="border:none;position:sticky;top:0;z-index:2;background:var(--surface);border-bottom:2px solid #ddd6fe;box-shadow:0 4px 8px -6px rgba(0,0,0,.2);">
+    <div class="wizard-section" id="wCfdSecaoMontar" style="border:none;position:sticky;top:0;z-index:2;background:var(--surface);border-bottom:2px solid #ddd6fe;box-shadow:0 4px 8px -6px rgba(0,0,0,.2);">
       <div class="wizard-label">🧩 Monte sua regra arrastando os campos</div>
       <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#374151;cursor:pointer;margin-bottom:8px;font-weight:600;">
         <input type="checkbox" id="wCfdOutrosValoresCheck" onchange="_cfdToggleOutrosValores(this.checked)"> Utiliza Valores outros (campos personalizados)?
@@ -5070,14 +5284,14 @@ function mostrarWizardContratoDnd(queryOriginal){
       <div id="wCfdPreview" style="padding:8px 10px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;font-family:monospace;font-size:11.5px;color:#374151;margin-bottom:10px;white-space:pre-wrap;word-break:break-all;">// defina um campo (nome + arraste algo pra área de montagem)</div>
       <div style="display:flex;gap:8px;">
         <button onclick="_cfdLimparCanvas()" style="padding:8px 14px;background:#fef2f2;color:#991b1b;border:1.5px solid #fecaca;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:600;">🗑️ Limpar tudo</button>
-        <button onclick="_cfdGerarRegraCustom()" style="flex:1;padding:8px 14px;background:#7c3aed;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;">🚀 Gerar Regra Montada</button>
+        <button id="wCfdBtnGerar" onclick="_cfdGerarRegraCustom()" style="flex:1;padding:8px 14px;background:#7c3aed;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;">🚀 Gerar Regra Montada</button>
       </div>
     </div>
   </div>
 </div>`;
     document.getElementById('builderModalBody').appendChild(card);
     _cfdRenderBlocos();
-    _abrirBuilderModal();
+    _abrirBuilderModal('cfd');
 }
 function _cfdSelecionarAcao(acao){
     window._cfdAcaoSel=acao;
@@ -5132,7 +5346,7 @@ function _cfdRenderBlocos(){
             ?`<button onclick="_cfdRemoverBloco(${idx})" title="Remover esta definição" style="padding:7px 10px;background:#fef2f2;color:#991b1b;border:1.5px solid #fecaca;border-radius:6px;cursor:pointer;font-size:12px;">🗑️</button>`
             :'';
         let condSecao=`<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:#92400e;cursor:pointer;margin:6px 0 8px;">
-                <input type="checkbox" ${bloco.temCondicao?'checked':''} onchange="_cfdToggleCondicao(${idx},this.checked)"> Definir condição?
+                <input type="checkbox" ${idx===0?'data-tour="condicao"':''} ${bloco.temCondicao?'checked':''} onchange="_cfdToggleCondicao(${idx},this.checked)"> Definir condição?
             </label>`;
         if(bloco.temCondicao){
             const condTermos=(bloco.condicao&&bloco.condicao.termos)||[];
@@ -5444,12 +5658,13 @@ function mostrarWizardFaturamento(queryOriginal){
     card.innerHTML=`<div style="flex-shrink:0;background:#ecfdf5;padding:10px 15px;border-bottom:1px solid #a7f3d0;font-size:12px;color:#065f46;font-weight:700;">💰 Assistente — Regra de Faturamento</div>
 <div class="builder-grid">
   <div class="builder-grid-side">
-    <div class="wizard-section">
+    <button id="wFatBtnTutorial" onclick="_iniciarTourBuilder('fat')" class="tour-btn-abrir">🎓 Ver tutorial passo a passo</button>
+    <div class="wizard-section" id="wFatSecaoColar">
       <div class="wizard-label">📋 Colar regra existente do sistema</div>
       <textarea id="wFatColarRegra" class="wizard-textarea" placeholder="Cole aqui uma regra já pronta do sistema..." style="min-height:90px;font-family:monospace;font-size:11.5px;" oninput="_fatColarRegraInput()"></textarea>
       <div style="font-size:10.5px;color:#059669;margin-top:4px;">🔄 A área de montagem ao lado é atualizada automaticamente conforme você cola ou edita aqui.</div>
     </div>
-    <div class="wizard-section">
+    <div class="wizard-section" id="wFatSecaoPredefinidas">
       <div class="wizard-label">📋 Regra pré-existente (padrão)</div>
       <button onclick="_fatUsarPredefinida()" style="width:100%;text-align:left;padding:10px 12px;background:#f9fafb;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-family:monospace;font-size:11.5px;color:#374151;">${FATURAMENTO_REGRA_PADRAO}</button>
     </div>
@@ -5461,7 +5676,7 @@ function mostrarWizardFaturamento(queryOriginal){
     </div>
   </div>
   <div class="builder-grid-main">
-    <div class="wizard-section" style="border:none;position:sticky;top:0;z-index:2;background:var(--surface);border-bottom:2px solid #a7f3d0;box-shadow:0 4px 8px -6px rgba(0,0,0,.2);">
+    <div class="wizard-section" id="wFatSecaoMontar" style="border:none;position:sticky;top:0;z-index:2;background:var(--surface);border-bottom:2px solid #a7f3d0;box-shadow:0 4px 8px -6px rgba(0,0,0,.2);">
       <div class="wizard-label">🧩 Monte sua regra arrastando os campos</div>
       <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#374151;cursor:pointer;margin-bottom:8px;font-weight:600;">
         <input type="checkbox" id="wFatOutrosValoresCheck" onchange="_fatToggleOutrosValores(this.checked)"> Utiliza Valores outros (campos personalizados)?
@@ -5500,14 +5715,14 @@ function mostrarWizardFaturamento(queryOriginal){
       <div id="wFatPreview" style="padding:8px 10px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;font-family:monospace;font-size:11.5px;color:#374151;margin-bottom:10px;white-space:pre-wrap;word-break:break-all;">// defina um campo (nome + arraste algo pra área de montagem)</div>
       <div style="display:flex;gap:8px;">
         <button onclick="_fatLimparCanvas()" style="padding:8px 14px;background:#fef2f2;color:#991b1b;border:1.5px solid #fecaca;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:600;">🗑️ Limpar tudo</button>
-        <button onclick="_fatGerarRegraCustom()" style="flex:1;padding:8px 14px;background:#059669;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;">🚀 Gerar Regra Montada</button>
+        <button id="wFatBtnGerar" onclick="_fatGerarRegraCustom()" style="flex:1;padding:8px 14px;background:#059669;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;">🚀 Gerar Regra Montada</button>
       </div>
     </div>
   </div>
 </div>`;
     document.getElementById('builderModalBody').appendChild(card);
     _fatRenderBlocos();
-    _abrirBuilderModal();
+    _abrirBuilderModal('fat');
 }
 
 // ─── Montador visual (arrastar e soltar) da regra de Faturamento ───
@@ -5898,7 +6113,7 @@ function _fatRenderBlocos(){
             ?`<button onclick="_fatRemoverBloco(${idx})" title="Remover esta definição" style="padding:7px 10px;background:#fef2f2;color:#991b1b;border:1.5px solid #fecaca;border-radius:6px;cursor:pointer;font-size:12px;">🗑️</button>`
             :'';
         let condSecao=`<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:#92400e;cursor:pointer;margin:6px 0 8px;">
-                <input type="checkbox" ${bloco.temCondicao?'checked':''} onchange="_fatToggleCondicao(${idx},this.checked)"> Definir condição?
+                <input type="checkbox" ${idx===0?'data-tour="condicao"':''} ${bloco.temCondicao?'checked':''} onchange="_fatToggleCondicao(${idx},this.checked)"> Definir condição?
             </label>`;
         if(bloco.temCondicao){
             const condTermos=(bloco.condicao&&bloco.condicao.termos)||[];
