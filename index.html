@@ -4175,7 +4175,14 @@ const CTE_OPCOES_MONTAGEM=[
         // entra na exclusividade de 1-por-grupo com as 2 opções acima): é um acréscimo, soma o
         // valorICMS já calculado (por qualquer uma das 2 opções acima, ou já definido de outro
         // jeito) no total da prestação — combinável com qualquer uma delas.
-        {id:'icms_somar', label:'Somar ICMS no Total Prestação', grupoExclusivo:'icms_somar', modo:'somar', campoAlvo:'totalPrestacao', termoNovo:{termo:"obt('valorICMS')", acao:'+'}}
+        {id:'icms_somar', label:'Somar ICMS no Total Prestação', grupoExclusivo:'icms_somar', modo:'somar', campoAlvo:'totalPrestacao', termoNovo:{termo:"obt('valorICMS')", acao:'+'}},
+        // Idem: grupoExclusivo próprio pra poder ficar marcado JUNTO com o cálculo de ICMS (ICMS
+        // Demonstrativo ou Cálculo Inverso) -- não substitui o cálculo, só adiciona os 3 campos de
+        // retenção da Substituição Tributária em cima do que já foi calculado (baseCalculo,
+        // aliquota, valorICMS). modo:'inserirApos' garante que entra logo depois de "valorICMS" --
+        // dentro do bloco do cálculo de ICMS -- em vez de ir parar no final da regra (onde nenhum
+        // dos 3 destinos novos bate com nada que já exista pra servir de referência de posição).
+        {id:'icms_st', label:'Substituição Tributária', grupoExclusivo:'icms_st', modo:'inserirApos', ancoraDestino:'valorICMS', codigo:'def("outrosValores[vBCSTRet]", obt("baseCalculo"));\ndef("outrosValores[pICMSSTRet]", obt("aliquota"));\ndef("outrosValores[vICMSSTRet]", obt("valorICMS"));'}
     ]},
     {titulo:'📋 Tabela de Preços — Fração do Pedágio', itens:[
         {id:'pedagio_peso', label:'Em cima do peso', codigo:'let qtdVezesMultiplica = Math.ceil(obt("merc_quantKg[]") / 100);\nlet vPedagio = tabelaPrecos.percentualPedagio * qtdVezesMultiplica;\ndef("valorPedagioConhecimento", vPedagio);'},
@@ -4276,7 +4283,7 @@ const _TOUR_PASSOS=[
     {
         alvo:p=>[`#w${p}SecaoMontar`,`#w${p}BlocosContainer`],
         titulo:'Monte sua regra arrastando os campos',
-        texto:'1) Se o "Campo a definir" ainda estiver vazio, arraste um dos "Campos disponíveis" até ele.\n\n2) Escolha uma ação (Somar, Subtrair...) e arraste um campo pro quadro azul — é ali que o cálculo é montado.'
+        texto:'1) Se o "Campo a definir" ainda estiver vazio, arraste um dos "Campos disponíveis" até ele.\n\n2) Arraste uma ação (Somar, Subtrair...) pra área de montagem pra deixar ela ativa, depois arraste um campo pro quadro azul — é ali que o cálculo é montado.'
     },
     {
         alvo:()=>['[data-tour="condicao"]'],
@@ -4404,7 +4411,7 @@ function _tourRenderPasso(){
 }
 function mostrarWizardRegraDnd(queryOriginal){
     _wizardRegraDndQuery=queryOriginal;
-    window._cteAcaoSel='+';
+    window._cteAcaoSel=null;
     window._cteBlocos=[{destino:'',expr:null}];
     window._cteExtras=[];
     window._cteOpcionaisBase=null;
@@ -4453,28 +4460,30 @@ function mostrarWizardRegraDnd(queryOriginal){
   <div class="builder-grid-main">
     <div class="wizard-section" id="wCteSecaoMontar" style="border:none;position:sticky;top:0;z-index:2;background:var(--surface);border-bottom:2px solid #bfdbfe;box-shadow:0 4px 8px -6px rgba(0,0,0,.2);">
       <div class="wizard-label">🧩 Monte sua regra arrastando os campos</div>
-      <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#374151;cursor:pointer;margin-bottom:8px;font-weight:600;">
-        <input type="checkbox" id="wCteOutrosValoresCheck" onchange="_cteToggleOutrosValores(this.checked)"> Utiliza Valores outros (campos personalizados)?
-      </label>
-      <div id="wCteOutrosValoresWrap" style="display:none;margin-bottom:10px;">
-        <input type="text" id="wCteOutrosValoresInput" oninput="_cteRenderPalette()" placeholder="coloque aqui o nome interno dos campos separados por vírgula" style="width:100%;padding:7px 10px;border:1.5px solid #f9a8d4;border-radius:6px;font-size:12px;font-family:monospace;background:#fdf2f8;color:#9d174d;">
-        <div id="wCteOutrosValoresChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;max-height:70px;overflow-y:auto;"></div>
-      </div>
-      <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">1. Selecione a ação:</div>
+      <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">1. Clique ou arraste a ação pra ativar (fica destacada, vale pro próximo campo arrastado):</div>
       <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
-        <button class="_cte-acao-btn" data-acao="+" onclick="_cteSelecionarAcao('+')" style="padding:8px 14px;background:var(--primary);color:white;border:2px solid var(--primary);border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➕ Somar</button>
-        <button class="_cte-acao-btn" data-acao="-" onclick="_cteSelecionarAcao('-')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➖ Subtrair</button>
-        <button class="_cte-acao-btn" data-acao="*" onclick="_cteSelecionarAcao('*')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">✖️ Multiplicar</button>
-        <button class="_cte-acao-btn" data-acao="/" onclick="_cteSelecionarAcao('/')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➗ Dividir</button>
+        <button class="_cte-acao-btn" data-acao="+" onclick="_cteSelecionarAcao('+')" draggable="true" ondragstart="_cteAcaoDragStart(event,'+')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➕ Somar</button>
+        <button class="_cte-acao-btn" data-acao="-" onclick="_cteSelecionarAcao('-')" draggable="true" ondragstart="_cteAcaoDragStart(event,'-')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➖ Subtrair</button>
+        <button class="_cte-acao-btn" data-acao="*" onclick="_cteSelecionarAcao('*')" draggable="true" ondragstart="_cteAcaoDragStart(event,'*')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">✖️ Multiplicar</button>
+        <button class="_cte-acao-btn" data-acao="/" onclick="_cteSelecionarAcao('/')" draggable="true" ondragstart="_cteAcaoDragStart(event,'/')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➗ Dividir</button>
         <span style="width:1px;background:#e5e7eb;margin:2px 2px;"></span>
-        <button class="_cte-acao-btn" data-acao=">" onclick="_cteSelecionarAcao('&gt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt; Maior que</button>
-        <button class="_cte-acao-btn" data-acao="<" onclick="_cteSelecionarAcao('&lt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt; Menor que</button>
-        <button class="_cte-acao-btn" data-acao="==" onclick="_cteSelecionarAcao('==')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">== Igual</button>
-        <button class="_cte-acao-btn" data-acao=">=" onclick="_cteSelecionarAcao('&gt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt;= Maior ou igual</button>
-        <button class="_cte-acao-btn" data-acao="<=" onclick="_cteSelecionarAcao('&lt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt;= Menor ou igual</button>
+        <button class="_cte-acao-btn" data-acao=">" onclick="_cteSelecionarAcao('&gt;')" draggable="true" ondragstart="_cteAcaoDragStart(event,'&gt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt; Maior que</button>
+        <button class="_cte-acao-btn" data-acao="<" onclick="_cteSelecionarAcao('&lt;')" draggable="true" ondragstart="_cteAcaoDragStart(event,'&lt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt; Menor que</button>
+        <button class="_cte-acao-btn" data-acao="==" onclick="_cteSelecionarAcao('==')" draggable="true" ondragstart="_cteAcaoDragStart(event,'==')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">== Igual</button>
+        <button class="_cte-acao-btn" data-acao=">=" onclick="_cteSelecionarAcao('&gt;=')" draggable="true" ondragstart="_cteAcaoDragStart(event,'&gt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt;= Maior ou igual</button>
+        <button class="_cte-acao-btn" data-acao="<=" onclick="_cteSelecionarAcao('&lt;=')" draggable="true" ondragstart="_cteAcaoDragStart(event,'&lt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt;= Menor ou igual</button>
       </div>
       <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">2. Campos disponíveis (arraste para a área abaixo):</div>
       <div id="wCteCamposPalette" style="display:flex;flex-wrap:wrap;gap:6px;padding:10px;border:1.5px dashed #d1d5db;border-radius:8px;margin-bottom:10px;max-height:170px;overflow-y:auto;">${chipsHtml}</div>
+      <div style="background:#fdf2f8;border:1.5px solid #f9a8d4;border-radius:8px;padding:10px 12px;margin-bottom:10px;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#9d174d;cursor:pointer;font-weight:800;text-transform:uppercase;letter-spacing:.3px;">
+          <input type="checkbox" id="wCteOutrosValoresCheck" onchange="_cteToggleOutrosValores(this.checked)"> Utiliza Valores outros (campos personalizados)?
+        </label>
+        <div id="wCteOutrosValoresWrap" style="display:none;margin-top:8px;">
+          <input type="text" id="wCteOutrosValoresInput" oninput="_cteRenderPalette()" placeholder="coloque aqui o nome interno dos campos separados por vírgula" style="width:100%;padding:7px 10px;border:1.5px solid #f9a8d4;border-radius:6px;font-size:12px;font-family:monospace;background:white;color:#9d174d;">
+          <div id="wCteOutrosValoresChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;max-height:70px;overflow-y:auto;"></div>
+        </div>
+      </div>
       <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Ou digite um valor numérico (ex: 100, 0.02) e arraste-o pra área de montagem — útil pra dividir/multiplicar um campo por um número fixo:</div>
       <div style="display:flex;gap:8px;align-items:center;">
         <input type="text" id="wCteValorInput" inputmode="decimal" placeholder="Ex: 100" oninput="_cteValorInputChange()" style="width:110px;padding:7px 10px;border:1.5px solid #d1d5db;border-radius:6px;font-size:12px;font-family:monospace;">
@@ -4507,6 +4516,18 @@ function _cteSelecionarAcao(acao){
         b.style.color=ativo?'white':'#374151';
         b.style.borderColor=ativo?'var(--primary)':'#e5e7eb';
     });
+    // Atualiza também o selo "Ação ativa"/aviso dentro dos quadros de soltar -- sem isso, clicar
+    // no botão (em vez de arrastar) deixava o selo desatualizado, já que só o clique não redesenha
+    // os blocos sozinho.
+    if(document.getElementById('wCteBlocosContainer'))_cteRenderBlocos();
+}
+// Arrastar uma ação (em vez de clicar) tem o MESMO efeito de _cteSelecionarAcao -- só ativa ela
+// (destaca na fileira) pro próximo campo/valor arrastado usar. Os handlers de drop (canvas,
+// condição, destino) reconhecem o prefixo "acao:" e chamam _cteSelecionarAcao direto, em vez de
+// tentar montar um termo com isso.
+function _cteAcaoDragStart(e,acao){
+    e.dataTransfer.setData('text/plain','acao:'+acao);
+    e.dataTransfer.effectAllowed='copy';
 }
 function _cteDragStart(e){
     e.dataTransfer.setData('text/plain','campo:'+e.target.dataset.campo);
@@ -4534,12 +4555,12 @@ function _cteRenderBlocos(){
         let canvasConteudo;
         if(bloco.termos&&bloco.termos.length){
             canvasConteudo=bloco.termos.map((t,tIdx)=>{
-                const sep=tIdx>0?`<span style="font-size:13px;color:#2563eb;font-weight:700;margin:0 3px;">${escapeHtml(t.acao||'')}</span>`:'';
+                const sep=tIdx>0?`<span style="font-size:11.5px;color:#2563eb;font-weight:700;margin:0 3px;">${escapeHtml(_ACAO_NOMES[t.acao]||t.acao||'')}</span>`:'';
                 const label=_termoParaLabel(t.termo);
                 const daTabela=_ehCampoTabelaPrecos(t.termo), daCte=_ehCampoCte(t.termo), daOutros=_ehCampoOutrosValores(t.termo);
                 const corBorda=daOutros?'#f9a8d4':daTabela?'#fbbf24':daCte?'#86efac':'#93c5fd', corFundo=daOutros?'#fdf2f8':daTabela?'#fffbeb':daCte?'#f0fdf4':'white', corTexto=daOutros?'#9d174d':daTabela?'#92400e':daCte?'#166534':'#1e40af', corX=daOutros?'#be185d':daTabela?'#b45309':daCte?'#15803d':'#2563eb';
                 return `${sep}<span title="${escapeHtml(t.termo)}" style="display:inline-flex;align-items:center;gap:3px;padding:3px 4px 3px 9px;margin:2px 0;background:${corFundo};border:1px solid ${corBorda};border-radius:12px;font-size:11.5px;font-family:monospace;color:${corTexto};">${escapeHtml(label)}<button onclick="_cteRemoverTermo(${idx},${tIdx})" title="Remover este item" style="border:none;background:none;color:${corX};cursor:pointer;font-size:13px;padding:0 4px;line-height:1;font-weight:700;">✕</button></span>`;
-            }).join('');
+            }).join('')+_acaoPreviaTrailingHtml(window._cteAcaoSel,'#2563eb');
         }else if(bloco.expr){
             canvasConteudo=`<span style="font-family:monospace;font-size:12.5px;color:#1e40af;word-break:break-all;">${escapeHtml(bloco.expr)}</span>`;
         }else{
@@ -4558,16 +4579,17 @@ function _cteRenderBlocos(){
             const condTermos=(bloco.condicao&&bloco.condicao.termos)||[];
             const condConteudo=condTermos.length
                 ?condTermos.map((t,tIdx)=>{
-                    const sep=tIdx>0?`<span style="font-size:13px;color:#b45309;font-weight:700;margin:0 3px;">${escapeHtml(t.acao||'')}</span>`:'';
+                    const sep=tIdx>0?`<span style="font-size:11.5px;color:#b45309;font-weight:700;margin:0 3px;">${escapeHtml(_ACAO_NOMES[t.acao]||t.acao||'')}</span>`:'';
                     const label=_termoParaLabel(t.termo);
                     const daTabela=_ehCampoTabelaPrecos(t.termo), daCte=_ehCampoCte(t.termo), daOutros=_ehCampoOutrosValores(t.termo);
                     const corBorda=daOutros?'#f9a8d4':daTabela?'#fbbf24':daCte?'#86efac':'#fcd34d', corFundo=daOutros?'#fce7f3':daTabela?'#fef3c7':daCte?'#dcfce7':'white', corTexto=daOutros?'#9d174d':daCte?'#166534':'#92400e', corX=daOutros?'#be185d':daCte?'#15803d':'#b45309';
                     return `${sep}<span title="${escapeHtml(t.termo)}" style="display:inline-flex;align-items:center;gap:3px;padding:3px 4px 3px 9px;margin:2px 0;background:${corFundo};border:1px solid ${corBorda};border-radius:12px;font-size:11.5px;font-family:monospace;color:${corTexto};">${escapeHtml(label)}<button onclick="_cteRemoverTermoCondicao(${idx},${tIdx})" title="Remover este item" style="border:none;background:none;color:${corX};cursor:pointer;font-size:13px;padding:0 4px;line-height:1;font-weight:700;">✕</button></span>`;
-                }).join('')
+                }).join('')+_acaoPreviaTrailingHtml(window._cteAcaoSel,'#b45309')
                 :`<span style="color:#b45309;font-size:12px;">Arraste campos aqui pra montar a condição</span>`;
             condSecao+=`<div style="margin:0 0 10px;padding-left:8px;border-left:3px solid #fbbf24;">
                 <div style="font-size:10.5px;color:#92400e;margin-bottom:4px;">Condição — SE isso for verdade, o campo é definido:</div>
-                <div ondragover="_cteCanvasDragOver(event)" ondrop="_cteCondicaoDrop(event,${idx})" style="min-height:44px;padding:8px;border:1.5px dashed #f59e0b;border-radius:8px;background:#fffbeb;display:flex;align-items:center;flex-wrap:wrap;">
+                <div ondragover="_cteCanvasDragOver(event)" ondrop="_cteCondicaoDrop(event,${idx})" style="position:relative;min-height:44px;padding:8px;border:1.5px dashed #f59e0b;border-radius:8px;background:#fffbeb;display:flex;align-items:center;flex-wrap:wrap;">
+                    ${_acaoBadgeHtml(window._cteAcaoSel,'#fbbf24','#92400e')}
                     ${condConteudo}
                 </div>
             </div>`;
@@ -4581,7 +4603,8 @@ function _cteRenderBlocos(){
                 ${btnRemover}
             </div>
             ${condSecao}
-            <div ondragover="_cteCanvasDragOver(event)" ondrop="_cteCanvasDrop(event,${idx})" style="min-height:50px;padding:10px;border:1.5px dashed #3b82f6;border-radius:8px;background:#eff6ff;display:flex;align-items:center;flex-wrap:wrap;">
+            <div ondragover="_cteCanvasDragOver(event)" ondrop="_cteCanvasDrop(event,${idx})" style="position:relative;min-height:50px;padding:10px;border:1.5px dashed #3b82f6;border-radius:8px;background:#eff6ff;display:flex;align-items:center;flex-wrap:wrap;">
+                ${_acaoBadgeHtml(window._cteAcaoSel,'#93c5fd','#1e40af')}
                 ${canvasConteudo}
             </div>
             ${btnLimparExpr}
@@ -4595,11 +4618,13 @@ function _cteCanvasDrop(e,idx){
     e.preventDefault();
     const raw=e.dataTransfer.getData('text/plain');
     if(!raw)return;
+    if(raw.startsWith('acao:')){ _cteSelecionarAcao(raw.slice(5)); _cteRenderBlocos(); return; }
     const termo=_fatTermoParaExpressao(raw);
     if(termo===null)return;
     const bloco=window._cteBlocos[idx];
     _seedTermosBase(bloco);
-    bloco.termos.push({termo, acao: bloco.termos.length?(window._cteAcaoSel||'+'):null});
+    if(bloco.termos.length&&!window._cteAcaoSel){ alert('Selecione uma ação antes de arrastar outro campo.'); return; }
+    bloco.termos.push({termo, acao: bloco.termos.length?window._cteAcaoSel:null});
     _recalcExprDeTermos(bloco);
     _cteRenderBlocos();
 }
@@ -4618,11 +4643,13 @@ function _cteCondicaoDrop(e,idx){
     e.preventDefault();
     const raw=e.dataTransfer.getData('text/plain');
     if(!raw)return;
+    if(raw.startsWith('acao:')){ _cteSelecionarAcao(raw.slice(5)); _cteRenderBlocos(); return; }
     const termo=_fatTermoParaExpressao(raw);
     if(termo===null)return;
     const bloco=window._cteBlocos[idx];
     if(!bloco.condicao)bloco.condicao={termos:[],expr:null};
-    bloco.condicao.termos.push({termo, acao: bloco.condicao.termos.length?(window._cteAcaoSel||'+'):null});
+    if(bloco.condicao.termos.length&&!window._cteAcaoSel){ alert('Selecione uma ação antes de arrastar outro campo.'); return; }
+    bloco.condicao.termos.push({termo, acao: bloco.condicao.termos.length?window._cteAcaoSel:null});
     _recalcExprDeTermos(bloco.condicao);
     _cteRenderBlocos();
 }
@@ -4638,6 +4665,7 @@ function _cteDestinoDrop(e,idx){
     e.preventDefault();
     const raw=e.dataTransfer.getData('text/plain');
     if(!raw)return;
+    if(raw.startsWith('acao:')){ _cteSelecionarAcao(raw.slice(5)); _cteRenderBlocos(); return; }
     const nome=raw.startsWith('campo:')?raw.slice(6):raw.startsWith('valor:')?raw.slice(6):raw;
     window._cteBlocos[idx].destino=nome;
     _cteRenderBlocos();
@@ -4822,6 +4850,8 @@ function _cteAplicarOpcionais(){
             if(chk && chk.checked){
                 if(item.modo==='somar'){
                     ({blocos,extras}=_aplicarSomaTermo(blocos,extras,item.campoAlvo,item.termoNovo));
+                }else if(item.modo==='inserirApos'){
+                    ({blocos,extras}=_inserirOpcaoAposAncora(blocos,extras,item.codigo,item.ancoraDestino));
                 }else{
                     ({blocos,extras}=_mesclarOpcaoRegra(blocos,extras,item.codigo));
                 }
@@ -5218,7 +5248,7 @@ function _cfdToggleOutrosValores(marcado){
 }
 function mostrarWizardContratoDnd(queryOriginal){
     _wizardContratoDndQuery=queryOriginal;
-    window._cfdAcaoSel='+';
+    window._cfdAcaoSel=null;
     window._cfdBlocos=[{destino:'',expr:null}];
     window._cfdExtras=[];
     document.getElementById('builderModalBody').innerHTML='';
@@ -5254,28 +5284,30 @@ function mostrarWizardContratoDnd(queryOriginal){
   <div class="builder-grid-main">
     <div class="wizard-section" id="wCfdSecaoMontar" style="border:none;position:sticky;top:0;z-index:2;background:var(--surface);border-bottom:2px solid #ddd6fe;box-shadow:0 4px 8px -6px rgba(0,0,0,.2);">
       <div class="wizard-label">🧩 Monte sua regra arrastando os campos</div>
-      <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#374151;cursor:pointer;margin-bottom:8px;font-weight:600;">
-        <input type="checkbox" id="wCfdOutrosValoresCheck" onchange="_cfdToggleOutrosValores(this.checked)"> Utiliza Valores outros (campos personalizados)?
-      </label>
-      <div id="wCfdOutrosValoresWrap" style="display:none;margin-bottom:10px;">
-        <input type="text" id="wCfdOutrosValoresInput" oninput="_cfdRenderPalette()" placeholder="coloque aqui o nome interno dos campos separados por vírgula" style="width:100%;padding:7px 10px;border:1.5px solid #f9a8d4;border-radius:6px;font-size:12px;font-family:monospace;background:#fdf2f8;color:#9d174d;">
-        <div id="wCfdOutrosValoresChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;max-height:70px;overflow-y:auto;"></div>
-      </div>
-      <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">1. Selecione a ação:</div>
+      <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">1. Clique ou arraste a ação pra ativar (fica destacada, vale pro próximo campo arrastado):</div>
       <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
-        <button class="_cfd-acao-btn" data-acao="+" onclick="_cfdSelecionarAcao('+')" style="padding:8px 14px;background:var(--primary);color:white;border:2px solid var(--primary);border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➕ Somar</button>
-        <button class="_cfd-acao-btn" data-acao="-" onclick="_cfdSelecionarAcao('-')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➖ Subtrair</button>
-        <button class="_cfd-acao-btn" data-acao="*" onclick="_cfdSelecionarAcao('*')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">✖️ Multiplicar</button>
-        <button class="_cfd-acao-btn" data-acao="/" onclick="_cfdSelecionarAcao('/')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➗ Dividir</button>
+        <button class="_cfd-acao-btn" data-acao="+" onclick="_cfdSelecionarAcao('+')" draggable="true" ondragstart="_cfdAcaoDragStart(event,'+')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➕ Somar</button>
+        <button class="_cfd-acao-btn" data-acao="-" onclick="_cfdSelecionarAcao('-')" draggable="true" ondragstart="_cfdAcaoDragStart(event,'-')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➖ Subtrair</button>
+        <button class="_cfd-acao-btn" data-acao="*" onclick="_cfdSelecionarAcao('*')" draggable="true" ondragstart="_cfdAcaoDragStart(event,'*')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">✖️ Multiplicar</button>
+        <button class="_cfd-acao-btn" data-acao="/" onclick="_cfdSelecionarAcao('/')" draggable="true" ondragstart="_cfdAcaoDragStart(event,'/')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➗ Dividir</button>
         <span style="width:1px;background:#e5e7eb;margin:2px 2px;"></span>
-        <button class="_cfd-acao-btn" data-acao=">" onclick="_cfdSelecionarAcao('&gt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt; Maior que</button>
-        <button class="_cfd-acao-btn" data-acao="<" onclick="_cfdSelecionarAcao('&lt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt; Menor que</button>
-        <button class="_cfd-acao-btn" data-acao="==" onclick="_cfdSelecionarAcao('==')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">== Igual</button>
-        <button class="_cfd-acao-btn" data-acao=">=" onclick="_cfdSelecionarAcao('&gt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt;= Maior ou igual</button>
-        <button class="_cfd-acao-btn" data-acao="<=" onclick="_cfdSelecionarAcao('&lt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt;= Menor ou igual</button>
+        <button class="_cfd-acao-btn" data-acao=">" onclick="_cfdSelecionarAcao('&gt;')" draggable="true" ondragstart="_cfdAcaoDragStart(event,'&gt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt; Maior que</button>
+        <button class="_cfd-acao-btn" data-acao="<" onclick="_cfdSelecionarAcao('&lt;')" draggable="true" ondragstart="_cfdAcaoDragStart(event,'&lt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt; Menor que</button>
+        <button class="_cfd-acao-btn" data-acao="==" onclick="_cfdSelecionarAcao('==')" draggable="true" ondragstart="_cfdAcaoDragStart(event,'==')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">== Igual</button>
+        <button class="_cfd-acao-btn" data-acao=">=" onclick="_cfdSelecionarAcao('&gt;=')" draggable="true" ondragstart="_cfdAcaoDragStart(event,'&gt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt;= Maior ou igual</button>
+        <button class="_cfd-acao-btn" data-acao="<=" onclick="_cfdSelecionarAcao('&lt;=')" draggable="true" ondragstart="_cfdAcaoDragStart(event,'&lt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt;= Menor ou igual</button>
       </div>
       <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">2. Campos disponíveis (arraste para a área abaixo):</div>
       <div id="wCfdCamposPalette" style="display:flex;flex-wrap:wrap;gap:6px;padding:10px;border:1.5px dashed #d1d5db;border-radius:8px;margin-bottom:10px;max-height:170px;overflow-y:auto;">${chipsHtml}</div>
+      <div style="background:#fdf2f8;border:1.5px solid #f9a8d4;border-radius:8px;padding:10px 12px;margin-bottom:10px;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#9d174d;cursor:pointer;font-weight:800;text-transform:uppercase;letter-spacing:.3px;">
+          <input type="checkbox" id="wCfdOutrosValoresCheck" onchange="_cfdToggleOutrosValores(this.checked)"> Utiliza Valores outros (campos personalizados)?
+        </label>
+        <div id="wCfdOutrosValoresWrap" style="display:none;margin-top:8px;">
+          <input type="text" id="wCfdOutrosValoresInput" oninput="_cfdRenderPalette()" placeholder="coloque aqui o nome interno dos campos separados por vírgula" style="width:100%;padding:7px 10px;border:1.5px solid #f9a8d4;border-radius:6px;font-size:12px;font-family:monospace;background:white;color:#9d174d;">
+          <div id="wCfdOutrosValoresChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;max-height:70px;overflow-y:auto;"></div>
+        </div>
+      </div>
       <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Ou digite um valor numérico (ex: 100, 0.02) e arraste-o pra área de montagem — útil pra dividir/multiplicar um campo por um número fixo:</div>
       <div style="display:flex;gap:8px;align-items:center;">
         <input type="text" id="wCfdValorInput" inputmode="decimal" placeholder="Ex: 100" oninput="_cfdValorInputChange()" style="width:110px;padding:7px 10px;border:1.5px solid #d1d5db;border-radius:6px;font-size:12px;font-family:monospace;">
@@ -5308,6 +5340,11 @@ function _cfdSelecionarAcao(acao){
         b.style.color=ativo?'white':'#374151';
         b.style.borderColor=ativo?'var(--primary)':'#e5e7eb';
     });
+    if(document.getElementById('wCfdBlocosContainer'))_cfdRenderBlocos();
+}
+function _cfdAcaoDragStart(e,acao){
+    e.dataTransfer.setData('text/plain','acao:'+acao);
+    e.dataTransfer.effectAllowed='copy';
 }
 function _cfdDragStart(e){
     e.dataTransfer.setData('text/plain','campo:'+e.target.dataset.campo);
@@ -5335,12 +5372,12 @@ function _cfdRenderBlocos(){
         let canvasConteudo;
         if(bloco.termos&&bloco.termos.length){
             canvasConteudo=bloco.termos.map((t,tIdx)=>{
-                const sep=tIdx>0?`<span style="font-size:13px;color:#7c3aed;font-weight:700;margin:0 3px;">${escapeHtml(t.acao||'')}</span>`:'';
+                const sep=tIdx>0?`<span style="font-size:11.5px;color:#7c3aed;font-weight:700;margin:0 3px;">${escapeHtml(_ACAO_NOMES[t.acao]||t.acao||'')}</span>`:'';
                 const label=_termoParaLabel(t.termo);
                 const daOutros=_ehCampoOutrosValores(t.termo);
                 const corBorda=daOutros?'#f9a8d4':'#c4b5fd', corFundo=daOutros?'#fdf2f8':'white', corTexto=daOutros?'#9d174d':'#5b21b6', corX=daOutros?'#be185d':'#9333ea';
                 return `${sep}<span title="${escapeHtml(t.termo)}" style="display:inline-flex;align-items:center;gap:3px;padding:3px 4px 3px 9px;margin:2px 0;background:${corFundo};border:1px solid ${corBorda};border-radius:12px;font-size:11.5px;font-family:monospace;color:${corTexto};">${escapeHtml(label)}<button onclick="_cfdRemoverTermo(${idx},${tIdx})" title="Remover este item" style="border:none;background:none;color:${corX};cursor:pointer;font-size:13px;padding:0 4px;line-height:1;font-weight:700;">✕</button></span>`;
-            }).join('');
+            }).join('')+_acaoPreviaTrailingHtml(window._cfdAcaoSel,'#7c3aed');
         }else if(bloco.expr){
             canvasConteudo=`<span style="font-family:monospace;font-size:12.5px;color:#5b21b6;word-break:break-all;">${escapeHtml(bloco.expr)}</span>`;
         }else{
@@ -5359,16 +5396,17 @@ function _cfdRenderBlocos(){
             const condTermos=(bloco.condicao&&bloco.condicao.termos)||[];
             const condConteudo=condTermos.length
                 ?condTermos.map((t,tIdx)=>{
-                    const sep=tIdx>0?`<span style="font-size:13px;color:#b45309;font-weight:700;margin:0 3px;">${escapeHtml(t.acao||'')}</span>`:'';
+                    const sep=tIdx>0?`<span style="font-size:11.5px;color:#b45309;font-weight:700;margin:0 3px;">${escapeHtml(_ACAO_NOMES[t.acao]||t.acao||'')}</span>`:'';
                     const label=_termoParaLabel(t.termo);
                     const daOutros=_ehCampoOutrosValores(t.termo);
                     const corBorda=daOutros?'#f9a8d4':'#fcd34d', corFundo=daOutros?'#fce7f3':'white', corTexto=daOutros?'#9d174d':'#92400e', corX=daOutros?'#be185d':'#b45309';
                     return `${sep}<span title="${escapeHtml(t.termo)}" style="display:inline-flex;align-items:center;gap:3px;padding:3px 4px 3px 9px;margin:2px 0;background:${corFundo};border:1px solid ${corBorda};border-radius:12px;font-size:11.5px;font-family:monospace;color:${corTexto};">${escapeHtml(label)}<button onclick="_cfdRemoverTermoCondicao(${idx},${tIdx})" title="Remover este item" style="border:none;background:none;color:${corX};cursor:pointer;font-size:13px;padding:0 4px;line-height:1;font-weight:700;">✕</button></span>`;
-                }).join('')
+                }).join('')+_acaoPreviaTrailingHtml(window._cfdAcaoSel,'#b45309')
                 :`<span style="color:#b45309;font-size:12px;">Arraste campos aqui pra montar a condição</span>`;
             condSecao+=`<div style="margin:0 0 10px;padding-left:8px;border-left:3px solid #fbbf24;">
                 <div style="font-size:10.5px;color:#92400e;margin-bottom:4px;">Condição — SE isso for verdade, o campo é definido:</div>
-                <div ondragover="_cfdCanvasDragOver(event)" ondrop="_cfdCondicaoDrop(event,${idx})" style="min-height:44px;padding:8px;border:1.5px dashed #f59e0b;border-radius:8px;background:#fffbeb;display:flex;align-items:center;flex-wrap:wrap;">
+                <div ondragover="_cfdCanvasDragOver(event)" ondrop="_cfdCondicaoDrop(event,${idx})" style="position:relative;min-height:44px;padding:8px;border:1.5px dashed #f59e0b;border-radius:8px;background:#fffbeb;display:flex;align-items:center;flex-wrap:wrap;">
+                    ${_acaoBadgeHtml(window._cfdAcaoSel,'#fbbf24','#92400e')}
                     ${condConteudo}
                 </div>
             </div>`;
@@ -5382,7 +5420,8 @@ function _cfdRenderBlocos(){
                 ${btnRemover}
             </div>
             ${condSecao}
-            <div ondragover="_cfdCanvasDragOver(event)" ondrop="_cfdCanvasDrop(event,${idx})" style="min-height:50px;padding:10px;border:1.5px dashed #7c3aed;border-radius:8px;background:#f5f3ff;display:flex;align-items:center;flex-wrap:wrap;">
+            <div ondragover="_cfdCanvasDragOver(event)" ondrop="_cfdCanvasDrop(event,${idx})" style="position:relative;min-height:50px;padding:10px;border:1.5px dashed #7c3aed;border-radius:8px;background:#f5f3ff;display:flex;align-items:center;flex-wrap:wrap;">
+                ${_acaoBadgeHtml(window._cfdAcaoSel,'#c4b5fd','#5b21b6')}
                 ${canvasConteudo}
             </div>
             ${btnLimparExpr}
@@ -5396,11 +5435,13 @@ function _cfdCanvasDrop(e,idx){
     e.preventDefault();
     const raw=e.dataTransfer.getData('text/plain');
     if(!raw)return;
+    if(raw.startsWith('acao:')){ _cfdSelecionarAcao(raw.slice(5)); _cfdRenderBlocos(); return; }
     const termo=_fatTermoParaExpressao(raw);
     if(termo===null)return;
     const bloco=window._cfdBlocos[idx];
     _seedTermosBase(bloco);
-    bloco.termos.push({termo, acao: bloco.termos.length?(window._cfdAcaoSel||'+'):null});
+    if(bloco.termos.length&&!window._cfdAcaoSel){ alert('Selecione uma ação antes de arrastar outro campo.'); return; }
+    bloco.termos.push({termo, acao: bloco.termos.length?window._cfdAcaoSel:null});
     _recalcExprDeTermos(bloco);
     _cfdRenderBlocos();
 }
@@ -5419,11 +5460,13 @@ function _cfdCondicaoDrop(e,idx){
     e.preventDefault();
     const raw=e.dataTransfer.getData('text/plain');
     if(!raw)return;
+    if(raw.startsWith('acao:')){ _cfdSelecionarAcao(raw.slice(5)); _cfdRenderBlocos(); return; }
     const termo=_fatTermoParaExpressao(raw);
     if(termo===null)return;
     const bloco=window._cfdBlocos[idx];
     if(!bloco.condicao)bloco.condicao={termos:[],expr:null};
-    bloco.condicao.termos.push({termo, acao: bloco.condicao.termos.length?(window._cfdAcaoSel||'+'):null});
+    if(bloco.condicao.termos.length&&!window._cfdAcaoSel){ alert('Selecione uma ação antes de arrastar outro campo.'); return; }
+    bloco.condicao.termos.push({termo, acao: bloco.condicao.termos.length?window._cfdAcaoSel:null});
     _recalcExprDeTermos(bloco.condicao);
     _cfdRenderBlocos();
 }
@@ -5439,6 +5482,7 @@ function _cfdDestinoDrop(e,idx){
     e.preventDefault();
     const raw=e.dataTransfer.getData('text/plain');
     if(!raw)return;
+    if(raw.startsWith('acao:')){ _cfdSelecionarAcao(raw.slice(5)); _cfdRenderBlocos(); return; }
     const nome=raw.startsWith('campo:')?raw.slice(6):raw.startsWith('valor:')?raw.slice(6):raw;
     window._cfdBlocos[idx].destino=nome;
     _cfdRenderBlocos();
@@ -5673,7 +5717,7 @@ function _fatToggleOutrosValores(marcado){
 }
 function mostrarWizardFaturamento(queryOriginal){
     _wizardFaturamentoQuery=queryOriginal;
-    window._fatAcaoSel='+';
+    window._fatAcaoSel=null;
     window._fatBlocos=[{destino:'',expr:null}];
     window._fatExtras=[];
     document.getElementById('builderModalBody').innerHTML='';
@@ -5704,28 +5748,30 @@ function mostrarWizardFaturamento(queryOriginal){
   <div class="builder-grid-main">
     <div class="wizard-section" id="wFatSecaoMontar" style="border:none;position:sticky;top:0;z-index:2;background:var(--surface);border-bottom:2px solid #a7f3d0;box-shadow:0 4px 8px -6px rgba(0,0,0,.2);">
       <div class="wizard-label">🧩 Monte sua regra arrastando os campos</div>
-      <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#374151;cursor:pointer;margin-bottom:8px;font-weight:600;">
-        <input type="checkbox" id="wFatOutrosValoresCheck" onchange="_fatToggleOutrosValores(this.checked)"> Utiliza Valores outros (campos personalizados)?
-      </label>
-      <div id="wFatOutrosValoresWrap" style="display:none;margin-bottom:10px;">
-        <input type="text" id="wFatOutrosValoresInput" oninput="_fatRenderPalette()" placeholder="coloque aqui o nome interno dos campos separados por vírgula" style="width:100%;padding:7px 10px;border:1.5px solid #f9a8d4;border-radius:6px;font-size:12px;font-family:monospace;background:#fdf2f8;color:#9d174d;">
-        <div id="wFatOutrosValoresChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;max-height:70px;overflow-y:auto;"></div>
-      </div>
-      <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">1. Selecione a ação:</div>
+      <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">1. Clique ou arraste a ação pra ativar (fica destacada, vale pro próximo campo arrastado):</div>
       <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
-        <button class="_fat-acao-btn" data-acao="+" onclick="_fatSelecionarAcao('+')" style="padding:8px 14px;background:var(--primary);color:white;border:2px solid var(--primary);border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➕ Somar</button>
-        <button class="_fat-acao-btn" data-acao="-" onclick="_fatSelecionarAcao('-')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➖ Subtrair</button>
-        <button class="_fat-acao-btn" data-acao="*" onclick="_fatSelecionarAcao('*')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">✖️ Multiplicar</button>
-        <button class="_fat-acao-btn" data-acao="/" onclick="_fatSelecionarAcao('/')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➗ Dividir</button>
+        <button class="_fat-acao-btn" data-acao="+" onclick="_fatSelecionarAcao('+')" draggable="true" ondragstart="_fatAcaoDragStart(event,'+')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➕ Somar</button>
+        <button class="_fat-acao-btn" data-acao="-" onclick="_fatSelecionarAcao('-')" draggable="true" ondragstart="_fatAcaoDragStart(event,'-')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➖ Subtrair</button>
+        <button class="_fat-acao-btn" data-acao="*" onclick="_fatSelecionarAcao('*')" draggable="true" ondragstart="_fatAcaoDragStart(event,'*')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">✖️ Multiplicar</button>
+        <button class="_fat-acao-btn" data-acao="/" onclick="_fatSelecionarAcao('/')" draggable="true" ondragstart="_fatAcaoDragStart(event,'/')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➗ Dividir</button>
         <span style="width:1px;background:#e5e7eb;margin:2px 2px;"></span>
-        <button class="_fat-acao-btn" data-acao=">" onclick="_fatSelecionarAcao('&gt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt; Maior que</button>
-        <button class="_fat-acao-btn" data-acao="<" onclick="_fatSelecionarAcao('&lt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt; Menor que</button>
-        <button class="_fat-acao-btn" data-acao="==" onclick="_fatSelecionarAcao('==')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">== Igual</button>
-        <button class="_fat-acao-btn" data-acao=">=" onclick="_fatSelecionarAcao('&gt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt;= Maior ou igual</button>
-        <button class="_fat-acao-btn" data-acao="<=" onclick="_fatSelecionarAcao('&lt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt;= Menor ou igual</button>
+        <button class="_fat-acao-btn" data-acao=">" onclick="_fatSelecionarAcao('&gt;')" draggable="true" ondragstart="_fatAcaoDragStart(event,'&gt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt; Maior que</button>
+        <button class="_fat-acao-btn" data-acao="<" onclick="_fatSelecionarAcao('&lt;')" draggable="true" ondragstart="_fatAcaoDragStart(event,'&lt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt; Menor que</button>
+        <button class="_fat-acao-btn" data-acao="==" onclick="_fatSelecionarAcao('==')" draggable="true" ondragstart="_fatAcaoDragStart(event,'==')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">== Igual</button>
+        <button class="_fat-acao-btn" data-acao=">=" onclick="_fatSelecionarAcao('&gt;=')" draggable="true" ondragstart="_fatAcaoDragStart(event,'&gt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt;= Maior ou igual</button>
+        <button class="_fat-acao-btn" data-acao="<=" onclick="_fatSelecionarAcao('&lt;=')" draggable="true" ondragstart="_fatAcaoDragStart(event,'&lt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt;= Menor ou igual</button>
       </div>
       <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">2. Campos disponíveis (arraste para a área abaixo):</div>
       <div id="wFatCamposPalette" style="display:flex;flex-wrap:wrap;gap:6px;padding:10px;border:1.5px dashed #d1d5db;border-radius:8px;margin-bottom:10px;max-height:170px;overflow-y:auto;">${chipsHtml}</div>
+      <div style="background:#fdf2f8;border:1.5px solid #f9a8d4;border-radius:8px;padding:10px 12px;margin-bottom:10px;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#9d174d;cursor:pointer;font-weight:800;text-transform:uppercase;letter-spacing:.3px;">
+          <input type="checkbox" id="wFatOutrosValoresCheck" onchange="_fatToggleOutrosValores(this.checked)"> Utiliza Valores outros (campos personalizados)?
+        </label>
+        <div id="wFatOutrosValoresWrap" style="display:none;margin-top:8px;">
+          <input type="text" id="wFatOutrosValoresInput" oninput="_fatRenderPalette()" placeholder="coloque aqui o nome interno dos campos separados por vírgula" style="width:100%;padding:7px 10px;border:1.5px solid #f9a8d4;border-radius:6px;font-size:12px;font-family:monospace;background:white;color:#9d174d;">
+          <div id="wFatOutrosValoresChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;max-height:70px;overflow-y:auto;"></div>
+        </div>
+      </div>
       <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Ou digite um valor numérico (ex: 100, 0.02) e arraste-o pra área de montagem — útil pra dividir/multiplicar um campo por um número fixo:</div>
       <div style="display:flex;gap:8px;align-items:center;">
         <input type="text" id="wFatValorInput" inputmode="decimal" placeholder="Ex: 100" oninput="_fatValorInputChange()" style="width:110px;padding:7px 10px;border:1.5px solid #d1d5db;border-radius:6px;font-size:12px;font-family:monospace;">
@@ -5760,6 +5806,11 @@ function _fatSelecionarAcao(acao){
         b.style.color=ativo?'white':'#374151';
         b.style.borderColor=ativo?'var(--primary)':'#e5e7eb';
     });
+    if(document.getElementById('wFatBlocosContainer'))_fatRenderBlocos();
+}
+function _fatAcaoDragStart(e,acao){
+    e.dataTransfer.setData('text/plain','acao:'+acao);
+    e.dataTransfer.effectAllowed='copy';
 }
 function _fatDragStart(e){
     e.dataTransfer.setData('text/plain','campo:'+e.target.dataset.campo);
@@ -5782,6 +5833,32 @@ function _fatValorDragStart(e){
     if(!val||isNaN(Number(norm))){e.preventDefault();return;}
     e.dataTransfer.setData('text/plain','valor:'+norm);
     e.dataTransfer.effectAllowed='copy';
+}
+// Rótulo completo (ícone + nome) de cada ação, igual aparece nos botões de arrastar -- usado pra
+// mostrar dentro da área de montagem qual ação está ativa no momento (senão arrastar uma ação não
+// deixa rastro nenhum visível ali, dando a falsa impressão de que não funcionou).
+const _ACAO_LABELS={'+':'➕ Somar','-':'➖ Subtrair','*':'✖️ Multiplicar','/':'➗ Dividir','>':'> Maior que','<':'< Menor que','==':'== Igual','>=':'>= Maior ou igual','<=':'<= Menor ou igual'};
+// Só o nome (sem ícone/símbolo) -- usado como conector entre os campos já soltos na área de
+// montagem (ex.: "Tarifa Final" Somar "Pedágio"), pra ficar claro em palavras o que a regra tá
+// fazendo ali, em vez de só o simbolo matemático cru.
+const _ACAO_NOMES={'+':'Somar','-':'Subtrair','*':'Multiplicar','/':'Dividir','>':'Maior que','<':'Menor que','==':'Igual','>=':'Maior ou igual','<=':'Menor ou igual'};
+// Mostra o nome da ação ativa logo depois do ÚLTIMO campo já soltado, mesmo com só 1 campo ainda
+// -- assim já fica visual qual ação vai ser usada no próximo campo arrastado, sem precisar esperar
+// soltar o segundo pra descobrir. Um pouco apagado (opacity) pra diferenciar de um conector "de
+// verdade" (que já une 2 campos) de um que é só a prévia do que vai acontecer a seguir.
+function _acaoPreviaTrailingHtml(acaoSel,corTexto){
+    if(!acaoSel)return '';
+    return `<span style="font-size:11.5px;color:${corTexto};font-weight:700;margin:0 3px;opacity:.55;">${escapeHtml(_ACAO_NOMES[acaoSel]||acaoSel)}</span>`;
+}
+// Selo mostrado no canto de cada quadro de soltar: "Ação ativa: X" no tema de quem chamou
+// (Ct-e/Contrato/Faturamento, canvas ou condição) -- ou, se ainda não tiver nenhuma ação
+// escolhida, um aviso em VERMELHO (sempre vermelho, independente do tema) pedindo pra escolher
+// uma antes. Compartilhado pelos 3 criadores pra não repetir esse if 6 vezes.
+function _acaoBadgeHtml(acaoSel,corBorda,corTexto){
+    if(!acaoSel){
+        return `<span style="position:absolute;top:-9px;left:10px;background:#fef2f2;border:1px solid #ef4444;border-radius:10px;padding:1px 8px;font-size:10px;color:#dc2626;font-weight:700;white-space:nowrap;">⚠️ Selecione uma ação antes</span>`;
+    }
+    return `<span style="position:absolute;top:-9px;left:10px;background:white;border:1px solid ${corBorda};border-radius:10px;padding:1px 8px;font-size:10px;color:${corTexto};font-weight:700;white-space:nowrap;">Ação ativa: ${escapeHtml(_ACAO_LABELS[acaoSel]||acaoSel)}</span>`;
 }
 // Converte o texto recebido no drop em um termo pra expressão: campo vira obt('campo'),
 // valor numérico entra puro (sem obt) — é assim que se divide/multiplica por um número fixo.
@@ -5913,6 +5990,25 @@ function _mesclarOpcaoRegra(blocosAcumulados, extrasAcumuladas, codigoOpcao){
     });
     if(usadosNovos<novasExtrasLigadas.length){ extras.push(...novasExtrasLigadas.slice(usadosNovos)); }
     extras.push(...novasExtrasSoltas);
+    return {blocos, extras};
+}
+// Insere um bloco de código NOVO logo depois de um destino "âncora" já existente na área de
+// montagem (ex.: Substituição Tributária tem que entrar dentro do bloco de cálculo do ICMS, não lá
+// no final da regra, depois de Total Serviço). Diferente de _mesclarOpcaoRegra (substitui pelo
+// destino em comum) e _aplicarSomaTermo (soma dentro de 1 campo só): aqui os destinos do código
+// novo são TODOS NOVOS (não existem ainda), então a posição não dá pra descobrir por destino em
+// comum -- é fixada pela âncora. Se a âncora ainda não existir na área de montagem (ex.: nenhum
+// cálculo de ICMS foi montado ainda), cai no mesmo comportamento de sempre: insere no final, sem
+// sumir com nada.
+function _inserirOpcaoAposAncora(blocosAcumulados, extrasAcumuladas, codigoOpcao, destinoAncora){
+    const {blocos:novosBlocos, extras:novasExtras}=_parseRegraParaBlocos(codigoOpcao);
+    novosBlocos.forEach(_seedTermosBase);
+    const blocosBase=blocosAcumulados||[];
+    const idxAncora=blocosBase.findIndex(b=>b.destino===destinoAncora);
+    const blocos=idxAncora===-1
+        ?[...blocosBase, ...novosBlocos]
+        :[...blocosBase.slice(0,idxAncora+1), ...novosBlocos, ...blocosBase.slice(idxAncora+1)];
+    const extras=[...(extrasAcumuladas||[]), ...novasExtras];
     return {blocos, extras};
 }
 // Acrescenta 1 termo a um campo que já está (ou não) na área de montagem, SEM substituir o que já
@@ -6121,12 +6217,12 @@ function _fatRenderBlocos(){
         let canvasConteudo;
         if(bloco.termos&&bloco.termos.length){
             canvasConteudo=bloco.termos.map((t,tIdx)=>{
-                const sep=tIdx>0?`<span style="font-size:13px;color:#059669;font-weight:700;margin:0 3px;">${escapeHtml(t.acao||'')}</span>`:'';
+                const sep=tIdx>0?`<span style="font-size:11.5px;color:#059669;font-weight:700;margin:0 3px;">${escapeHtml(_ACAO_NOMES[t.acao]||t.acao||'')}</span>`:'';
                 const label=_termoParaLabel(t.termo);
                 const daOutros=_ehCampoOutrosValores(t.termo);
                 const corBorda=daOutros?'#f9a8d4':'#6ee7b7', corFundo=daOutros?'#fdf2f8':'white', corTexto=daOutros?'#9d174d':'#065f46', corX=daOutros?'#be185d':'#059669';
                 return `${sep}<span title="${escapeHtml(t.termo)}" style="display:inline-flex;align-items:center;gap:3px;padding:3px 4px 3px 9px;margin:2px 0;background:${corFundo};border:1px solid ${corBorda};border-radius:12px;font-size:11.5px;font-family:monospace;color:${corTexto};">${escapeHtml(label)}<button onclick="_fatRemoverTermo(${idx},${tIdx})" title="Remover este item" style="border:none;background:none;color:${corX};cursor:pointer;font-size:13px;padding:0 4px;line-height:1;font-weight:700;">✕</button></span>`;
-            }).join('');
+            }).join('')+_acaoPreviaTrailingHtml(window._fatAcaoSel,'#059669');
         }else if(bloco.expr){
             canvasConteudo=`<span style="font-family:monospace;font-size:12.5px;color:#065f46;word-break:break-all;">${escapeHtml(bloco.expr)}</span>`;
         }else{
@@ -6145,16 +6241,17 @@ function _fatRenderBlocos(){
             const condTermos=(bloco.condicao&&bloco.condicao.termos)||[];
             const condConteudo=condTermos.length
                 ?condTermos.map((t,tIdx)=>{
-                    const sep=tIdx>0?`<span style="font-size:13px;color:#b45309;font-weight:700;margin:0 3px;">${escapeHtml(t.acao||'')}</span>`:'';
+                    const sep=tIdx>0?`<span style="font-size:11.5px;color:#b45309;font-weight:700;margin:0 3px;">${escapeHtml(_ACAO_NOMES[t.acao]||t.acao||'')}</span>`:'';
                     const label=_termoParaLabel(t.termo);
                     const daOutros=_ehCampoOutrosValores(t.termo);
                     const corBorda=daOutros?'#f9a8d4':'#fcd34d', corFundo=daOutros?'#fce7f3':'white', corTexto=daOutros?'#9d174d':'#92400e', corX=daOutros?'#be185d':'#b45309';
                     return `${sep}<span title="${escapeHtml(t.termo)}" style="display:inline-flex;align-items:center;gap:3px;padding:3px 4px 3px 9px;margin:2px 0;background:${corFundo};border:1px solid ${corBorda};border-radius:12px;font-size:11.5px;font-family:monospace;color:${corTexto};">${escapeHtml(label)}<button onclick="_fatRemoverTermoCondicao(${idx},${tIdx})" title="Remover este item" style="border:none;background:none;color:${corX};cursor:pointer;font-size:13px;padding:0 4px;line-height:1;font-weight:700;">✕</button></span>`;
-                }).join('')
+                }).join('')+_acaoPreviaTrailingHtml(window._fatAcaoSel,'#b45309')
                 :`<span style="color:#b45309;font-size:12px;">Arraste campos aqui pra montar a condição</span>`;
             condSecao+=`<div style="margin:0 0 10px;padding-left:8px;border-left:3px solid #fbbf24;">
                 <div style="font-size:10.5px;color:#92400e;margin-bottom:4px;">Condição — SE isso for verdade, o campo é definido:</div>
-                <div ondragover="_fatCanvasDragOver(event)" ondrop="_fatCondicaoDrop(event,${idx})" style="min-height:44px;padding:8px;border:1.5px dashed #f59e0b;border-radius:8px;background:#fffbeb;display:flex;align-items:center;flex-wrap:wrap;">
+                <div ondragover="_fatCanvasDragOver(event)" ondrop="_fatCondicaoDrop(event,${idx})" style="position:relative;min-height:44px;padding:8px;border:1.5px dashed #f59e0b;border-radius:8px;background:#fffbeb;display:flex;align-items:center;flex-wrap:wrap;">
+                    ${_acaoBadgeHtml(window._fatAcaoSel,'#fbbf24','#92400e')}
                     ${condConteudo}
                 </div>
             </div>`;
@@ -6168,7 +6265,8 @@ function _fatRenderBlocos(){
                 ${btnRemover}
             </div>
             ${condSecao}
-            <div ondragover="_fatCanvasDragOver(event)" ondrop="_fatCanvasDrop(event,${idx})" style="min-height:50px;padding:10px;border:1.5px dashed #10b981;border-radius:8px;background:#f0fdf4;display:flex;align-items:center;flex-wrap:wrap;">
+            <div ondragover="_fatCanvasDragOver(event)" ondrop="_fatCanvasDrop(event,${idx})" style="position:relative;min-height:50px;padding:10px;border:1.5px dashed #10b981;border-radius:8px;background:#f0fdf4;display:flex;align-items:center;flex-wrap:wrap;">
+                ${_acaoBadgeHtml(window._fatAcaoSel,'#6ee7b7','#065f46')}
                 ${canvasConteudo}
             </div>
             ${btnLimparExpr}
@@ -6182,11 +6280,13 @@ function _fatCanvasDrop(e,idx){
     e.preventDefault();
     const raw=e.dataTransfer.getData('text/plain');
     if(!raw)return;
+    if(raw.startsWith('acao:')){ _fatSelecionarAcao(raw.slice(5)); _fatRenderBlocos(); return; }
     const termo=_fatTermoParaExpressao(raw);
     if(termo===null)return;
     const bloco=window._fatBlocos[idx];
     _seedTermosBase(bloco);
-    bloco.termos.push({termo, acao: bloco.termos.length?(window._fatAcaoSel||'+'):null});
+    if(bloco.termos.length&&!window._fatAcaoSel){ alert('Selecione uma ação antes de arrastar outro campo.'); return; }
+    bloco.termos.push({termo, acao: bloco.termos.length?window._fatAcaoSel:null});
     _recalcExprDeTermos(bloco);
     _fatRenderBlocos();
 }
@@ -6205,11 +6305,13 @@ function _fatCondicaoDrop(e,idx){
     e.preventDefault();
     const raw=e.dataTransfer.getData('text/plain');
     if(!raw)return;
+    if(raw.startsWith('acao:')){ _fatSelecionarAcao(raw.slice(5)); _fatRenderBlocos(); return; }
     const termo=_fatTermoParaExpressao(raw);
     if(termo===null)return;
     const bloco=window._fatBlocos[idx];
     if(!bloco.condicao)bloco.condicao={termos:[],expr:null};
-    bloco.condicao.termos.push({termo, acao: bloco.condicao.termos.length?(window._fatAcaoSel||'+'):null});
+    if(bloco.condicao.termos.length&&!window._fatAcaoSel){ alert('Selecione uma ação antes de arrastar outro campo.'); return; }
+    bloco.condicao.termos.push({termo, acao: bloco.condicao.termos.length?window._fatAcaoSel:null});
     _recalcExprDeTermos(bloco.condicao);
     _fatRenderBlocos();
 }
@@ -6225,6 +6327,7 @@ function _fatDestinoDrop(e,idx){
     e.preventDefault();
     const raw=e.dataTransfer.getData('text/plain');
     if(!raw)return;
+    if(raw.startsWith('acao:')){ _fatSelecionarAcao(raw.slice(5)); _fatRenderBlocos(); return; }
     const nome=raw.startsWith('campo:')?raw.slice(6):raw.startsWith('valor:')?raw.slice(6):raw;
     window._fatBlocos[idx].destino=nome;
     _fatRenderBlocos();
@@ -6494,19 +6597,19 @@ function _voltarParaWizardRegra(ts) {
     if (dados.tipo === 'cte-dnd' && dados.cteExtraDnd) {
         window._cteBlocos = (dados.cteExtraDnd.blocos && dados.cteExtraDnd.blocos.length) ? _clonarBlocos(dados.cteExtraDnd.blocos) : [{destino:'',expr:null}];
         window._cteExtras = (dados.cteExtraDnd.extras || []).map(e => ({...e}));
-        _cteSelecionarAcao(dados.cteExtraDnd.acaoSel || '+');
+        _cteSelecionarAcao(dados.cteExtraDnd.acaoSel || null);
         _cteRenderBlocos();
     }
     if (dados.tipo === 'contrato-dnd' && dados.cfdExtra) {
         window._cfdBlocos = (dados.cfdExtra.blocos && dados.cfdExtra.blocos.length) ? _clonarBlocos(dados.cfdExtra.blocos) : [{destino:'',expr:null}];
         window._cfdExtras = (dados.cfdExtra.extras || []).map(e => ({...e}));
-        _cfdSelecionarAcao(dados.cfdExtra.acaoSel || '+');
+        _cfdSelecionarAcao(dados.cfdExtra.acaoSel || null);
         _cfdRenderBlocos();
     }
     if (dados.tipo === 'faturamento' && dados.fatExtra) {
         window._fatBlocos = (dados.fatExtra.blocos && dados.fatExtra.blocos.length) ? _clonarBlocos(dados.fatExtra.blocos) : [{destino:'',expr:null}];
         window._fatExtras = (dados.fatExtra.extras || []).map(e => ({...e}));
-        _fatSelecionarAcao(dados.fatExtra.acaoSel || '+');
+        _fatSelecionarAcao(dados.fatExtra.acaoSel || null);
         _fatRenderBlocos();
     }
 }
