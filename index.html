@@ -4460,20 +4460,20 @@ function mostrarWizardRegraDnd(queryOriginal){
   <div class="builder-grid-main">
     <div class="wizard-section" id="wCteSecaoMontar" style="border:none;position:sticky;top:0;z-index:2;background:var(--surface);border-bottom:2px solid #bfdbfe;box-shadow:0 4px 8px -6px rgba(0,0,0,.2);">
       <div class="wizard-label">🧩 Monte sua regra arrastando os campos</div>
-      <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">1. Clique ou arraste a ação pra ativar (fica destacada, vale pro próximo campo arrastado):</div>
+      <div style="font-size:12.5px;color:#1e40af;font-weight:700;margin-bottom:6px;">1. Clique ou arraste a ação pra ativar (fica destacada, vale pro próximo campo arrastado):</div>
       <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
-        <button class="_cte-acao-btn" data-acao="+" onclick="_cteSelecionarAcao('+')" draggable="true" ondragstart="_cteAcaoDragStart(event,'+')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➕ Somar</button>
-        <button class="_cte-acao-btn" data-acao="-" onclick="_cteSelecionarAcao('-')" draggable="true" ondragstart="_cteAcaoDragStart(event,'-')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➖ Subtrair</button>
-        <button class="_cte-acao-btn" data-acao="*" onclick="_cteSelecionarAcao('*')" draggable="true" ondragstart="_cteAcaoDragStart(event,'*')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">✖️ Multiplicar</button>
-        <button class="_cte-acao-btn" data-acao="/" onclick="_cteSelecionarAcao('/')" draggable="true" ondragstart="_cteAcaoDragStart(event,'/')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➗ Dividir</button>
+        <button class="_cte-acao-btn" data-acao="+" onclick="_cteClicarAcao('+')" draggable="true" ondragstart="_cteAcaoDragStart(event,'+')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➕ Somar</button>
+        <button class="_cte-acao-btn" data-acao="-" onclick="_cteClicarAcao('-')" draggable="true" ondragstart="_cteAcaoDragStart(event,'-')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➖ Subtrair</button>
+        <button class="_cte-acao-btn" data-acao="*" onclick="_cteClicarAcao('*')" draggable="true" ondragstart="_cteAcaoDragStart(event,'*')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">✖️ Multiplicar</button>
+        <button class="_cte-acao-btn" data-acao="/" onclick="_cteClicarAcao('/')" draggable="true" ondragstart="_cteAcaoDragStart(event,'/')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➗ Dividir</button>
         <span style="width:1px;background:#e5e7eb;margin:2px 2px;"></span>
-        <button class="_cte-acao-btn" data-acao=">" onclick="_cteSelecionarAcao('&gt;')" draggable="true" ondragstart="_cteAcaoDragStart(event,'&gt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt; Maior que</button>
-        <button class="_cte-acao-btn" data-acao="<" onclick="_cteSelecionarAcao('&lt;')" draggable="true" ondragstart="_cteAcaoDragStart(event,'&lt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt; Menor que</button>
-        <button class="_cte-acao-btn" data-acao="==" onclick="_cteSelecionarAcao('==')" draggable="true" ondragstart="_cteAcaoDragStart(event,'==')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">== Igual</button>
-        <button class="_cte-acao-btn" data-acao=">=" onclick="_cteSelecionarAcao('&gt;=')" draggable="true" ondragstart="_cteAcaoDragStart(event,'&gt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt;= Maior ou igual</button>
-        <button class="_cte-acao-btn" data-acao="<=" onclick="_cteSelecionarAcao('&lt;=')" draggable="true" ondragstart="_cteAcaoDragStart(event,'&lt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt;= Menor ou igual</button>
+        <button class="_cte-acao-btn" data-acao=">" onclick="_cteClicarAcao('&gt;')" draggable="true" ondragstart="_cteAcaoDragStart(event,'&gt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt; Maior que</button>
+        <button class="_cte-acao-btn" data-acao="<" onclick="_cteClicarAcao('&lt;')" draggable="true" ondragstart="_cteAcaoDragStart(event,'&lt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt; Menor que</button>
+        <button class="_cte-acao-btn" data-acao="==" onclick="_cteClicarAcao('==')" draggable="true" ondragstart="_cteAcaoDragStart(event,'==')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">== Igual</button>
+        <button class="_cte-acao-btn" data-acao=">=" onclick="_cteClicarAcao('&gt;=')" draggable="true" ondragstart="_cteAcaoDragStart(event,'&gt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt;= Maior ou igual</button>
+        <button class="_cte-acao-btn" data-acao="<=" onclick="_cteClicarAcao('&lt;=')" draggable="true" ondragstart="_cteAcaoDragStart(event,'&lt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt;= Menor ou igual</button>
       </div>
-      <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">2. Campos disponíveis (arraste para a área abaixo):</div>
+      <div style="font-size:12.5px;color:#1e40af;font-weight:700;margin-bottom:6px;">2. Campos disponíveis (arraste para a área abaixo):</div>
       <div id="wCteCamposPalette" style="display:flex;flex-wrap:wrap;gap:6px;padding:10px;border:1.5px dashed #d1d5db;border-radius:8px;margin-bottom:10px;max-height:170px;overflow-y:auto;">${chipsHtml}</div>
       <div style="background:#fdf2f8;border:1.5px solid #f9a8d4;border-radius:8px;padding:10px 12px;margin-bottom:10px;">
         <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#9d174d;cursor:pointer;font-weight:800;text-transform:uppercase;letter-spacing:.3px;">
@@ -4491,7 +4491,7 @@ function mostrarWizardRegraDnd(queryOriginal){
       </div>
     </div>
     <div class="wizard-section" style="border:none;">
-      <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">3. Área de montagem — arraste um campo (ou valor) sobre outro pra combinar com a ação selecionada:</div>
+      <div style="font-size:12.5px;color:#1e40af;font-weight:700;margin-bottom:6px;">3. Área de montagem — arraste um campo (ou valor) sobre outro pra combinar com a ação selecionada:</div>
       <div id="wCteBlocosContainer"></div>
       <button onclick="_cteAdicionarBloco()" style="width:100%;padding:8px;background:white;border:1.5px dashed #3b82f6;border-radius:8px;color:#1e40af;cursor:pointer;font-size:12.5px;font-weight:700;margin-bottom:12px;">➕ Definir mais um campo</button>
       <div id="wCteExtrasContainer"></div>
@@ -4520,6 +4520,11 @@ function _cteSelecionarAcao(acao){
     // no botão (em vez de arrastar) deixava o selo desatualizado, já que só o clique não redesenha
     // os blocos sozinho.
     if(document.getElementById('wCteBlocosContainer'))_cteRenderBlocos();
+}
+// Só no CLIQUE: clicar na ação que já está ativa desmarca ela (volta pra nenhuma selecionada).
+// Arrastar a mesma ação de novo não desmarca -- continua só selecionando, sem alternar.
+function _cteClicarAcao(acao){
+    _cteSelecionarAcao(window._cteAcaoSel===acao?null:acao);
 }
 // Arrastar uma ação (em vez de clicar) tem o MESMO efeito de _cteSelecionarAcao -- só ativa ela
 // (destaca na fileira) pro próximo campo/valor arrastado usar. Os handlers de drop (canvas,
@@ -5284,20 +5289,20 @@ function mostrarWizardContratoDnd(queryOriginal){
   <div class="builder-grid-main">
     <div class="wizard-section" id="wCfdSecaoMontar" style="border:none;position:sticky;top:0;z-index:2;background:var(--surface);border-bottom:2px solid #ddd6fe;box-shadow:0 4px 8px -6px rgba(0,0,0,.2);">
       <div class="wizard-label">🧩 Monte sua regra arrastando os campos</div>
-      <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">1. Clique ou arraste a ação pra ativar (fica destacada, vale pro próximo campo arrastado):</div>
+      <div style="font-size:12.5px;color:#5b21b6;font-weight:700;margin-bottom:6px;">1. Clique ou arraste a ação pra ativar (fica destacada, vale pro próximo campo arrastado):</div>
       <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
-        <button class="_cfd-acao-btn" data-acao="+" onclick="_cfdSelecionarAcao('+')" draggable="true" ondragstart="_cfdAcaoDragStart(event,'+')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➕ Somar</button>
-        <button class="_cfd-acao-btn" data-acao="-" onclick="_cfdSelecionarAcao('-')" draggable="true" ondragstart="_cfdAcaoDragStart(event,'-')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➖ Subtrair</button>
-        <button class="_cfd-acao-btn" data-acao="*" onclick="_cfdSelecionarAcao('*')" draggable="true" ondragstart="_cfdAcaoDragStart(event,'*')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">✖️ Multiplicar</button>
-        <button class="_cfd-acao-btn" data-acao="/" onclick="_cfdSelecionarAcao('/')" draggable="true" ondragstart="_cfdAcaoDragStart(event,'/')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➗ Dividir</button>
+        <button class="_cfd-acao-btn" data-acao="+" onclick="_cfdClicarAcao('+')" draggable="true" ondragstart="_cfdAcaoDragStart(event,'+')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➕ Somar</button>
+        <button class="_cfd-acao-btn" data-acao="-" onclick="_cfdClicarAcao('-')" draggable="true" ondragstart="_cfdAcaoDragStart(event,'-')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➖ Subtrair</button>
+        <button class="_cfd-acao-btn" data-acao="*" onclick="_cfdClicarAcao('*')" draggable="true" ondragstart="_cfdAcaoDragStart(event,'*')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">✖️ Multiplicar</button>
+        <button class="_cfd-acao-btn" data-acao="/" onclick="_cfdClicarAcao('/')" draggable="true" ondragstart="_cfdAcaoDragStart(event,'/')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➗ Dividir</button>
         <span style="width:1px;background:#e5e7eb;margin:2px 2px;"></span>
-        <button class="_cfd-acao-btn" data-acao=">" onclick="_cfdSelecionarAcao('&gt;')" draggable="true" ondragstart="_cfdAcaoDragStart(event,'&gt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt; Maior que</button>
-        <button class="_cfd-acao-btn" data-acao="<" onclick="_cfdSelecionarAcao('&lt;')" draggable="true" ondragstart="_cfdAcaoDragStart(event,'&lt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt; Menor que</button>
-        <button class="_cfd-acao-btn" data-acao="==" onclick="_cfdSelecionarAcao('==')" draggable="true" ondragstart="_cfdAcaoDragStart(event,'==')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">== Igual</button>
-        <button class="_cfd-acao-btn" data-acao=">=" onclick="_cfdSelecionarAcao('&gt;=')" draggable="true" ondragstart="_cfdAcaoDragStart(event,'&gt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt;= Maior ou igual</button>
-        <button class="_cfd-acao-btn" data-acao="<=" onclick="_cfdSelecionarAcao('&lt;=')" draggable="true" ondragstart="_cfdAcaoDragStart(event,'&lt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt;= Menor ou igual</button>
+        <button class="_cfd-acao-btn" data-acao=">" onclick="_cfdClicarAcao('&gt;')" draggable="true" ondragstart="_cfdAcaoDragStart(event,'&gt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt; Maior que</button>
+        <button class="_cfd-acao-btn" data-acao="<" onclick="_cfdClicarAcao('&lt;')" draggable="true" ondragstart="_cfdAcaoDragStart(event,'&lt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt; Menor que</button>
+        <button class="_cfd-acao-btn" data-acao="==" onclick="_cfdClicarAcao('==')" draggable="true" ondragstart="_cfdAcaoDragStart(event,'==')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">== Igual</button>
+        <button class="_cfd-acao-btn" data-acao=">=" onclick="_cfdClicarAcao('&gt;=')" draggable="true" ondragstart="_cfdAcaoDragStart(event,'&gt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt;= Maior ou igual</button>
+        <button class="_cfd-acao-btn" data-acao="<=" onclick="_cfdClicarAcao('&lt;=')" draggable="true" ondragstart="_cfdAcaoDragStart(event,'&lt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt;= Menor ou igual</button>
       </div>
-      <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">2. Campos disponíveis (arraste para a área abaixo):</div>
+      <div style="font-size:12.5px;color:#5b21b6;font-weight:700;margin-bottom:6px;">2. Campos disponíveis (arraste para a área abaixo):</div>
       <div id="wCfdCamposPalette" style="display:flex;flex-wrap:wrap;gap:6px;padding:10px;border:1.5px dashed #d1d5db;border-radius:8px;margin-bottom:10px;max-height:170px;overflow-y:auto;">${chipsHtml}</div>
       <div style="background:#fdf2f8;border:1.5px solid #f9a8d4;border-radius:8px;padding:10px 12px;margin-bottom:10px;">
         <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#9d174d;cursor:pointer;font-weight:800;text-transform:uppercase;letter-spacing:.3px;">
@@ -5315,7 +5320,7 @@ function mostrarWizardContratoDnd(queryOriginal){
       </div>
     </div>
     <div class="wizard-section" style="border:none;">
-      <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">3. Área de montagem — arraste um campo (ou valor) sobre outro pra combinar com a ação selecionada:</div>
+      <div style="font-size:12.5px;color:#5b21b6;font-weight:700;margin-bottom:6px;">3. Área de montagem — arraste um campo (ou valor) sobre outro pra combinar com a ação selecionada:</div>
       <div id="wCfdBlocosContainer"></div>
       <button onclick="_cfdAdicionarBloco()" style="width:100%;padding:8px;background:white;border:1.5px dashed #7c3aed;border-radius:8px;color:#5b21b6;cursor:pointer;font-size:12.5px;font-weight:700;margin-bottom:12px;">➕ Definir mais um campo</button>
       <div id="wCfdExtrasContainer"></div>
@@ -5341,6 +5346,9 @@ function _cfdSelecionarAcao(acao){
         b.style.borderColor=ativo?'var(--primary)':'#e5e7eb';
     });
     if(document.getElementById('wCfdBlocosContainer'))_cfdRenderBlocos();
+}
+function _cfdClicarAcao(acao){
+    _cfdSelecionarAcao(window._cfdAcaoSel===acao?null:acao);
 }
 function _cfdAcaoDragStart(e,acao){
     e.dataTransfer.setData('text/plain','acao:'+acao);
@@ -5748,20 +5756,20 @@ function mostrarWizardFaturamento(queryOriginal){
   <div class="builder-grid-main">
     <div class="wizard-section" id="wFatSecaoMontar" style="border:none;position:sticky;top:0;z-index:2;background:var(--surface);border-bottom:2px solid #a7f3d0;box-shadow:0 4px 8px -6px rgba(0,0,0,.2);">
       <div class="wizard-label">🧩 Monte sua regra arrastando os campos</div>
-      <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">1. Clique ou arraste a ação pra ativar (fica destacada, vale pro próximo campo arrastado):</div>
+      <div style="font-size:12.5px;color:#065f46;font-weight:700;margin-bottom:6px;">1. Clique ou arraste a ação pra ativar (fica destacada, vale pro próximo campo arrastado):</div>
       <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
-        <button class="_fat-acao-btn" data-acao="+" onclick="_fatSelecionarAcao('+')" draggable="true" ondragstart="_fatAcaoDragStart(event,'+')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➕ Somar</button>
-        <button class="_fat-acao-btn" data-acao="-" onclick="_fatSelecionarAcao('-')" draggable="true" ondragstart="_fatAcaoDragStart(event,'-')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➖ Subtrair</button>
-        <button class="_fat-acao-btn" data-acao="*" onclick="_fatSelecionarAcao('*')" draggable="true" ondragstart="_fatAcaoDragStart(event,'*')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">✖️ Multiplicar</button>
-        <button class="_fat-acao-btn" data-acao="/" onclick="_fatSelecionarAcao('/')" draggable="true" ondragstart="_fatAcaoDragStart(event,'/')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➗ Dividir</button>
+        <button class="_fat-acao-btn" data-acao="+" onclick="_fatClicarAcao('+')" draggable="true" ondragstart="_fatAcaoDragStart(event,'+')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➕ Somar</button>
+        <button class="_fat-acao-btn" data-acao="-" onclick="_fatClicarAcao('-')" draggable="true" ondragstart="_fatAcaoDragStart(event,'-')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➖ Subtrair</button>
+        <button class="_fat-acao-btn" data-acao="*" onclick="_fatClicarAcao('*')" draggable="true" ondragstart="_fatAcaoDragStart(event,'*')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">✖️ Multiplicar</button>
+        <button class="_fat-acao-btn" data-acao="/" onclick="_fatClicarAcao('/')" draggable="true" ondragstart="_fatAcaoDragStart(event,'/')" style="padding:8px 14px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;">➗ Dividir</button>
         <span style="width:1px;background:#e5e7eb;margin:2px 2px;"></span>
-        <button class="_fat-acao-btn" data-acao=">" onclick="_fatSelecionarAcao('&gt;')" draggable="true" ondragstart="_fatAcaoDragStart(event,'&gt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt; Maior que</button>
-        <button class="_fat-acao-btn" data-acao="<" onclick="_fatSelecionarAcao('&lt;')" draggable="true" ondragstart="_fatAcaoDragStart(event,'&lt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt; Menor que</button>
-        <button class="_fat-acao-btn" data-acao="==" onclick="_fatSelecionarAcao('==')" draggable="true" ondragstart="_fatAcaoDragStart(event,'==')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">== Igual</button>
-        <button class="_fat-acao-btn" data-acao=">=" onclick="_fatSelecionarAcao('&gt;=')" draggable="true" ondragstart="_fatAcaoDragStart(event,'&gt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt;= Maior ou igual</button>
-        <button class="_fat-acao-btn" data-acao="<=" onclick="_fatSelecionarAcao('&lt;=')" draggable="true" ondragstart="_fatAcaoDragStart(event,'&lt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt;= Menor ou igual</button>
+        <button class="_fat-acao-btn" data-acao=">" onclick="_fatClicarAcao('&gt;')" draggable="true" ondragstart="_fatAcaoDragStart(event,'&gt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt; Maior que</button>
+        <button class="_fat-acao-btn" data-acao="<" onclick="_fatClicarAcao('&lt;')" draggable="true" ondragstart="_fatAcaoDragStart(event,'&lt;')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt; Menor que</button>
+        <button class="_fat-acao-btn" data-acao="==" onclick="_fatClicarAcao('==')" draggable="true" ondragstart="_fatAcaoDragStart(event,'==')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">== Igual</button>
+        <button class="_fat-acao-btn" data-acao=">=" onclick="_fatClicarAcao('&gt;=')" draggable="true" ondragstart="_fatAcaoDragStart(event,'&gt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&gt;= Maior ou igual</button>
+        <button class="_fat-acao-btn" data-acao="<=" onclick="_fatClicarAcao('&lt;=')" draggable="true" ondragstart="_fatAcaoDragStart(event,'&lt;=')" style="padding:8px 14px;background:#f3f4f6;color:#92400e;border:2px solid #fde68a;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;" title="Usar pra montar uma condição">&lt;= Menor ou igual</button>
       </div>
-      <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">2. Campos disponíveis (arraste para a área abaixo):</div>
+      <div style="font-size:12.5px;color:#065f46;font-weight:700;margin-bottom:6px;">2. Campos disponíveis (arraste para a área abaixo):</div>
       <div id="wFatCamposPalette" style="display:flex;flex-wrap:wrap;gap:6px;padding:10px;border:1.5px dashed #d1d5db;border-radius:8px;margin-bottom:10px;max-height:170px;overflow-y:auto;">${chipsHtml}</div>
       <div style="background:#fdf2f8;border:1.5px solid #f9a8d4;border-radius:8px;padding:10px 12px;margin-bottom:10px;">
         <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#9d174d;cursor:pointer;font-weight:800;text-transform:uppercase;letter-spacing:.3px;">
@@ -5779,7 +5787,7 @@ function mostrarWizardFaturamento(queryOriginal){
       </div>
     </div>
     <div class="wizard-section" style="border:none;">
-      <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">3. Área de montagem — arraste um campo (ou valor) sobre outro pra combinar com a ação selecionada:</div>
+      <div style="font-size:12.5px;color:#065f46;font-weight:700;margin-bottom:6px;">3. Área de montagem — arraste um campo (ou valor) sobre outro pra combinar com a ação selecionada:</div>
       <div id="wFatBlocosContainer"></div>
       <button onclick="_fatAdicionarBloco()" style="width:100%;padding:8px;background:white;border:1.5px dashed #10b981;border-radius:8px;color:#059669;cursor:pointer;font-size:12.5px;font-weight:700;margin-bottom:12px;">➕ Definir mais um campo</button>
       <div id="wFatExtrasContainer"></div>
@@ -5807,6 +5815,9 @@ function _fatSelecionarAcao(acao){
         b.style.borderColor=ativo?'var(--primary)':'#e5e7eb';
     });
     if(document.getElementById('wFatBlocosContainer'))_fatRenderBlocos();
+}
+function _fatClicarAcao(acao){
+    _fatSelecionarAcao(window._fatAcaoSel===acao?null:acao);
 }
 function _fatAcaoDragStart(e,acao){
     e.dataTransfer.setData('text/plain','acao:'+acao);
