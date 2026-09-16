@@ -1918,9 +1918,19 @@ async function _executarAnaliseTela() {
     const mi = semResultado ? '\n⚠️ ATENÇÃO: Nenhum artigo relevante encontrado no manual para esta tela. Informe claramente ao usuário que não encontrou e peça para descrever a dúvida no chat.' : '';
     ld2.remove();
 
+    // Cruza a descrição da tela com a tabela Rotinas -- ajuda a confirmar o nome OFICIAL da tela
+    // (em vez de confiar só no palpite da IA de visão) e, se fizer sentido, informar o nome
+    // interno/caminho técnico da rotina como referência extra.
+    const rotinasRel = _buscarRotinasRelevantes(descricaoTela, 3);
+    let rotinasCtx = '';
+    if (rotinasRel.length > 0) {
+        rotinasCtx = '\n=== ROTINA(S) DO SISTEMA IDENTIFICADA(S) (use pra confirmar o nome oficial da tela) ===\n';
+        rotinasRel.forEach((x, i) => { rotinasCtx += `\n[ROTINA ${i+1} - sim:${(x.sim*100).toFixed(0)}%]\n${_formatarRotinaParaPrompt(x.item)}\n`; });
+    }
+
     // ETAPA 4: Resposta final usando APENAS os artigos encontrados
     const ch = obterContextoHorario();
-    const prompt = `🏢 VOCÊ É UM AGENTE DE SUPORTE DA BSOFT TMS\n\n${ch}\n\nO usuário compartilhou uma captura de tela para análise.\n\nTELA IDENTIFICADA: ${descricaoTela}\n\n🎯 REGRAS OBRIGATÓRIAS:\n1. Use APENAS as informações dos artigos do manual abaixo. NUNCA invente.\n2. Se não encontrar no manual, diga claramente que não encontrou e peça para descrever a dúvida no chat.\n3. Relacione o que está visível na tela com o que o manual diz.${mi}\n\n📚 MANUAL BSOFT TMS:\n${ar || 'Nenhum artigo relevante encontrado para esta tela.'}\n\n📝 FORMATO:\n- Responda em Markdown limpo\n- Use **negrito** para termos importantes\n- No final, SEMPRE inclua: "Se não era isso que eu queria que analise na tela, pode perguntar no chat o que necessita exatamente."`;
+    const prompt = `🏢 VOCÊ É UM AGENTE DE SUPORTE DA BSOFT TMS\n\n${ch}\n\nO usuário compartilhou uma captura de tela para análise.\n\nTELA IDENTIFICADA: ${descricaoTela}\n${rotinasCtx}\n🎯 REGRAS OBRIGATÓRIAS:\n1. Use APENAS as informações dos artigos do manual abaixo. NUNCA invente.\n2. Se não encontrar no manual, diga claramente que não encontrou e peça para descrever a dúvida no chat.\n3. Relacione o que está visível na tela com o que o manual diz.\n4. Se a seção "ROTINA(S) DO SISTEMA IDENTIFICADA(S)" tiver algo relevante, use o Nome oficial dela pra confirmar/corrigir como você chama a tela na resposta. Só cite o nome interno/caminho técnico da rotina se isso realmente ajudar o usuário (ex.: pedido de suporte técnico) -- não é obrigatório mencionar em toda resposta.${mi}\n\n📚 MANUAL BSOFT TMS:\n${ar || 'Nenhum artigo relevante encontrado para esta tela.'}\n\n📝 FORMATO:\n- Responda em Markdown limpo\n- Use **negrito** para termos importantes\n- No final, SEMPRE inclua: "Se não era isso que eu queria que analise na tela, pode perguntar no chat o que necessita exatamente."`;
 
     const ld3 = appendLoadingCard('🤖 Analisando com base no manual...');
     try {
@@ -2006,9 +2016,17 @@ async function _executarAnaliseImagem(base64Url, fileName) {
     const semResultado = rr.length === 0 || rr[0].similaridade < 0.5;
     const mi = semResultado ? '\n⚠️ ATENÇÃO: Nenhum artigo relevante encontrado no manual para esta imagem. Informe claramente ao usuário que não encontrou e peça para descrever a dúvida no chat.' : '';
     ld2.remove();
+    // Cruza a descrição da imagem com a tabela Rotinas -- mesma ideia do "Analisar tela" por
+    // compartilhamento de tela, só que aqui pra imagem anexada.
+    const rotinasRel = _buscarRotinasRelevantes(descricaoTela, 3);
+    let rotinasCtx = '';
+    if (rotinasRel.length > 0) {
+        rotinasCtx = '\n=== ROTINA(S) DO SISTEMA IDENTIFICADA(S) (use pra confirmar o nome oficial da tela) ===\n';
+        rotinasRel.forEach((x, i) => { rotinasCtx += `\n[ROTINA ${i+1} - sim:${(x.sim*100).toFixed(0)}%]\n${_formatarRotinaParaPrompt(x.item)}\n`; });
+    }
     // ETAPA 3: Resposta final usando APENAS os artigos encontrados
     const ch = obterContextoHorario();
-    const prompt = `🏢 VOCÊ É UM AGENTE DE SUPORTE DA BSOFT TMS\n\n${ch}\n\nO usuário anexou uma imagem para análise.\n\nIMAGEM IDENTIFICADA: ${descricaoTela}\n\n🎯 REGRAS OBRIGATÓRIAS:\n1. Use APENAS as informações dos artigos do manual abaixo. NUNCA invente.\n2. Se não encontrar no manual, diga claramente que não encontrou e peça para descrever a dúvida no chat.\n3. Relacione o que está visível na imagem com o que o manual diz.${mi}\n\n📚 MANUAL BSOFT TMS:\n${ar || 'Nenhum artigo relevante encontrado para esta imagem.'}\n\n📝 FORMATO:\n- Responda em Markdown limpo\n- Use **negrito** para termos importantes\n- No final, SEMPRE inclua: "Se não era isso que eu queria que analise na imagem, pode perguntar no chat o que necessita exatamente."`;
+    const prompt = `🏢 VOCÊ É UM AGENTE DE SUPORTE DA BSOFT TMS\n\n${ch}\n\nO usuário anexou uma imagem para análise.\n\nIMAGEM IDENTIFICADA: ${descricaoTela}\n${rotinasCtx}\n🎯 REGRAS OBRIGATÓRIAS:\n1. Use APENAS as informações dos artigos do manual abaixo. NUNCA invente.\n2. Se não encontrar no manual, diga claramente que não encontrou e peça para descrever a dúvida no chat.\n3. Relacione o que está visível na imagem com o que o manual diz.\n4. Se a seção "ROTINA(S) DO SISTEMA IDENTIFICADA(S)" tiver algo relevante, use o Nome oficial dela pra confirmar/corrigir como você chama a tela na resposta.${mi}\n\n📚 MANUAL BSOFT TMS:\n${ar || 'Nenhum artigo relevante encontrado para esta imagem.'}\n\n📝 FORMATO:\n- Responda em Markdown limpo\n- Use **negrito** para termos importantes\n- No final, SEMPRE inclua: "Se não era isso que eu queria que analise na imagem, pode perguntar no chat o que necessita exatamente."`;
     const ld3 = appendLoadingCard('🤖 Analisando com base no manual...');
     try {
         const result = await callMCPVision(
@@ -2404,7 +2422,7 @@ async function _continuarResposta(messagesOriginais, textoTruncado, config, maxC
 // ═══════════════════════════════════════════════════════════
 let filaSolucoes=[],lastQuery="",attachedFileData=null,screenStream=null,isMinimized=false,isCallActive=false,silenceTimer,currentResults=[];
 window.currentAudio=null;
-let manualVetorizado=[],dadosParametros=[],dadosFuncionalidades=[],isVectorizing=true,bancoCompletoRaw=[];
+let manualVetorizado=[],dadosParametros=[],dadosFuncionalidades=[],isVectorizing=true,bancoCompletoRaw=[],dadosRotinas=[];
 const SCRIPT_URL="https://script.google.com/macros/s/AKfycbyxuDqwFCdhkLSE59cSD5FrAaTS6gbNC6jpOvj8hWp-2oOGQF_w-UL2QjPm0E1VqwU/exec";
 const SUPABASE_URL = 'https://btikuvmypdugpfmusqsf.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ0aWt1dm15cGR1Z3BmbXVzcXNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1Mzk5MjgsImV4cCI6MjA5NzExNTkyOH0.Ai_qaiX_ft8IzpS0HsJsQO_6b5JS-x26A-5GM-MyYak';
@@ -2696,19 +2714,36 @@ function _atualizarBotaoScrollDown(streaming = false) {
     btn.classList.toggle('streaming', longeDoFim && streaming);
 }
 
+// A tabela Rotinas tem ~3.800 linhas -- passa do limite padrão de 1000 por consulta do Supabase/
+// PostgREST, então precisa paginar com .range() até vir uma página incompleta (mesmo padrão já
+// usado no editor de banco, função dbeLoadTable). Devolve {data:[...]} pra encaixar direto no
+// Promise.allSettled de loadData(), igual as outras consultas da lista.
+async function _carregarRotinasCompleto(){
+    let todas=[], from=0; const lote=1000;
+    while(true){
+        const {data,error}=await sb.from('Rotinas').select('*').range(from, from+lote-1);
+        if(error)throw error;
+        todas=todas.concat(data||[]);
+        if(!data||data.length<lote)break;
+        from+=lote;
+    }
+    return {data:todas};
+}
 async function loadData() {
     const b = document.getElementById('statusBadge');
     try {
         b.innerText = `Carregando banco de dados...`;
-        const [rB, rP, rF, rL, rM] = await Promise.allSettled([
+        const [rB, rP, rF, rL, rM, rR] = await Promise.allSettled([
             sb.from('BancoDados').select('id, titulo, conteudo, como_emitir, categoria'), // embedding vem do cache local
             sb.from('Parametros').select('*'),
             sb.from('Funcionalidades').select('*'),
             sb.from('logs').select('pergunta, timestamp, created_at').order('created_at', {ascending: false}).limit(100),
-            sb.from('machine_learning').select('*')
+            sb.from('machine_learning').select('*'),
+            _carregarRotinasCompleto() // telas/funções do sistema (~3.800 linhas -- passa do limite de 1000 por consulta do Supabase, por isso pagina) -- usado em "Analisar tela" e no chat pra confirmar nome oficial e caminho técnico de uma rotina
         ]);
         if (rP.status === 'fulfilled' && rP.value.data) dadosParametros = rP.value.data;
         if (rF.status === 'fulfilled' && rF.value.data) dadosFuncionalidades = rF.value.data;
+        if (rR.status === 'fulfilled' && rR.value.data) dadosRotinas = rR.value.data;
         if (rL.status === 'fulfilled' && rL.value.data) popularBarraEmAlta(rL.value.data);
         if (rM.status === 'fulfilled' && rM.value.data && Array.isArray(rM.value.data)) {
             rM.value.data.forEach(item => {
@@ -3243,6 +3278,40 @@ function _respostaInstantanea(query) {
 }
 
 // ═══════════════════════════════════════════════════════════
+//  ROTINAS DO SISTEMA (telas/funções cadastradas no Supabase) -- usado em "Analisar tela" pra
+//  confirmar o nome oficial da tela identificada pela IA de visão, e no chat normal pra responder
+//  "onde fica X" com o nome/id reais da rotina, em vez de arriscar inventar.
+// ═══════════════════════════════════════════════════════════
+// Mesma técnica de sobreposição de palavras já usada pra Parâmetros/Funcionalidades -- não precisa
+// gerar embedding pras ~3.800 rotinas, busca por palavra-chave já é suficiente aqui (nomes curtos).
+function _buscarRotinasRelevantes(texto, limite=5){
+    if(!dadosRotinas.length)return [];
+    const _n = t => String(t||'').toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,'');
+    const palavras = _n(texto).split(/\s+/).filter(w=>w.length>2);
+    if(!palavras.length)return [];
+    const minSim = Math.min(2, palavras.length)/palavras.length; // pelo menos 2 palavras batem (ou 100% se só tiver 1)
+    return dadosRotinas
+        .map(r=>{
+            const txt = _n((r['Descrição']||'')+' '+(r['Nome Interno']||''));
+            const sim = palavras.filter(w=>txt.includes(w)).length/palavras.length;
+            return {item:r, sim};
+        })
+        .filter(x=>x.sim>=minSim)
+        .sort((a,b)=>b.sim-a.sim)
+        .slice(0,limite);
+}
+// O "Diretório" da tabela Rotinas é só organização interna do banco de rotinas, NÃO é o caminho de
+// menu nem a URL real (cada cliente Bsoft tem seu próprio domínio, ex. https://NOMEDOCLIENTE.bsoft.app).
+// O que dá pra oferecer com segurança é o "Nome Interno" (id da rotina) e o sufixo de URL padrão do
+// sistema, que o usuário completa com o endereço do sistema dele.
+function _formatarRotinaParaPrompt(r){
+    const nomeInterno=(r['Nome Interno']||'').trim();
+    const caminho=nomeInterno?`/versoes/versao5.0/rotinas/c.php?id=${nomeInterno}&menu=s`:'';
+    return `Nome oficial: ${r['Descrição']||''}\nNome interno (id da rotina): ${nomeInterno||'(não informado)'}`+
+        (caminho?`\nCaminho técnico (o usuário precisa completar ANTES com o endereço do sistema dele, ex.: https://NOMEDOCLIENTE.bsoft.app): ${caminho}`:'');
+}
+
+// ═══════════════════════════════════════════════════════════
 //  LÓGICA DE CHAT PRINCIPAL (com Repositório integrado)
 // ═══════════════════════════════════════════════════════════
 async function handleChat() {
@@ -3413,7 +3482,18 @@ async function handleChat() {
         }
     } catch(e) {}
 
-    const ps = `🏢 VOCÊ É UM AGENTE DE SUPORTE DA BSOFT TMS\n\n${ch}\n\n🎯 Atenda o cliente de forma PROFISSIONAL e DIDÁTICA.\n\nREGRAS OBRIGATÓRIAS:\n1. Use APENAS as informações contidas no CONHECIMENTO abaixo. Nada além.\n2. NUNCA invente. Se não encontrar a resposta no conhecimento fornecido, diga claramente que não encontrou e peça para reformular.\n3. ⚠️ CAMINHOS DE MENU — PROIBIDO INVENTAR: Só cite um caminho de menu (ex: "Transporte > Documentos > Ct-e") se ele aparecer LITERALMENTE nos CAMINHOS DO MENU ou na solução do artigo fornecido. Se o caminho não estiver explícito no conhecimento abaixo, NÃO mencione nenhum caminho — escreva apenas "acesse pelo menu do sistema" sem inventar a navegação.\n4. Procedimentos e passos: só descreva o que estiver documentado na solução. Não crie etapas extras por lógica própria.\n5. ⚠️ NÃO OMITA NADA DA SOLUÇÃO — REGRA ABSOLUTA: Reproduza TODOS os passos da solução do artigo, na íntegra. É PROIBIDO: resumir, condensar, escrever "etc.", "e assim por diante", pular etapas, ou dizer "siga os passos normais". Se a solução tem 10 passos, escreva os 10 completos com todos os detalhes. O público é suporte iniciante que não conhece o sistema — cada detalhe é essencial para resolver o problema. Prefira respostas longas e completas a respostas curtas e incompletas.\n6. Mantenha o contexto da conversa.\n7. Seja conversacional e humano.\n8. Diferencie: CT-e, MDF-e, NF-e, NFS-e, Minuta, OC, CIOT, VPO.\n9. PARÂMETROS E FUNCIONALIDADES: Se a seção "PARÂMETROS E FUNCIONALIDADES RELACIONADOS" contiver itens relevantes para a pergunta, mencione-os ao final da resposta como opção adicional — ex: "💡 Verifique também se o parâmetro/funcionalidade X está habilitado, pois pode estar relacionado a esta situação."\n\n${mi}\n📚 CONHECIMENTO:\n${es}${ar}${pfCtx}${conhecimentoRepositorio}${hc}\n\n🗣️ PERGUNTA: "${query}"\n\n📝 FORMATO:\n- Markdown limpo. NUNCA JSON.\n- **negrito** para termos importantes.\n- Listas com - para passos sequenciais.\n- Linguagem conversacional e humana.${vum ? '\n- Não encontrou: pedir reformulação.' : ''}\n- OBRIGATÓRIO: ao encerrar toda resposta completa, escreva \`#finalizado\` sozinho na última linha.`;
+    // Busca na tabela Rotinas (telas/funções cadastradas) -- ajuda a responder "onde fica X"/"como
+    // acesso X" com o nome oficial e o id real da rotina, em vez de arriscar inventar.
+    let rotinasCtx = '';
+    try {
+        const rotinasRel = _buscarRotinasRelevantes(query, 3);
+        if (rotinasRel.length > 0) {
+            rotinasCtx = '\n=== ROTINAS RELACIONADAS ===\n';
+            rotinasRel.forEach((x,i) => { rotinasCtx += `\n[ROTINA ${i+1} - sim:${(x.sim*100).toFixed(0)}%]\n${_formatarRotinaParaPrompt(x.item)}\n`; });
+        }
+    } catch(e) {}
+
+    const ps = `🏢 VOCÊ É UM AGENTE DE SUPORTE DA BSOFT TMS\n\n${ch}\n\n🎯 Atenda o cliente de forma PROFISSIONAL e DIDÁTICA.\n\nREGRAS OBRIGATÓRIAS:\n1. Use APENAS as informações contidas no CONHECIMENTO abaixo. Nada além.\n2. NUNCA invente. Se não encontrar a resposta no conhecimento fornecido, diga claramente que não encontrou e peça para reformular.\n3. ⚠️ CAMINHOS DE MENU — PROIBIDO INVENTAR: Só cite um caminho de menu (ex: "Transporte > Documentos > Ct-e") se ele aparecer LITERALMENTE nos CAMINHOS DO MENU ou na solução do artigo fornecido. Se o caminho não estiver explícito no conhecimento abaixo, NÃO mencione nenhum caminho — escreva apenas "acesse pelo menu do sistema" sem inventar a navegação.\n4. Procedimentos e passos: só descreva o que estiver documentado na solução. Não crie etapas extras por lógica própria.\n5. ⚠️ NÃO OMITA NADA DA SOLUÇÃO — REGRA ABSOLUTA: Reproduza TODOS os passos da solução do artigo, na íntegra. É PROIBIDO: resumir, condensar, escrever "etc.", "e assim por diante", pular etapas, ou dizer "siga os passos normais". Se a solução tem 10 passos, escreva os 10 completos com todos os detalhes. O público é suporte iniciante que não conhece o sistema — cada detalhe é essencial para resolver o problema. Prefira respostas longas e completas a respostas curtas e incompletas.\n6. Mantenha o contexto da conversa.\n7. Seja conversacional e humano.\n8. Diferencie: CT-e, MDF-e, NF-e, NFS-e, Minuta, OC, CIOT, VPO.\n9. PARÂMETROS E FUNCIONALIDADES: Se a seção "PARÂMETROS E FUNCIONALIDADES RELACIONADOS" contiver itens relevantes para a pergunta, mencione-os ao final da resposta como opção adicional — ex: "💡 Verifique também se o parâmetro/funcionalidade X está habilitado, pois pode estar relacionado a esta situação."\n10. ROTINAS: Se a seção "ROTINAS RELACIONADAS" tiver algo relevante pra pergunta (ex.: "onde fica X", "como acesso X"), use o Nome oficial pra confirmar como a tela/função se chama. Só inclua o nome interno/caminho técnico da rotina se isso realmente ajudar (ex.: pedido claramente técnico) -- e nesse caso, deixe claro que o caminho técnico precisa ser completado com o endereço do sistema do próprio cliente antes (cada empresa Bsoft tem o seu). Nunca invente nome oficial nem id de rotina que não estejam listados aqui.\n\n${mi}\n📚 CONHECIMENTO:\n${es}${ar}${pfCtx}${rotinasCtx}${conhecimentoRepositorio}${hc}\n\n🗣️ PERGUNTA: "${query}"\n\n📝 FORMATO:\n- Markdown limpo. NUNCA JSON.\n- **negrito** para termos importantes.\n- Listas com - para passos sequenciais.\n- Linguagem conversacional e humana.${vum ? '\n- Não encontrou: pedir reformulação.' : ''}\n- OBRIGATÓRIO: ao encerrar toda resposta completa, escreva \`#finalizado\` sozinho na última linha.`;
 
     // Build multi-turn messages when conversation history exists
     const _historyTurns = cc.slice(0, -1); // previous turns, current query already added to cc as last item
