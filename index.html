@@ -3831,7 +3831,8 @@ const CALC_FRETE_MAP={
 
 const REGRAS_PREDEFINIDAS_CONTRATO={
     combinado_motorista:`def("tarifaMotoristaCalculada", 0);\nvalor = (obt("valorTotalOrigem") * 0.2) * (obt("descontoINSS") / 100)\ndef("totalDescontoINSS", valor);\nvalor = (obt("valorTotalOrigem") * 0.2) * (obt("descontoSEST") / 100)\ndef("totalDescontoSEST", valor);\nvalorBase = (((obt("valorTotalOrigem"))*0.10)- obt("totalDescontoINSS"));\ndef("baseCalculoIRRF", valorBase);\nIRRF.defineDescontoIRRF();\nvalor =  obt("valorTotalOrigem")  + obt("outrosAcrescimos") - obt("outrosDescontos") - obt("totalDescontoINSS") - obt("totalDescontoSEST")  - obt("descontoIRRF");\ndef("freteLiquido", valor);\nvalor = obt("freteLiquido")  - obt("descontoQuebraPeso");\ndef("saldo", valor - obt("valorAdiantamento"));\ndef("resultado", obt("totalPrestacaoTerceiraAba") - obt("valorTotalOrigem") );`,
-    combinado_motorista_frete_minimo:`def("tarifaMotoristaCalculada", 0);\nvalor = (obt("valorTotalOrigem") * 0.2) * (obt("descontoINSS") / 100)\ndef("totalDescontoINSS", valor);\nvalor = (obt("valorTotalOrigem") * 0.2) * (obt("descontoSEST") / 100)\ndef("totalDescontoSEST", valor);\nvalorBase = (((obt("valorTotalOrigem"))*0.10)- obt("totalDescontoINSS"));\ndef("baseCalculoIRRF", valorBase);\nIRRF.defineDescontoIRRF();\nvalor =  obt("valorTotalOrigem")  + obt("outrosAcrescimos") - obt("outrosDescontos") - obt("totalDescontoINSS") - obt("totalDescontoSEST")  - obt("descontoIRRF");\ndef("freteLiquido", valor);\nvalor = obt("freteLiquido")  - obt("descontoQuebraPeso");\ndef("saldo", valor - obt("valorAdiantamento"));\ndef("resultado", obt("totalPrestacaoTerceiraAba") - obt("valorTotalOrigem") );\nif (obt("valorTotalOrigem") < obt("freteMinimo_valor")) {\n    alert("Valor abaixo do frete mínimo, será preenchido com valor do frete mínimo");\n    def("valorTotalOrigem", obt("freteMinimo_valor"));\n}`
+    combinado_motorista_frete_minimo:`def("tarifaMotoristaCalculada", 0);\nvalor = (obt("valorTotalOrigem") * 0.2) * (obt("descontoINSS") / 100)\ndef("totalDescontoINSS", valor);\nvalor = (obt("valorTotalOrigem") * 0.2) * (obt("descontoSEST") / 100)\ndef("totalDescontoSEST", valor);\nvalorBase = (((obt("valorTotalOrigem"))*0.10)- obt("totalDescontoINSS"));\ndef("baseCalculoIRRF", valorBase);\nIRRF.defineDescontoIRRF();\nvalor =  obt("valorTotalOrigem")  + obt("outrosAcrescimos") - obt("outrosDescontos") - obt("totalDescontoINSS") - obt("totalDescontoSEST")  - obt("descontoIRRF");\ndef("freteLiquido", valor);\nvalor = obt("freteLiquido")  - obt("descontoQuebraPeso");\ndef("saldo", valor - obt("valorAdiantamento"));\ndef("resultado", obt("totalPrestacaoTerceiraAba") - obt("valorTotalOrigem") );\nif (obt("valorTotalOrigem") < obt("freteMinimo_valor")) {\n    alert("Valor abaixo do frete mínimo, será preenchido com valor do frete mínimo");\n    def("valorTotalOrigem", obt("freteMinimo_valor"));\n}`,
+    combinado_motorista_perc_adiantamento:`def("tarifaMotoristaCalculada", 0);\nvalor = (obt("valorTotalOrigem") * 0.2) * (obt("descontoINSS") / 100)\ndef("totalDescontoINSS", valor);\nvalor = (obt("valorTotalOrigem") * 0.2) * (obt("descontoSEST") / 100)\ndef("totalDescontoSEST", valor);\nvalorBase = (((obt("valorTotalOrigem"))*0.10)- obt("totalDescontoINSS"));\ndef("baseCalculoIRRF", valorBase);\nIRRF.defineDescontoIRRF();\nvalor =  obt("valorTotalOrigem")  + obt("outrosAcrescimos") - obt("outrosDescontos") - obt("totalDescontoINSS") - obt("totalDescontoSEST")  - obt("descontoIRRF");\ndef("freteLiquido", valor);\nvalor= (obt("freteLiquido") * obt("outrosValoresCF[percAdiantamento]") /100);\nif(obt("outrosValoresCF[percAdiantamento]") != 0)\ndef("valorAdiantamento", valor);\nvalor = obt("freteLiquido")  - obt("descontoQuebraPeso");\ndef("saldo", valor - obt("valorAdiantamento"));\ndef("resultado", obt("totalPrestacaoTerceiraAba") - obt("valorTotalOrigem") );`
 };
 
 function mostrarWizardRegra(queryOriginal){
@@ -5240,6 +5241,7 @@ function mostrarWizardContratoDnd(queryOriginal){
       <div style="display:flex;flex-direction:column;gap:6px;">
         <button onclick="_cfdUsarPredefinida('combinado_motorista')" style="width:100%;text-align:left;padding:9px 12px;background:#f9fafb;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12.5px;color:#374151;font-weight:600;">🤝 Combinado Motorista</button>
         <button onclick="_cfdUsarPredefinida('combinado_motorista_frete_minimo')" style="width:100%;text-align:left;padding:9px 12px;background:#f9fafb;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12.5px;color:#374151;font-weight:600;">🤝 Combinado Motorista — com alerta e bloqueio abaixo do frete mínimo</button>
+        <button onclick="_cfdUsarPredefinida('combinado_motorista_perc_adiantamento')" style="width:100%;text-align:left;padding:9px 12px;background:#f9fafb;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12.5px;color:#374151;font-weight:600;">🤝 COMBINADO MOTORISTA % ADIANTAMENTO</button>
       </div>
     </div>
     <div class="wizard-section" style="border:none;">
@@ -5537,6 +5539,16 @@ function _cfdGerarRegraCustom(){
     if(linhas.length===0){alert('Defina ao menos um campo: dê um nome e arraste ao menos um campo pra área de montagem dele.');return;}
     _renderizarCardRegraContratoDndSemIA(linhas.join('\n'));
 }
+// Algumas regras pré-definidas dependem de um campo personalizado ("Utiliza Valores outros") que
+// não existe sozinho no sistema -- ao escolher essa regra, já marca o checkbox e preenche o nome
+// interno do campo, pra o chip correspondente já aparecer pronto pra arrastar, sem o usuário
+// precisar descobrir e digitar esse nome por conta própria.
+const CFD_REGRA_PRE_OUTROS_VALORES={
+    combinado_motorista_perc_adiantamento:{
+        nomes:['percAdiantamento'],
+        aviso:'ATENÇÃO, VERIFICAR EM Transporte > Configurações > Tipos Valores Outros, se está configurado o campo com nome interno percAdiantamento e descrição % Adiantamento e se ele está ativo.'
+    }
+};
 // Ao escolher uma regra pré-definida, ao invés de já gerar o resultado final, preenche o canvas
 // com os campos/definições dela — o usuário parte dessa base pronta e edita/adiciona o que precisar.
 function _cfdUsarPredefinida(chave){
@@ -5547,6 +5559,15 @@ function _cfdUsarPredefinida(chave){
     const {blocos,extras}=_parseRegraParaBlocos(codigo);
     window._cfdBlocos=(blocos.length?blocos:[{destino:'',expr:null}]).map(_seedTermosBase);
     window._cfdExtras=extras;
+    const outrosValoresPre=CFD_REGRA_PRE_OUTROS_VALORES[chave];
+    if(outrosValoresPre&&outrosValoresPre.nomes&&outrosValoresPre.nomes.length){
+        const chk=document.getElementById('wCfdOutrosValoresCheck');
+        const input=document.getElementById('wCfdOutrosValoresInput');
+        if(chk)chk.checked=true;
+        if(input)input.value=outrosValoresPre.nomes.join(', ');
+        _cfdToggleOutrosValores(true);
+        if(outrosValoresPre.aviso)alert(outrosValoresPre.aviso);
+    }
     _cfdRenderBlocos();
     const cont=document.getElementById('wCfdBlocosContainer');
     if(cont)cont.scrollIntoView({behavior:'smooth',block:'nearest'});
