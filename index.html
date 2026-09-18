@@ -2098,12 +2098,12 @@ const GEMINI_FALLBACK_KEY=gf1+gf2+gf3;
 const GEMINI_FALLBACK_MODEL="gemma-4-26b-a4b-it";
 const j1="jina_59e554b4ce3e4bfba5f7550ddb515ec7",j2="O3wfZe11iXINaz3azhRgd0-xpE5L";
 const JINA_KEY=j1+j2;
-// nemotron-3-nano-30b-a3b:free saiu do catálogo grátis da OpenRouter (só sobrou a versão paga) —
-// trocado por nemotron-3.5-lightning:free, testado ao vivo (responde em ~1s, texto limpo, sem
-// custo). Ver comentário mais abaixo (MODEL_LABELS) sobre os outros modelos também trocados.
-const DEFAULT_MCP_CONFIG = { provider:'openrouter', model:'nvidia/nemotron-3.5-lightning:free', apiKey:o1+o2+o3, baseUrl:'https://openrouter.ai/api/v1' };
+// Modelo padrão/rascunho: North Mini Code, o mais "leve" dos 4 modelos do fallback principal (ver
+// callCurrentMCP/callCurrentMCPStream) — reaproveitado aqui pra gerar a resposta rápida em paralelo
+// enquanto o modelo grande processa. Ordem da cadeia trocada em 18/09/2026, a pedido.
+const DEFAULT_MCP_CONFIG = { provider:'openrouter', model:'cohere/north-mini-code:free', apiKey:o1+o2+o3, baseUrl:'https://openrouter.ai/api/v1' };
 const PROVIDER_PRESETS = {
-    openrouter: { baseUrl:'https://openrouter.ai/api/v1', models:['inclusionai/ling-3.0-flash-fin:free','cohere/north-mini-code:free','nvidia/nemotron-3.5-lightning:free','nvidia/nemotron-3-ultra-550b-a55b:free','nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free','google/gemma-4-31b-it:free','nvidia/nemotron-3-super-120b-a12b:free','thinkingmachines/inkling:free'], defaultModel:'inclusionai/ling-3.0-flash-fin:free', chatEndpoint:'/chat/completions', headers:(k)=>({Authorization:`Bearer ${k}`,'Content-Type':'application/json','HTTP-Referer':window.location.origin,'X-Title':'Bsoft TMS Suporte'}), formatRequestBody:(m,msgs,c={})=>({model:m,messages:msgs,temperature:c.temperature||0.3,max_tokens:c.maxTokens||4096,...(c.responseFormat?{response_format:c.responseFormat}:{})}), parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro OpenRouter');return{text:d.choices?.[0]?.message?.content||'',finishReason:d.choices?.[0]?.finish_reason||'',full:d};} },
+    openrouter: { baseUrl:'https://openrouter.ai/api/v1', models:['inclusionai/ling-3.0-flash-fin:free','inclusionai/ling-3.0-flash-vl:free','inclusionai/ling-3.0-flash-sante:free','cohere/north-mini-code:free','nvidia/nemotron-3.5-lightning:free','nvidia/nemotron-3-ultra-550b-a55b:free','nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free','google/gemma-4-31b-it:free','nvidia/nemotron-3-super-120b-a12b:free','thinkingmachines/inkling:free'], defaultModel:'inclusionai/ling-3.0-flash-fin:free', chatEndpoint:'/chat/completions', headers:(k)=>({Authorization:`Bearer ${k}`,'Content-Type':'application/json','HTTP-Referer':window.location.origin,'X-Title':'Bsoft TMS Suporte'}), formatRequestBody:(m,msgs,c={})=>({model:m,messages:msgs,temperature:c.temperature||0.3,max_tokens:c.maxTokens||4096,...(c.responseFormat?{response_format:c.responseFormat}:{})}), parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro OpenRouter');return{text:d.choices?.[0]?.message?.content||'',finishReason:d.choices?.[0]?.finish_reason||'',full:d};} },
     google: { baseUrl:'https://generativelanguage.googleapis.com/v1beta', models:['gemma-4-26b-a4b-it','gemini-2.0-flash','gemini-2.0-flash-lite','gemini-2.5-flash'], defaultModel:'gemma-4-26b-a4b-it', chatEndpoint:'/models/{model}:generateContent', headers:()=>({'Content-Type':'application/json'}), formatRequestBody:(m,msgs,c={})=>{const cnt=msgs.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:typeof m.content==='string'?m.content:JSON.stringify(m.content)}]}));return{contents:cnt,generationConfig:{temperature:c.temperature||0.3,maxOutputTokens:c.maxTokens||4096,...(c.responseFormat?.type==='json_object'?{responseMimeType:'application/json'}:{})}};}, parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro Google');const p=d.candidates?.[0]?.content?.parts||[];return{text:p.filter(p=>p.text).map(p=>p.text).join(''),finishReason:d.candidates?.[0]?.finishReason||'',full:d};}, buildUrl:(b,m,e)=>`${b}${e.replace('{model}',m)}` },
     custom: { baseUrl:'',models:[],defaultModel:'',chatEndpoint:'/chat/completions', headers:(k)=>({Authorization:`Bearer ${k}`,'Content-Type':'application/json'}), formatRequestBody:(m,msgs,c={})=>({model:m,messages:msgs,temperature:c.temperature||0.3,max_tokens:c.maxTokens||4096,...(c.responseFormat?{response_format:c.responseFormat}:{})}), parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro API');return{text:d.choices?.[0]?.message?.content||'',finishReason:d.choices?.[0]?.finish_reason||'',full:d};} }
 };
@@ -2114,11 +2114,13 @@ const PROVIDER_PRESETS = {
 // desses parar de funcionar de novo no futuro, é só repetir essa conferência.
 const MODEL_LABELS = {
     'inclusionai/ling-3.0-flash-fin:free':            'Ling 3.0 Flash Fin ⭐ (principal)',
-    'nvidia/nemotron-3-super-120b-a12b:free':         'Nemotron 3 Super (secundário)',
-    'cohere/north-mini-code:free':                    'North Mini Code (terceiro)',
-    'nvidia/nemotron-3-ultra-550b-a55b:free':         'Nemotron Ultra 550B (quarto/último fallback)',
+    'inclusionai/ling-3.0-flash-vl:free':             'Ling 3.0 Flash VL (secundário)',
+    'inclusionai/ling-3.0-flash-sante:free':          'Ling 3.0 Flash Sante (terceiro)',
+    'cohere/north-mini-code:free':                    'North Mini Code (quarto/último fallback)',
+    'nvidia/nemotron-3-super-120b-a12b:free':         'Nemotron 3 Super',
+    'nvidia/nemotron-3-ultra-550b-a55b:free':         'Nemotron Ultra 550B',
     'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free': 'Nemotron Nano 30B Reasoning',
-    'nvidia/nemotron-3.5-lightning:free':             'Nemotron 3.5 Lightning (rápido)',
+    'nvidia/nemotron-3.5-lightning:free':             'Nemotron 3.5 Lightning',
     'google/gemma-4-31b-it:free':                     'Gemma 4 31B',
     'thinkingmachines/inkling:free':                  'Inkling',
     'gemma-4-26b-a4b-it':                             'Gemma 4 26B (fallback padrão)',
@@ -2173,16 +2175,15 @@ async function callMCPAPI(provider,model,apiKey,baseUrl,messages,config={}){
 }
 
 async function callCurrentMCP(messages,config={}){
-    // Ordem 09/09/2026, a pedido: Ling 3.0 Flash Fin (principal) → North Mini (secundário) →
-    // Nano/Lightning (terceiro) → Ultra 550B (quarto, último fallback). Testei o Ling ao vivo antes
-    // de colocar aqui: responde certo em pt-BR, ~2-4s (ele "pensa" antes de responder — normal,
-    // só precisa de orçamento de tokens suficiente, o que este app já usa).
-    const LING_MODEL='inclusionai/ling-3.0-flash-fin:free';
-    const MINI_MODEL='cohere/north-mini-code:free';
-    const NANO_MODEL=DEFAULT_MCP_CONFIG.model; // padrão fixo do código
-    const ULTRA_MODEL='nvidia/nemotron-3-ultra-550b-a55b:free';
+    // Ordem 18/09/2026, a pedido: Ling 3.0 Flash Fin (principal) → Ling 3.0 Flash VL (secundário) →
+    // Ling 3.0 Flash Sante (terceiro) → North Mini Code (quarto, último fallback). Testei os 4 ao
+    // vivo antes de colocar aqui (chamada real, resposta válida na OpenRouter).
+    const LING_FIN_MODEL='inclusionai/ling-3.0-flash-fin:free';
+    const LING_VL_MODEL='inclusionai/ling-3.0-flash-vl:free';
+    const LING_SANTE_MODEL='inclusionai/ling-3.0-flash-sante:free';
+    const NORTH_MINI_MODEL=DEFAULT_MCP_CONFIG.model; // padrão fixo do código
     // modelo configurado pelo usuário — tem prioridade se for diferente do padrão
-    const CUSTOM_MODEL = mcpConfig.model !== NANO_MODEL ? mcpConfig.model : null;
+    const CUSTOM_MODEL = mcpConfig.model !== NORTH_MINI_MODEL ? mcpConfig.model : null;
     const _providerLabel = mcpConfig.provider==='google'?'Google':mcpConfig.provider==='custom'?'Custom':'OpenRouter';
 
     const _tlog = (modelo, t, total, status, extra='') => console.log(
@@ -2204,11 +2205,11 @@ async function callCurrentMCP(messages,config={}){
                 _tlog(CUSTOM_MODEL,t,0,`❌ erro (${e.status||e.message?.substring(0,40)||'?'})`);
             }
         }
-        console.warn(`[Config] ${CUSTOM_MODEL} falhou → entrando no fluxo padrão (Ling → NorthMini → Nano → Ultra)...`);
+        console.warn(`[Config] ${CUSTOM_MODEL} falhou → entrando no fluxo padrão (Ling Fin → Ling VL → Ling Sante → North Mini)...`);
     }
 
     // ── 1º: Principal (Ling 3.0 Flash Fin) — 2 tentativas ──
-    console.log(`%c⏱️ [IA] Tentando principal (${LING_MODEL})...`,'color:#7c3aed;font-weight:600');
+    console.log(`%c⏱️ [IA] Tentando principal (${LING_FIN_MODEL})...`,'color:#7c3aed;font-weight:600');
     for(let t=1;t<=2;t++){
         try{
             if(t>1){console.warn('[Principal] retry 2/2...');await new Promise(r=>setTimeout(r,1500));}
@@ -2217,58 +2218,58 @@ async function callCurrentMCP(messages,config={}){
             // usuário tenha configurado outro provedor. Usar mcpConfig aqui gerava uma URL quebrada
             // (ex.: modelo da OpenRouter colado na URL do Google), que o navegador reportava como
             // erro de CORS.
-            const res=await callMCPAPI(DEFAULT_MCP_CONFIG.provider,LING_MODEL,DEFAULT_MCP_CONFIG.apiKey,DEFAULT_MCP_CONFIG.baseUrl,messages,config);
-            _tlog('Principal',t,performance.now()-_tm,'✅ OK',` — modelo real: ${LING_MODEL}`);
-            return{...res,_iaUsada:'OpenRouter',_iaModelo:LING_MODEL};
+            const res=await callMCPAPI(DEFAULT_MCP_CONFIG.provider,LING_FIN_MODEL,DEFAULT_MCP_CONFIG.apiKey,DEFAULT_MCP_CONFIG.baseUrl,messages,config);
+            _tlog('Principal',t,performance.now()-_tm,'✅ OK',` — modelo real: ${LING_FIN_MODEL}`);
+            return{...res,_iaUsada:'OpenRouter',_iaModelo:LING_FIN_MODEL};
         }catch(e){
             _tlog('Principal',t,0,`❌ erro (${e.status||e.message?.substring(0,40)||'?'})`);
         }
     }
 
-    // ── 2º: North Mini Code (secundário) — 2 tentativas ──
-    if(CUSTOM_MODEL !== MINI_MODEL && LING_MODEL !== MINI_MODEL){
-        console.log(`%c⏱️ [IA] Principal falhou → tentando ${MINI_MODEL}...`,'color:#7c3aed;font-weight:600');
+    // ── 2º: Ling 3.0 Flash VL (secundário) — 2 tentativas ──
+    if(CUSTOM_MODEL !== LING_VL_MODEL && LING_FIN_MODEL !== LING_VL_MODEL){
+        console.log(`%c⏱️ [IA] Principal falhou → tentando ${LING_VL_MODEL}...`,'color:#7c3aed;font-weight:600');
+        for(let t=1;t<=2;t++){
+            try{
+                if(t>1){console.warn('[Ling-VL] retry 2/2...');await new Promise(r=>setTimeout(r,1500));}
+                const _tm=performance.now();
+                const res=await callMCPAPI(DEFAULT_MCP_CONFIG.provider,LING_VL_MODEL,DEFAULT_MCP_CONFIG.apiKey,DEFAULT_MCP_CONFIG.baseUrl,messages,config);
+                _tlog('Ling-VL',t,performance.now()-_tm,'✅ OK',` — modelo real: ${LING_VL_MODEL}`);
+                return{...res,_iaUsada:'OpenRouter',_iaModelo:LING_VL_MODEL};
+            }catch(e){
+                _tlog('Ling-VL',t,0,`❌ erro (${e.status||e.message?.substring(0,40)||'?'})`);
+            }
+        }
+    }
+
+    // ── 3º: Ling 3.0 Flash Sante (terceiro) — 2 tentativas ──
+    if(CUSTOM_MODEL !== LING_SANTE_MODEL && LING_FIN_MODEL !== LING_SANTE_MODEL && LING_VL_MODEL !== LING_SANTE_MODEL){
+        console.log(`%c⏱️ [IA] Falhou → tentando ${LING_SANTE_MODEL}...`,'color:#ea6a0a;font-weight:600');
+        for(let t=1;t<=2;t++){
+            try{
+                if(t>1){console.warn('[Ling-Sante] retry 2/2...');await new Promise(r=>setTimeout(r,1500));}
+                const _tm=performance.now();
+                const res=await callMCPAPI(DEFAULT_MCP_CONFIG.provider,LING_SANTE_MODEL,DEFAULT_MCP_CONFIG.apiKey,DEFAULT_MCP_CONFIG.baseUrl,messages,config);
+                _tlog('Ling-Sante',t,performance.now()-_tm,'✅ OK',` — modelo real: ${LING_SANTE_MODEL}`);
+                return{...res,_iaUsada:'OpenRouter',_iaModelo:LING_SANTE_MODEL};
+            }catch(e){
+                _tlog('Ling-Sante',t,0,`❌ erro (${e.status||e.message?.substring(0,40)||'?'})`);
+            }
+        }
+    }
+
+    // ── 4º: North Mini Code (último fallback) — 2 tentativas ──
+    if(CUSTOM_MODEL !== NORTH_MINI_MODEL && LING_FIN_MODEL !== NORTH_MINI_MODEL && LING_VL_MODEL !== NORTH_MINI_MODEL && LING_SANTE_MODEL !== NORTH_MINI_MODEL){
+        console.log(`%c⏱️ [IA] Falhou → tentando North Mini (${NORTH_MINI_MODEL})...`,'color:#ea6a0a;font-weight:600');
         for(let t=1;t<=2;t++){
             try{
                 if(t>1){console.warn('[NorthMini] retry 2/2...');await new Promise(r=>setTimeout(r,1500));}
                 const _tm=performance.now();
-                const res=await callMCPAPI(DEFAULT_MCP_CONFIG.provider,MINI_MODEL,DEFAULT_MCP_CONFIG.apiKey,DEFAULT_MCP_CONFIG.baseUrl,messages,config);
-                _tlog('NorthMini',t,performance.now()-_tm,'✅ OK',` — modelo real: ${MINI_MODEL}`);
-                return{...res,_iaUsada:'OpenRouter',_iaModelo:MINI_MODEL};
+                const res=await callMCPAPI(DEFAULT_MCP_CONFIG.provider,NORTH_MINI_MODEL,DEFAULT_MCP_CONFIG.apiKey,DEFAULT_MCP_CONFIG.baseUrl,messages,config);
+                _tlog('NorthMini',t,performance.now()-_tm,'✅ OK',` — modelo real: ${NORTH_MINI_MODEL}`);
+                return{...res,_iaUsada:'OpenRouter',_iaModelo:NORTH_MINI_MODEL};
             }catch(e){
                 _tlog('NorthMini',t,0,`❌ erro (${e.status||e.message?.substring(0,40)||'?'})`);
-            }
-        }
-    }
-
-    // ── 3º: Nano/Lightning (terceiro) — 2 tentativas ──
-    if(CUSTOM_MODEL !== NANO_MODEL && LING_MODEL !== NANO_MODEL && MINI_MODEL !== NANO_MODEL){
-        console.log(`%c⏱️ [IA] Falhou → tentando Nano (${NANO_MODEL})...`,'color:#ea6a0a;font-weight:600');
-        for(let t=1;t<=2;t++){
-            try{
-                if(t>1){console.warn('[Nano] retry 2/2...');await new Promise(r=>setTimeout(r,1500));}
-                const _tm=performance.now();
-                const res=await callMCPAPI(DEFAULT_MCP_CONFIG.provider,NANO_MODEL,DEFAULT_MCP_CONFIG.apiKey,DEFAULT_MCP_CONFIG.baseUrl,messages,config);
-                _tlog('Nano',t,performance.now()-_tm,'✅ OK',` — modelo real: ${NANO_MODEL}`);
-                return{...res,_iaUsada:'OpenRouter',_iaModelo:NANO_MODEL};
-            }catch(e){
-                _tlog('Nano',t,0,`❌ erro (${e.status||e.message?.substring(0,40)||'?'})`);
-            }
-        }
-    }
-
-    // ── 4º: Ultra 550B (último fallback) — 2 tentativas ──
-    if(CUSTOM_MODEL !== ULTRA_MODEL && LING_MODEL !== ULTRA_MODEL && MINI_MODEL !== ULTRA_MODEL && NANO_MODEL !== ULTRA_MODEL){
-        console.log(`%c⏱️ [IA] Falhou → tentando Ultra 550B (${ULTRA_MODEL})...`,'color:#ea6a0a;font-weight:600');
-        for(let t=1;t<=2;t++){
-            try{
-                if(t>1){console.warn('[Ultra] retry 2/2...');await new Promise(r=>setTimeout(r,1500));}
-                const _tm=performance.now();
-                const res=await callMCPAPI(DEFAULT_MCP_CONFIG.provider,ULTRA_MODEL,DEFAULT_MCP_CONFIG.apiKey,DEFAULT_MCP_CONFIG.baseUrl,messages,config);
-                _tlog('Ultra',t,performance.now()-_tm,'✅ OK',` — modelo real: ${ULTRA_MODEL}`);
-                return{...res,_iaUsada:'OpenRouter',_iaModelo:ULTRA_MODEL};
-            }catch(e){
-                _tlog('Ultra',t,0,`❌ erro (${e.status||e.message?.substring(0,40)||'?'})`);
             }
         }
     }
@@ -2498,7 +2499,12 @@ function enviarContextoCiotParaIA() {
 //  SISTEMA DE SINÔNIMOS
 // ═══════════════════════════════════════════════════════════
 const SINONIMOS = {
-    emitir: ["emito","criar","emitir","gerar","lançar","fazer","abrir","registrar","incluir","cadastrar","inserir","montar","produzir","processar","emissão","geração","criação","lançamento","abertura"],
+    // 18/09/2026: "cadastrar" (e variações) tratado como sinônimo de "emitir" fazia "como cadastrar
+    // um veículo" virar "como emitir um veículo" -- cadastro de registro (veículo/motorista/cliente)
+    // é uma ação bem diferente de emissão de documento fiscal (CT-e/NF-e/MDF-e) neste sistema, e a
+    // busca passava a priorizar artigos de emissão, empurrando o artigo de cadastro pra fora do topo
+    // (onde o conteúdo é cortado). Tirado daqui -- ver também "veiculo" logo abaixo.
+    emitir: ["emito","criar","emitir","gerar","lançar","fazer","abrir","montar","produzir","processar","emissão","geração","criação","lançamento","abertura"],
     cancelar: ["cancelar","estornar","desfazer","anular","reverter","excluir","deletar","remover","apagar","cancelamento","estorno"],
     cte: ["conhecimento", "conhecimento de transporte", "ct-e", "cte"],
     mdfe: ["manifesto", "manifesto de carga", "mdf-e", "mdf", "mdfe"],
@@ -2506,7 +2512,14 @@ const SINONIMOS = {
     nfe: ["nf-e", "nfe", "nota fiscal eletrônica", "nota fiscal", "notas fiscais"],
     consultar: ["consultar","buscar","localizar","pesquisar","encontrar","ver","visualizar","verificar","checar","acessar","abrir","listar","mostrar","exibir","onde fica","como ver","como achar","como encontrar","onde encontrar","onde localizar"],
     motorista: ["motorista", "condutor", "piloto", "chofer", "colaborador", "funcionário", "pessoa"],
-    veiculo: ["veículo", "caminhão", "carreta", "truck", "trucado", "bitrem", "rodotrem", "carro", "frota", "cavalo", "conjunto", "conjuntos"],
+    // 18/09/2026: testei ao vivo (busca vetorial real) antes de decidir -- tirar "bitrem"/"dolly"/
+    // "carreta"/"cavalo"/etc. daqui pra virarem só "veículo" pareceu mais preciso a princípio, mas
+    // na prática piora a busca: o artigo "Como cadastrar um veículo" cobre TODOS esses tipos, mas o
+    // embedding dele é dominado pela palavra "veículo" -- pesquisar só "bitrem" ou "dolly" sozinho
+    // rankeava esse artigo mal (dolly nem entrava no top 12) ou fora do top 3 (corte de 1000
+    // caracteres). Mantido/ampliado com os nomes de categoria reais do cadastro (Truck, Bitruck,
+    // Cavalo, Carreta, Semi Reboque, Dolly, Bitrem, Rodotrem).
+    veiculo: ["veículo", "caminhão", "carreta", "truck", "trucado", "bitruck", "bitrem", "rodotrem", "carro", "frota", "cavalo", "conjunto", "conjuntos", "dolly", "semi reboque", "semi-reboque", "semirreboque"],
     cliente: ["cliente", "contratante", "pagador", "remetente", "destinatário", "tomador", "pessoa"],
     transporte: ["transporte", "frete", "carga", "entrega", "coleta", "movimentação", "logística", "transferência"],
     financeiro: ["financeiro", "pagamento", "recebimento", "cobrança", "faturamento", "contas", "títulos", "caixa", "banco", "dinheiro", "valor"],
@@ -3194,13 +3207,13 @@ async function _readSSEStream(resp, provider, onChunk) {
 }
 
 async function callCurrentMCPStream(messages, config = {}) {
-    // Ordem 09/09/2026, a pedido: Ling 3.0 Flash Fin (principal) → North Mini (secundário) →
-    // Nano/Lightning (terceiro) → Ultra 550B (quarto, último fallback).
-    const LING_MODEL = 'inclusionai/ling-3.0-flash-fin:free';
-    const MINI_MODEL = 'cohere/north-mini-code:free';
-    const NANO_MODEL = DEFAULT_MCP_CONFIG.model;
-    const ULTRA_MODEL = 'nvidia/nemotron-3-ultra-550b-a55b:free';
-    const CUSTOM_MODEL = mcpConfig.model !== NANO_MODEL ? mcpConfig.model : null;
+    // Ordem 18/09/2026, a pedido: Ling 3.0 Flash Fin (principal) → Ling 3.0 Flash VL (secundário) →
+    // Ling 3.0 Flash Sante (terceiro) → North Mini Code (quarto, último fallback).
+    const LING_FIN_MODEL = 'inclusionai/ling-3.0-flash-fin:free';
+    const LING_VL_MODEL = 'inclusionai/ling-3.0-flash-vl:free';
+    const LING_SANTE_MODEL = 'inclusionai/ling-3.0-flash-sante:free';
+    const NORTH_MINI_MODEL = DEFAULT_MCP_CONFIG.model;
+    const CUSTOM_MODEL = mcpConfig.model !== NORTH_MINI_MODEL ? mcpConfig.model : null;
     const _pLabel = mcpConfig.provider==='google'?'Google':mcpConfig.provider==='custom'?'Custom':'OpenRouter';
 
     const _conn = async (provider, model, apiKey, baseUrl) => {
@@ -3215,7 +3228,7 @@ async function callCurrentMCPStream(messages, config = {}) {
         const body = preset.formatRequestBody(model, messages, config);
         if (!isGoogle) body.stream = true;
         const _ac = new AbortController();
-        const _tid = setTimeout(() => _ac.abort(), 12000);
+        const _tid = setTimeout(() => _ac.abort(), 24000);
         let resp;
         try {
             resp = await fetch(url, { method: 'POST', headers: preset.headers(apiKey), body: JSON.stringify(body), signal: _ac.signal });
@@ -3232,17 +3245,17 @@ async function callCurrentMCPStream(messages, config = {}) {
         return resp;
     };
 
-    // Chain: Custom → Ling 3.0 Flash Fin (principal) → North Mini (secundário) → Nano/Lightning
-    // (terceiro) → Ultra 550B (quarto, último fallback).
+    // Chain: Custom → Ling 3.0 Flash Fin (principal) → Ling 3.0 Flash VL (secundário) → Ling 3.0
+    // Flash Sante (terceiro) → North Mini Code (quarto, último fallback).
     const chain = [];
     if (CUSTOM_MODEL) chain.push({ model: CUSTOM_MODEL, provider: mcpConfig.provider, apiKey: mcpConfig.apiKey, baseUrl: mcpConfig.baseUrl, label: _pLabel });
     // Todos fixos da OpenRouter — sempre credenciais padrão da OpenRouter aqui (nunca as do
     // provedor configurado pelo usuário), senão vira uma URL quebrada tipo modelo da OpenRouter
     // colado na URL do Google, que o navegador só reporta como erro de CORS.
-    if (CUSTOM_MODEL !== LING_MODEL) chain.push({ model: LING_MODEL, provider: DEFAULT_MCP_CONFIG.provider, apiKey: DEFAULT_MCP_CONFIG.apiKey, baseUrl: DEFAULT_MCP_CONFIG.baseUrl, label: 'OpenRouter' });
-    if (LING_MODEL !== MINI_MODEL && CUSTOM_MODEL !== MINI_MODEL) chain.push({ model: MINI_MODEL, provider: DEFAULT_MCP_CONFIG.provider, apiKey: DEFAULT_MCP_CONFIG.apiKey, baseUrl: DEFAULT_MCP_CONFIG.baseUrl, label: 'OpenRouter' });
-    if (LING_MODEL !== NANO_MODEL && MINI_MODEL !== NANO_MODEL && CUSTOM_MODEL !== NANO_MODEL) chain.push({ model: NANO_MODEL, provider: DEFAULT_MCP_CONFIG.provider, apiKey: DEFAULT_MCP_CONFIG.apiKey, baseUrl: DEFAULT_MCP_CONFIG.baseUrl, label: 'OpenRouter' });
-    if (LING_MODEL !== ULTRA_MODEL && MINI_MODEL !== ULTRA_MODEL && NANO_MODEL !== ULTRA_MODEL && CUSTOM_MODEL !== ULTRA_MODEL) chain.push({ model: ULTRA_MODEL, provider: DEFAULT_MCP_CONFIG.provider, apiKey: DEFAULT_MCP_CONFIG.apiKey, baseUrl: DEFAULT_MCP_CONFIG.baseUrl, label: 'OpenRouter' });
+    if (CUSTOM_MODEL !== LING_FIN_MODEL) chain.push({ model: LING_FIN_MODEL, provider: DEFAULT_MCP_CONFIG.provider, apiKey: DEFAULT_MCP_CONFIG.apiKey, baseUrl: DEFAULT_MCP_CONFIG.baseUrl, label: 'OpenRouter' });
+    if (LING_FIN_MODEL !== LING_VL_MODEL && CUSTOM_MODEL !== LING_VL_MODEL) chain.push({ model: LING_VL_MODEL, provider: DEFAULT_MCP_CONFIG.provider, apiKey: DEFAULT_MCP_CONFIG.apiKey, baseUrl: DEFAULT_MCP_CONFIG.baseUrl, label: 'OpenRouter' });
+    if (LING_FIN_MODEL !== LING_SANTE_MODEL && LING_VL_MODEL !== LING_SANTE_MODEL && CUSTOM_MODEL !== LING_SANTE_MODEL) chain.push({ model: LING_SANTE_MODEL, provider: DEFAULT_MCP_CONFIG.provider, apiKey: DEFAULT_MCP_CONFIG.apiKey, baseUrl: DEFAULT_MCP_CONFIG.baseUrl, label: 'OpenRouter' });
+    if (LING_FIN_MODEL !== NORTH_MINI_MODEL && LING_VL_MODEL !== NORTH_MINI_MODEL && LING_SANTE_MODEL !== NORTH_MINI_MODEL && CUSTOM_MODEL !== NORTH_MINI_MODEL) chain.push({ model: NORTH_MINI_MODEL, provider: DEFAULT_MCP_CONFIG.provider, apiKey: DEFAULT_MCP_CONFIG.apiKey, baseUrl: DEFAULT_MCP_CONFIG.baseUrl, label: 'OpenRouter' });
 
     const _skipModels = config.skipModels || [];
     const _activeChain = _skipModels.length ? chain.filter(c => !_skipModels.includes(c.model)) : chain;
@@ -3514,13 +3527,13 @@ async function handleChat() {
     let _streamCard = null;
     let _mainStreamConectado = false; // só vira true depois que o modelo grande conecta de fato — usado no catch pra decidir a mensagem de erro certa
     const _filter = _makeThinkingFilter();
-    // Rascunho rápido de um modelo menor (Nano), disparado em paralelo com o modelo grande — só é
-    // mostrado se o modelo grande ainda não tiver começado a responder (tira a sensação de tela
-    // parada enquanto ele processa/conecta). Assim que a resposta de verdade do modelo grande
+    // Rascunho rápido de um modelo menor (North Mini), disparado em paralelo com o modelo grande —
+    // só é mostrado se o modelo grande ainda não tiver começado a responder (tira a sensação de
+    // tela parada enquanto ele processa/conecta). Assim que a resposta de verdade do modelo grande
     // começa a chegar, ela substitui o rascunho normalmente — o rascunho nunca vira a resposta
-    // salva, notificada ou falada na chamada, é só pra ocupar a espera. Se o Nano falhar, sem
+    // salva, notificada ou falada na chamada, é só pra ocupar a espera. Se o North Mini falhar, sem
     // problema: simplesmente não aparece nada antes da resposta de verdade.
-    const _rascunhoPromise = callMCPAPI(DEFAULT_MCP_CONFIG.provider, DEFAULT_MCP_CONFIG.model, DEFAULT_MCP_CONFIG.apiKey, DEFAULT_MCP_CONFIG.baseUrl, _apiMessages, { temperature: 0.2, maxTokens: 12000 })
+    const _rascunhoPromise = callMCPAPI(DEFAULT_MCP_CONFIG.provider, DEFAULT_MCP_CONFIG.model, DEFAULT_MCP_CONFIG.apiKey, DEFAULT_MCP_CONFIG.baseUrl, _apiMessages, { temperature: 0.2, maxTokens: 24000 })
         .then(r => (r.text || '').replace(/#finalizado\s*/gi, '').trim())
         .catch(() => '');
 
@@ -3562,7 +3575,7 @@ async function handleChat() {
     try {
         const _t5 = performance.now();
         const { resp: _resp, provider: _pr, iaUsada: _iu, iaModelo: _im } = await callCurrentMCPStream(
-            _apiMessages, { temperature: 0.2, maxTokens: 12000 }
+            _apiMessages, { temperature: 0.2, maxTokens: 24000 }
         );
         _tp('callCurrentMCPStream (conectado)', _t5);
         _mainStreamConectado = true;
