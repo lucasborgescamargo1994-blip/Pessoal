@@ -2103,7 +2103,7 @@ const JINA_KEY=j1+j2;
 // enquanto o modelo grande processa. Ordem da cadeia trocada em 18/09/2026, a pedido.
 const DEFAULT_MCP_CONFIG = { provider:'openrouter', model:'cohere/north-mini-code:free', apiKey:o1+o2+o3, baseUrl:'https://openrouter.ai/api/v1' };
 const PROVIDER_PRESETS = {
-    openrouter: { baseUrl:'https://openrouter.ai/api/v1', models:['inclusionai/ling-3.0-flash-vl:free','inclusionai/ling-3.0-flash-fin:free','inclusionai/ling-3.0-flash-sante:free','cohere/north-mini-code:free','nvidia/nemotron-3.5-lightning:free','nvidia/nemotron-3-ultra-550b-a55b:free','nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free','google/gemma-4-31b-it:free','nvidia/nemotron-3-super-120b-a12b:free','thinkingmachines/inkling:free'], defaultModel:'inclusionai/ling-3.0-flash-vl:free', chatEndpoint:'/chat/completions', headers:(k)=>({Authorization:`Bearer ${k}`,'Content-Type':'application/json','HTTP-Referer':window.location.origin,'X-Title':'Bsoft TMS Suporte'}), formatRequestBody:(m,msgs,c={})=>({model:m,messages:msgs,temperature:c.temperature||0.3,max_tokens:c.maxTokens||4096,...(c.responseFormat?{response_format:c.responseFormat}:{})}), parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro OpenRouter');return{text:d.choices?.[0]?.message?.content||'',finishReason:d.choices?.[0]?.finish_reason||'',full:d};} },
+    openrouter: { baseUrl:'https://openrouter.ai/api/v1', models:['inclusionai/ling-3.0-flash-fin:free','inclusionai/ling-3.0-flash-vl:free','inclusionai/ling-3.0-flash-sante:free','cohere/north-mini-code:free','nvidia/nemotron-3.5-lightning:free','nvidia/nemotron-3-ultra-550b-a55b:free','nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free','google/gemma-4-31b-it:free','nvidia/nemotron-3-super-120b-a12b:free','thinkingmachines/inkling:free'], defaultModel:'inclusionai/ling-3.0-flash-fin:free', chatEndpoint:'/chat/completions', headers:(k)=>({Authorization:`Bearer ${k}`,'Content-Type':'application/json','HTTP-Referer':window.location.origin,'X-Title':'Bsoft TMS Suporte'}), formatRequestBody:(m,msgs,c={})=>({model:m,messages:msgs,temperature:c.temperature||0.3,max_tokens:c.maxTokens||4096,...(c.responseFormat?{response_format:c.responseFormat}:{})}), parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro OpenRouter');return{text:d.choices?.[0]?.message?.content||'',finishReason:d.choices?.[0]?.finish_reason||'',full:d};} },
     google: { baseUrl:'https://generativelanguage.googleapis.com/v1beta', models:['gemma-4-26b-a4b-it','gemini-2.0-flash','gemini-2.0-flash-lite','gemini-2.5-flash'], defaultModel:'gemma-4-26b-a4b-it', chatEndpoint:'/models/{model}:generateContent', headers:()=>({'Content-Type':'application/json'}), formatRequestBody:(m,msgs,c={})=>{const cnt=msgs.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:typeof m.content==='string'?m.content:JSON.stringify(m.content)}]}));return{contents:cnt,generationConfig:{temperature:c.temperature||0.3,maxOutputTokens:c.maxTokens||4096,...(c.responseFormat?.type==='json_object'?{responseMimeType:'application/json'}:{})}};}, parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro Google');const p=d.candidates?.[0]?.content?.parts||[];return{text:p.filter(p=>p.text).map(p=>p.text).join(''),finishReason:d.candidates?.[0]?.finishReason||'',full:d};}, buildUrl:(b,m,e)=>`${b}${e.replace('{model}',m)}` },
     custom: { baseUrl:'',models:[],defaultModel:'',chatEndpoint:'/chat/completions', headers:(k)=>({Authorization:`Bearer ${k}`,'Content-Type':'application/json'}), formatRequestBody:(m,msgs,c={})=>({model:m,messages:msgs,temperature:c.temperature||0.3,max_tokens:c.maxTokens||4096,...(c.responseFormat?{response_format:c.responseFormat}:{})}), parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro API');return{text:d.choices?.[0]?.message?.content||'',finishReason:d.choices?.[0]?.finish_reason||'',full:d};} }
 };
@@ -2113,8 +2113,8 @@ const PROVIDER_PRESETS = {
 // válida) nessa mesma data. Como o catálogo grátis da OpenRouter muda com frequência, se algum
 // desses parar de funcionar de novo no futuro, é só repetir essa conferência.
 const MODEL_LABELS = {
-    'inclusionai/ling-3.0-flash-vl:free':             'Ling 3.0 Flash VL ⭐ (principal)',
-    'inclusionai/ling-3.0-flash-fin:free':            'Ling 3.0 Flash Fin (secundário)',
+    'inclusionai/ling-3.0-flash-fin:free':            'Ling 3.0 Flash Fin ⭐ (principal)',
+    'inclusionai/ling-3.0-flash-vl:free':             'Ling 3.0 Flash VL (secundário)',
     'inclusionai/ling-3.0-flash-sante:free':          'Ling 3.0 Flash Sante (terceiro)',
     'cohere/north-mini-code:free':                    'North Mini Code (quarto/último fallback)',
     'nvidia/nemotron-3-super-120b-a12b:free':         'Nemotron 3 Super',
@@ -2175,9 +2175,10 @@ async function callMCPAPI(provider,model,apiKey,baseUrl,messages,config={}){
 }
 
 async function callCurrentMCP(messages,config={}){
-    // Ordem 22/09/2026, a pedido: Ling 3.0 Flash VL (principal) → Ling 3.0 Flash Fin (secundário) →
-    // Ling 3.0 Flash Sante (terceiro) → North Mini Code (quarto, último fallback). Testei os 4 ao
-    // vivo antes de colocar aqui (chamada real, resposta válida na OpenRouter).
+    // Ordem 23/09/2026, a pedido (volta pra ordem de 18/09): Ling 3.0 Flash Fin (principal) →
+    // Ling 3.0 Flash VL (secundário) → Ling 3.0 Flash Sante (terceiro) → North Mini Code (quarto,
+    // último fallback). Testei os 4 ao vivo antes de colocar aqui (chamada real, resposta válida
+    // na OpenRouter).
     const LING_FIN_MODEL='inclusionai/ling-3.0-flash-fin:free';
     const LING_VL_MODEL='inclusionai/ling-3.0-flash-vl:free';
     const LING_SANTE_MODEL='inclusionai/ling-3.0-flash-sante:free';
@@ -2205,11 +2206,11 @@ async function callCurrentMCP(messages,config={}){
                 _tlog(CUSTOM_MODEL,t,0,`❌ erro (${e.status||e.message?.substring(0,40)||'?'})`);
             }
         }
-        console.warn(`[Config] ${CUSTOM_MODEL} falhou → entrando no fluxo padrão (Ling VL → Ling Fin → Ling Sante → North Mini)...`);
+        console.warn(`[Config] ${CUSTOM_MODEL} falhou → entrando no fluxo padrão (Ling Fin → Ling VL → Ling Sante → North Mini)...`);
     }
 
-    // ── 1º: Principal (Ling 3.0 Flash VL) — 2 tentativas ──
-    console.log(`%c⏱️ [IA] Tentando principal (${LING_VL_MODEL})...`,'color:#7c3aed;font-weight:600');
+    // ── 1º: Principal (Ling 3.0 Flash Fin) — 2 tentativas ──
+    console.log(`%c⏱️ [IA] Tentando principal (${LING_FIN_MODEL})...`,'color:#7c3aed;font-weight:600');
     for(let t=1;t<=2;t++){
         try{
             if(t>1){console.warn('[Principal] retry 2/2...');await new Promise(r=>setTimeout(r,1500));}
@@ -2218,32 +2219,32 @@ async function callCurrentMCP(messages,config={}){
             // usuário tenha configurado outro provedor. Usar mcpConfig aqui gerava uma URL quebrada
             // (ex.: modelo da OpenRouter colado na URL do Google), que o navegador reportava como
             // erro de CORS.
-            const res=await callMCPAPI(DEFAULT_MCP_CONFIG.provider,LING_VL_MODEL,DEFAULT_MCP_CONFIG.apiKey,DEFAULT_MCP_CONFIG.baseUrl,messages,config);
-            _tlog('Principal',t,performance.now()-_tm,'✅ OK',` — modelo real: ${LING_VL_MODEL}`);
-            return{...res,_iaUsada:'OpenRouter',_iaModelo:LING_VL_MODEL};
+            const res=await callMCPAPI(DEFAULT_MCP_CONFIG.provider,LING_FIN_MODEL,DEFAULT_MCP_CONFIG.apiKey,DEFAULT_MCP_CONFIG.baseUrl,messages,config);
+            _tlog('Principal',t,performance.now()-_tm,'✅ OK',` — modelo real: ${LING_FIN_MODEL}`);
+            return{...res,_iaUsada:'OpenRouter',_iaModelo:LING_FIN_MODEL};
         }catch(e){
             _tlog('Principal',t,0,`❌ erro (${e.status||e.message?.substring(0,40)||'?'})`);
         }
     }
 
-    // ── 2º: Ling 3.0 Flash Fin (secundário) — 2 tentativas ──
-    if(CUSTOM_MODEL !== LING_FIN_MODEL && LING_VL_MODEL !== LING_FIN_MODEL){
-        console.log(`%c⏱️ [IA] Principal falhou → tentando ${LING_FIN_MODEL}...`,'color:#7c3aed;font-weight:600');
+    // ── 2º: Ling 3.0 Flash VL (secundário) — 2 tentativas ──
+    if(CUSTOM_MODEL !== LING_VL_MODEL && LING_FIN_MODEL !== LING_VL_MODEL){
+        console.log(`%c⏱️ [IA] Principal falhou → tentando ${LING_VL_MODEL}...`,'color:#7c3aed;font-weight:600');
         for(let t=1;t<=2;t++){
             try{
-                if(t>1){console.warn('[Ling-Fin] retry 2/2...');await new Promise(r=>setTimeout(r,1500));}
+                if(t>1){console.warn('[Ling-VL] retry 2/2...');await new Promise(r=>setTimeout(r,1500));}
                 const _tm=performance.now();
-                const res=await callMCPAPI(DEFAULT_MCP_CONFIG.provider,LING_FIN_MODEL,DEFAULT_MCP_CONFIG.apiKey,DEFAULT_MCP_CONFIG.baseUrl,messages,config);
-                _tlog('Ling-Fin',t,performance.now()-_tm,'✅ OK',` — modelo real: ${LING_FIN_MODEL}`);
-                return{...res,_iaUsada:'OpenRouter',_iaModelo:LING_FIN_MODEL};
+                const res=await callMCPAPI(DEFAULT_MCP_CONFIG.provider,LING_VL_MODEL,DEFAULT_MCP_CONFIG.apiKey,DEFAULT_MCP_CONFIG.baseUrl,messages,config);
+                _tlog('Ling-VL',t,performance.now()-_tm,'✅ OK',` — modelo real: ${LING_VL_MODEL}`);
+                return{...res,_iaUsada:'OpenRouter',_iaModelo:LING_VL_MODEL};
             }catch(e){
-                _tlog('Ling-Fin',t,0,`❌ erro (${e.status||e.message?.substring(0,40)||'?'})`);
+                _tlog('Ling-VL',t,0,`❌ erro (${e.status||e.message?.substring(0,40)||'?'})`);
             }
         }
     }
 
     // ── 3º: Ling 3.0 Flash Sante (terceiro) — 2 tentativas ──
-    if(CUSTOM_MODEL !== LING_SANTE_MODEL && LING_VL_MODEL !== LING_SANTE_MODEL && LING_FIN_MODEL !== LING_SANTE_MODEL){
+    if(CUSTOM_MODEL !== LING_SANTE_MODEL && LING_FIN_MODEL !== LING_SANTE_MODEL && LING_VL_MODEL !== LING_SANTE_MODEL){
         console.log(`%c⏱️ [IA] Falhou → tentando ${LING_SANTE_MODEL}...`,'color:#ea6a0a;font-weight:600');
         for(let t=1;t<=2;t++){
             try{
@@ -2259,7 +2260,7 @@ async function callCurrentMCP(messages,config={}){
     }
 
     // ── 4º: North Mini Code (último fallback) — 2 tentativas ──
-    if(CUSTOM_MODEL !== NORTH_MINI_MODEL && LING_VL_MODEL !== NORTH_MINI_MODEL && LING_FIN_MODEL !== NORTH_MINI_MODEL && LING_SANTE_MODEL !== NORTH_MINI_MODEL){
+    if(CUSTOM_MODEL !== NORTH_MINI_MODEL && LING_FIN_MODEL !== NORTH_MINI_MODEL && LING_VL_MODEL !== NORTH_MINI_MODEL && LING_SANTE_MODEL !== NORTH_MINI_MODEL){
         console.log(`%c⏱️ [IA] Falhou → tentando North Mini (${NORTH_MINI_MODEL})...`,'color:#ea6a0a;font-weight:600');
         for(let t=1;t<=2;t++){
             try{
@@ -3208,8 +3209,9 @@ async function _readSSEStream(resp, provider, onChunk) {
 }
 
 async function callCurrentMCPStream(messages, config = {}) {
-    // Ordem 22/09/2026, a pedido: Ling 3.0 Flash VL (principal) → Ling 3.0 Flash Fin (secundário) →
-    // Ling 3.0 Flash Sante (terceiro) → North Mini Code (quarto, último fallback).
+    // Ordem 23/09/2026, a pedido (volta pra ordem de 18/09): Ling 3.0 Flash Fin (principal) →
+    // Ling 3.0 Flash VL (secundário) → Ling 3.0 Flash Sante (terceiro) → North Mini Code (quarto,
+    // último fallback).
     const LING_FIN_MODEL = 'inclusionai/ling-3.0-flash-fin:free';
     const LING_VL_MODEL = 'inclusionai/ling-3.0-flash-vl:free';
     const LING_SANTE_MODEL = 'inclusionai/ling-3.0-flash-sante:free';
@@ -3246,17 +3248,17 @@ async function callCurrentMCPStream(messages, config = {}) {
         return resp;
     };
 
-    // Chain: Custom → Ling 3.0 Flash VL (principal) → Ling 3.0 Flash Fin (secundário) → Ling 3.0
+    // Chain: Custom → Ling 3.0 Flash Fin (principal) → Ling 3.0 Flash VL (secundário) → Ling 3.0
     // Flash Sante (terceiro) → North Mini Code (quarto, último fallback).
     const chain = [];
     if (CUSTOM_MODEL) chain.push({ model: CUSTOM_MODEL, provider: mcpConfig.provider, apiKey: mcpConfig.apiKey, baseUrl: mcpConfig.baseUrl, label: _pLabel });
     // Todos fixos da OpenRouter — sempre credenciais padrão da OpenRouter aqui (nunca as do
     // provedor configurado pelo usuário), senão vira uma URL quebrada tipo modelo da OpenRouter
     // colado na URL do Google, que o navegador só reporta como erro de CORS.
-    if (CUSTOM_MODEL !== LING_VL_MODEL) chain.push({ model: LING_VL_MODEL, provider: DEFAULT_MCP_CONFIG.provider, apiKey: DEFAULT_MCP_CONFIG.apiKey, baseUrl: DEFAULT_MCP_CONFIG.baseUrl, label: 'OpenRouter' });
-    if (LING_VL_MODEL !== LING_FIN_MODEL && CUSTOM_MODEL !== LING_FIN_MODEL) chain.push({ model: LING_FIN_MODEL, provider: DEFAULT_MCP_CONFIG.provider, apiKey: DEFAULT_MCP_CONFIG.apiKey, baseUrl: DEFAULT_MCP_CONFIG.baseUrl, label: 'OpenRouter' });
-    if (LING_VL_MODEL !== LING_SANTE_MODEL && LING_FIN_MODEL !== LING_SANTE_MODEL && CUSTOM_MODEL !== LING_SANTE_MODEL) chain.push({ model: LING_SANTE_MODEL, provider: DEFAULT_MCP_CONFIG.provider, apiKey: DEFAULT_MCP_CONFIG.apiKey, baseUrl: DEFAULT_MCP_CONFIG.baseUrl, label: 'OpenRouter' });
-    if (LING_VL_MODEL !== NORTH_MINI_MODEL && LING_FIN_MODEL !== NORTH_MINI_MODEL && LING_SANTE_MODEL !== NORTH_MINI_MODEL && CUSTOM_MODEL !== NORTH_MINI_MODEL) chain.push({ model: NORTH_MINI_MODEL, provider: DEFAULT_MCP_CONFIG.provider, apiKey: DEFAULT_MCP_CONFIG.apiKey, baseUrl: DEFAULT_MCP_CONFIG.baseUrl, label: 'OpenRouter' });
+    if (CUSTOM_MODEL !== LING_FIN_MODEL) chain.push({ model: LING_FIN_MODEL, provider: DEFAULT_MCP_CONFIG.provider, apiKey: DEFAULT_MCP_CONFIG.apiKey, baseUrl: DEFAULT_MCP_CONFIG.baseUrl, label: 'OpenRouter' });
+    if (LING_FIN_MODEL !== LING_VL_MODEL && CUSTOM_MODEL !== LING_VL_MODEL) chain.push({ model: LING_VL_MODEL, provider: DEFAULT_MCP_CONFIG.provider, apiKey: DEFAULT_MCP_CONFIG.apiKey, baseUrl: DEFAULT_MCP_CONFIG.baseUrl, label: 'OpenRouter' });
+    if (LING_FIN_MODEL !== LING_SANTE_MODEL && LING_VL_MODEL !== LING_SANTE_MODEL && CUSTOM_MODEL !== LING_SANTE_MODEL) chain.push({ model: LING_SANTE_MODEL, provider: DEFAULT_MCP_CONFIG.provider, apiKey: DEFAULT_MCP_CONFIG.apiKey, baseUrl: DEFAULT_MCP_CONFIG.baseUrl, label: 'OpenRouter' });
+    if (LING_FIN_MODEL !== NORTH_MINI_MODEL && LING_VL_MODEL !== NORTH_MINI_MODEL && LING_SANTE_MODEL !== NORTH_MINI_MODEL && CUSTOM_MODEL !== NORTH_MINI_MODEL) chain.push({ model: NORTH_MINI_MODEL, provider: DEFAULT_MCP_CONFIG.provider, apiKey: DEFAULT_MCP_CONFIG.apiKey, baseUrl: DEFAULT_MCP_CONFIG.baseUrl, label: 'OpenRouter' });
 
     const _skipModels = config.skipModels || [];
     const _activeChain = _skipModels.length ? chain.filter(c => !_skipModels.includes(c.model)) : chain;
