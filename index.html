@@ -7157,7 +7157,8 @@ function _relSelecionarOrigem(origem) {
     if (step2) step2.style.display = 'block';
     // Cada origem tem seu próprio catálogo de campos — troca de origem reinicia a busca e as
     // colunas já montadas (senão ficaria coluna com campo de uma origem diferente da escolhida agora).
-    window._relColunas = [{ nomeColuna: '', campo: null }];
+    window._relColunas = [{ nomeColuna: '', termos: [] }];
+    window._relAcaoSel = null;
     const busca = document.getElementById('wRelBusca'); if (busca) busca.value = '';
     _relRenderResultadosBusca();
     _relRenderColunas();
@@ -7239,27 +7240,116 @@ function _relRenderResultadosBusca() {
         ? resultados.map(c => `<span class="_rel-chip" draggable="true" data-exp="${escapeHtml(c.exp)}" data-label="${escapeHtml(c.label)}" ondragstart="_relCampoDragStart(event)" title="${escapeHtml(c.grupo)} · ${escapeHtml(c.exp)}" style="display:inline-flex;align-items:center;padding:6px 12px;background:white;border:1.5px solid #93c5fd;border-radius:16px;font-size:12px;color:#1e40af;cursor:grab;user-select:none;">${escapeHtml(c.label)}</span>`).join('')
         : `<span style="font-size:11.5px;color:#9ca3af;">Nenhum campo encontrado pra "${escapeHtml(query)}".</span>`;
 }
+window._relAcaoSel = null;
+// Mesmo sistema de ações do criador de regras (clicar OU arrastar ativa; clicar de novo na mesma
+// desmarca; vale pro próximo campo arrastado em QUALQUER coluna) -- só com as 4 ações aritméticas,
+// já que aqui é sempre pra montar um número (não uma condição).
+function _relSelecionarAcao(acao){
+    window._relAcaoSel=acao;
+    document.querySelectorAll('._rel-acao-btn').forEach(b=>{
+        const ativo=b.dataset.acao===acao;
+        b.style.background=ativo?'var(--primary)':'#f3f4f6';
+        b.style.color=ativo?'white':'#374151';
+        b.style.borderColor=ativo?'var(--primary)':'#e5e7eb';
+    });
+    _relRenderColunas();
+}
+function _relClicarAcao(acao){
+    _relSelecionarAcao(window._relAcaoSel===acao?null:acao);
+}
+function _relAcaoDragStart(e,acao){
+    e.dataTransfer.setData('text/plain','acao:'+acao);
+    e.dataTransfer.effectAllowed='copy';
+}
+function _relValorInputChange(){
+    const val=(document.getElementById('wRelValorInput')?.value||'').trim();
+    const chip=document.getElementById('wRelValorChip');
+    if(!chip)return;
+    const valido=val!==''&&!isNaN(Number(val.replace(',','.')));
+    chip.style.opacity=valido?'1':'.4';
+    chip.style.cursor=valido?'grab':'not-allowed';
+}
+function _relValorDragStart(e){
+    const val=(document.getElementById('wRelValorInput')?.value||'').trim();
+    const norm=val.replace(',','.');
+    if(!val||isNaN(Number(norm))){e.preventDefault();return;}
+    e.dataTransfer.setData('text/plain','valor:'+norm);
+    e.dataTransfer.effectAllowed='copy';
+}
 function _relCampoDragStart(e) {
-    e.dataTransfer.setData('text/plain', JSON.stringify({ exp: e.target.dataset.exp, label: e.target.dataset.label }));
+    e.dataTransfer.setData('text/plain', 'campo:'+e.target.dataset.exp);
     e.dataTransfer.effectAllowed = 'copy';
 }
 function _relDropZoneDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; }
-// Solta SEMPRE substitui o que já estava (1 campo por coluna, não é pra somar vários) — se o
-// "Nome coluna" ainda estiver vazio, sugere o rótulo do campo arrastado (o usuário pode reescrever).
+// Diferente do selo do criador de regras (_acaoBadgeHtml), aqui NÃO mostra aviso vermelho quando
+// nenhuma ação está selecionada -- pra relatório a ação é sempre opcional (só entra em jogo se o
+// usuário realmente soltar 2 campos na mesma coluna), então não tem porque cobrar isso de cara.
+// Só mostra o selo quando o usuário realmente ativou alguma.
+function _relAcaoBadgeHtml(acaoSel, corBorda, corTexto){
+    if(!acaoSel)return '';
+    return `<span style="position:absolute;top:-9px;left:10px;background:white;border:1px solid ${corBorda};border-radius:10px;padding:1px 8px;font-size:10px;color:${corTexto};font-weight:700;white-space:nowrap;">Ação ativa: ${escapeHtml(_ACAO_LABELS[acaoSel]||acaoSel)}</span>`;
+}
+// Converte o payload do drop no termo que vai pra fórmula: campo entra com a expressão pura do
+// catálogo (parênteses só entram na hora de montar a fórmula final, se houver 2+ termos -- ver
+// _relFormulaDeTermos), valor numérico entra como está.
+function _relTermoDeRaw(raw){
+    if(raw.startsWith('campo:'))return raw.slice(6)||null;
+    if(raw.startsWith('valor:')){ const n=raw.slice(6); return /^-?\d+(\.\d+)?$/.test(n)?n:null; }
+    return null;
+}
+// Rótulo amigável do termo pro chip: número mostra como está, campo procura o rótulo no catálogo
+// da origem selecionada (senão mostra a própria expressão).
+function _relTermoParaLabel(termo, origemSel){
+    if(/^-?\d+(\.\d+)?$/.test(termo))return termo;
+    const catalogo=CATALOGO_RELATORIOS[origemSel]||CATALOGO_RELATORIOS.CTe;
+    const achou=catalogo.find(c=>c.exp===termo);
+    return achou?achou.label:termo;
+}
+// Monta a fórmula final a partir dos termos: 1 termo só -> expressão pura (coluna simples, igual
+// sempre foi); 2+ termos -> cada CAMPO entre parênteses, número puro, unidos pelos símbolos das
+// ações -- mesmo formato que a IA já gera a partir do texto livre (ver enviarWizardRelatorio),
+// pra ficar consistente não importa se a coluna foi montada arrastando ou escrevendo.
+function _relFormulaDeTermos(termos){
+    if(!termos||!termos.length)return null;
+    if(termos.length===1)return termos[0].termo;
+    const ehNumero=t=>/^-?\d+(\.\d+)?$/.test(t);
+    return termos.map((t,i)=>{
+        const parte=ehNumero(t.termo)?t.termo:`(${t.termo})`;
+        return i===0?parte:`${t.acao}${parte}`;
+    }).join('');
+}
+// Solta SEMPRE acrescenta ao final dos termos já montados nessa coluna (permite montar uma conta
+// com 2+ campos, igual ao criador de regras) -- MAS, diferente de lá, escolher uma ação nunca é
+// obrigatório: a maioria das colunas de relatório é só 1 campo (sem conta nenhuma), então não faz
+// sentido travar o usuário nesse passo. Se soltar um 2º campo sem ter escolhido uma ação, assume
+// Somar (a mais comum) -- ele ainda pode clicar/arrastar outra ação antes de soltar, se quiser.
+// Se o nome da coluna ainda estiver vazio, sugere o rótulo do PRIMEIRO campo (o usuário pode
+// reescrever).
 function _relDropZoneDrop(e, idx) {
     e.preventDefault();
-    let dados; try { dados = JSON.parse(e.dataTransfer.getData('text/plain')); } catch (err) { return; }
-    if (!dados || !dados.exp) return;
+    const raw = e.dataTransfer.getData('text/plain');
+    if (!raw) return;
+    if (raw.startsWith('acao:')) { _relSelecionarAcao(raw.slice(5)); return; }
+    const termo = _relTermoDeRaw(raw);
+    if (termo === null) return;
     const col = window._relColunas[idx]; if (!col) return;
-    col.campo = dados;
-    if (!col.nomeColuna.trim()) col.nomeColuna = dados.label;
+    if (!col.termos) col.termos = [];
+    col.termos.push({ termo, acao: col.termos.length ? (window._relAcaoSel || '+') : null });
+    if (!col.nomeColuna.trim() && col.termos.length === 1) col.nomeColuna = _relTermoParaLabel(termo, window._relOrigemSel);
     _relRenderColunas();
 }
 function _relNomeColunaInput(idx, valor) {
     if (window._relColunas[idx]) window._relColunas[idx].nomeColuna = valor;
 }
-function _relLimparCampoColuna(idx) {
-    if (window._relColunas[idx]) window._relColunas[idx].campo = null;
+function _relRemoverTermoColuna(idx, termoIdx) {
+    const col = window._relColunas[idx];
+    if (!col || !col.termos) return;
+    col.termos.splice(termoIdx, 1);
+    _relRenderColunas();
+}
+function _relLimparTermosColuna(idx) {
+    const col = window._relColunas[idx]; if (!col) return;
+    col.termos = [];
     _relRenderColunas();
 }
 function _relRemoverColuna(idx) {
@@ -7277,7 +7367,7 @@ function _relAdicionarColuna() {
         if (alvo) { alvo.style.borderColor = '#ef4444'; alvo.focus(); setTimeout(() => { alvo.style.borderColor = ''; }, 1200); }
         return;
     }
-    window._relColunas.push({ nomeColuna: '', campo: null });
+    window._relColunas.push({ nomeColuna: '', termos: [] });
     _relRenderColunas();
     setTimeout(() => { const inputs = document.querySelectorAll('.wRelNomeColunaInput'); inputs[inputs.length - 1]?.focus(); }, 30);
 }
@@ -7285,20 +7375,33 @@ function _relRenderColunas() {
     const cont = document.getElementById('wRelColunasContainer');
     if (!cont) return;
     cont.innerHTML = window._relColunas.map((col, idx) => {
-        const campoHtml = col.campo
-            ? `<span title="${escapeHtml(col.campo.exp)}" style="display:inline-flex;align-items:center;gap:5px;padding:4px 4px 4px 10px;background:white;border:1px solid #93c5fd;border-radius:12px;font-size:11.5px;color:#1e40af;">${escapeHtml(col.campo.label)}<button onclick="_relLimparCampoColuna(${idx})" title="Remover campo" style="border:none;background:none;color:#2563eb;cursor:pointer;font-size:13px;padding:0 4px;line-height:1;font-weight:700;">✕</button></span>`
-            : `<span style="color:#9ca3af;font-size:12px;">arraste um campo aqui</span>`;
+        const termos = col.termos || [];
+        let canvasConteudo;
+        if (termos.length) {
+            canvasConteudo = termos.map((t, tIdx) => {
+                const sep = tIdx > 0 ? `<span style="font-size:11px;color:#2563eb;font-weight:700;margin:0 3px;">${escapeHtml(_ACAO_NOMES[t.acao] || t.acao || '')}</span>` : '';
+                const label = _relTermoParaLabel(t.termo, window._relOrigemSel);
+                return `${sep}<span title="${escapeHtml(t.termo)}" style="display:inline-flex;align-items:center;gap:3px;padding:3px 4px 3px 9px;margin:2px 0;background:white;border:1px solid #93c5fd;border-radius:12px;font-size:11px;font-family:monospace;color:#1e40af;">${escapeHtml(label)}<button onclick="_relRemoverTermoColuna(${idx},${tIdx})" title="Remover este item" style="border:none;background:none;color:#2563eb;cursor:pointer;font-size:12px;padding:0 3px;line-height:1;font-weight:700;">✕</button></span>`;
+            }).join('') + _acaoPreviaTrailingHtml(window._relAcaoSel, '#2563eb');
+        } else {
+            canvasConteudo = `<span style="color:#9ca3af;font-size:11.5px;">arraste um campo aqui</span>`;
+        }
         const btnRemover = window._relColunas.length > 1
-            ? `<button onclick="_relRemoverColuna(${idx})" title="Remover esta coluna" style="padding:7px 10px;background:#fef2f2;color:#991b1b;border:1.5px solid #fecaca;border-radius:6px;cursor:pointer;font-size:12px;">🗑️</button>`
+            ? `<button onclick="_relRemoverColuna(${idx})" title="Remover esta coluna" style="padding:5px 8px;background:#fef2f2;color:#991b1b;border:1.5px solid #fecaca;border-radius:6px;cursor:pointer;font-size:11px;">🗑️</button>`
             : '';
-        return `<div style="flex:0 0 190px;width:190px;border:1.5px solid #e5e7eb;border-radius:8px;padding:10px;box-sizing:border-box;">
+        const btnLimpar = termos.length > 1
+            ? `<div style="text-align:right;margin-top:4px;"><button onclick="_relLimparTermosColuna(${idx})" title="Remover tudo o que foi arrastado (mantém o nome da coluna)" style="padding:2px 6px;background:none;border:1px dashed #93c5fd;border-radius:6px;color:#2563eb;cursor:pointer;font-size:10px;">🧹 limpar</button></div>`
+            : '';
+        return `<div style="flex:0 0 210px;width:210px;border:1.5px solid #e5e7eb;border-radius:8px;padding:10px;box-sizing:border-box;">
             <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;">
                 <input type="text" class="wRelNomeColunaInput" value="${escapeHtml(col.nomeColuna)}" oninput="_relNomeColunaInput(${idx}, this.value)" placeholder="Nome da coluna *" style="flex:1;min-width:0;padding:7px 8px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;outline:none;box-sizing:border-box;">
                 ${btnRemover}
             </div>
-            <div ondragover="_relDropZoneDragOver(event)" ondrop="_relDropZoneDrop(event,${idx})" style="min-height:36px;padding:8px 10px;border:1.5px dashed #93c5fd;border-radius:8px;background:#eff6ff;display:flex;align-items:center;flex-wrap:wrap;">
-                ${campoHtml}
+            <div ondragover="_relDropZoneDragOver(event)" ondrop="_relDropZoneDrop(event,${idx})" style="position:relative;min-height:40px;padding:8px 10px;border:1.5px dashed #93c5fd;border-radius:8px;background:#eff6ff;display:flex;align-items:center;flex-wrap:wrap;">
+                ${_relAcaoBadgeHtml(window._relAcaoSel, '#93c5fd', '#1e40af')}
+                ${canvasConteudo}
             </div>
+            ${btnLimpar}
         </div>`;
     }).join('');
 }
@@ -7307,6 +7410,7 @@ function mostrarWizardRelatorio(nomePrefill, camposPrefill, origemPrefill) {
     const s = document.getElementById('chatStream');
     const old = document.getElementById('wizardRelatorioCard'); if (old) old.remove();
     window._relOrigemSel = null;
+    window._relAcaoSel = null;
     const card = document.createElement('div');
     card.id = 'wizardRelatorioCard';
     card.className = 'answer-card';
@@ -7328,9 +7432,21 @@ function mostrarWizardRelatorio(nomePrefill, camposPrefill, origemPrefill) {
     </div>
     <div class="wizard-section">
       <div class="wizard-label">🧩 Colunas do relatório</div>
-      <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Pesquise pelo nome do campo e arraste o resultado pra dentro da coluna desejada.</div>
+      <div style="font-size:12px;color:#1e40af;font-weight:700;margin-bottom:6px;">1. Clique ou arraste a ação pra ativar <span style="font-weight:400;color:#6b7280;">(só necessário pra montar uma conta com 2+ campos numa coluna, tipo Total Prestação − Valor do Frete)</span>:</div>
+      <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
+        <button class="_rel-acao-btn" data-acao="+" onclick="_relClicarAcao('+')" draggable="true" ondragstart="_relAcaoDragStart(event,'+')" style="padding:7px 12px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;">➕ Somar</button>
+        <button class="_rel-acao-btn" data-acao="-" onclick="_relClicarAcao('-')" draggable="true" ondragstart="_relAcaoDragStart(event,'-')" style="padding:7px 12px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;">➖ Subtrair</button>
+        <button class="_rel-acao-btn" data-acao="*" onclick="_relClicarAcao('*')" draggable="true" ondragstart="_relAcaoDragStart(event,'*')" style="padding:7px 12px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;">✖️ Multiplicar</button>
+        <button class="_rel-acao-btn" data-acao="/" onclick="_relClicarAcao('/')" draggable="true" ondragstart="_relAcaoDragStart(event,'/')" style="padding:7px 12px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;">➗ Dividir</button>
+      </div>
+      <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">2. Pesquise pelo nome do campo e arraste o resultado pra dentro da coluna desejada — pra montar uma conta, arraste o 1º campo, ative uma ação, e arraste o 2º campo na MESMA coluna.</div>
       <input type="text" id="wRelBusca" oninput="_relRenderResultadosBusca()" placeholder="Pesquisar campos... (ex: agência, placa, valor frete)" style="width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:12.5px;outline:none;box-sizing:border-box;margin-bottom:8px;">
-      <div id="wRelResultadosBusca" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;min-height:0;"></div>
+      <div id="wRelResultadosBusca" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;min-height:0;"></div>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">
+        <span style="font-size:11px;color:#6b7280;">Ou valor fixo:</span>
+        <input type="text" id="wRelValorInput" inputmode="decimal" placeholder="Ex: 0.02" oninput="_relValorInputChange()" style="width:90px;padding:6px 8px;border:1.5px solid #d1d5db;border-radius:6px;font-size:11.5px;font-family:monospace;">
+        <span id="wRelValorChip" draggable="true" ondragstart="_relValorDragStart(event)" style="display:inline-flex;align-items:center;gap:4px;padding:6px 10px;background:#fff7ed;border:1.5px solid #fdba74;border-radius:16px;font-size:11.5px;font-family:monospace;cursor:not-allowed;user-select:none;color:#9a3412;opacity:.4;transition:opacity .15s;">🔢 arrastar</span>
+      </div>
       <div id="wRelColunasContainer" style="display:flex;align-items:flex-start;gap:8px;overflow-x:auto;padding:2px 2px 10px;margin-bottom:4px;"></div>
       <button onclick="_relAdicionarColuna()" style="width:100%;padding:8px;background:white;border:1.5px dashed #3b82f6;border-radius:8px;color:#1e40af;cursor:pointer;font-size:12.5px;font-weight:700;">➕ Adicionar coluna</button>
     </div>
@@ -7366,7 +7482,7 @@ function _voltarParaWizardRelatorio(ts) {
     const card = document.getElementById('_relatorioResultCard_' + ts); if (card) card.remove();
     mostrarWizardRelatorio(dados.nome, dados.camposTxt, dados.origemSel);
     if (dados.colunasRascunho && dados.colunasRascunho.length) {
-        window._relColunas = dados.colunasRascunho.map(c => ({ nomeColuna: c.nomeColuna, campo: c.campo ? { ...c.campo } : null }));
+        window._relColunas = dados.colunasRascunho.map(c => ({ nomeColuna: c.nomeColuna, termos: (c.termos || []).map(t => ({ ...t })) }));
         _relRenderColunas();
     }
 }
@@ -7431,14 +7547,17 @@ async function enviarWizardRelatorio() {
     if (!origemSel) { scrollToBottom(true); return; }
     const nome = (document.getElementById('wRelNome')?.value || '').trim();
     const camposTxt = (document.getElementById('wRelCampos')?.value || '').trim();
-    // Colunas montadas arrastando (nome da coluna + campo, os dois obrigatórios pra contar) — vão
-    // pro relatório final direto, sem precisar de IA nenhuma pra elas.
+    // Colunas montadas arrastando (nome da coluna + ao menos 1 termo, os dois obrigatórios pra
+    // contar) — vão pro relatório final direto, sem precisar de IA nenhuma pra elas. Coluna com só
+    // 1 termo vira uma expressão simples (igual sempre foi); com 2+ termos (campos/valores unidos
+    // por ações) vira uma fórmula, no mesmo formato que a IA já gera a partir do texto livre.
     const colunasEstruturadas = (window._relColunas || [])
-        .filter(c => c.nomeColuna && c.nomeColuna.trim() && c.campo && c.campo.exp)
-        .map(c => ({ exp: c.campo.exp, label: c.nomeColuna.trim() }));
+        .filter(c => c.nomeColuna && c.nomeColuna.trim() && c.termos && c.termos.length)
+        .map(c => ({ exp: _relFormulaDeTermos(c.termos), label: c.nomeColuna.trim() }))
+        .filter(c => c.exp !== null);
     // Guarda uma cópia de TODAS as colunas (inclusive as ainda incompletas) só pro botão Voltar
     // conseguir devolver a tela exatamente como o usuário deixou, mesmo com coluna pela metade.
-    const colunasRascunho = (window._relColunas || []).map(c => ({ nomeColuna: c.nomeColuna, campo: c.campo ? { ...c.campo } : null }));
+    const colunasRascunho = (window._relColunas || []).map(c => ({ nomeColuna: c.nomeColuna, termos: (c.termos || []).map(t => ({ ...t })) }));
     if (!nome || (!camposTxt && colunasEstruturadas.length === 0)) {
         if (!nome) document.getElementById('wRelNome')?.focus();
         else document.getElementById('wRelBusca')?.focus();
