@@ -2507,6 +2507,15 @@ const SINONIMOS = {
     // (onde o conteúdo é cortado). Tirado daqui -- ver também "veiculo" logo abaixo.
     emitir: ["emito","criar","emitir","gerar","lançar","fazer","abrir","montar","produzir","processar","emissão","geração","criação","lançamento","abertura"],
     cancelar: ["cancelar","estornar","desfazer","anular","reverter","excluir","deletar","remover","apagar","cancelamento","estorno"],
+    // 23/09/2026: existiam DOIS grupos apontando um pro outro -- "cte" tinha "conhecimento" como
+    // sinônimo, e mais embaixo um grupo "conhecimento" separado tinha "cte" como sinônimo dele (o
+    // mesmo valia pra "mdfe"/"manifesto"). Como a normalização roda os grupos em sequência, o
+    // ÚLTIMO da lista sempre desfazia o que o primeiro tinha acabado de trocar -- ex.: "manifesto
+    // de carga" virava "mdfe" no grupo mdfe, e alguns grupos depois o grupo "manifesto" via esse
+    // "mdfe" e trocava de volta pra "manifesto" sozinho, PERDENDO a palavra "de carga" no caminho.
+    // Removidos os grupos duplicados "conhecimento" e "manifesto" (eram exatamente os mesmos
+    // sinônimos, só que apontando pro nome "errado") -- mantido só "cte"/"mdfe", que já cobrem os
+    // mesmos termos e batem com as mesmas chaves usadas em detectarDocumento().
     cte: ["conhecimento", "conhecimento de transporte", "ct-e", "cte"],
     mdfe: ["manifesto", "manifesto de carga", "mdf-e", "mdf", "mdfe"],
     nfse: ["nfs-e", "nfs", "nota fiscal de serviço", "notas fiscais de serviço", "nfse"],
@@ -2535,8 +2544,6 @@ const SINONIMOS = {
     certificado: ["certificado", "digital", "a1", "a3", "token", "assinatura", "ssl", "validade", "vencimento", "cert"],
     tabela: ["tabela", "preço", "preco", "valor", "custo", "tarifa", "taxa", "tabela de preço", "tabela de preços"],
     contrato: ["contrato", "acordo", "negociação", "negociacao", "ajuste contratual", "contrato de frete"],
-    manifesto: ["manifesto", "mdfe", "mdf-e", "mdf", "manifesto de carga"],
-    conhecimento: ["conhecimento", "cte", "ct-e", "ct", "conhecimento de transporte"],
     ordem: ["ordem", "oc", "ordem de carregamento", "carregamento", "ordem de coleta"],
     minuta: ["minuta", "rascunho", "pré-conhecimento", "pre-conhecimento", "documento não fiscal"],
     // Busca pelo artigo de Substituição Tributária não estava achando o conteúdo certo (o artigo
@@ -3415,6 +3422,33 @@ async function handleChat() {
             rr = _todos.slice(0, _topN);
         }
     }
+    // Reforço por palavra-chave literal: mesmo quando a busca vetorial "funciona" (achou algo com
+    // confiança), um artigo grande cobrindo VÁRIOS assuntos de uma vez (ex.: uma lista com ~150
+    // opções de tela diferentes, de telas diferentes, num único artigo) tem sua similaridade
+    // "diluída" pelo resto do conteúdo, e pode nem entrar no topN mesmo contendo a resposta exata
+    // (caso real: "Limpar Data de Encerramento Automático" -- artigo caiu na posição 27, de resto
+    // 500+, só por estar junto de mais ~150 outras opções não relacionadas). Aqui, à parte da busca
+    // vetorial, procura o artigo com MAIS palavras da pergunta batendo literalmente no conteúdo; se
+    // for um artigo forte (70%+ das palavras da pergunta aparecem literalmente nele) e ele ainda
+    // não estiver no resultado vetorial, adiciona ele também -- não troca nem reordena o que a
+    // busca vetorial já achou, só reforça.
+    if (rr.length > 0) {
+        const _normKw = t => String(t||'').toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,'');
+        const _wordsKw = _normKw(queryNormalizada).split(/\s+/).filter(w => w.length > 2);
+        if (_wordsKw.length >= 2) {
+            const _jaIncluido = new Set(rr.map(r => r.idSupabase || r.erro));
+            const _fonteKw = bancoCompletoRaw.length > 0 ? bancoCompletoRaw : manualVetorizado;
+            const _melhorPalavraChave = _fonteKw
+                .map(item => {
+                    const txt = _normKw((item.erro || item.titulo || '') + ' ' + (item.solucao || item.conteudo || ''));
+                    const hits = _wordsKw.filter(w => txt.includes(w)).length;
+                    return { item, sim: hits / _wordsKw.length };
+                })
+                .filter(x => x.sim >= 0.7 && !_jaIncluido.has(x.item.idSupabase || x.item.erro))
+                .sort((a, b) => b.sim - a.sim)[0];
+            if (_melhorPalavraChave) rr.push({ ..._melhorPalavraChave.item, similaridade: _melhorPalavraChave.sim, _reforcoPalavraChave: true });
+        }
+    }
     // Fallback por palavras-chave: embedding null OU incompatibilidade de dimensão (Llama vs Gemini)
     if (rr.length === 0) {
         const _norm = t => String(t||'').toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,'');
@@ -3441,11 +3475,13 @@ async function handleChat() {
     console.log(`🎯 Método de busca: ${vp && rr.length > 0 && rr[0].similaridade >= 0.1 ? 'VETORIAL (Jina)' : 'PALAVRAS-CHAVE'}`);
     if (rr.length > 0) {
         console.log(`📋 Top ${rr.length} resultado(s) encontrado(s):`);
-        rr.slice(0, 5).forEach((r, i) => {
+        rr.forEach((r, i) => {
+            if (i >= 5 && !r._reforcoPalavraChave) return; // top 5 + reforço (se existir), sem poluir o log
             const titulo = r.erro || r.titulo || '(sem título)';
             const sim = (r.similaridade * 100).toFixed(1);
             const fonte = r.isRepositorio ? '📁 Repositório' : '🗃️ BancoDados';
-            console.log(`  ${i+1}. [${sim}%] ${fonte} — ${titulo.substring(0, 80)}`);
+            const tag = r._reforcoPalavraChave ? ' 🔤 [reforço por palavra-chave]' : '';
+            console.log(`  ${i+1}. [${sim}%] ${fonte} — ${titulo.substring(0, 80)}${tag}`);
         });
     } else {
         console.warn('⚠️ NENHUM artigo encontrado! A IA vai responder sem contexto do banco.');
