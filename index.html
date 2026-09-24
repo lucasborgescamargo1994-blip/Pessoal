@@ -2676,7 +2676,7 @@ function calcularSimilaridade(vA,vB){if(!vA||!vB||vA.length!==vB.length)return 0
 //  CACHE LOCAL DE EMBEDDINGS (evita baixar vetores do Supabase a cada carga)
 // ═══════════════════════════════════════════════════════════
 const _EMB_CACHE_KEY = 'bsoft_emb_v3'; // v3 = migração Gemini → Jina (1024 dims)
-let _embCacheMem = {};
+let _embCacheMem = {}; // id -> { vetor:number[], hash:string|null }
 
 function _embToB64(arr) {
     const f = new Float32Array(arr);
@@ -2690,25 +2690,46 @@ function _b64ToEmb(b64) {
     for (let i = 0; i < s.length; i++) b[i] = s.charCodeAt(i);
     return Array.from(new Float32Array(b.buffer));
 }
+// Hash simples (não-criptográfico, só pra detectar mudança de conteúdo) do texto que foi
+// realmente vetorizado -- 23/09/2026: editar um registro no banco (Editor de Banco ou direto no
+// Supabase) não atualizava a busca porque o vetor usado vem só do cache local (ver
+// "zero egress Supabase" logo abaixo), que nunca era invalidado. Guardando esse hash junto com
+// cada vetor em cache, dá pra comparar com o hash do conteúdo atual a cada carga (ver
+// carregarVetoresExistentes) e só revetorizar quem realmente mudou -- sem precisar baixar vetor
+// nenhum do Supabase pra descobrir isso (o conteúdo, ao contrário do vetor, já é baixado de graça
+// a cada carga de qualquer forma).
+function _hashConteudo(texto) {
+    let h = 5381;
+    const s = String(texto || '');
+    for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
+    return h.toString(36);
+}
 function _loadEmbCache() {
     try {
         const raw = localStorage.getItem(_EMB_CACHE_KEY);
         if (!raw) return;
         const obj = JSON.parse(raw);
-        for (const [id, b64] of Object.entries(obj)) _embCacheMem[id] = _b64ToEmb(b64);
+        for (const [id, entry] of Object.entries(obj)) {
+            // Formato antigo (só o vetor em base64, sem hash) continua lendo normal -- só ganha
+            // hash na próxima vez que passar por carregarVetoresExistentes (backfill oportunista).
+            if (typeof entry === 'string') _embCacheMem[id] = { vetor: _b64ToEmb(entry), hash: null };
+            else if (entry && entry.v) _embCacheMem[id] = { vetor: _b64ToEmb(entry.v), hash: entry.h || null };
+        }
     } catch(e) { _embCacheMem = {}; }
 }
-function _saveEmbToCache(id, vec) {
+function _saveEmbToCache(id, vec, hash) {
     if (!id || !vec) return;
-    _embCacheMem[id] = vec;
+    const hashFinal = hash || _embCacheMem[id]?.hash || null;
+    _embCacheMem[id] = { vetor: vec, hash: hashFinal };
     try {
         const raw = localStorage.getItem(_EMB_CACHE_KEY);
         const obj = raw ? JSON.parse(raw) : {};
-        obj[String(id)] = _embToB64(vec);
+        obj[String(id)] = { v: _embToB64(vec), h: hashFinal };
         localStorage.setItem(_EMB_CACHE_KEY, JSON.stringify(obj));
     } catch(e) {} // localStorage cheio — mantém apenas em memória
 }
-function _getEmbFromCache(id) { return _embCacheMem[String(id)] || null; }
+function _getEmbFromCache(id) { return _embCacheMem[String(id)]?.vetor || null; }
+function _getEmbHashFromCache(id) { return _embCacheMem[String(id)]?.hash || null; }
 _loadEmbCache();
 // Remove caches antigos de versões anteriores para liberar espaço no localStorage
 ['bsoft_emb_v1','bsoft_emb_v2'].forEach(k => { try { localStorage.removeItem(k); } catch(e) {} });
@@ -2830,7 +2851,19 @@ async function loadData() {
     }
 }
 function popularBarraEmAlta(logsData){try{const isO=Array.isArray(logsData)&&logsData.length>0&&typeof logsData[0]==='object'&&!Array.isArray(logsData[0]);const rows=Array.isArray(logsData)?logsData:[];if(!rows.length)return;const cont={};const po=[];const agora=Date.now();const seteD=7*24*60*60*1000;rows.forEach((row)=>{let p="",ts=0;if(isO){p=(row.pergunta||row.Pergunta||"").toString().trim();if(row.data){const d=new Date(row.data);if(!isNaN(d.getTime()))ts=d.getTime();}}else{p=(row[1]||"").toString().trim();}if(!p||p.length<3||p.toUpperCase().startsWith("FEEDBACK")||p==="Pendente")return;if(!cont[p]){cont[p]={freq:0};po.push(p);}cont[p].freq++;if((agora-ts)<seteD&&ts>0)cont[p].recente=true;});if(Object.keys(cont).length===0)return;const u4=po.filter(p=>cont[p].recente).slice(0,4);const su4=new Set(u4);const rec=Object.entries(cont).filter(([k])=>!su4.has(k)&&cont[k].freq>=2).sort((a,b)=>b[1].freq-a[1].freq).map(([k])=>k);let lf=[...u4,...rec].filter((v,i,a)=>a.indexOf(v)===i).slice(0,8);const bar=document.getElementById('topTermsBar');if(!bar||!lf.length)return;bar.innerHTML='<span>Em alta:</span>';lf.forEach(t=>{const a=document.createElement('a');a.textContent=t.length>35?t.substring(0,33)+'…':t;a.title=t;a.onclick=()=>fillAndSend(t);bar.appendChild(a);});}catch(e){}}
-function carregarVetoresExistentes(dados){if(!dados.length)return{linhasComVetor:0,linhasSemVetor:[],chaves:[]};const chaves=Object.keys(dados[0]);const cv=chaves.find(k=>k.toLowerCase().trim()==='vetor'||k.toLowerCase().trim()==='embedding');const ce=chaves.find(k=>k.toLowerCase().trim()==='erro'||k.toLowerCase().trim()==='titulo');const cs=chaves.find(k=>k.toLowerCase().trim()==='solucao'||k.toLowerCase().trim()==='solução'||k.toLowerCase().trim()==='conteudo');const cc=chaves.find(k=>k.toLowerCase().trim()==='categoria');const cem=chaves.find(k=>{const kn=k.toLowerCase().trim();return kn==='como emitir'||kn==='como_emitir'||kn==='emissao'||kn==='emissão'||kn==='emitir';});if(!cv)return{linhasComVetor:0,linhasSemVetor:[],chaves};let lcv=0;const lsv=[];dados.forEach((linha,i)=>{const te=linha[ce]||"";const ts=linha[cs]||"";const tc=cc?(linha[cc]||""):"";const tem=cem?(linha[cem]||""):"";if(!te&&!ts)return;const tc2=`DÚVIDA: ${te} | PROCEDIMENTO: ${ts}${tem?' | COMO EMITIR: '+tem:''}${tc?' | CATEGORIA: '+tc:''}`;const ve=linha[cv];let veArray=null;if(Array.isArray(ve)){veArray=ve;}else if(ve&&typeof ve==='string'&&ve.trim().startsWith('[')){try{veArray=JSON.parse(ve);}catch(e){veArray=null;}}if(veArray&&veArray.length>0){manualVetorizado.push({texto:tc2,erro:te,solucao:ts,emitir:tem,categoria:tc,vetor:veArray,idSupabase:linha.id});lcv++;}else{lsv.push({linha,textoCompleto:tc2,textoErro:te,textoSolucao:ts,textoEmitir:tem,textoCategoria:tc,indexPlanilha:i+2,chaveVetor:cv,chaves,idSupabase:linha.id});}});return{linhasComVetor:lcv,linhasSemVetor:lsv,chaves};}
+function carregarVetoresExistentes(dados){if(!dados.length)return{linhasComVetor:0,linhasSemVetor:[],chaves:[]};const chaves=Object.keys(dados[0]);const cv=chaves.find(k=>k.toLowerCase().trim()==='vetor'||k.toLowerCase().trim()==='embedding');const ce=chaves.find(k=>k.toLowerCase().trim()==='erro'||k.toLowerCase().trim()==='titulo');const cs=chaves.find(k=>k.toLowerCase().trim()==='solucao'||k.toLowerCase().trim()==='solução'||k.toLowerCase().trim()==='conteudo');const cc=chaves.find(k=>k.toLowerCase().trim()==='categoria');const cem=chaves.find(k=>{const kn=k.toLowerCase().trim();return kn==='como emitir'||kn==='como_emitir'||kn==='emissao'||kn==='emissão'||kn==='emitir';});if(!cv)return{linhasComVetor:0,linhasSemVetor:[],chaves};let lcv=0;const lsv=[];dados.forEach((linha,i)=>{const te=linha[ce]||"";const ts=linha[cs]||"";const tc=cc?(linha[cc]||""):"";const tem=cem?(linha[cem]||""):"";if(!te&&!ts)return;const tc2=`DÚVIDA: ${te} | PROCEDIMENTO: ${ts}${tem?' | COMO EMITIR: '+tem:''}${tc?' | CATEGORIA: '+tc:''}`;const ve=linha[cv];let veArray=null;if(Array.isArray(ve)){veArray=ve;}else if(ve&&typeof ve==='string'&&ve.trim().startsWith('[')){try{veArray=JSON.parse(ve);}catch(e){veArray=null;}}
+// Confere se o conteúdo mudou desde a última vetorização (ver _hashConteudo/_saveEmbToCache) --
+// hash diferente do salvo = registro foi editado, vetor em cache tá desatualizado, trata como se
+// não tivesse vetor (cai em linhasSemVetor e revetoriza sozinho). Hash ainda não registrado (cache
+// de antes dessa checagem existir) não força revetorização à toa -- só grava o hash de agora como
+// referência pra próxima vez.
+if(veArray&&veArray.length>0&&linha.id!=null){
+    const hashAtual=_hashConteudo(tc2);
+    const hashSalvo=_getEmbHashFromCache(linha.id);
+    if(hashSalvo&&hashSalvo!==hashAtual)veArray=null;
+    else if(!hashSalvo)_saveEmbToCache(linha.id,veArray,hashAtual);
+}
+if(veArray&&veArray.length>0){manualVetorizado.push({texto:tc2,erro:te,solucao:ts,emitir:tem,categoria:tc,vetor:veArray,idSupabase:linha.id});lcv++;}else{lsv.push({linha,textoCompleto:tc2,textoErro:te,textoSolucao:ts,textoEmitir:tem,textoCategoria:tc,indexPlanilha:i+2,chaveVetor:cv,chaves,idSupabase:linha.id});}});return{linhasComVetor:lcv,linhasSemVetor:lsv,chaves};}
 async function vetorizarEmBackground(lsv,chaves){
     const b=document.getElementById('statusBadge');
     const overlay=document.getElementById('vecOverlay');
@@ -2858,7 +2891,7 @@ async function vetorizarEmBackground(lsv,chaves){
         const nv=await gerarEmbeddingComRetry(item.textoCompleto);
         if(nv){
             manualVetorizado.push({texto:item.textoCompleto,erro:item.textoErro,solucao:item.textoSolucao,emitir:item.textoEmitir||"",categoria:item.textoCategoria,vetor:nv,idSupabase:item.idSupabase});
-            salvarVetorNoSupabase(item.idSupabase,nv);
+            salvarVetorNoSupabase(item.idSupabase,nv,_hashConteudo(item.textoCompleto));
             es=0;
         } else{es++;await new Promise(r=>setTimeout(r,10000));}
     }
@@ -2899,7 +2932,7 @@ function liberarChat(modo="completo"){
         if(w) w.innerHTML = `⚠️ Não consegui conectar ao banco de dados.<br>Posso tentar ajudar com conhecimento geral. Digite sua dúvida.<br><button class="retry-btn" onclick="location.reload()">🔄 Tentar Novamente</button>${_menuBtnsHtml()}`;
     }
 }
-function salvarVetorNoSupabase(id,vetor){if(!id)return;_saveEmbToCache(id,vetor);sb.from('BancoDados').update({embedding:vetor}).eq('id',id).then(({error})=>{if(error)console.error('Erro ao salvar vetor:',error);});}
+function salvarVetorNoSupabase(id,vetor,hash){if(!id)return;_saveEmbToCache(id,vetor,hash);sb.from('BancoDados').update({embedding:vetor}).eq('id',id).then(({error})=>{if(error)console.error('Erro ao salvar vetor:',error);});}
 
 
 function extrairTermos(texto) {
