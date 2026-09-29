@@ -9167,6 +9167,12 @@ window.addEventListener('DOMContentLoaded', async () => {
     await loadData();
     console.log("✅ Banco de dados carregado! Chat liberado.");
     _statusCarregar(); setInterval(_statusCarregar, 5 * 60000); // status SEFAZ/ANTT -- mesmo intervalo da Edge Function agendada
+    // Navegador reduz/pausa setInterval quando a aba fica em segundo plano por um tempo (economia
+    // de bateria/CPU) -- então, deixando só o setInterval acima, quem volta pra aba depois de um
+    // tempo podia ver um status desatualizado até o próximo disparo. Isso aqui reforça: sempre que
+    // a aba volta a ficar visível, atualiza na hora (evento real do navegador, não sofre esse
+    // throttling).
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') _statusCarregar(); });
     renderNovidades(); // inicializa painel de novidades
     _subscribeChat(chatSessionId); // escuta mensagens em tempo real para o usuário
     _pedirPermissaoNotificacao();
