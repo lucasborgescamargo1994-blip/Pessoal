@@ -678,8 +678,8 @@
                                 <div class="config-field">
                                     <label>MODELO</label>
                                     <select id="aiModelSelect">
-                                        <option value="nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free">Nemotron (gratuito)</option>
-                                        <option value="z-ai/glm-4.5-air:free">GLM 4.5 Air</option>
+                                        <option value="inclusionai/ling-3.0-flash-sante:free">Inclusion Sante</option>
+                                        <option value="cohere/north-mini-code:free">North Mini</option>
                                         <option value="meta-llama/llama-3.3-70b-instruct">Llama 3.3 70B</option>
                                         <option value="google/gemma-4-26b-a4b-it">Gemma 4 26B</option>
                                     </select>
@@ -1338,9 +1338,9 @@
     const MCP_CONFIG_KEY = 'bsoft_mcp_config_v2';
     const o1="sk-or-v1-4f5f373376",o2="08150b806689797fef2f32",o3="f4e7b62ba4eb967fc47f13850bb4decc";
     const p1="AIzaSyA3IOL",p2="jyyxIL3xlSD",p3="iEVvCu92JTgmD3vNQ";
-    const DEFAULT_MCP_CONFIG = { provider:'openrouter', model:'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free', apiKey:o1+o2+o3, baseUrl:'https://openrouter.ai/api/v1' };
+    const DEFAULT_MCP_CONFIG = { provider:'openrouter', model:'inclusionai/ling-3.0-flash-sante:free', apiKey:o1+o2+o3, baseUrl:'https://openrouter.ai/api/v1' };
     const PROVIDER_PRESETS = {
-        openrouter: { baseUrl:'https://openrouter.ai/api/v1', models:['nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free','z-ai/glm-4.5-air:free','meta-llama/llama-3.3-70b-instruct','google/gemma-4-26b-a4b-it'], defaultModel:'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free', chatEndpoint:'/chat/completions', headers:(k)=>({Authorization:`Bearer ${k}`,'Content-Type':'application/json','HTTP-Referer':window.location.origin,'X-Title':'Bsoft TMS'}), formatRequestBody:(m,msgs,c={})=>({model:m,messages:msgs,temperature:c.temperature||0.3,max_tokens:c.maxTokens||8192}), parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro OpenRouter');return{text:d.choices?.[0]?.message?.content||'',full:d};} },
+        openrouter: { baseUrl:'https://openrouter.ai/api/v1', models:['inclusionai/ling-3.0-flash-sante:free','cohere/north-mini-code:free','meta-llama/llama-3.3-70b-instruct','google/gemma-4-26b-a4b-it'], defaultModel:'inclusionai/ling-3.0-flash-sante:free', chatEndpoint:'/chat/completions', headers:(k)=>({Authorization:`Bearer ${k}`,'Content-Type':'application/json','HTTP-Referer':window.location.origin,'X-Title':'Bsoft TMS'}), formatRequestBody:(m,msgs,c={})=>({model:m,messages:msgs,temperature:c.temperature||0.3,max_tokens:c.maxTokens||8192}), parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro OpenRouter');return{text:d.choices?.[0]?.message?.content||'',full:d};} },
         google: { baseUrl:'https://generativelanguage.googleapis.com/v1beta', models:['gemini-2.0-flash','gemini-2.0-flash-lite'], defaultModel:'gemini-2.0-flash', chatEndpoint:'/models/{model}:generateContent', headers:()=>({'Content-Type':'application/json'}), formatRequestBody:(m,msgs,c={})=>{const cnt=msgs.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:typeof m.content==='string'?m.content:JSON.stringify(m.content)}]}));return{contents:cnt,generationConfig:{temperature:c.temperature||0.3,maxOutputTokens:c.maxTokens||8192}};}, parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro Google');const p=d.candidates?.[0]?.content?.parts||[];return{text:p.filter(p=>p.text).map(p=>p.text).join(''),full:d};}, buildUrl:(b,m,e)=>`${b}${e.replace('{model}',m)}?key=${mcpConfig.apiKey}` }
     };
 
