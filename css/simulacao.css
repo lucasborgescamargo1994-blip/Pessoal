@@ -1,0 +1,10 @@
+@charset "UTF-8";
+/* Modo simulação (?sim=1): chat de teste dentro da Área Administrativa. Nada é gravado no banco. */
+.sim-banner { display: none; }
+html.sim .sim-banner {
+    display: flex; align-items: center; justify-content: center; gap: 8px; position: fixed; top: 0; left: 0; right: 0; z-index: 4000;
+    padding: 7px 12px; font: 600 12px/1.3 'Plus Jakarta Sans', system-ui, sans-serif; color: #92400e;
+    background: #fffbeb; border-bottom: 1px solid #fde68a; text-align: center;
+}
+html.sim body { padding-top: 40px !important; }
+html.sim #welcomeMsg .bento-card[onclick*="Copilot"] { display: none; }

@@ -1,0 +1,92 @@
+@charset "UTF-8";
+/* Variáveis de design (cores, raios, sombras, animações). Carregado por index.html e admin/index.html. */
+
+/* ── Variáveis originais do sistema ── */
+        :root {
+            --primary: #f97316;
+            --primary-dark: #ea6a0a;
+            --primary-light: #fff7ed;
+            --primary-border: #fed7aa;
+            --bg: #fafaf8;
+            --surface: #ffffff;
+            --text: #1c1917;
+            --text-muted: #78716c;
+            --text-light: #a8a29e;
+            --border: #e7e5e4;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+            --shadow-lg: 0 20px 60px rgba(249,115,22,0.18), 0 4px 16px rgba(0,0,0,0.08);
+            --radius: 16px;
+            --header-h: 58px;
+            --suggestions-h: 38px;
+            --input-h: 68px;
+            --sidebar-w: 240px;
+            --ml-color: #7c3aed;
+            --ml-light: #f5f3ff;
+            --ml-border: #ddd6fe;
+            --central-color: #0891b2;
+            --central-dark: #0e7490;
+            --central-light: #ecfeff;
+            --central-border: #a5f3fc;
+            --blog-color: #dc2626;
+            --blog-dark: #991b1b;
+            --blog-light: #fef2f2;
+            --blog-border: #fecaca;
+            --manual-color: #2563eb;
+            --manual-dark: #1d4ed8;
+            --manual-light: #eff6ff;
+            --manual-border: #bfdbfe;
+            --repo-color: #059669;
+            --repo-dark: #047857;
+            --repo-light: #ecfdf5;
+            --repo-border: #a7f3d0;
+            --ciot-color: #10b981;
+            --ciot-dark: #059669;
+            --ciot-light: #ecfdf5;
+            --ciot-border: #a7f3d0;
+        }
+
+/* ── Sistema de design 2026 (v27): sobrescreve as variáveis acima ── */
+@property --ring { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+
+:root {
+    --primary: #f97316;
+    --primary-rgb: 249 115 22;   /* separado por espaço: rgb(var(--primary-rgb) / .3) só é válido assim */
+    --primary-dark: color-mix(in srgb, var(--primary) 80%, #000);
+    --primary-light: color-mix(in srgb, var(--primary) 8%, #fff);
+    --primary-border: color-mix(in srgb, var(--primary) 30%, #fff);
+    --accent-glow: rgb(var(--primary-rgb) / .38);
+
+    --bg-base: #f6f2ed;
+    --glass: rgba(255,255,255,.68);
+    --glass-strong: rgba(255,255,255,.88);
+    --glass-border: rgba(255,255,255,.78);
+    --line: rgba(28,25,23,.09);
+    --blur: 22px;
+
+    --radius: 22px;
+    --radius-md: 14px;
+    --radius-sm: 10px;
+    --shadow-sm: 0 1px 2px rgba(28,25,23,.06), 0 1px 1px rgba(28,25,23,.04);
+    --shadow-lg: 0 26px 60px -22px rgba(28,25,23,.34), 0 8px 20px -10px rgba(28,25,23,.14);
+    --shadow-glow: 0 12px 32px -10px var(--accent-glow);
+
+    --ease-out: cubic-bezier(.22, 1, .36, 1);
+    --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+    --ease-inout: cubic-bezier(.65, 0, .35, 1);
+    --dur-1: .14s; --dur-2: .26s; --dur-3: .5s;
+
+    --rail-w: 78px;
+    --composer-h: 78px;
+    --input-h: 78px;
+    --tabbar-h: 46px;
+    --header-h: 62px;
+    --pane-pad: clamp(14px, calc((100% - 860px) / 2), 9999px);
+}
+html[data-bg="escuro"] {
+    --bg-base: #0b0807;
+    --glass: rgba(255,255,255,.80);
+    --glass-strong: rgba(255,255,255,.92);
+}
+html[data-density="compacta"] { --header-h: 54px; --tabbar-h: 40px; --rail-w: 68px; }
+::selection { background: rgb(var(--primary-rgb) / .28); }
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 6px; }

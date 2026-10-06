@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-admin>
+<head>
+    <meta charset="UTF-8">
+    <title>Gerar senha - Administração Bsoft TMS IA</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <meta http-equiv="Content-Security-Policy" content="object-src 'none'; base-uri 'self'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:">
+    <script src="js/tema.js?v=28.1.2" charset="utf-8"></script>
+    <script src="../js/core/fontes.js?v=28.1.2" charset="utf-8"></script>
+    <link rel="stylesheet" href="../css/tokens.css?v=28.1.2">
+    <link rel="stylesheet" href="admin.css?v=28.1.2">
+</head>
+<body>
+<div class="aurora" aria-hidden="true"></div>
+<main class="login" style="align-items:start;padding-top:6vh">
+    <div class="login-card" style="width:min(640px,100%)">
+        <h1>Gerar senha da área administrativa</h1>
+        <p class="login-sub" style="text-align:left;margin-top:-6px">Esqueceu a senha, ou quer trocar sem entrar no painel? Crie uma nova aqui — <b>não precisa da antiga</b>.</p>
+        <div class="aviso"><div class="corpo">Esta página só <b>gera</b> o arquivo <code>config/admin-config.js</code> com o hash da nova senha. Nada é enviado a lugar nenhum: o cálculo acontece no seu navegador. Para valer no site, substitua o arquivo no projeto e faça o commit/push no GitHub (quem pode alterar o repositório já controla o sistema, então esta página não abre brecha nenhuma).</div></div>
+        <label class="campo"><span class="rot">Nova senha</span><input type="password" id="nova" autocomplete="new-password"></label>
+        <label class="campo"><span class="rot">Repita a nova senha</span><input type="password" id="repete" autocomplete="new-password"></label>
+        <div class="forca"><i id="forcaBarra"></i></div><span class="dica" id="forcaTxt"></span>
+        <div id="msg" class="login-msg" role="alert" style="text-align:left"></div>
+        <button class="btn primario grande" id="gerar" type="button">Gerar arquivo</button>
+        <div id="saida" hidden>
+            <label class="campo"><span class="rot">Conteúdo de config/admin-config.js</span><textarea id="texto" class="mono" rows="16" readonly></textarea></label>
+            <div class="linha" style="margin-top:10px"><button class="btn" id="copiar" type="button">Copiar</button><button class="btn" id="baixar" type="button">Baixar admin-config.js</button><a class="btn fantasma" href="index.html">Voltar ao painel</a></div>
+            <ol class="passos" style="margin-top:12px"><li>Substitua o arquivo <code>config/admin-config.js</code> do projeto por este conteúdo.</li><li>Faça commit + push no GitHub.</li><li>Aguarde ~1 minuto e entre no painel com a nova senha.</li></ol>
+        </div>
+    </div>
+</main>
+<script src="../config/admin-config.js" charset="utf-8"></script>
+<script src="js/cripto.js?v=28.1.2" charset="utf-8"></script>
+<script src="js/senha.js?v=28.1.2" charset="utf-8"></script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+@charset "UTF-8";
+/* Ajustes para telas estreitas (gaveta de conversas, cabeçalho compacto). */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   v27 — Telas estreitas: conversas viram gaveta, cabeçalho e chips compactos
+   ═══════════════════════════════════════════════════════════════════════════ */
+.smart-dock { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+.smart-dock::-webkit-scrollbar { display: none; }
+.dock-chip, .sd-label { flex: 0 0 auto; white-space: nowrap; }
+.sd-x { position: sticky; right: 0; flex: 0 0 auto; }
+.header-chips { overflow: hidden; }
+@media (max-width: 1100px) {
+    #statusBadge { font-size: 0 !important; padding: 0 !important; width: 26px; height: 26px; border-radius: 50% !important; display: inline-grid; place-items: center; max-width: none; animation: none; }
+    #statusBadge::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,.2); }
+    #statusBadge.badge-loading::before { background: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,.25); animation: dotPulse 1.6s ease-out infinite; }
+    .brand-text small { display: none; }
+}
+@media (max-width: 1000px) {
+    .sidebar { position: fixed; left: -110%; top: 12px; bottom: 12px; height: auto; z-index: 1100; width: min(300px, 86vw); transition: left var(--dur-3) var(--ease-out); border-radius: var(--radius); }
+    .sidebar.open { left: 12px; }
+    .btn-toggle-sidebar { display: flex !important; width: 36px; height: 36px; border-radius: 12px; background: rgba(255,255,255,.7); border: 1px solid var(--line); }
+    .app-layout { gap: 12px; }
+}
+@media (max-width: 900px) { .brand-text { display: none; } }
+@media (max-width: 768px) {
+    .sidebar { top: 0; bottom: 0; border-radius: 0; }
+    .sidebar.open { left: 0; }
+    .status-servico-badge { font-size: 0; gap: 0; padding: 5px 9px 5px 8px; }
+    .status-servico-badge::after { content: attr(data-short); font-size: 10.5px; margin-left: 6px; }
+    .dock-chip span { max-width: 190px; overflow: hidden; text-overflow: ellipsis; }
+    .tabbar-sep { display: none; }
+}
+@media (max-width: 520px) { #btnCopilotHeader { display: none; } header { gap: 8px; padding: 0 10px; } .header-actions { gap: 4px; } .btn-icon { width: 34px; height: 34px; } }
