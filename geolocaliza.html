@@ -51,8 +51,13 @@
         .logo h1 { color: white; font-size: 1.2rem; font-weight: 700; }
         .logo span { color: var(--primary); }
         .sub { color: rgba(255,255,255,0.7); margin-top: 6px; font-size: 0.7rem; }
-        .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .main-grid { display: grid; grid-template-columns: 1fr 220px; gap: 16px; }
         @media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } }
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(220,38,38,0.5); }
+            70% { box-shadow: 0 0 0 12px rgba(220,38,38,0); }
+            100% { box-shadow: 0 0 0 0 rgba(220,38,38,0); }
+        }
         .card {
             background: var(--surface);
             border-radius: var(--radius);
@@ -532,12 +537,15 @@
 </head>
 <body>
 <div class="container">
-    <div class="header">
+    <div class="header" style="position:relative;">
         <div class="logo">
             <span class="logo-icon">🚛</span>
             <h1>Geo<span>Localiza Frete - By Lucas Camargo</span></h1>
         </div>
         <div class="sub">Geolocalizador de NF-e/CT-e + Validador CIOT + Analisador de Erros com IA 100% Livre</div>
+        <button id="btnSettingsTop" onclick="abrirSettings()" title="Configurações da IA"
+            style="position:absolute;top:0;right:0;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;border-radius:50%;width:38px;height:38px;font-size:1.1rem;cursor:pointer;backdrop-filter:blur(10px);transition:background .2s;"
+            onmouseover="this.style.background='rgba(255,255,255,0.28)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">⚙️</button>
     </div>
 
     <div class="main-grid">
@@ -664,42 +672,9 @@
 
                         <textarea id="combinedContentInput" rows="5" placeholder="Ou cole o conteúdo aqui (REQUEST, RESPONSE ou ambos juntos)..." style="width:100%; padding:12px; border:2px solid #fca5a5; border-radius:12px; font-size:0.78rem; margin-bottom:12px; font-family:'JetBrains Mono',monospace; background:#fff5f5; resize:vertical;"></textarea>
 
-                        <!-- Configuração da IA -->
-                        <div class="config-section" style="margin-top: 4px; background: #f8fafc;">
-                            <div style="font-size: 0.7rem; font-weight: 600; margin-bottom: 8px;">⚙️ Configuração da IA</div>
-                            <div class="config-row">
-                                <div class="config-field">
-                                    <label>PROVEDOR</label>
-                                    <select id="aiProviderSelect">
-                                        <option value="openrouter">OpenRouter (recomendado)</option>
-                                        <option value="google">Google Gemini</option>
-                                    </select>
-                                </div>
-                                <div class="config-field">
-                                    <label>MODELO</label>
-                                    <select id="aiModelSelect">
-                                        <option value="inclusionai/ling-3.0-flash-sante:free">Inclusion Sante</option>
-                                        <option value="cohere/north-mini-code:free">North Mini</option>
-                                        <option value="meta-llama/llama-3.3-70b-instruct">Llama 3.3 70B</option>
-                                        <option value="google/gemma-4-26b-a4b-it">Gemma 4 26B</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="config-row">
-                                <div class="config-field">
-                                    <label>API KEY</label>
-                                    <input type="password" id="aiApiKey" placeholder="Sua chave da API" value="">
-                                </div>
-                                <div class="config-field">
-                                    <label>&nbsp;</label>
-                                    <button id="btnSalvarConfigAI" class="secondary" style="padding: 6px 12px;">💾 Salvar Config</button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="btn-group" style="margin-top: 12px;">
-                            <button id="btnAnalisarErro" class="error-btn" style="flex:1;">🤖 Analisar com IA</button>
-                            <button id="btnLimparErro" class="secondary" style="flex:1;">🗑️ Limpar</button>
+                        <div style="margin-top: 16px; display:flex; flex-direction:column; gap:8px;">
+                            <button id="btnAnalisarErro" class="error-btn" style="width:100%; padding:18px 24px; font-size:1.05rem; font-weight:700; letter-spacing:0.5px; border-radius:14px; animation:pulse-red 2s infinite;">🤖 Analisar com IA</button>
+                            <button id="btnLimparErro" class="secondary" style="width:100%; padding:10px; border-radius:12px;">🗑️ Limpar</button>
                         </div>
                     </div>
 
@@ -711,12 +686,12 @@
             </div>
         </div>
 
-        <div class="card">
-            <div class="card-header">
+        <div class="card" style="min-width:200px;">
+            <div class="card-header" style="display:none;">
                 <h2>💰 2. Cálculo de Frete</h2>
             </div>
-            <div class="card-body">
-                <div class="config-section">
+            <div class="card-body" style="padding:12px;">
+                <div class="config-section" style="display:none;">
                     <div style="font-weight:600; font-size:0.75rem; margin-bottom:10px;">📋 PARÂMETROS DE FRETE (ANTT)</div>
                     <div class="config-row">
                         <div class="config-field">
@@ -767,7 +742,7 @@
                         <div style="font-size:0.6rem;">Geolocalize origem e destino</div>
                     </div>
                 </div>
-                <div id="historyList" class="history-list">
+                <div id="historyList" class="history-list" style="display:none;">
                     <div style="text-align: center; color: #94a3b8; padding: 20px;">Nenhuma geolocalização</div>
                 </div>
             </div>
@@ -777,6 +752,66 @@
 </div>
 
 <div id="toastStack" class="toast-stack"></div>
+
+<!-- Modal Configurações da IA (protegido por senha) -->
+<div id="settingsModal" onclick="if(event.target===this)fecharSettings()"
+    style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(5px);">
+    <div style="background:white;border-radius:18px;padding:28px 24px;width:92%;max-width:420px;box-shadow:0 24px 60px rgba(0,0,0,0.35);position:relative;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+            <h3 style="font-size:1rem;font-weight:700;color:#1e293b;">⚙️ Configurações da IA</h3>
+            <button onclick="fecharSettings()" style="background:#f1f5f9;border:none;border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:1rem;color:#475569;">✕</button>
+        </div>
+
+        <!-- Área de senha -->
+        <div id="settingsPasswordArea">
+            <p style="font-size:0.75rem;color:#64748b;margin-bottom:14px;">Esta área é protegida. Digite a senha para acessar as configurações.</p>
+            <input type="password" id="settingsPassword" placeholder="Senha"
+                style="width:100%;padding:11px 14px;border:2px solid #e2e8f0;border-radius:10px;font-size:0.9rem;margin-bottom:10px;outline:none;transition:border .2s;"
+                onfocus="this.style.borderColor='#1e3a5f'" onblur="this.style.borderColor='#e2e8f0'"
+                onkeydown="if(event.key==='Enter')verificarSenhaSettings()">
+            <button onclick="verificarSenhaSettings()"
+                style="width:100%;padding:11px;background:linear-gradient(135deg,#1e3a5f,#1e293b);color:white;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-size:0.9rem;transition:opacity .2s;"
+                onmouseover="this.style.opacity='.88'" onmouseout="this.style.opacity='1'">🔓 Entrar</button>
+            <div id="settingsPasswordError" style="color:#dc2626;font-size:0.72rem;margin-top:8px;display:none;">Senha incorreta. Tente novamente.</div>
+        </div>
+
+        <!-- Conteúdo após autenticação -->
+        <div id="settingsContent" style="display:none;">
+            <div class="config-section" style="background:#f8fafc;border-radius:12px;padding:14px;">
+                <div style="font-size:0.72rem;font-weight:700;margin-bottom:10px;color:#1e293b;">⚙️ Configuração da IA</div>
+                <div class="config-row">
+                    <div class="config-field">
+                        <label>PROVEDOR</label>
+                        <select id="aiProviderSelect">
+                            <option value="openrouter">OpenRouter (recomendado)</option>
+                            <option value="google">Google Gemini</option>
+                        </select>
+                    </div>
+                    <div class="config-field">
+                        <label>MODELO</label>
+                        <select id="aiModelSelect">
+                            <option value="inclusionai/ling-3.0-flash-sante:free">Inclusion Sante</option>
+                            <option value="cohere/north-mini-code:free">North Mini</option>
+                            <option value="meta-llama/llama-3.3-70b-instruct">Llama 3.3 70B</option>
+                            <option value="google/gemma-4-26b-a4b-it">Gemma 4 26B</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="config-row">
+                    <div class="config-field">
+                        <label>API KEY</label>
+                        <input type="password" id="aiApiKey" placeholder="Sua chave da API" value="">
+                    </div>
+                    <div class="config-field">
+                        <label>&nbsp;</label>
+                        <button id="btnSalvarConfigAI" class="secondary" style="padding:8px 12px;width:100%;">💾 Salvar Config</button>
+                    </div>
+                </div>
+            </div>
+            <button onclick="fecharSettings()" style="margin-top:12px;width:100%;padding:10px;background:#f1f5f9;border:none;border-radius:10px;color:#475569;font-weight:600;cursor:pointer;font-size:0.85rem;">Fechar</button>
+        </div>
+    </div>
+</div>
 
 <script>
     // ============================================================
@@ -1916,6 +1951,42 @@ ${KB_CIOT_TERCEIROS}`) {
         });
     });
     
+    // ============================================================
+    // MODAL DE CONFIGURAÇÕES (SENHA PROTEGIDA)
+    // ============================================================
+    function abrirSettings() {
+        const modal = document.getElementById('settingsModal');
+        modal.style.display = 'flex';
+        document.getElementById('settingsPasswordArea').style.display = 'block';
+        document.getElementById('settingsContent').style.display = 'none';
+        document.getElementById('settingsPassword').value = '';
+        document.getElementById('settingsPasswordError').style.display = 'none';
+        setTimeout(() => document.getElementById('settingsPassword').focus(), 80);
+    }
+    function fecharSettings() {
+        const modal = document.getElementById('settingsModal');
+        modal.style.display = 'none';
+        document.getElementById('settingsContent').style.display = 'none';
+        document.getElementById('settingsPasswordArea').style.display = 'block';
+        document.getElementById('settingsPassword').value = '';
+        document.getElementById('settingsPasswordError').style.display = 'none';
+    }
+    function verificarSenhaSettings() {
+        const pw = document.getElementById('settingsPassword').value;
+        if (pw === 'camargo02') {
+            document.getElementById('settingsPasswordArea').style.display = 'none';
+            document.getElementById('settingsContent').style.display = 'block';
+            document.getElementById('settingsPasswordError').style.display = 'none';
+        } else {
+            document.getElementById('settingsPasswordError').style.display = 'block';
+            document.getElementById('settingsPassword').value = '';
+            document.getElementById('settingsPassword').focus();
+        }
+    }
+    window.abrirSettings = abrirSettings;
+    window.fecharSettings = fecharSettings;
+    window.verificarSenhaSettings = verificarSenhaSettings;
+
     loadToken();
     loadHistory();
     loadMCPConfig();
