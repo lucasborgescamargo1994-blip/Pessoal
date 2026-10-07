@@ -149,6 +149,7 @@ Como funciona, do começo ao fim:
    O simulador do painel **não grava nada**.
 2. Em **Admin → Revisão** você confere a resposta, ajusta o texto (com pré-visualização) e escolhe:
    - **Aprovar** → cria uma linha em `respostas_rapidas` (a "planilha" nova), com variantes opcionais; ou
+   - **Salvar no banco de dados** → em vez de resposta rápida, grava como **artigo da base de conhecimento** (`BancoDados`, o que a IA consulta) — veja o item 7; ou
    - **Adicionar como variante** de uma resposta rápida que já existe; ou **Rejeitar** (com motivo) / **Ignorar**.
 3. Quando alguém faz uma pergunta **parecida** com uma aprovada, o chat mostra a resposta pronta **na hora, sem gastar IA**, com o selo
    ⚡ *Resposta rápida* e o botão **"Não era o que procurava? Clique aqui para pesquisar com a IA"**.
@@ -166,6 +167,15 @@ Como funciona, do começo ao fim:
    - se há uma aprovada bem relacionada, a IA não diz "não encontrei no manual";
    - em **IA / MCP → Respostas rápidas** dá para **desligar** isso ("Usar também como conhecimento da IA") ou mudar quantas entram (1 a 6);
      as chaves no arquivo são `usarNoContexto` e `contextoMax`. No **Simulador**, o rastro mostra 📚 quais aprovadas foram dadas à IA em cada pergunta.
+7. **Resposta rápida × banco de dados — qual escolher?** Resposta rápida é para pergunta que sempre tem a mesma resposta (o texto sai pronto, sem IA).
+   **Salvar no banco de dados** é para tema amplo, ou que muda conforme a pergunta: o texto vira um artigo que a IA consulta e adapta. Como funciona:
+   - grava em `BancoDados`: `titulo` = pergunta principal, `conteudo` = a resposta (já com os seus ajustes), `categoria` (opcional) e **vetor vazio** — o sistema
+     calcula o vetor de busca sozinho na próxima vez que abre (é o mesmo caminho do **Novo registro** da aba **Banco de dados**; **não precisa de SQL novo**);
+   - os logs da pergunta ficam com `revisao = banco` e a nota *"Salvo no banco de dados (#id)"*; dá para filtrar por **Salvas no banco de dados** na Revisão
+     e na aba Logs, e o botão **Abrir no banco de dados** leva direto ao artigo (na aba **Banco de dados**, digitar `#123` no filtro vai direto ao ID 123);
+   - avisa antes se já existe artigo com título muito parecido (≥ 80 %) ou se o usuário deu 👎 na resposta; as **variantes** da pergunta não são gravadas
+     (só valem na resposta rápida);
+   - **Reabrir para revisão** não apaga o artigo — edite ou exclua na aba **Banco de dados**.
 
 O índice das respostas rápidas é baixado **só com o que mudou** e guardado no navegador (IndexedDB) — consumo mínimo do plano gratuito do Supabase.
 
@@ -239,6 +249,11 @@ Detalhes:
 - Os modelos formam uma **cadeia**: tenta o 1º (2 tentativas); se falhar, o 2º, e assim por diante. Dá para ter um **modelo prioritário**
   de outro provedor (ex.: um pago) na frente da cadeia grátis.
 - **Resposta provisória**: um modelo leve responde primeiro enquanto o principal elabora a resposta completa (pode desligar).
+- **Idioma: sempre português do Brasil.** Modelos pequenos/grátis (principalmente os de código, como o North Mini no fallback) respondem em inglês quando
+  ninguém pede o idioma. Por isso **toda chamada à IA** (chat, Parâmetros, regras, relatórios, resposta provisória, painel) leva a instrução
+  "IDIOMA OBRIGATÓRIO: pt-BR" no começo e no fim do prompt (`js/core/mcp.js → mcpComIdioma`). Como rede de segurança, se mesmo assim a resposta sair em
+  inglês, o chat **não mostra o inglês**: detecta, traduz para pt-BR e só então exibe (e é a versão traduzida que vai para o log). Se nem a tradução
+  funcionar, mostra o texto com um aviso. Uma resposta provisória em inglês simplesmente não aparece.
 - **Visão** (Analisar tela) e **embeddings** (busca por significado) têm lista/chave próprias. O modelo de embeddings é fixo
   (`jina-embeddings-v3`): os vetores guardados no banco foram gerados com ele.
 - As chaves ficam no arquivo **divididas em pedaços** (só para não ficarem como uma linha pesquisável; **não é criptografia**).
