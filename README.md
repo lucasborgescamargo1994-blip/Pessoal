@@ -109,9 +109,11 @@ Todos são seguros para rodar de novo.
 | 2 | `sql/02_respostas_rapidas_e_revisao.sql` | Guarda a **resposta** da IA nos logs, fila de **revisão** e a tabela de **respostas rápidas** | **sim**, para a revisão/respostas rápidas |
 | 3 | `sql/03_seguranca_rls.sql` | Faz o **banco** exigir o login de administrador para editar conteúdo | recomendado (veja [Segurança](#segurança--leia)) |
 | — | `sql/03b_desfazer_rls.sql` | Desfaz o 03 (volta ao banco "aberto") | só se precisar voltar atrás |
+| 4 | `sql/04_logs_fontes_banco.sql` | Cria a coluna `logs.fontes_banco`: guarda **quais dados do banco a IA usou** em cada resposta (aba Revisão) | para ver essa lista na Revisão (sem ele, tudo funciona igual) |
 
 **Conferir se deu certo:** painel → aba **Sistema** → **Rodar verificação** (lista o que existe e o que falta).
 Enquanto o `02` não for rodado, o sistema funciona normalmente — só não grava a resposta no log nem mostra respostas rápidas.
+Enquanto o `04` não for rodado, a resposta é gravada normalmente (e vai para a Revisão) — só não guarda nem mostra os dados do banco que a IA usou.
 
 ---
 
@@ -122,7 +124,7 @@ todas na mesma tela (`Alt+1` … `Alt+9` também trocam de aba). Tudo o que voc�
 
 | Aba | O que faz |
 |---|---|
-| **Revisão** | Mostra as respostas que a IA deu aos usuários. Você edita, **aprova** (vira resposta rápida), rejeita ou ignora. Agrupa perguntas iguais e sugere "perguntas parecidas" como variantes. |
+| **Revisão** | Mostra as respostas que a IA deu aos usuários. Você edita, **aprova** (vira resposta rápida), rejeita ou ignora. Agrupa perguntas iguais e sugere "perguntas parecidas" como variantes. Cada resposta mostra os **dados do banco de dados que a IA usou** — clique num artigo para corrigir o texto dele e salvar direto na base de conhecimento (item 8 de [Respostas rápidas e revisão](#respostas-rápidas-e-revisão)). |
 | **Respostas rápidas** | Lista/edita/pausa/exclui as respostas aprovadas, mostra quantas vezes cada uma foi usada e tem um **testador**: "se alguém perguntar isto, qual resposta o sistema usaria?". |
 | **Simulador** | O chat de verdade dentro do painel, **sem gravar nada** (nem log, nem feedback). Mostra de onde veio cada resposta (rápida ou IA, qual modelo, tempo). Dá para testar a configuração de IA **antes de salvar**. |
 | **IA / MCP** | Edita `config/mcp-config.js`: provedor, chaves, cadeia de modelos (arrastar para ordenar, testar cada um), visão, embeddings, regras das respostas rápidas. |
@@ -130,7 +132,7 @@ todas na mesma tela (`Alt+1` … `Alt+9` também trocam de aba). Tudo o que voc�
 | **Logs** | Perguntas dos usuários, 👍/👎, motivo e **retorno do suporte**; filtros, busca, exclusão em lote, exportar CSV. A resposta só é baixada quando você abre a linha (economiza transferência). |
 | **Análise** | Lê **todos os logs direto do banco** (sem importar planilha) e mostra o que alimentar na IA primeiro, a evolução no tempo — com filtros de **período, usuário, assunto e pergunta específica** —, o uso por pessoa e as perguntas que mais se repetem. Veja [Análise de logs](#análise-de-logs-aba-análise). |
 | **Novidades** | Publica avisos que aparecem para todos na coluna "Novidades". |
-| **Sistema** | Verificação do banco, **alterar a senha**, limpeza do cache deste navegador, informações. |
+| **Sistema** | Verificação do banco, **usuários e acessos** (criar logins e escolher as abas de cada pessoa), alterar a senha, limpeza do cache deste navegador, informações. |
 
 ### Senha do painel
 
@@ -140,6 +142,29 @@ todas na mesma tela (`Alt+1` … `Alt+9` também trocam de aba). Tudo o que voc�
 - **Esqueceu?** Abra `admin/senha.html`, crie uma senha nova (não precisa da antiga), substitua o arquivo e suba.
 - Depois de 3 erros seguidos o login espera um pouco (5 s, 15 s, 30 s… até 5 min); a sessão encerra sozinha após 120 min parada
   (`sessaoMinutosOciosa` em `admin-config.js`).
+
+### Vários usuários e abas liberadas (aba Sistema → Usuários e acessos)
+
+Quem entra com a **senha do painel** é o **administrador principal**: vê todas as abas e é o único que cria usuários. Para dar acesso a mais gente:
+
+1. **Sistema → Usuários e acessos → Novo usuário**: escreva o usuário (login), clique em **Gerar senha forte** (e **Copiar**, para enviar à pessoa) e marque as **abas** que ela pode usar.
+   Há atalhos: *Suporte*, *Só consulta*, *Tudo, menos configurações*. Abas delicadas têm uma etiqueta (IA / MCP guarda chaves de API; Banco de dados altera o conteúdo da IA; Logs pode excluir logs).
+2. As mudanças ficam num **rascunho** (etiqueta "novo"/"alterado" e um ponto na aba). Clique em **Salvar no arquivo…** — o painel atualiza o `config/admin-config.js` — e faça **commit + push**.
+3. Em ~1 minuto o usuário já entra no mesmo endereço do painel, digitando **usuário e senha**. O administrador principal continua entrando com a senha dele
+   (no campo "Usuário" pode deixar em branco ou escrever o nome que quiser).
+
+Como funciona e o que esperar:
+
+- Quem não tem uma aba **não a vê, não abre pelo endereço (`#/aba`), nem pelos atalhos `Alt+número`**; botões que levariam a uma aba sem acesso somem. Quem fica **sem nenhuma aba** vê um aviso para falar com o administrador.
+- **Desativar** bloqueia a entrada sem apagar o usuário; **Senha** redefine; **Excluir** remove. Nada vale até o arquivo ser publicado.
+- Quem estiver logado e for **desativado, excluído ou tiver a senha trocada** é desconectado em até **5 minutos**; se só as **abas** mudarem, a página recarrega sozinha para aplicar.
+  (A conferência lê o arquivo publicado; abrindo o painel direto do disco ela não acontece.)
+- O nome do usuário aparece no histórico (`revisado_por` nas revisões, `aprovado_por` nas respostas rápidas) e no topo do painel.
+- Cada usuário tem o próprio hash de senha (PBKDF2, 210 mil voltas, sal único). A senha em si nunca é gravada.
+- **Só o administrador principal** vê "Usuários e acessos" e "Senha do administrador principal". Quem recebeu a aba Sistema vê só a verificação, as informações e a limpeza do cache do próprio navegador.
+- Trocar a senha do administrador principal (aba Sistema ou `admin/senha.html`) **mantém a lista de usuários** no arquivo gerado.
+- **Limite importante:** no modo `local` isso organiza o que cada pessoa vê e usa, mas **não é uma barreira de segurança** — quem entende de programação consegue falar direto com o banco, e os hashes ficam no
+  arquivo público do GitHub (use senhas fortes). No **modo seguro** (Supabase) o acesso é por uma conta só e esta lista não vale.
 
 ---
 
@@ -178,6 +203,18 @@ Como funciona, do começo ao fim:
    - avisa antes se já existe artigo com título muito parecido (≥ 80 %) ou se o usuário deu 👎 na resposta; as **variantes** da pergunta não são gravadas
      (só valem na resposta rápida);
    - **Reabrir para revisão** não apaga o artigo — edite ou exclua na aba **Banco de dados**.
+8. **De onde a IA tirou a resposta? (v28.4 — `sql/04_logs_fontes_banco.sql`).** A cada resposta da IA o sistema guarda, na coluna `logs.fontes_banco`, a lista dos
+   **dados do banco de dados que foram entregues à IA** para montá-la: artigos da base de conhecimento (com a relevância de cada um), respostas rápidas aprovadas usadas como
+   conhecimento, parâmetros, funcionalidades e rotinas. Na **Revisão**, o cartão **"Dados do banco usados nesta resposta"** mostra essa lista:
+   - **clicar num artigo** abre a janela *Corrigir artigo #id*: ela lê o texto **atual** direto da base (título, categoria, conteúdo e "como emitir"), mostra a pergunta e a
+     resposta da IA para conferir, e **Salvar no banco de dados** atualiza o próprio artigo — vale para todos e o vetor de busca é recalculado sozinho na próxima abertura do
+     sistema (mesmo caminho do **Editar** da aba **Banco de dados**). Dica: se a resposta da IA saiu errada por causa de um artigo errado ou velho, corrija **ele** em vez de criar outro;
+   - **resposta rápida** abre a janela de edição dela; **parâmetro, funcionalidade e rotina** abrem a aba **Banco de dados** já no registro (lá você clica em **Editar**);
+     documentos do repositório e conhecimento aprendido aparecem só para consulta;
+   - quem não tem a aba **Banco de dados** (ou **Respostas rápidas**) liberada vê a lista, mas não consegue abrir a edição desses itens;
+   - **lista vazia** = a IA não recebeu nenhum dado do banco para aquela pergunta (a resposta saiu sem base) — um bom sinal de que vale *Salvar no banco de dados*;
+   - respostas **anteriores ao SQL 04** (ou geradas por quem ainda estava com a versão antiga aberta) não têm esse registro e nunca terão;
+   - o que fica gravado é só o suficiente para achar o registro (tipo, id, título cortado em 90 caracteres e relevância) — o texto é lido na hora, da própria base.
 
 O índice das respostas rápidas é baixado **só com o que mudou** e guardado no navegador (IndexedDB) — consumo mínimo do plano gratuito do Supabase.
 
@@ -226,14 +263,31 @@ Detalhes que valem saber:
 (ou pelo botão **Voltar ao chat** da ferramenta) sem abrir uma conversa nova, e até ver as duas lado a lado (tela dividida). **Nova consulta** limpa só a
 aba da ferramenta; fechar a aba (✕) também a reinicia.
 
+**Criar Regra › Ct-e › "Monte com um clique" › 📊 Cálculo do ICMS (v28.3.1)** — além do ICMS Demonstrativo, Cálculo Inverso, Somar ICMS e Substituição Tributária, há:
+- **Definir valor manualmente GNRE?** — acrescenta, logo depois do `valorICMS`: `if (obt("outrosValores[vICMSGNRE]") < 0.01) def("outrosValores[vICMSGNRE]", obt("valorICMS"));`.
+  O GNRE digitado na tela do Ct-e é mantido; se vier vazio (menor que 0,01) recebe o valor do ICMS. Se a regra já tiver o `vICMSGNRE`, a opção troca em vez de duplicar.
+- **Redução Base de cálculo?** — abre um campo para a porcentagem (0 a 100) e gera `def("baseCalculo", obt("valorFrete") * (100 - %) / 100);` (20 → base = 80 % do frete; 0 → sem redução; 100 → base zero).
+  Essa linha **substitui qualquer outra definição de `baseCalculo`** que já estiver montada (ICMS Demonstrativo, Cálculo Inverso, regra base ou regra colada), então a base nunca fica calculada duas vezes —
+  e vale em qualquer ordem de cliques. Sem um número válido nada é aplicado (o campo avisa). Como a definição é única, com alíquota 0 a base também fica reduzida (a que zerava a base some).
+  Se a base da regra colada estiver escondida num bloco if/else ("Linha extra"), o montador não consegue trocar e avisa em vermelho.
+
 **Registro (log) — como funciona:**
-- A **1ª pergunta de cada conversa do chat sempre gera log.** A conversa só é marcada como "já registrada" quando o log é de fato gravado — então uma
-  saudação ("oi"), um clique de atalho ou o uso de uma ferramenta **nunca** gastam o log da primeira pergunta de verdade.
+- **Toda pergunta feita no chat gera a sua própria linha de log — a 1ª da conversa e também as seguintes** (desde a v28.3). É isso que faz o log contar 100% do uso:
+  cada pergunta tem a sua resposta (`fonte` = `ia` ou `rapida`, `modelo`), vai para a **Revisão** como qualquer outra e recebe o **seu** 👍/👎 (o botão de cada resposta
+  vale para a pergunta daquela resposta, mesmo que a pessoa já tenha feito outras depois).
+- **O que conta:** perguntas digitadas (ou clicadas em "Em alta"/sugestões), "Tentar novamente" e "Pesquisar com a IA" depois de uma resposta rápida (a IA foi chamada de novo: vira
+  mais uma linha, e a da resposta rápida fica com o 👎 automático). **O que não conta:** saudações/agradecimentos/despedidas ("oi", "obrigado", "tchau"), que o sistema responde na
+  hora sem IA; as perguntas da **Agenda** (ficam só no computador da pessoa); o **Analisar tela**; e o simulador do painel.
 - Cada ferramenta tem o **seu próprio registro**, 1 por sessão da ferramenta (gravado na primeira consulta de verdade, não ao abrir a aba), com a coluna
   `fonte = 'ferramenta'`. No painel (**Logs**) aparece como **🧰 Ferramenta** e dá para filtrar. O 👍/👎 dentro da ferramenta vai para o registro dela.
-- Se você digitar no chat "criar regra…" ou "assistente de relatórios…", o chat registra a pergunta (se for a primeira da conversa) e **abre a ferramenta
+- Se você digitar no chat "criar regra…" ou "assistente de relatórios…", o chat registra a pergunta e **abre a ferramenta
   na aba reaproveitando esse mesmo registro** (sem duplicar).
-- No Copilot (janela flutuante) e no simulador não existem abas: lá as ferramentas continuam funcionando dentro do chat, como antes.
+- No Copilot (janela flutuante) e no simulador não existem abas: lá as ferramentas continuam funcionando dentro do chat (e registram 1 vez por conversa, como antes).
+- Atenção ao ler os números: o total de linhas do log agora é o total de **perguntas**, não de conversas (antes era quase 1 por conversa). Perguntas de continuação
+  ("e para o MDF-e?") entram como qualquer outra — na Revisão, confira o contexto antes de aprovar como resposta rápida.
+- **Histórico antigo:** as linhas gravadas antes da v28.3 só têm a 1ª pergunta de cada conversa (as seguintes nunca foram gravadas e não dá para recuperar). Para declarar o
+  uso com 100% de precisão, conte **a partir do dia em que a v28.3 foi publicada** (anote essa data). Se a IA falhar, a pergunta continua registrada como uma linha **sem resposta**
+  (uso tentado); para contar só as respostas entregues pela IA, use as linhas com `fonte = 'ia'`.
 
 ---
 
@@ -308,6 +362,7 @@ Este sistema roda **no navegador** e é publicado como site estático. Isso traz
 | **Chaves de IA** (`mcp-config.js`) | Qualquer visitante que abrir as ferramentas do desenvolvedor consegue ver as chaves. | Use chaves **gratuitas ou com limite de gasto**; troque se vazar. A solução definitiva é uma *Edge Function* intermediando as chamadas (não incluída). |
 | **Chave pública do Supabase** (`app-config.js`) | É pública por desenho do Supabase. O que protege o banco são as regras **RLS**. | Rode o `sql/03_seguranca_rls.sql` e use o **modo seguro** do painel (abaixo). |
 | **Senha do painel — modo `local`** | O hash da senha fica em arquivo público. É uma proteção **básica** (esconde a tela), mas **não protege o banco**: quem entende de programação fala direto com o Supabase. | Use senha **forte (12+ caracteres)** — o hash é público e pode ser testado offline — ou o modo seguro. |
+| **Vários usuários no painel — modo `local`** | As abas liberadas a cada usuário valem só na tela (e os hashes das senhas ficam no arquivo público). Evita acidentes e acesso casual; **não impede** quem entende de programação de falar direto com o banco. | Use senhas fortes (o painel gera) e libere só as abas necessárias; para proteção de verdade, o modo seguro. |
 | **Painel — modo `supabase`** (recomendado) | Login no Supabase Auth + regras RLS: só o administrador consegue **gravar** no conteúdo; o app dos usuários continua lendo, registrando log e dando feedback. | Passo a passo abaixo. |
 | **Texto de usuários/IA** | Tudo que vem do banco entra no painel como **texto** (nunca como HTML) e o painel tem política CSP (sem scripts embutidos). | — |
 | **Logs** | Guardam o que os usuários digitaram (pode haver dado pessoal — LGPD). | Apague periodicamente (aba Logs) e **não aprove** respostas que contenham dado pessoal. |
@@ -342,9 +397,13 @@ inserir/atualizar `logs` e inserir/apagar `machine_learning` (como já fazia). S
 | Sintoma | Causa provável / solução |
 |---|---|
 | Aba **Revisão** diz que "faltam as colunas" / **Respostas rápidas** diz que a tabela não existe | Rode `sql/02_respostas_rapidas_e_revisao.sql` (botão **Copiar o SQL** na própria tela) e clique em Atualizar. |
+| Na **Revisão**, o cartão "Dados do banco usados nesta resposta" pede para rodar o SQL 04 / diz "Sem registro" | Rode `sql/04_logs_fontes_banco.sql` (botão **Copiar o SQL** no próprio cartão) e clique em **Atualizar**. As respostas novas passam a ter a lista; as antigas não têm como ganhar. |
 | "O banco recusou a gravação (sem permissão)" | Você ativou o `03` mas o painel está no modo `local`. Troque para `"modo": "supabase"` (passo 4 acima) — ou rode o `03b`. |
 | Login do painel: "Este endereço não permite conferir a senha" | A criptografia do navegador só funciona em **HTTPS**, `localhost` ou arquivo aberto do disco. Evite abrir por IP de rede (`http://192.168...`). |
-| Esqueci a senha do painel | `admin/senha.html` (modo local) ou redefinir no Supabase → Authentication (modo seguro). |
+| Esqueci a senha do painel | `admin/senha.html` (modo local; os usuários cadastrados são mantidos) ou redefinir no Supabase → Authentication (modo seguro). |
+| Um usuário novo diz "Usuário ou senha incorretos" | Confira se você fez **commit + push** do `config/admin-config.js` depois de **Salvar no arquivo…** e espere ~1 min. Usuário e senha não diferenciam maiúsculas/acentos no usuário (só na senha). Se foi desativado, a tela avisa depois de acertar a senha. |
+| Um usuário esqueceu a senha | Sistema → Usuários e acessos → botão **Senha** (gera uma nova) → Salvar no arquivo… → push. |
+| Um usuário diz que "não tem acesso a nenhuma aba" ou não vê uma aba | Sistema → Usuários e acessos → **Editar** → marque as abas → Salvar no arquivo… → push. Ele recebe a mudança ao recarregar (ou em até 5 min). |
 | Mudei a IA e nada mudou para os usuários | Confirme o commit/push do `config/mcp-config.js` e aguarde ~1 min; o sistema confere ao abrir e a cada 2 h. No painel: **IA / MCP → Conferir arquivo publicado agora**. |
 | Simulador fica em "carregando a base…" | A base leva alguns segundos para carregar; se passar de 1 min, clique em **Recarregar** e confira a internet. |
 | Tela branca ao abrir `index.html` pelo disco | Confira se a pasta está completa (js/, css/, config/). Rode `tools/verificar-projeto.ps1`. |
