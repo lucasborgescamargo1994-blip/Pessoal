@@ -218,7 +218,7 @@ async function handleChat(opts) {
     const es = buildContextoSistema(query, dc);
 
     // Busca por similaridade de palavras-chave em Parâmetros e Funcionalidades
-    let pfCtx = '';
+    let pfCtx = '', _pmUsados = [], _fmUsados = [];   // _pmUsados/_fmUsados: o que entrou no prompt (vai para o log: "dados do banco usados" na Revisão)
     try {
         const _nPF = t => String(t||'').toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,'');
         const _wPF = _nPF(query).split(/\s+/).filter(w => w.length > 2);
@@ -232,6 +232,7 @@ async function handleChat(opts) {
             const pm = dadosParametros.map(p=>({item:p,sim:_simPF(p)})).filter(x=>x.sim>=_minSim).sort((a,b)=>b.sim-a.sim).slice(0,5);
             const fm = dadosFuncionalidades.map(f=>({item:f,sim:_simPF(f)})).filter(x=>x.sim>=_minSim).sort((a,b)=>b.sim-a.sim).slice(0,5);
             if (pm.length > 0 || fm.length > 0) {
+                _pmUsados = pm; _fmUsados = fm;
                 pfCtx = '\n=== PARÂMETROS E FUNCIONALIDADES RELACIONADOS ===\n';
                 pm.forEach((x,i) => { pfCtx += `\n[PARÂMETRO ${i+1} - sim:${(x.sim*100).toFixed(0)}%]\n${_fPF(x.item)}\n`; });
                 fm.forEach((x,i) => { pfCtx += `\n[FUNCIONALIDADE ${i+1} - sim:${(x.sim*100).toFixed(0)}%]\n${_fPF(x.item)}\n`; });
@@ -241,14 +242,21 @@ async function handleChat(opts) {
 
     // Busca na tabela Rotinas (telas/funções cadastradas) -- ajuda a responder "onde fica X"/"como
     // acesso X" com o nome oficial e o id real da rotina, em vez de arriscar inventar.
-    let rotinasCtx = '';
+    let rotinasCtx = '', _rotinasUsadas = [];
     try {
         const rotinasRel = _buscarRotinasRelevantes(query, 3);
         if (rotinasRel.length > 0) {
+            _rotinasUsadas = rotinasRel;
             rotinasCtx = '\n=== ROTINAS RELACIONADAS ===\n';
             rotinasRel.forEach((x,i) => { rotinasCtx += `\n[ROTINA ${i+1} - sim:${(x.sim*100).toFixed(0)}%]\n${_formatarRotinaParaPrompt(x.item)}\n`; });
         }
     } catch(e) {}
+
+    // Quais dados do banco de dados esta resposta vai usar (artigos, respostas aprovadas, parâmetros, funcionalidades, rotinas): gravados no log junto
+    // da resposta, para a aba Revisão mostrar — e deixar corrigir direto na base. Só informação: se algo falhar aqui, a resposta sai igual.
+    let _fontesUsadas = null;
+    try { _fontesUsadas = fontesDoBanco({ artigos: rr, aprovadas: rrUsadas, parametros: _pmUsados, funcionalidades: _fmUsados, rotinas: _rotinasUsadas }); }
+    catch (e) { console.warn('[log] não consegui listar os dados do banco usados nesta resposta:', e); }
 
     const ps = `🏢 VOCÊ É UM AGENTE DE SUPORTE DA BSOFT TMS\n\n${ch}\n\n🎯 Atenda o cliente de forma PROFISSIONAL e DIDÁTICA.\n\nREGRAS OBRIGATÓRIAS:\n1. Use APENAS as informações contidas no CONHECIMENTO abaixo. Nada além.\n2. NUNCA invente. Se não encontrar a resposta no conhecimento fornecido, diga claramente que não encontrou e peça para reformular.\n3. ⚠️ CAMINHOS DE MENU — PROIBIDO INVENTAR: Só cite um caminho de menu (ex: "Transporte > Documentos > Ct-e") se ele aparecer LITERALMENTE nos CAMINHOS DO MENU ou na solução do artigo fornecido. Se o caminho não estiver explícito no conhecimento abaixo, NÃO mencione nenhum caminho — escreva apenas "acesse pelo menu do sistema" sem inventar a navegação.\n4. Procedimentos e passos: só descreva o que estiver documentado na solução. Não crie etapas extras por lógica própria.\n5. ⚠️ NÃO OMITA NADA DA SOLUÇÃO — REGRA ABSOLUTA: Reproduza TODOS os passos da solução do artigo, na íntegra. É PROIBIDO: resumir, condensar, escrever "etc.", "e assim por diante", pular etapas, ou dizer "siga os passos normais". Se a solução tem 10 passos, escreva os 10 completos com todos os detalhes. O público é suporte iniciante que não conhece o sistema — cada detalhe é essencial para resolver o problema. Prefira respostas longas e completas a respostas curtas e incompletas.\n6. Mantenha o contexto da conversa.\n7. Seja conversacional e humano.\n8. Diferencie: CT-e, MDF-e, NF-e, NFS-e, Minuta, OC, CIOT, VPO.\n9. PARÂMETROS E FUNCIONALIDADES: Se a seção "PARÂMETROS E FUNCIONALIDADES RELACIONADOS" contiver itens relevantes para a pergunta, mencione-os ao final da resposta como opção adicional — ex: "💡 Verifique também se o parâmetro/funcionalidade X está habilitado, pois pode estar relacionado a esta situação."\n10. ROTINAS: Se a seção "ROTINAS RELACIONADAS" tiver algo relevante pra pergunta (ex.: "onde fica X", "como acesso X"), use o Nome oficial pra confirmar como a tela/função se chama. Só inclua o nome interno/caminho técnico da rotina se isso realmente ajudar (ex.: pedido claramente técnico) -- e nesse caso, deixe claro que o caminho técnico precisa ser completado com o endereço do sistema do próprio cliente antes (cada empresa Bsoft tem o seu). Nunca invente nome oficial nem id de rotina que não estejam listados aqui.\n11. RESPOSTAS APROVADAS PELA EQUIPE: Se existir a seção "RESPOSTAS JÁ APROVADAS PELA EQUIPE DE SUPORTE", ela traz respostas que a própria equipe já revisou e aprovou para perguntas parecidas — é conhecimento VALIDADO, do mesmo nível dos artigos. Se alguma delas resolve a pergunta atual, use o conteúdo dela por inteiro (sem omitir passos) e complemente com os artigos quando fizer sentido. Se um artigo e uma resposta aprovada divergirem sobre o MESMO assunto, siga a resposta aprovada. NÃO aplique uma resposta aprovada que seja sobre outro assunto, outro código de erro/rejeição ou outro tipo de documento (CT-e, MDF-e, NF-e, NFS-e…): nesse caso, ignore-a. Nunca diga ao cliente que existe uma "resposta aprovada" ou uma "seção" — apenas responda.\n\n${mi}\n📚 CONHECIMENTO:\n${es}${rrCtx}${ar}${pfCtx}${rotinasCtx}${conhecimentoRepositorio}${hc}\n\n🗣️ PERGUNTA: "${query}"\n\n📝 FORMATO:\n- Markdown limpo. NUNCA JSON.\n- **negrito** para termos importantes.\n- Listas com - para passos sequenciais.\n- Linguagem conversacional e humana.${vum ? '\n- Não encontrou: pedir reformulação.' : ''}\n- OBRIGATÓRIO: ao encerrar toda resposta completa, escreva \`#finalizado\` sozinho na última linha.`;
 
@@ -399,7 +407,7 @@ async function handleChat(opts) {
         feedbackEl.style.display = 'flex';
         adicionarMensagemNaConversa('ai', finalText.replace(/\*\*(.*?)\*\*/g, '$1'));
         // Guarda a resposta apresentada no log (vai para a fila de revisão da Área Administrativa)
-        registrarRespostaNoLog(_logTs, { resposta: finalText, fonte: 'ia', modelo: _im });
+        registrarRespostaNoLog(_logTs, { resposta: finalText, fonte: 'ia', modelo: _im, fontes: _fontesUsadas });
         simEnviarAoPainel({ tipo: 'bsoft:sim:trace', fonte: 'ia', pergunta: query, modelo: _im, ms: Math.round(performance.now() - _t0), bloqueios: window.BSOFT_SIM_BLOQUEIOS.length, bloqueiosLista: window.BSOFT_SIM_BLOQUEIOS.slice(-20), forcouIA: !!opts.forcarIA, rrContexto: rrUsadas.map(x => ({ id: x.item.id, pct: Math.round(x.score * 100) })) });
         // Resposta pode demorar — se a pessoa saiu da aba/janela nesse meio tempo, avisa que já
         // terminou (só quando não está olhando; quem está vendo o streaming não precisa de aviso).

@@ -2,16 +2,20 @@
    Fluxo:  usuário pergunta → o sistema grava pergunta + resposta no log (revisao = 'pendente') → aqui você escolhe:
            • aprovar → vira uma linha em respostas_rapidas → perguntas parecidas passam a receber a resposta pronta (revisao = 'aprovada');
            • salvar no banco de dados → vira um artigo da base de conhecimento (BancoDados) que a IA consulta (revisao = 'banco');
-           • rejeitar / ignorar. */
+           • rejeitar / ignorar.
+   Cada resposta da IA mostra também os DADOS DO BANCO DE DADOS que ela recebeu para ser montada (coluna logs.fontes_banco, SQL 04): clicar em um
+   artigo abre o texto atual dele para corrigir e salvar direto na base de conhecimento (ADM.editarArtigoBanco); as outras fontes abrem a aba certa. */
 (function () {
     'use strict';
     const TAM = 40;   // logs por página
     const COLS = 'id, pergunta, resposta, fonte, modelo, feedback, motivo, usuario_windows, timestamp, created_at, revisao, revisao_nota, revisado_em, revisado_por, resposta_rapida_id';
+    const COL_FONTES = 'fontes_banco';   // coluna do SQL 04: se o banco ainda não a tem, a lista carrega sem ela (carregar → E.semFontes)
     const ESTADOS = [['pendente', 'Pendentes'], ['aprovada', 'Aprovadas (resposta rápida)'], ['banco', 'Salvas no banco de dados'], ['rejeitada', 'Rejeitadas'], ['ignorada', 'Ignoradas'], ['nao_se_aplica', 'Vindas de resposta rápida'], ['todas', 'Todas']];
     const ROTULO_REV = { banco: 'no banco de dados', nao_se_aplica: 'vinda de resposta rápida' };
     const CLASSE_REV = { aprovada: 'ok', banco: 'ok', rejeitada: 'er' };
     const rotuloRev = v => ROTULO_REV[v] || v;
-    const E = { filtro: { revisao: 'pendente', fonte: '', feedback: '', texto: '' }, linhas: [], grupos: [], selChave: null, idxResp: 0, fim: false, carregando: false, erro: null, form: null, jaCarregou: false, salvando: false };
+    const E = { filtro: { revisao: 'pendente', fonte: '', feedback: '', texto: '' }, linhas: [], grupos: [], selChave: null, idxResp: 0, fim: false, carregando: false, erro: null, form: null, jaCarregou: false, salvando: false, comFontes: true, semFontes: false };
+    const TIT = new Map();   // id do artigo → título atual (depois de corrigido aqui, o cartão mostra o título novo e não o que estava no log)
     const R = {};   // referências de tela
 
     const pesoFb = l => l.feedback === 'Positivo' ? 2 : l.feedback === 'Negativo' ? 0 : 1;
@@ -80,16 +84,23 @@
     async function carregar(reiniciar) {
         if (E.carregando) return;
         E.carregando = true;
-        if (reiniciar) { E.linhas = []; E.grupos = []; E.fim = false; E.erro = null; }
+        if (reiniciar) { E.linhas = []; E.grupos = []; E.fim = false; E.erro = null; E.comFontes = true; E.semFontes = false; }   // reiniciar também tenta de novo a coluna das fontes (o SQL 04 pode ter sido rodado agora)
         renderLista();
         try {
             const de = E.linhas.length, f = E.filtro;
-            let q = ADM.sb.from('logs').select(COLS).not('resposta', 'is', null).order('created_at', { ascending: false }).range(de, de + TAM - 1);
-            if (f.revisao !== 'todas') q = q.eq('revisao', f.revisao);
-            if (f.fonte) q = q.eq('fonte', f.fonte);
-            if (f.feedback) q = q.eq('feedback', f.feedback);
-            const t = ADM.db.termoSeguro(f.texto); if (t) q = q.ilike('pergunta', '%' + t + '%');
-            const { data, error } = await q;
+            const consulta = cols => {
+                let q = ADM.sb.from('logs').select(cols).not('resposta', 'is', null).order('created_at', { ascending: false }).range(de, de + TAM - 1);
+                if (f.revisao !== 'todas') q = q.eq('revisao', f.revisao);
+                if (f.fonte) q = q.eq('fonte', f.fonte);
+                if (f.feedback) q = q.eq('feedback', f.feedback);
+                const t = ADM.db.termoSeguro(f.texto); if (t) q = q.ilike('pergunta', '%' + t + '%');
+                return q;
+            };
+            let { data, error } = await consulta(E.comFontes ? COLS + ', ' + COL_FONTES : COLS);
+            if (error && E.comFontes && ADM.db.ehColunaAusente(error)) {   // SQL 04 ainda não rodado: a revisão funciona igual, só sem a lista de dados usados
+                E.comFontes = false; E.semFontes = true;
+                ({ data, error } = await consulta(COLS));
+            }
             if (error) throw error;
             E.linhas = E.linhas.concat(data || []);
             if (!data || data.length < TAM) E.fim = true;
@@ -97,7 +108,91 @@
         } catch (e) { E.erro = e; }
         E.carregando = false; E.jaCarregou = true;
         if (!grupoSel() && E.grupos.length && !E.erro) selecionar(E.grupos[0].chave, true);
-        else { renderLista(); if (!E.grupos.length) renderDetalhe(); }
+        else { renderLista(); if (!E.grupos.length || reiniciar) renderDetalhe(); }   // "Atualizar" com a mesma pergunta selecionada também refaz o detalhe (ex.: as fontes depois de rodar o SQL 04); o que já foi digitado no formulário fica (E.form)
+    }
+
+    /* ───────────── dados do banco de dados que a IA usou nesta resposta ───────────── */
+    const GRUPOS_FONTE = [
+        { tipo: 'banco', rot: 'Artigos da base de conhecimento', ic: 'database' },
+        { tipo: 'rr', rot: 'Respostas rápidas aprovadas', ic: 'zap' },
+        { tipo: 'param', rot: 'Parâmetros', ic: 'sliders' },
+        { tipo: 'func', rot: 'Funcionalidades', ic: 'layers' },
+        { tipo: 'rotina', rot: 'Rotinas (telas)', ic: 'file' },
+        { tipo: 'repo', rot: 'Documentos do repositório', ic: 'folder' },
+        { tipo: 'ml', rot: 'Conhecimento aprendido', ic: 'book' },
+    ];
+    // a coluna fontes_banco do log → lista limpa de { tipo, id, titulo, pct, chave }; null = esta resposta não tem o registro (anterior ao SQL 04)
+    function fontesDe(L) {
+        let v = L && L.fontes_banco;
+        if (typeof v === 'string') { try { v = JSON.parse(v); } catch (e) { return null; } }
+        if (!Array.isArray(v)) return null;
+        return v.filter(x => x && typeof x === 'object').map(x => ({
+            tipo: String(x.tipo || 'banco'), id: x.id == null ? null : x.id, titulo: String(x.titulo || ''), chave: x.chave ? String(x.chave) : '',
+            pct: x.pct == null || !Number.isFinite(Number(x.pct)) ? null : Math.max(0, Math.min(100, Math.round(Number(x.pct)))) }));
+    }
+    // o que acontece ao clicar num item: artigo → janela de correção aqui mesmo; resposta rápida → a janela de edição dela; parâmetro, funcionalidade
+    // e rotina → a aba Banco de dados já no registro. null = só informativo (repositório, aprendizado ou quem não tem acesso à aba de destino).
+    function acaoFonte(L, f) {
+        if (f.tipo === 'banco' && f.id != null && ADM.podeAba('banco'))
+            return { icone: 'edit', dica: 'Clique para ver o texto atual do artigo, corrigir e salvar na base de conhecimento', rodar: () => corrigirArtigo(L, f) };
+        if (f.tipo === 'rr' && f.id != null && ADM.podeAba('respostas'))
+            return { icone: 'edit', dica: 'Clique para editar esta resposta rápida', rodar: () => {
+                const it = ADM.rr.obter(f.id);
+                if (!it) return ADM.ui.toast(`A resposta rápida #${f.id} não foi encontrada (foi excluída?). Clique em Atualizar para recarregar a lista.`, 'wa', 8000);
+                ADM.editarRespostaRapida(it, () => renderDetalhe());
+            } };
+        if ((f.tipo === 'param' || f.tipo === 'func') && f.id != null && ADM.podeAba('banco'))
+            return { icone: 'ext', dica: 'Abre este registro na aba Banco de dados (lá você clica em Editar)', rodar: () => ADM.irParaAba('banco', { tabela: f.tipo === 'param' ? 'Parametros' : 'Funcionalidades', id: f.id }) };
+        if (f.tipo === 'rotina' && (f.chave || f.titulo) && ADM.podeAba('banco'))
+            return { icone: 'ext', dica: 'Procura esta rotina na aba Banco de dados (lá você clica em Editar)', rodar: () => ADM.irParaAba('banco', { tabela: 'Rotinas', buscar: f.chave || f.titulo }) };
+        return null;
+    }
+    async function corrigirArtigo(L, f) {
+        await ADM.editarArtigoBanco(f.id, {
+            contexto: { pergunta: L.pergunta, resposta: L.resposta }, categorias: categoriasSugeridas(),
+            aoSalvar: r => {
+                TIT.set(String(r.id), r.titulo || '');   // os cartões passam a mostrar o título novo
+                const a = BD.itens && BD.itens.find(x => String(x.id) === String(r.id));
+                if (a) { a.titulo = r.titulo; a.categoria = r.categoria; sugerirCategorias(); }   // o aviso de "título parecido" também enxerga a correção
+                renderDetalhe();
+            },
+        });
+    }
+    function linhaFonte(L, f) {
+        const acao = acaoFonte(L, f);
+        const titulo = (f.tipo === 'banco' && f.id != null && TIT.get(String(f.id))) || f.titulo || '(sem título)';
+        const partes = [
+            (f.tipo === 'banco' || f.tipo === 'rr') && f.id != null ? h('span', { class: 'mu nw' }, '#' + f.id) : null,
+            h('span', { class: 't' }, titulo),
+            f.pct != null ? h('span', { class: 'pct ' + (f.pct >= 80 ? 'alto' : f.pct >= 50 ? 'medio' : ''), title: 'Relevância deste item para a pergunta' }, f.pct + '%') : null,
+            acao ? h('span', { class: 'ed' }, I(acao.icone, 14)) : null,
+        ];
+        if (!acao) return h('div', { class: 'fonte somente', title: f.tipo === 'repo' || f.tipo === 'ml' ? 'Só informativo: este tipo de conteúdo não é editado aqui' : 'Seu usuário não tem acesso à aba onde este item é editado' }, partes);
+        const b = h('button', { class: 'fonte', type: 'button', title: acao.dica }, partes);
+        b.addEventListener('click', () => ADM.ui.ocupado(b, async () => { await acao.rodar(); }));
+        return b;
+    }
+    function renderFontes(L) {
+        const fontes = fontesDe(L), corpo = h('div', { class: 'cartao-corpo' });
+        if (fontes === null) {
+            if (E.semFontes) corpo.appendChild(ADM.ui.aviso('wa', h('b', null, 'O banco ainda não guarda quais dados a IA usou.'), h('br'),
+                'Rode o arquivo sql/04_logs_fontes_banco.sql uma vez no SQL Editor do Supabase (é seguro rodar de novo) e clique em Atualizar. As respostas novas passam a mostrar a lista; as anteriores não têm esse registro.',
+                h('div', { style: { marginTop: '8px' } }, ADM.ui.sqlAjuda('04_logs_fontes_banco.sql'))));
+            else corpo.appendChild(h('div', { class: 'mu' }, 'Sem registro dos dados usados nesta resposta: ela foi gerada antes desta função existir (ou por um navegador que ainda estava com a versão antiga do sistema).'));
+        } else if (!fontes.length) {
+            corpo.appendChild(ADM.ui.aviso('wa', h('b', null, 'A IA não recebeu nenhum dado do banco para esta pergunta.'), ' Nenhum artigo, parâmetro, funcionalidade ou rotina combinou, então a resposta saiu sem base na base de conhecimento. Se ela estiver certa, vale ', h('b', null, 'Salvar no banco de dados'), '.'));
+        } else {
+            corpo.appendChild(h('div', { class: 'dica' }, 'Foi isto que a IA recebeu para montar a resposta. ', h('b', null, 'Clique em um artigo'), ' para ver o texto atual, corrigir e salvar direto na base de conhecimento (vale para todos).'));
+            const porTipo = new Map();
+            fontes.forEach(f => { if (!porTipo.has(f.tipo)) porTipo.set(f.tipo, []); porTipo.get(f.tipo).push(f); });
+            const desconhecidos = Array.from(porTipo.keys()).filter(t => !GRUPOS_FONTE.some(g => g.tipo === t)).map(t => ({ tipo: t, rot: 'Outros', ic: 'file' }));
+            GRUPOS_FONTE.concat(desconhecidos).forEach(g => {
+                const itens = porTipo.get(g.tipo); if (!itens) return;
+                corpo.appendChild(h('div', { class: 'fontes-grupo' }, h('div', { class: 'rot-mini' }, I(g.ic, 13), g.rot + ' (' + itens.length + ')'), itens.map(f => linhaFonte(L, f))));
+            });
+        }
+        return h('div', { class: 'cartao', id: 'cartaoFontes' }, h('div', { class: 'cartao-topo' }, h('h3', null, I('database', 16), 'Dados do banco usados nesta resposta'),
+            fontes && fontes.length ? h('span', { class: 'sel' }, String(fontes.length)) : null), corpo);
     }
 
     /* ───────────── lista ───────────── */
@@ -197,6 +292,7 @@
 
         /* coluna da direita: o que já existe */
         const lateral = h('div', { class: 'pilha' });
+        if (L.fonte !== 'rapida') lateral.appendChild(renderFontes(L));   // de onde a IA tirou a resposta (e como corrigir a base)
         const alvo = RRMatch.preparar(L.pergunta);
         const ja = RRMatch.ranking(L.pergunta, ADM.rr.itens, 0.55).slice(0, 5);
         const cfg = ADM.configAtiva().respostasRapidas;
@@ -262,6 +358,7 @@
                     L.revisao === 'banco' && ADM.podeAba('banco') ? h('button', { class: 'btn', type: 'button', title: 'Abre a aba Banco de dados já no artigo que foi salvo', onclick: () => ADM.irParaAba('banco', idBanco ? { id: idBanco } : { buscar: L.pergunta }) }, I('database', 15), idBanco ? 'Abrir no banco de dados (#' + idBanco + ')' : 'Procurar no banco de dados') : null,
                     reabrirBtn,
                     ADM.podeAba('simulador') ? h('button', { class: 'btn', type: 'button', onclick: () => { ADM.irParaAba('simulador'); ADM.sim.perguntar(L.pergunta); } }, I('flask', 15), 'Testar no simulador') : null))));
+        if (L.fonte !== 'rapida') box.appendChild(renderFontes(L));   // mesmo depois de decidida, dá para ver (e corrigir) de onde a IA tirou a resposta
     }
 
     /* ───────────── ações ───────────── */
@@ -404,7 +501,7 @@
     /* ───────────── aba ───────────── */
     ADM.registrarAba({
         id: 'revisao', titulo: 'Revisão', icone: 'inbox', ordem: 10,
-        descricao: 'Confira as respostas que a IA deu aos usuários. As boas viram respostas rápidas (imediatas, sem gastar IA, para perguntas parecidas — e também conhecimento validado para a IA) ou, quando o tema é mais amplo, vão para o banco de dados (base de conhecimento) com o botão “Salvar no banco de dados”.',
+        descricao: 'Confira as respostas que a IA deu aos usuários. As boas viram respostas rápidas (imediatas, sem gastar IA, para perguntas parecidas — e também conhecimento validado para a IA) ou, quando o tema é mais amplo, vão para o banco de dados (base de conhecimento) com o botão “Salvar no banco de dados”. Em cada resposta você vê quais dados do banco a IA usou — clique num artigo para corrigi-lo na própria base.',
         montar(ctx) {
             const sel = (opcoes, valor, aoMudar, titulo) => { const s = h('select', { title: titulo, 'aria-label': titulo }, opcoes.map(([v, t]) => h('option', { value: v }, t))); s.value = valor; s.addEventListener('change', () => aoMudar(s.value)); return s; };
             const busca = h('input', { type: 'search', placeholder: 'Buscar na pergunta…', 'aria-label': 'Buscar na pergunta' });

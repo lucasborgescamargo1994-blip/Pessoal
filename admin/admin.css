@@ -234,6 +234,20 @@ table.tabela { width: 100%; border-collapse: separate; border-spacing: 0; font-s
 .pct { font-family: var(--ad-mono); font-size: 11.5px; font-weight: 700; padding: 1px 6px; border-radius: 6px; background: var(--ad-sf-3); }
 .pct.alto { background: var(--ad-ok-bg); color: var(--ad-ok); } .pct.medio { background: var(--ad-wa-bg); color: var(--ad-wa); }
 
+/* revisão: dados do banco de dados que a IA usou na resposta (cada item é um botão que abre a correção) */
+.fontes-grupo { display: flex; flex-direction: column; gap: 6px; }
+.rot-mini { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 800; color: var(--ad-mu); text-transform: uppercase; letter-spacing: .05em; }
+.fonte { display: flex; align-items: center; gap: 9px; width: 100%; text-align: left; font: inherit; font-size: 12.5px; color: var(--ad-tx); padding: 8px 10px; border: 1px solid var(--ad-ln); border-radius: 10px; background: var(--ad-sf-2); }
+button.fonte { cursor: pointer; transition: border-color .15s, background .15s; }
+button.fonte:hover { border-color: var(--ad-pr); background: rgb(var(--ad-pr-rgb) / .07); }
+button.fonte:focus-visible { outline: 2px solid var(--ad-pr); outline-offset: 2px; }
+button.fonte.carregando { opacity: .6; cursor: progress; }
+.fonte .t { flex: 1; min-width: 0; font-weight: 600; word-break: break-word; }
+.fonte .ed { color: var(--ad-pr); display: inline-flex; flex-shrink: 0; }
+.fonte.somente { cursor: default; }
+details.ctx-artigo { border: 1px solid var(--ad-ln); border-radius: var(--ad-r-sm); padding: 9px 12px; background: var(--ad-sf-2); }
+details.ctx-artigo > summary { cursor: pointer; font-weight: 700; font-size: 12.5px; }
+
 /* editor de resposta (texto + visualização) */
 .editor-resp { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .editor-resp textarea { min-height: 260px; font-family: var(--ad-mono); font-size: 12.5px; }

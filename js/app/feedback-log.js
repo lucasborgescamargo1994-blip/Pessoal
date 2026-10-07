@@ -3,18 +3,51 @@
    contar 100% do uso. Quando a resposta termina, ela é gravada NA LINHA DAQUELA PERGUNTA (colunas resposta/fonte/modelo, revisao = 'pendente').
    O 👍/👎 de cada resposta vai para a linha da própria resposta (data-log-ts no cartão). Na Área Administrativa (aba "Revisão") você aprova ou
    rejeita: aprovada vira uma "resposta rápida" (tabela respostas_rapidas).
+   Junto da resposta vai a lista dos DADOS DO BANCO DE DADOS que a IA recebeu para montá-la (coluna fontes_banco, SQL 04): na Revisão, cada item
+   pode ser aberto para corrigir o conteúdo na própria base. Ver fontesDoBanco() e registrarRespostaNoLog().
    No simulador (?sim=1) nada disso é gravado.
    As ferramentas em abas (SEFAZ, Regras, Relatórios, Parâmetros) têm o seu próprio registro: ver js/app/ferramentas.js. */
 
 let currentLogTimestamp = null;
 let perguntaPrimariaAtual = "";
 let _avisouSqlPendente = false;
+let _semColunaFontes = false;   // vira true quando o banco diz que a coluna fontes_banco (SQL 04) não existe: as próximas respostas nem tentam gravar as fontes
 
 // Avisa uma vez só (no console) quando as colunas novas ainda não existem no Supabase.
 function _avisarSqlPendente(error) {
     if (_avisouSqlPendente) return;
     _avisouSqlPendente = true;
     console.warn('[log] Não consegui gravar a resposta no log (as colunas novas ainda não existem?). Rode sql/02_respostas_rapidas_e_revisao.sql no Supabase. Detalhe:', error && error.message);
+}
+function _colunaAusente(error) {
+    return !!error && (error.code === '42703' || error.code === 'PGRST204' || /column .* does not exist|could not find the .* column/i.test(error.message || ''));
+}
+
+// Lista compacta dos dados do banco de dados que entraram no prompt da IA — é o que a aba Revisão mostra em "Dados do banco de dados usados".
+// Cada item: { tipo, id, titulo, pct }:
+//   tipo   'banco' (artigo da base de conhecimento) | 'rr' (resposta rápida aprovada usada como conhecimento) | 'param' (Parâmetros) |
+//          'func' (Funcionalidades) | 'rotina' (Rotinas) | 'repo' (documento do repositório) | 'ml' (conhecimento aprendido)
+//   id     chave do registro na tabela de origem (null quando não há uma: repositório, aprendizado e rotinas — a tabela Rotinas não tem coluna id)
+//   pct    relevância 0–100 (semelhança da busca)
+//   chave  (só rotinas) o "Nome Interno" da rotina — é por ele que a Revisão encontra o registro na aba Banco de dados
+// Recebe { artigos, aprovadas, parametros, funcionalidades, rotinas } exatamente como o chat os montou. Títulos cortados em 90 caracteres:
+// o log guarda só o suficiente para achar e abrir o registro (o conteúdo é lido na hora, da própria base, quando alguém clica).
+function fontesDoBanco(p) {
+    p = p || {};
+    const corta = (t, n) => String(t == null ? '' : t).replace(/\s+/g, ' ').trim().slice(0, n);
+    const pct = x => Math.max(0, Math.min(100, Math.round((Number(x) || 0) * 100)));
+    const out = [];
+    (p.artigos || []).forEach(r => {
+        const tipo = r.isRepositorio ? 'repo' : r.isML ? 'ml' : 'banco';
+        // artigos vetorizados guardam o id em idSupabase; os da busca por palavra-chave vêm da linha crua do banco, onde o id é "id"
+        const id = r.idSupabase != null ? r.idSupabase : (tipo === 'banco' && r.id != null ? r.id : null);
+        out.push({ tipo, id, titulo: corta(r.erro || r.titulo || '(sem título)', 90), pct: pct(r.similaridade) });
+    });
+    (p.aprovadas || []).forEach(x => out.push({ tipo: 'rr', id: x.item.id, titulo: corta(x.item.pergunta, 90), pct: pct(x.score) }));
+    (p.parametros || []).forEach(x => out.push({ tipo: 'param', id: x.item.id, titulo: corta(x.item['Descrição'] || x.item['Nome Interno'] || '(sem descrição)', 90), pct: pct(x.sim) }));
+    (p.funcionalidades || []).forEach(x => out.push({ tipo: 'func', id: x.item.id, titulo: corta(x.item['Descrição'] || '(sem descrição)', 90), pct: pct(x.sim) }));
+    (p.rotinas || []).forEach(x => out.push({ tipo: 'rotina', id: null, titulo: corta(x.item['Descrição'] || x.item['Nome Interno'] || '(sem descrição)', 90), pct: pct(x.sim), chave: corta(x.item['Nome Interno'], 80) }));
+    return out;
 }
 
 // Grava UMA linha de log (não depende de conversa). Devolve o timestamp da linha — ou null se não gravou (simulador).
@@ -86,13 +119,28 @@ function _extraLog(extra) {
 }
 
 // Grava a resposta apresentada na linha de log da pergunta que a gerou ("ts" = valor devolvido por logSearch).
+// dados.fontes (opcional) = o que fontesDoBanco() devolveu. Vai na coluna fontes_banco (SQL 04): se ela ainda não existir, a resposta é gravada
+// do mesmo jeito, só sem as fontes — gravar a resposta (e mandá-la para a Revisão) nunca pode depender da coluna nova.
 function registrarRespostaNoLog(ts, dados) {
     if (BSOFT_SIM || !ts || !dados) return;
     const texto = String(dados.resposta || '').trim();
     if (!texto) return;
     const upd = { resposta: texto.slice(0, 12000), fonte: dados.fonte || 'ia', revisao: dados.revisao || 'pendente' };
     if (dados.modelo) upd.modelo = dados.modelo;
-    sb.from('logs').update(upd).eq('timestamp', ts).then(({ error }) => { if (error) _avisarSqlPendente(error); });
+    const fontes = Array.isArray(dados.fontes) && !_semColunaFontes ? dados.fontes : null;   // [] = a IA não recebeu nenhum dado do banco (vale gravar)
+    const gravar = async payload => (await sb.from('logs').update(payload).eq('timestamp', ts)).error;
+    (async () => {
+        if (fontes) {
+            const erro = await gravar({ ...upd, fontes_banco: fontes });
+            if (!erro) return;
+            if (_colunaAusente(erro)) {
+                _semColunaFontes = true;
+                console.warn('[log] A coluna fontes_banco ainda não existe — a Revisão não vai mostrar quais dados do banco a IA usou. Rode sql/04_logs_fontes_banco.sql no Supabase. (A resposta é gravada normalmente.)');
+            }
+        }
+        const erro = await gravar(upd);   // sem as fontes (coluna ausente ou qualquer falha da 1ª tentativa)
+        if (erro) _avisarSqlPendente(erro);
+    })().catch(e => console.warn('[log] falha ao gravar a resposta no log:', e));
 }
 
 // A que linha de log pertence o botão 👍/👎 clicado?

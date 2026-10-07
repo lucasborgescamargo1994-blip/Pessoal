@@ -39,6 +39,8 @@
             catch (e) { add('wa', 'Colunas de revisão em “logs”', ADM.db.ehColunaAusente(e) ? 'faltam — rode sql/02_respostas_rapidas_e_revisao.sql' : ADM.db.erroTexto(e), '02_respostas_rapidas_e_revisao.sql'); }
             try { const r = await ADM.sb.from('logs').select('retorno').limit(1); if (r.error) throw r.error; add('ok', 'Coluna “retorno” em “logs” (resposta do suporte ao feedback)', 'presente'); }
             catch (e) { add('wa', 'Coluna “retorno” em “logs”', ADM.db.ehColunaAusente(e) ? 'não existe — a Gestão de Feedback dos usuários não mostra o retorno do suporte' : ADM.db.erroTexto(e)); }
+            try { const r = await ADM.sb.from('logs').select('fontes_banco').limit(1); if (r.error) throw r.error; add('ok', 'Coluna “fontes_banco” em “logs” (quais dados do banco a IA usou — aba Revisão)', 'presente'); }
+            catch (e) { add('wa', 'Coluna “fontes_banco” em “logs”', ADM.db.ehColunaAusente(e) ? 'não existe — a Revisão não mostra quais dados do banco a IA usou em cada resposta. Rode sql/04_logs_fontes_banco.sql' : ADM.db.erroTexto(e), '04_logs_fontes_banco.sql'); }
 
             // segurança
             let sessao = 'anônima (chave pública)';
