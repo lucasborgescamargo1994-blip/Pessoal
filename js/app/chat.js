@@ -201,7 +201,7 @@ async function handleChat(opts) {
     let mi = "", vum = false;
     if (!trb && rr.every(r => r.similaridade < 0.5) && !rrUsadas.some(x => x.score >= 0.5)) { vum = true; mi = `\n⚠️ ATENÇÃO: Nenhum resultado encontrado no manual (max: ${rr.length > 0 ? (rr[0].similaridade * 100).toFixed(0) : 0}%).\n`; }
 
-    const _logTs = logSearch(query, !vum);   // timestamp da linha de log (só na 1ª pergunta da conversa; null no simulador)
+    const _logTs = logSearch(query, !vum);   // timestamp da linha de log DESTA pergunta (toda pergunta gera a sua; null no simulador): a resposta e o 👍/👎 vão para ela
 
     let conhecimentoRepositorio = '';
     if (!trb || vum) {
@@ -291,7 +291,7 @@ async function handleChat(opts) {
     const ts = Date.now();
     const card = document.createElement('div'); card.className = 'answer-card'; _streamCard = card;
     card.innerHTML = `<div class="answer-section"><div class="section-content" id="_sc${ts}"><span class="stream-thinking">💭 Pensando e formando resposta...</span><span class="stream-cursor"></span></div></div>
-        <div class="feedback-area" id="_sf${ts}" style="display:none">
+        <div class="feedback-area" id="_sf${ts}" data-log-ts="${_logTs || ''}" style="display:none">
             <span class="feedback-util">Esta resposta foi útil?</span>
             <button class="feedback-btn" onclick="saveFeedback(${ts},'positivo',this)">👍</button>
             <button class="feedback-btn" onclick="saveFeedback(${ts},'negativo',this)">👎</button>

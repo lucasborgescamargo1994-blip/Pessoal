@@ -44,7 +44,21 @@ const Cripto = (function () {
         return { pontos: pts, rotulo: rotulos[pts] };
     }
 
-    // Texto do arquivo config/admin-config.js. `cfg` = { modo, supabaseEmail, senha:{...}, sessaoMinutosOciosa, repositorio }
+    // Senha aleatória forte para entregar a um usuário novo: sem letras/números parecidos (0 O 1 l I), com pelo menos uma maiúscula,
+    // uma minúscula, um número e um símbolo. Usa o sorteio seguro do navegador e descarta valores que dariam viés.
+    function gerarSenha(tamanho) {
+        const n = Math.max(10, Number(tamanho) || 14);
+        const maiusc = 'ABCDEFGHJKLMNPQRSTUVWXYZ', minusc = 'abcdefghijkmnpqrstuvwxyz', nums = '23456789', simb = '!@#$%&*?-_+=';
+        const u32 = new Uint32Array(1);
+        const inteiro = m => { const lim = Math.floor(4294967296 / m) * m; do { crypto.getRandomValues(u32); } while (u32[0] >= lim); return u32[0] % m; };
+        const letra = alfabeto => alfabeto[inteiro(alfabeto.length)];
+        const out = [letra(maiusc), letra(minusc), letra(nums), letra(simb)];
+        while (out.length < n) out.push(letra(maiusc + minusc + nums + simb));
+        for (let i = out.length - 1; i > 0; i--) { const j = inteiro(i + 1); const t = out[i]; out[i] = out[j]; out[j] = t; }
+        return out.join('');
+    }
+
+    // Texto do arquivo config/admin-config.js. `cfg` = { modo, supabaseEmail, senha:{...}, usuarios:[...], sessaoMinutosOciosa, repositorio }
     function textoConfig(cfg) {
         const c = Object.assign({ modo: 'local', supabaseEmail: '', sessaoMinutosOciosa: 120, repositorio: '', ramo: 'main' }, cfg || {});
         const cab = [
@@ -58,6 +72,9 @@ const Cripto = (function () {
             '                  porque quem entender de programação consegue falar direto com o Supabase.',
             '                  Para trocar a senha: Admin → aba "Sistema" → "Alterar senha" (gera este arquivo de novo).',
             '                  Esqueceu a senha? Abra admin/senha.html, gere um hash novo e cole aqui.',
+            '                  "usuarios" (opcional): outras pessoas com acesso, cada uma com o seu hash de senha e as abas liberadas.',
+            '                  Quem cria e edita essa lista é o administrador principal: Admin → aba "Sistema" → "Usuários e acessos".',
+            '                  A "senha" de cima continua sendo a do administrador principal (todas as abas).',
             '',
             '   • "supabase" — recomendado. O login é feito no Supabase Auth (um usuário que você cria no painel do Supabase) e',
             '                  as regras do banco (sql/03_seguranca_rls.sql) só deixam esse usuário editar o conteúdo.',
@@ -71,5 +88,5 @@ const Cripto = (function () {
         return cab + '\nwindow.BSOFT_ADMIN = ' + JSON.stringify(c, null, 2) + ';\n';
     }
 
-    return { disponivel, derivar, iguais, conferir, novoHash, forca, textoConfig, ITERACOES };
+    return { disponivel, derivar, iguais, conferir, novoHash, forca, gerarSenha, textoConfig, ITERACOES };
 })();

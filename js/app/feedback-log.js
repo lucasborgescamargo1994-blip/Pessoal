@@ -1,7 +1,8 @@
 /* js/app/feedback-log.js — Log das perguntas, resposta apresentada e feedback (👍/👎).
-   Fluxo de revisão (v28): a 1ª pergunta de cada conversa vira uma linha em "logs". Quando a resposta termina,
-   ela é gravada nessa mesma linha (colunas resposta/fonte/modelo, revisao = 'pendente'). Na Área Administrativa
-   (aba "Revisão") você aprova ou rejeita: aprovada vira uma "resposta rápida" (tabela respostas_rapidas).
+   Fluxo de revisão (v28): TODA pergunta feita no chat vira uma linha em "logs" — a 1ª da conversa e também as seguintes (v28.3), para o log
+   contar 100% do uso. Quando a resposta termina, ela é gravada NA LINHA DAQUELA PERGUNTA (colunas resposta/fonte/modelo, revisao = 'pendente').
+   O 👍/👎 de cada resposta vai para a linha da própria resposta (data-log-ts no cartão). Na Área Administrativa (aba "Revisão") você aprova ou
+   rejeita: aprovada vira uma "resposta rápida" (tabela respostas_rapidas).
    No simulador (?sim=1) nada disso é gravado.
    As ferramentas em abas (SEFAZ, Regras, Relatórios, Parâmetros) têm o seu próprio registro: ver js/app/ferramentas.js. */
 
@@ -50,25 +51,27 @@ function registrarLog(query, found, extra) {
     return ts;
 }
 
-// Registra a pergunta do CHAT e devolve o timestamp do log — ou null se não registrou.
-// Regra: a 1ª pergunta registrada de cada conversa gera log (as seguintes não). A conversa só é marcada como "já registrada"
-// quando o log é de fato gravado — então uma saudação, um clique de atalho ou o uso de uma ferramenta em aba NUNCA gastam o log
-// da primeira pergunta de verdade. (Antes a regra era "só se for a 1ª mensagem do usuário": qualquer coisa antes da pergunta
-// fazia a pergunta nunca ser registrada.)
-function logSearch(query, found, extra) {
+// Registra a pergunta do CHAT e devolve o timestamp do log — ou null se não registrou (simulador).
+// Regra (v28.3): TODA pergunta registrada gera a sua própria linha de log — a 1ª da conversa e as seguintes. Cada linha leva a sua resposta
+// (que vai para a Revisão) e o seu 👍/👎; quem chama guarda o timestamp devolvido para gravar a resposta e apontar o feedback na linha certa.
+// Saudação ("oi", "obrigado"), "agenda" e cliques que não perguntam nada não chamam esta função, então não contam.
+// opcoes.umaPorConversa: só para as ferramentas SEM aba (Copilot) — elas passam por várias etapas e cada etapa chama o log, então
+// registram 1 vez por conversa (como sempre foi), em vez de uma linha por etapa.
+function logSearch(query, found, extra, opcoes) {
     if (BSOFT_SIM) return null;   // simulador: nenhum log
     const conversa = getConversaAtiva();
     if (!conversa) return null;
-    if (conversa.logTimestamp) {
-        console.log("⏭️ Log ignorado (esta conversa já tem a 1ª pergunta registrada):", String(query).substring(0, 50));
+    if (opcoes && opcoes.umaPorConversa && conversa.logTimestamp) {
+        console.log("⏭️ Log ignorado (ferramenta sem aba: esta conversa já tem registro):", String(query).substring(0, 50));
         return null;
     }
     const ts = registrarLog(query, found, extra);
     if (!ts) return null;
     currentLogTimestamp = ts;
     perguntaPrimariaAtual = query;
-    conversa.primeiraPergunta = query;
-    conversa.logTimestamp = ts;
+    if (!conversa.logTimestamp) conversa.primeiraPergunta = query;   // o título/busca da conversa continuam pela 1ª pergunta registrada
+    conversa.ultimaPerguntaLog = query;
+    conversa.logTimestamp = ts;   // timestamp da ÚLTIMA pergunta registrada: o 👍/👎 que não tem endereço próprio (assistentes antigos) vai para ela
     salvarConversas();
     return ts;
 }
@@ -82,7 +85,7 @@ function _extraLog(extra) {
     return e;
 }
 
-// Grava a resposta apresentada na linha de log da 1ª pergunta ("ts" = valor devolvido por logSearch).
+// Grava a resposta apresentada na linha de log da pergunta que a gerou ("ts" = valor devolvido por logSearch).
 function registrarRespostaNoLog(ts, dados) {
     if (BSOFT_SIM || !ts || !dados) return;
     const texto = String(dados.resposta || '').trim();
@@ -92,13 +95,20 @@ function registrarRespostaNoLog(ts, dados) {
     sb.from('logs').update(upd).eq('timestamp', ts).then(({ error }) => { if (error) _avisarSqlPendente(error); });
 }
 
-// A que linha de log pertence o botão 👍/👎 clicado? Dentro de uma ferramenta em aba → ao registro dela; senão → à conversa do chat.
+// A que linha de log pertence o botão 👍/👎 clicado?
+//  1) dentro de uma ferramenta em aba → ao registro dela;
+//  2) numa resposta do chat com endereço próprio (data-log-ts, gravado pelo cartão da resposta) → à linha DAQUELA pergunta — mesmo que a
+//     pessoa já tenha feito outras perguntas depois (a pergunta não precisa ser reescrita: a linha já a tem);
+//  3) senão (assistentes antigos sem endereço) → à última pergunta registrada da conversa.
 function _alvoFeedback(btn) {
     const ft = btn && btn.closest ? btn.closest('[data-ferr]') : null;
     if (ft) { const s = Ferr.sessao(ft.dataset.ferr); return { pergunta: s.pergunta || '?', ts: s.ts }; }
+    const al = btn && btn.closest ? btn.closest('[data-log-ts]') : null;
+    if (al && al.dataset.logTs) return { pergunta: '', ts: al.dataset.logTs };
     const conversa = getConversaAtiva();
-    return { pergunta: conversa?.primeiraPergunta || perguntaPrimariaAtual || lastQuery || "?", ts: conversa?.logTimestamp || currentLogTimestamp };
+    return { pergunta: conversa?.ultimaPerguntaLog || conversa?.primeiraPergunta || perguntaPrimariaAtual || lastQuery || "?", ts: conversa?.logTimestamp || currentLogTimestamp };
 }
+const _campoPergunta = p => p ? { pergunta: p } : {};   // só reescreve a pergunta quando o alvo não tem linha própria
 
 async function saveFeedback(logIndex, type, btn) {
     const feedbackArea = btn.parentElement;
@@ -108,7 +118,7 @@ async function saveFeedback(logIndex, type, btn) {
 
     if (type === 'positivo') {
         try {
-            await sb.from('logs').update({feedback: "Positivo", pergunta: perguntaParaLog}).eq('timestamp', timestampLog);
+            await sb.from('logs').update({feedback: "Positivo", ..._campoPergunta(perguntaParaLog)}).eq('timestamp', timestampLog);
             console.log("✅ Feedback POSITIVO enviado para Supabase");
         } catch(e) {
             console.error("Erro ao enviar feedback positivo:", e);
@@ -116,7 +126,7 @@ async function saveFeedback(logIndex, type, btn) {
         feedbackArea.innerHTML = "<span style='color:#166534;font-weight:700;'>👍 Obrigado pelo feedback positivo!</span>";
     } else {
         try {
-            await sb.from('logs').update({feedback: "Negativo", pergunta: perguntaParaLog}).eq('timestamp', timestampLog);
+            await sb.from('logs').update({feedback: "Negativo", ..._campoPergunta(perguntaParaLog)}).eq('timestamp', timestampLog);
             console.log("⚠️ Feedback NEGATIVO enviado para Supabase");
         } catch(e) {
             console.error("Erro ao enviar feedback negativo:", e);
@@ -135,7 +145,7 @@ async function sendDetailedFeedback(logIndex, btn) {
     const { pergunta: perguntaParaLog, ts: timestampLog } = _alvoFeedback(btn);
 
     try {
-        await sb.from('logs').update({feedback: "Negativo", pergunta: perguntaParaLog, motivo: motivo}).eq('timestamp', timestampLog);
+        await sb.from('logs').update({feedback: "Negativo", ..._campoPergunta(perguntaParaLog), motivo: motivo}).eq('timestamp', timestampLog);
         console.log("📝 Feedback detalhado enviado:", motivo);
         feedbackArea.innerHTML = "<span style='color:#dc2626;font-weight:700;'>⚠️ Feedback negativo registrado! Vamos melhorar.</span>";
     } catch(e) {

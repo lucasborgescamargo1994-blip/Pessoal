@@ -22,7 +22,8 @@ function limparTodasConversas() {
 }
 function criarNovaConversa(titulo = 'Nova Conversa') {
     const id = 'conv_' + Date.now();
-    conversas.unshift({ id, titulo, data: new Date().toISOString(), mensagens: [], contexto: [], primeiraPergunta: "", logTimestamp: null, topicoAtual: null, documentoContexto: null, mlKnowledgeId: null });
+    // logTimestamp / ultimaPerguntaLog = a ÚLTIMA pergunta registrada no log desta conversa (toda pergunta gera uma linha: ver feedback-log.js)
+    conversas.unshift({ id, titulo, data: new Date().toISOString(), mensagens: [], contexto: [], primeiraPergunta: "", logTimestamp: null, ultimaPerguntaLog: "", topicoAtual: null, documentoContexto: null, mlKnowledgeId: null });
     conversaAtivaId = id; salvarConversas(); renderizarListaConversas(); limparChatStream(); return id;
 }
 function novaConversa() { criarNovaConversa(); document.getElementById('searchInput').focus({ preventScroll: true }); }   // (preventScroll: no simulador, o foco não "puxa" a página do painel administrativo)

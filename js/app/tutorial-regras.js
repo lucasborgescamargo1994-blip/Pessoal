@@ -167,7 +167,7 @@ function mostrarWizardRegraDnd(queryOriginal){
       <div style="font-size:10.5px;color:#6b7280;font-weight:700;margin:6px 0 3px;">${grupo.titulo}</div>
       ${grupo.itens.map(item=>`<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#374151;padding:4px 8px;cursor:pointer;border-radius:6px;">
         <input type="checkbox" id="wCteOpc_${item.id}" class="wCteOpcCheckbox" data-grupo="${item.grupoExclusivo||grupoIdx}" onchange="_cteOpcaoClicada(this)">${escapeHtml(item.label)}
-      </label>`).join('')}
+      </label>${item.entrada?_cteEntradaOpcaoHtml(item):''}`).join('')}
     </div>`).join('');
     card.innerHTML=`<div style="flex-shrink:0;background:#eff6ff;padding:10px 15px;border-bottom:1px solid #bfdbfe;font-size:12px;color:#1e40af;font-weight:700;">📄 Assistente — Ct-e / Conhecimento <span style="font-weight:500;">(arrastar campos)</span></div>
 <div class="builder-grid">
@@ -468,9 +468,17 @@ function _cteRenderExtras(){
 }
 function _cteRemoverExtra(idx){
     if(!window._cteExtras)return;
-    window._cteExtras.splice(idx,1);
+    const [removida]=window._cteExtras.splice(idx,1);
+    // A base das opções "monte com um clique" também esquece a linha removida — senão marcar/desmarcar uma opção (ou mudar o número da
+    // redução) a traria de volta na regra logo em seguida.
+    const base=window._cteOpcionaisBase;
+    if(removida&&base&&base.extras){
+        const i=base.extras.findIndex(e=>e.linha===removida.linha&&e.antesDe===removida.antesDe);
+        if(i!==-1)base.extras.splice(i,1);
+    }
     _cteRenderExtras();
     _cteAtualizarPreview();
+    _cteSincronizarEntradasOpcao();   // o aviso de "outra definição numa linha extra" (ver CTE_OPCOES_MONTAGEM › conflitoCampo) pode ter deixado de valer
 }
 function _cteLinhasValidas(){
     const extras=window._cteExtras||[];
@@ -567,6 +575,8 @@ function _cteColarRegraInput(){
 // deixar um checkbox marcado "mentindo" sobre o que está na área de montagem.
 function _cteDesmarcarOpcionais(){
     document.querySelectorAll('.wCteOpcCheckbox').forEach(c=>{c.checked=false;});
+    document.querySelectorAll('input[id^="wCteOpcEntrada_"]').forEach(i=>{i.value='';});   // os campos de valor das opções (ex.: % de redução) voltam em branco junto
+    _cteSincronizarEntradasOpcao();
 }
 // Chamado ao clicar em qualquer checkbox de "monte com um clique" — no máximo 1 marcado por
 // grupo (ex.: só pode ter 1 jeito de calcular o valorFrete ativo por vez), pra não correr o risco
@@ -580,6 +590,63 @@ function _cteOpcaoClicada(chk){
         });
     }
     _cteAplicarOpcionais();
+    // opção que pede um número (ex.: % de redução): ao marcar, o cursor já cai no campo
+    if(chk.checked){ const inp=document.getElementById('wCteOpcEntrada_'+chk.id.replace('wCteOpc_','')); if(inp) inp.focus(); }
+}
+// ── Opções que pedem um número (ex.: "Redução Base de cálculo?" -> % de redução, de 0 a 100) ──
+// HTML do campo de valor que aparece embaixo da caixinha (escondido até a opção ser marcada).
+function _cteEntradaOpcaoHtml(item){
+    const e=item.entrada;
+    return `<div id="wCteOpcEntradaWrap_${item.id}" style="display:none;margin:0 0 6px 30px;">
+        <div style="display:flex;align-items:center;gap:6px;">
+            <input type="text" id="wCteOpcEntrada_${item.id}" inputmode="decimal" autocomplete="off" maxlength="8" aria-label="${escapeHtml(e.rotulo)}" placeholder="${escapeHtml(e.placeholder||'')}" oninput="_cteOpcaoEntradaMudou('${item.id}')" style="width:96px;padding:6px 9px;border:1.5px solid #d1d5db;border-radius:6px;font-size:12px;font-family:monospace;">
+            <span style="font-size:12px;color:#374151;font-weight:700;">${escapeHtml(e.sufixo||'')}</span>
+        </div>
+        <div id="wCteOpcEntradaMsg_${item.id}" role="status" style="font-size:10.5px;line-height:1.35;margin-top:4px;color:#92400e;"></div>
+    </div>`;
+}
+// Número digitado já normalizado (texto com ponto, sem zeros à esquerda) — ou null se o campo estiver vazio, inválido ou fora da faixa.
+// Só aceita número simples (até 3 dígitos + até 4 casas, vírgula ou ponto): sem sinal, sem notação científica e sem "020", que no JS seria octal.
+function _cteLerEntradaOpcao(item){
+    const inp=document.getElementById('wCteOpcEntrada_'+item.id);
+    if(!inp||!item.entrada)return null;
+    const bruto=String(inp.value||'').trim().replace(',','.');
+    if(!/^\d{1,3}(\.\d{1,4})?$/.test(bruto))return null;
+    const n=Number(bruto);
+    if(!(n>=item.entrada.min&&n<=item.entrada.max))return null;
+    return String(n);
+}
+// Mostra/esconde o campo de valor conforme a caixinha estar marcada e atualiza a mensagem de baixo:
+// vazio (âmbar) / inválido (vermelho) / aplicado (verde) / aplicado mas com outra definição do mesmo campo numa "linha extra" (vermelho).
+function _cteSincronizarEntradasOpcao(){
+    CTE_OPCOES_MONTAGEM.forEach(grupo=>grupo.itens.forEach(item=>{
+        if(!item.entrada)return;
+        const chk=document.getElementById('wCteOpc_'+item.id), wrap=document.getElementById('wCteOpcEntradaWrap_'+item.id);
+        const msg=document.getElementById('wCteOpcEntradaMsg_'+item.id), inp=document.getElementById('wCteOpcEntrada_'+item.id);
+        if(!chk||!wrap)return;
+        wrap.style.display=chk.checked?'block':'none';
+        if(!chk.checked||!msg||!inp)return;
+        const e=item.entrada, v=_cteLerEntradaOpcao(item), vazio=!String(inp.value||'').trim();
+        let texto, cor;
+        if(v!==null){
+            texto=e.ok.replace(/\{valor\}/g,v); cor='#166534';
+            if(item.conflitoCampo){
+                const re=new RegExp('def\\(\\s*["\']'+item.conflitoCampo+'["\']');
+                if((window._cteExtras||[]).some(x=>re.test(_semLinhasComentario(x.linha)))){ texto=e.conflito; cor='#b91c1c'; }
+            }
+        }else if(vazio){ texto=e.vazio; cor='#92400e'; }
+        else{ texto=e.invalido; cor='#b91c1c'; }
+        msg.textContent=texto; msg.style.color=cor;
+        const erro=v===null&&!vazio;
+        inp.style.borderColor=erro?'#ef4444':'#d1d5db';
+        inp.setAttribute('aria-invalid',erro?'true':'false');
+    }));
+}
+// A cada tecla no campo de valor de uma opção: se ela está marcada, refaz a regra com o número digitado.
+function _cteOpcaoEntradaMudou(id){
+    const chk=document.getElementById('wCteOpc_'+id);
+    if(chk&&chk.checked)_cteAplicarOpcionais();
+    else _cteSincronizarEntradasOpcao();
 }
 // Aplica (mescla) todas as opções marcadas em cima de uma base — a primeira vez que isso roda
 // depois de um "canvas novo" (regra pré-definida/colar/limpar), a base é o que estava no canvas
@@ -592,16 +659,25 @@ function _cteAplicarOpcionais(){
     }
     let blocos=_clonarBlocos(window._cteOpcionaisBase.blocos);
     let extras=window._cteOpcionaisBase.extras.map(e=>({...e}));
+    // As opções são aplicadas NA ORDEM desta lista (não na ordem dos cliques): é isso que garante, por exemplo, que a redução da base
+    // de cálculo (última do grupo de ICMS) sempre sobreponha o cálculo de ICMS marcado, qualquer que seja a ordem em que foram marcados.
     CTE_OPCOES_MONTAGEM.forEach(grupo=>{
         grupo.itens.forEach(item=>{
             const chk=document.getElementById('wCteOpc_'+item.id);
             if(chk && chk.checked){
+                let codigo=item.codigo;
+                if(item.entrada){
+                    // opção com campo de valor (ex.: % de redução): marcada, mas só entra na regra quando o número digitado for válido
+                    const valor=_cteLerEntradaOpcao(item);
+                    if(valor===null)return;
+                    codigo=codigo.replace(/\{valor\}/g,valor);
+                }
                 if(item.modo==='somar'){
                     ({blocos,extras}=_aplicarSomaTermo(blocos,extras,item.campoAlvo,item.termoNovo));
                 }else if(item.modo==='inserirApos'){
-                    ({blocos,extras}=_inserirOpcaoAposAncora(blocos,extras,item.codigo,item.ancoraDestino));
+                    ({blocos,extras}=_inserirOpcaoAposAncora(blocos,extras,codigo,item.ancoraDestino,{ancoraUltima:item.ancoraUltima,substituirExistentes:item.substituirExistentes}));
                 }else{
-                    ({blocos,extras}=_mesclarOpcaoRegra(blocos,extras,item.codigo));
+                    ({blocos,extras}=_mesclarOpcaoRegra(blocos,extras,codigo,{antesDe:item.antesDe}));
                 }
             }
         });
@@ -609,11 +685,16 @@ function _cteAplicarOpcionais(){
     window._cteBlocos=blocos.length?blocos:[{destino:'',expr:null}];
     window._cteExtras=extras;
     _cteRenderBlocos();
+    _cteSincronizarEntradasOpcao();   // campos de valor das opções (aparecem/somem e mostram se o número digitado foi aplicado)
 }
 function _renderizarCardRegraCteDndSemIA(codigo){
     const wCard=document.getElementById('wizardRegraDndCard');
     const _estadoForm=wCard?_capturarEstadoForm(wCard):null;
-    const _cteExtraVoltar={acaoSel:window._cteAcaoSel,blocos:_clonarBlocos(window._cteBlocos),extras:(window._cteExtras||[]).map(e=>({...e}))};
+    // opcionaisBase = a área de montagem ANTES das opções "monte com um clique" serem aplicadas: guardada pro "Voltar" (sem ela, desmarcar
+    // uma opção depois de voltar não conseguiria devolver o que ela tinha sobreposto, ex.: a Base de Cálculo original).
+    const _opBase=window._cteOpcionaisBase;
+    const _cteExtraVoltar={acaoSel:window._cteAcaoSel,blocos:_clonarBlocos(window._cteBlocos),extras:(window._cteExtras||[]).map(e=>({...e})),
+        opcionaisBase:_opBase?{blocos:_clonarBlocos(_opBase.blocos),extras:(_opBase.extras||[]).map(e=>({...e}))}:null};
     if(wCard)wCard.remove();
     _fecharBuilderModal();
     const s=Ferr.stream('regra');
@@ -1715,7 +1796,10 @@ function _clonarBlocos(blocos){
 // ocorrência antiga (não no final), pra manter a ordem de execução da regra — um campo lido mais
 // adiante via obt() precisa continuar sendo definido antes dele, não depois. Genérica (não depende
 // de qual ferramenta chamou) — reaproveitável por Ct-e/Contrato/Faturamento se precisar.
-function _mesclarOpcaoRegra(blocosAcumulados, extrasAcumuladas, codigoOpcao){
+// opcoes (opcional): { antesDe: lista de destinos } — quando NÃO há nada pra sobrepor, o código novo entra antes do primeiro bloco cujo
+// destino esteja na lista (ex.: a redução da base de cálculo entra antes de "valorICMS", que é calculado em cima dela) em vez de ir pro final.
+function _mesclarOpcaoRegra(blocosAcumulados, extrasAcumuladas, codigoOpcao, opcoes){
+    opcoes=opcoes||{};
     const {blocos:novosBlocos, extras:novasExtras}=_parseRegraParaBlocos(codigoOpcao);
     novosBlocos.forEach(_seedTermosBase);
     const destinos=new Set(novosBlocos.map(b=>b.destino));
@@ -1725,7 +1809,10 @@ function _mesclarOpcaoRegra(blocosAcumulados, extrasAcumuladas, codigoOpcao){
             if(!inserido){ blocos.push(...novosBlocos); inserido=true; }
         }else{ blocos.push(b); }
     });
-    if(!inserido) blocos.push(...novosBlocos);
+    if(!inserido){
+        const idxRef=opcoes.antesDe?blocos.findIndex(b=>opcoes.antesDe.includes(b.destino)):-1;
+        if(idxRef===-1) blocos.push(...novosBlocos); else blocos.splice(idxRef,0,...novosBlocos);
+    }
     const novasExtrasLigadas=novasExtras.filter(e=>e.antesDe!==null);
     const novasExtrasSoltas=novasExtras.filter(e=>e.antesDe===null);
     // Cada extra acumulada ancorada num destino que está sendo substituído descrevia o trecho
@@ -1754,11 +1841,19 @@ function _mesclarOpcaoRegra(blocosAcumulados, extrasAcumuladas, codigoOpcao){
 // comum -- é fixada pela âncora. Se a âncora ainda não existir na área de montagem (ex.: nenhum
 // cálculo de ICMS foi montado ainda), cai no mesmo comportamento de sempre: insere no final, sem
 // sumir com nada.
-function _inserirOpcaoAposAncora(blocosAcumulados, extrasAcumuladas, codigoOpcao, destinoAncora){
+// opcoes (opcional): { ancoraUltima: usa a ÚLTIMA definição da âncora em vez da primeira (o código novo lê o valor FINAL dela);
+// substituirExistentes: tira antes os blocos que já definiam os MESMOS destinos do código novo, pra não ficar duplicado }.
+function _inserirOpcaoAposAncora(blocosAcumulados, extrasAcumuladas, codigoOpcao, destinoAncora, opcoes){
+    opcoes=opcoes||{};
     const {blocos:novosBlocos, extras:novasExtras}=_parseRegraParaBlocos(codigoOpcao);
     novosBlocos.forEach(_seedTermosBase);
-    const blocosBase=blocosAcumulados||[];
-    const idxAncora=blocosBase.findIndex(b=>b.destino===destinoAncora);
+    let blocosBase=blocosAcumulados||[];
+    if(opcoes.substituirExistentes){
+        const destinosNovos=new Set(novosBlocos.map(b=>b.destino));
+        blocosBase=blocosBase.filter(b=>!destinosNovos.has(b.destino));
+    }
+    let idxAncora=blocosBase.findIndex(b=>b.destino===destinoAncora);
+    if(opcoes.ancoraUltima){ for(let i=blocosBase.length-1;i>=0;i--){ if(blocosBase[i].destino===destinoAncora){ idxAncora=i; break; } } }
     const blocos=idxAncora===-1
         ?[...blocosBase, ...novosBlocos]
         :[...blocosBase.slice(0,idxAncora+1), ...novosBlocos, ...blocosBase.slice(idxAncora+1)];
@@ -2351,9 +2446,12 @@ function _voltarParaWizardRegra(ts) {
     if (dados.tipo === 'cte-dnd' && dados.cteExtraDnd) {
         window._cteBlocos = (dados.cteExtraDnd.blocos && dados.cteExtraDnd.blocos.length) ? _clonarBlocos(dados.cteExtraDnd.blocos) : [{destino:'',expr:null}];
         window._cteExtras = (dados.cteExtraDnd.extras || []).map(e => ({...e}));
+        const ob = dados.cteExtraDnd.opcionaisBase;   // base das opções "monte com um clique" (ver _renderizarCardRegraCteDndSemIA)
+        window._cteOpcionaisBase = ob ? { blocos: _clonarBlocos(ob.blocos), extras: (ob.extras || []).map(e => ({...e})) } : null;
         _cteSelecionarAcao(dados.cteExtraDnd.acaoSel || null);
         _cteRenderBlocos();
     }
+    if (dados.tipo === 'cte-dnd') _cteSincronizarEntradasOpcao();   // campo de valor das opções marcadas (ex.: % de redução) volta a aparecer
     if (dados.tipo === 'contrato-dnd' && dados.cfdExtra) {
         window._cfdBlocos = (dados.cfdExtra.blocos && dados.cfdExtra.blocos.length) ? _clonarBlocos(dados.cfdExtra.blocos) : [{destino:'',expr:null}];
         window._cfdExtras = (dados.cfdExtra.extras || []).map(e => ({...e}));

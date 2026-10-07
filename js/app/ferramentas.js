@@ -9,9 +9,9 @@
    • Os módulos dos assistentes não escrevem mais direto no chat: chamam ferrMsg('<id>', ...), ferrCarregando('<id>', ...),
      ferrRolar('<id>', ...), ferrLog('<id>', ...) etc. Se não houver aba (Copilot e simulador, que não têm abas), tudo cai de volta
      no chat, exatamente como era antes.
-   • LOG: a 1ª pergunta de cada CONVERSA do chat sempre gera log (a conversa só marca "já registrei" quando de fato registra) e
+   • LOG: TODA pergunta feita no CHAT gera a sua própria linha de log (a 1ª da conversa e as seguintes: ver js/app/feedback-log.js) e
      o uso de uma ferramenta tem o seu próprio registro (1 por sessão da ferramenta; "Nova consulta" começa outra sessão).
-     Assim, usar uma ferramenta antes não "gasta" o log da primeira pergunta do chat. */
+     Sem aba (Copilot), a ferramenta registra 1 vez por conversa — os assistentes chamam o log em várias etapas. */
 
 const Ferr = (() => {
     const DEF = {};     // id → { iniciar(opcoes), entrada: { placeholder, rotulo } | null }
@@ -112,7 +112,7 @@ const Ferr = (() => {
     /* ── log ────────────────────────────────────────────────────────────────
        Em aba: 1 registro por sessão da ferramenta, independente da conversa do chat. Sem aba: igual ao chat. */
     function log(id, texto, achou = true) {
-        if (!emAba(id)) return logSearch(texto, achou);
+        if (!emAba(id)) return logSearch(texto, achou, undefined, { umaPorConversa: true });   // sem aba (Copilot): 1 por conversa — os assistentes chamam o log a cada etapa
         const s = sess(id);
         if (s.logado) return s.ts;
         s.pergunta = String(texto || '');

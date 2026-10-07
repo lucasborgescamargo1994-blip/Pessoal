@@ -394,7 +394,7 @@
                 h('div', { class: 'barra-fixa' }, R.btnSalvar,
                     h('button', { class: 'btn', type: 'button', onclick: copiarConteudo }, I('copy', 15), 'Copiar'),
                     h('button', { class: 'btn', type: 'button', onclick: baixarArquivo }, I('download', 15), 'Baixar'),
-                    h('button', { class: 'btn', type: 'button', onclick: testarNoSimulador }, I('flask', 15), 'Testar no simulador'),
+                    ADM.podeAba('simulador') ? h('button', { class: 'btn', type: 'button', onclick: testarNoSimulador }, I('flask', 15), 'Testar no simulador') : null,
                     R.btnDescartar, h('span', { class: 'grow' }), R.sujoTxt));
             construir();
             ARQ.obter(false).then(() => atualizarStatus());

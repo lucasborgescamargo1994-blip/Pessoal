@@ -210,7 +210,7 @@
                         x.variante !== x.item.pergunta ? h('div', { class: 'mu' }, 'casou com: ' + ADM.fmt.trunc(x.variante, 90)) : null,
                         h('div', { class: 'linha', style: { marginTop: '6px', gap: '6px' } },
                             h('button', { class: 'btn peq', type: 'button', onclick: () => mesclarCom(x.item) }, I('plus', 13), 'Adicionar como variante'),
-                            h('button', { class: 'btn peq fantasma', type: 'button', onclick: () => { ADM.irParaAba('respostas', { editar: x.item.id }); } }, 'Abrir'))),
+                            ADM.podeAba('respostas') ? h('button', { class: 'btn peq fantasma', type: 'button', onclick: () => { ADM.irParaAba('respostas', { editar: x.item.id }); } }, 'Abrir') : null)),
                     h('span', { class: 'pct ' + (x.lex >= .8 ? 'alto' : 'medio') }, ADM.fmt.pct(x.lex))))));
         if (jaResponde) cJa.insertBefore(h('div', { style: { padding: '12px 16px 0' } }, ADM.ui.aviso('wa', 'O sistema já responderia esta pergunta com a #' + jaResponde.item.id + '. Talvez baste adicioná-la como variante.')), cJa.children[1]);
         lateral.appendChild(cJa);
@@ -249,7 +249,7 @@
             h('button', { class: 'btn perigo', type: 'button', onclick: rejeitar }, I('thumbdown', 15), 'Rejeitar…'),
             h('button', { class: 'btn', type: 'button', title: 'Não vale guardar (pergunta genérica, específica demais, etc.)', onclick: ignorar }, I('skip', 15), 'Ignorar'),
             h('span', { class: 'grow' }),
-            h('button', { class: 'btn', type: 'button', title: 'Faz a pergunta no chat de simulação (nada é gravado)', onclick: () => { ADM.irParaAba('simulador'); ADM.sim.perguntar(L.pergunta); } }, I('flask', 15), 'Testar no simulador')));
+            ADM.podeAba('simulador') ? h('button', { class: 'btn', type: 'button', title: 'Faz a pergunta no chat de simulação (nada é gravado)', onclick: () => { ADM.irParaAba('simulador'); ADM.sim.perguntar(L.pergunta); } }, I('flask', 15), 'Testar no simulador') : null));
     }
 
     function renderSomenteLeitura(box, g, L) {
@@ -258,10 +258,10 @@
         box.appendChild(h('div', { class: 'cartao' },
             h('div', { class: 'cartao-topo' }, h('h3', null, I('chat', 16), 'Resposta apresentada ao usuário')),
             h('div', { class: 'cartao-corpo' }, (() => { const p = h('div', { class: 'md-prev' }); p.innerHTML = renderMd(L.resposta || ''); return p; })(),
-                h('div', { class: 'linha' }, L.resposta_rapida_id ? h('button', { class: 'btn', type: 'button', onclick: () => ADM.irParaAba('respostas', { editar: L.resposta_rapida_id }) }, I('zap', 15), 'Abrir resposta rápida #' + L.resposta_rapida_id) : null,
-                    L.revisao === 'banco' ? h('button', { class: 'btn', type: 'button', title: 'Abre a aba Banco de dados já no artigo que foi salvo', onclick: () => ADM.irParaAba('banco', idBanco ? { id: idBanco } : { buscar: L.pergunta }) }, I('database', 15), idBanco ? 'Abrir no banco de dados (#' + idBanco + ')' : 'Procurar no banco de dados') : null,
+                h('div', { class: 'linha' }, L.resposta_rapida_id && ADM.podeAba('respostas') ? h('button', { class: 'btn', type: 'button', onclick: () => ADM.irParaAba('respostas', { editar: L.resposta_rapida_id }) }, I('zap', 15), 'Abrir resposta rápida #' + L.resposta_rapida_id) : null,
+                    L.revisao === 'banco' && ADM.podeAba('banco') ? h('button', { class: 'btn', type: 'button', title: 'Abre a aba Banco de dados já no artigo que foi salvo', onclick: () => ADM.irParaAba('banco', idBanco ? { id: idBanco } : { buscar: L.pergunta }) }, I('database', 15), idBanco ? 'Abrir no banco de dados (#' + idBanco + ')' : 'Procurar no banco de dados') : null,
                     reabrirBtn,
-                    h('button', { class: 'btn', type: 'button', onclick: () => { ADM.irParaAba('simulador'); ADM.sim.perguntar(L.pergunta); } }, I('flask', 15), 'Testar no simulador')))));
+                    ADM.podeAba('simulador') ? h('button', { class: 'btn', type: 'button', onclick: () => { ADM.irParaAba('simulador'); ADM.sim.perguntar(L.pergunta); } }, I('flask', 15), 'Testar no simulador') : null))));
     }
 
     /* ───────────── ações ───────────── */

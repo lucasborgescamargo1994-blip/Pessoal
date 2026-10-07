@@ -192,7 +192,7 @@ function rrMostrarResposta(m, query, ms) {
     const trace = BSOFT_SIM ? `<span class="rr-trace" title="Só aparece no simulador">🔬 ${escapeHtml(m.motivo)} · léxico ${(m.lex * 100).toFixed(0)}%${m.sem != null ? ' · significado ' + (m.sem * 100).toFixed(0) + '%' : ''}</span>` : '';
     card.innerHTML = `<div class="rr-head"><span class="rr-badge">⚡ Resposta rápida</span><span class="rr-sub">aprovada pela equipe${item.categoria ? ' · ' + escapeHtml(item.categoria) : ''}</span>${trace}</div>
         <div class="answer-section"><div class="section-content">${renderMd(item.resposta)}</div></div>
-        <div class="feedback-area">
+        <div class="feedback-area" data-log-ts="${logTs || ''}">
             <span class="feedback-util">Esta resposta foi útil?</span>
             <button class="feedback-btn" onclick="saveFeedback(${feedbackId},'positivo',this)">👍</button>
             <button class="feedback-btn" onclick="saveFeedback(${feedbackId},'negativo',this)">👎</button>

@@ -558,7 +558,24 @@ const CTE_OPCOES_MONTAGEM=[
         // aliquota, valorICMS). modo:'inserirApos' garante que entra logo depois de "valorICMS" --
         // dentro do bloco do cálculo de ICMS -- em vez de ir parar no final da regra (onde nenhum
         // dos 3 destinos novos bate com nada que já exista pra servir de referência de posição).
-        {id:'icms_st', label:'Substituição Tributária', grupoExclusivo:'icms_st', modo:'inserirApos', ancoraDestino:'valorICMS', codigo:'def("outrosValores[vBCSTRet]", obt("baseCalculo"));\ndef("outrosValores[pICMSSTRet]", obt("aliquota"));\ndef("outrosValores[vICMSSTRet]", obt("valorICMS"));'}
+        {id:'icms_st', label:'Substituição Tributária', grupoExclusivo:'icms_st', modo:'inserirApos', ancoraDestino:'valorICMS', codigo:'def("outrosValores[vBCSTRet]", obt("baseCalculo"));\ndef("outrosValores[pICMSSTRet]", obt("aliquota"));\ndef("outrosValores[vICMSSTRet]", obt("valorICMS"));'},
+        // GNRE manual: o valor do GNRE (campo personalizado outrosValores[vICMSGNRE]) pode ser digitado na tela do Ct-e; só quando
+        // vier vazio/zerado (< 0,01) a regra preenche com o valorICMS. Também não é um jeito de CALCULAR o ICMS (grupoExclusivo próprio:
+        // combina com qualquer cálculo acima) e precisa entrar DEPOIS de o valorICMS estar calculado -- por isso modo:'inserirApos', na
+        // ÚLTIMA definição de valorICMS (ancoraUltima). substituirExistentes: se a regra já tiver o vICMSGNRE, troca em vez de duplicar.
+        {id:'icms_gnre', label:'Definir valor manualmente GNRE?', grupoExclusivo:'icms_gnre', modo:'inserirApos', ancoraDestino:'valorICMS', ancoraUltima:true, substituirExistentes:true, codigo:'if (obt("outrosValores[vICMSGNRE]") < 0.01)\ndef("outrosValores[vICMSGNRE]", obt("valorICMS"));'},
+        // Redução da base de cálculo: abre um campo para a % (0 a 100) e troca TODA definição de baseCalculo que já estiver montada
+        // (ICMS Demonstrativo, Cálculo Inverso, regra base ou regra colada) por esta única linha -- é o modo padrão (mesclar), que
+        // sobrepõe sem duplicar. Fica DEPOIS das opções de cálculo na lista de propósito: elas são aplicadas na ordem desta lista, então
+        // a redução sempre vence, qualquer que seja a ordem em que as caixinhas foram clicadas. {valor} vira o número digitado (só entra
+        // na regra quando for válido: ver _cteLerEntradaOpcao). Base = Frete × (100 − %) ÷ 100: 20 → 80 % do frete; 0 → sem redução; 100 → base zero.
+        // antesDe: se a regra não tiver nenhuma definição de baseCalculo pra sobrepor, a nova entra antes de valorICMS (que é calculado em cima dela).
+        {id:'icms_reducao', label:'Redução Base de cálculo?', grupoExclusivo:'icms_reducao', conflitoCampo:'baseCalculo', antesDe:['valorICMS'], codigo:'def("baseCalculo", obt("valorFrete") * (100 - {valor}) / 100);',
+            entrada:{ rotulo:'Percentual de redução', placeholder:'0 a 100', sufixo:'%', min:0, max:100,
+                vazio:'Digite o percentual de redução (de 0 a 100) para aplicar.',
+                invalido:'Valor inválido: use um número de 0 a 100 (ex.: 20 ou 33,5).',
+                ok:'✔ Base de Cálculo = Frete Valor × (100 − {valor}) ÷ 100. Substitui qualquer outra definição de Base de Cálculo que já estiver montada.',
+                conflito:'⚠️ Existe outra definição de Base de Cálculo dentro de uma “Linha extra” da regra original (um bloco if/else). Ela não foi substituída: revise para a Base de Cálculo não ficar definida duas vezes.' } }
     ]},
     {titulo:'📋 Tabela de Preços — Fração do Pedágio', itens:[
         {id:'pedagio_peso', label:'Em cima do peso', codigo:'let qtdVezesMultiplica = Math.ceil(obt("merc_quantKg[]") / 100);\nlet vPedagio = tabelaPrecos.percentualPedagio * qtdVezesMultiplica;\ndef("valorPedagioConhecimento", vPedagio);'},

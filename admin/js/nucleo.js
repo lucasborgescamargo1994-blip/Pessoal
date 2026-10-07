@@ -273,10 +273,15 @@ ADM.db = {
 
 /* ───────────── abas ───────────── */
 ADM.registrarAba = function (def) { ADM.abas.push(Object.assign({ ordem: 50, montada: false }, def)); };
+// a pessoa que entrou pode usar esta aba? (administrador principal: todas; usuário cadastrado: só as que o administrador liberou)
+ADM.podeAba = id => !ADM.auth || ADM.auth.podeAba(id);
 
 ADM.montarAbas = function () {
+    // ADM.abasTodas = tudo o que foi registrado; ADM.abas = só o que ESTA pessoa pode usar (o resto nem aparece nem abre)
+    ADM.abasTodas = (ADM.abasTodas || ADM.abas.slice()).sort((a, b) => a.ordem - b.ordem);
+    ADM.abas = ADM.abasTodas.filter(a => ADM.podeAba(a.id));
     const nav = limpar(document.getElementById('abas')), painel = limpar(document.getElementById('painel'));
-    ADM.abas.sort((a, b) => a.ordem - b.ordem).forEach((aba, i) => {
+    ADM.abas.forEach((aba, i) => {
         const btn = h('button', { class: 'aba', role: 'tab', id: 'aba-' + aba.id, 'aria-selected': 'false', 'aria-controls': 'painel-' + aba.id, title: aba.titulo + '  (Alt+' + (i + 1) + ')', dataset: { aba: aba.id } },
             I(aba.icone || 'file', 17), h('span', { class: 'rotulo' }, aba.titulo), h('span', { class: 'nota', hidden: true }));
         btn.addEventListener('click', () => ADM.irParaAba(aba.id));
@@ -297,6 +302,8 @@ ADM.montarAbas = function () {
 };
 
 ADM.irParaAba = function (id, op) {
+    const proibida = (ADM.abasTodas || []).find(a => a.id === id && !ADM.abas.includes(a));
+    if (proibida) { ADM.ui.toast(`Seu usuário não tem acesso à aba “${proibida.titulo}”. Fale com o administrador do painel.`, 'wa'); return; }
     const aba = ADM.abas.find(a => a.id === id) || ADM.abas[0];
     if (!aba) return;
     if (ADM.abaAtual === aba) { if (aba.reabrir) aba.reabrir(); return; }

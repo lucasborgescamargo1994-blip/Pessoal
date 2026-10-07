@@ -8,6 +8,9 @@
                   porque quem entender de programação consegue falar direto com o Supabase.
                   Para trocar a senha: Admin → aba "Sistema" → "Alterar senha" (gera este arquivo de novo).
                   Esqueceu a senha? Abra admin/senha.html, gere um hash novo e cole aqui.
+                  "usuarios" (opcional): outras pessoas com acesso, cada uma com o seu hash de senha e as abas liberadas.
+                  Quem cria e edita essa lista é o administrador principal: Admin → aba "Sistema" → "Usuários e acessos".
+                  A "senha" de cima continua sendo a do administrador principal (todas as abas).
 
    • "supabase" — recomendado. O login é feito no Supabase Auth (um usuário que você cria no painel do Supabase) e
                   as regras do banco (sql/03_seguranca_rls.sql) só deixam esse usuário editar o conteúdo.
@@ -28,5 +31,22 @@ window.BSOFT_ADMIN = {
     "iteracoes": 210000,
     "sal": "gD/7fs+o6PGfm30GKwqG3g==",
     "hash": "5jTbWtgbpyN6rq6V5DmUC8ekXDtOS2fJMn2J0kB69X4="
-  }
+  },
+  "usuarios": [
+    {
+      "nome": "Sorriso",
+      "ativo": true,
+      "abas": [
+        "analise",
+        "novidades"
+      ],
+      "criadoEm": "2026-10-07T19:06:24.369Z",
+      "senha": {
+        "algoritmo": "PBKDF2-SHA256",
+        "iteracoes": 210000,
+        "sal": "FmOZvkxmoLT5DUKgYPyPjQ==",
+        "hash": "FZczDEJmI7QmIYy6kwt7UIZdIXNiMXU//aLs/2JGawA="
+      }
+    }
+  ]
 };
