@@ -1,7 +1,7 @@
 # Bsoft TMS · Suporte IA — v28
 
 Assistente de suporte do Bsoft TMS: responde dúvidas com a base de conhecimento + IA, aprende com a equipe
-(**respostas rápidas** aprovadas por você) e tem uma **Área Administrativa** com abas (revisão, IA/MCP, banco de dados, logs, simulador…).
+(**respostas rápidas** aprovadas por você) e tem uma **Área Administrativa** com abas (revisão, IA/MCP, banco de dados, logs, análise, simulador…).
 
 É só HTML + CSS + JavaScript — **sem build e sem servidor**. Funciona:
 
@@ -22,12 +22,13 @@ Assistente de suporte do Bsoft TMS: responde dúvidas com a base de conhecimento
 4. [Banco de dados (Supabase): o que instalar](#banco-de-dados-supabase-o-que-instalar)
 5. [Área Administrativa](#área-administrativa)
 6. [Respostas rápidas e revisão](#respostas-rápidas-e-revisão)
-7. [Ferramentas em abas (Sefaz, Regras, Relatórios, Parâmetros)](#ferramentas-em-abas-sefaz-regras-relatórios-parâmetros)
-8. [Agenda (tarefas, cronograma e lembretes)](#agenda-tarefas-cronograma-e-lembretes)
-9. [IA / MCP: trocar modelos e chaves](#ia--mcp-trocar-modelos-e-chaves)
-10. [Segurança — leia](#segurança--leia)
-11. [Problemas comuns](#problemas-comuns)
-12. [Para quem vai mexer no código](#para-quem-vai-mexer-no-código)
+7. [Análise de logs (aba Análise)](#análise-de-logs-aba-análise)
+8. [Ferramentas em abas (Sefaz, Regras, Relatórios, Parâmetros)](#ferramentas-em-abas-sefaz-regras-relatórios-parâmetros)
+9. [Agenda (tarefas, cronograma e lembretes)](#agenda-tarefas-cronograma-e-lembretes)
+10. [IA / MCP: trocar modelos e chaves](#ia--mcp-trocar-modelos-e-chaves)
+11. [Segurança — leia](#segurança--leia)
+12. [Problemas comuns](#problemas-comuns)
+13. [Para quem vai mexer no código](#para-quem-vai-mexer-no-código)
 
 ---
 
@@ -40,7 +41,7 @@ bsoft-suporte-ia/
 │  ├─ index.html           ← Área Administrativa (login + abas)
 │  ├─ senha.html           ← gera/recupera a senha do painel (sem precisar da antiga)
 │  ├─ admin.css
-│  └─ js/                  ← nucleo, auth, componentes e uma aba por arquivo (aba-*.js)
+│  └─ js/                  ← nucleo, auth, componentes, analise-core, graficos e uma aba por arquivo (aba-*.js)
 ├─ config/                 ← AS CONFIGURAÇÕES (arquivos pequenos que você edita/sobe)
 │  ├─ app-config.js        ← endereços públicos (Supabase, planilhas)
 │  ├─ mcp-config.js        ← IA: provedor, chaves, modelos, regras das respostas rápidas
@@ -117,7 +118,7 @@ Enquanto o `02` não for rodado, o sistema funciona normalmente — só não gra
 ## Área Administrativa
 
 Abra `admin/index.html` (botão **🔑** no cabeçalho do sistema). Entre com a senha e use as abas — dá para alternar entre
-todas na mesma tela (`Alt+1` … `Alt+8` também trocam de aba). Tudo o que você está editando fica guardado ao trocar de aba.
+todas na mesma tela (`Alt+1` … `Alt+9` também trocam de aba). Tudo o que você está editando fica guardado ao trocar de aba.
 
 | Aba | O que faz |
 |---|---|
@@ -127,6 +128,7 @@ todas na mesma tela (`Alt+1` … `Alt+8` também trocam de aba). Tudo o que voc�
 | **IA / MCP** | Edita `config/mcp-config.js`: provedor, chaves, cadeia de modelos (arrastar para ordenar, testar cada um), visão, embeddings, regras das respostas rápidas. |
 | **Banco de dados** | Editor das tabelas de conteúdo (base de conhecimento, parâmetros, funcionalidades, rotinas, rejeições SEFAZ…): editar, criar, duplicar, excluir, exportar CSV. |
 | **Logs** | Perguntas dos usuários, 👍/👎, motivo e **retorno do suporte**; filtros, busca, exclusão em lote, exportar CSV. A resposta só é baixada quando você abre a linha (economiza transferência). |
+| **Análise** | Lê **todos os logs direto do banco** (sem importar planilha) e mostra o que alimentar na IA primeiro, a evolução no tempo — com filtros de **período, usuário, assunto e pergunta específica** —, o uso por pessoa e as perguntas que mais se repetem. Veja [Análise de logs](#análise-de-logs-aba-análise). |
 | **Novidades** | Publica avisos que aparecem para todos na coluna "Novidades". |
 | **Sistema** | Verificação do banco, **alterar a senha**, limpeza do cache deste navegador, informações. |
 
@@ -178,6 +180,42 @@ Como funciona, do começo ao fim:
    - **Reabrir para revisão** não apaga o artigo — edite ou exclua na aba **Banco de dados**.
 
 O índice das respostas rápidas é baixado **só com o que mudou** e guardado no navegador (IndexedDB) — consumo mínimo do plano gratuito do Supabase.
+
+---
+
+## Análise de logs (aba Análise)
+
+A aba **Análise** lê **todos os logs direto do banco** — não precisa exportar/importar CSV — e tem quatro visões:
+
+- **Foco IA** — volume de dúvidas por assunto, "encontrou × não encontrou" e o **Plano de ação** (o que alimentar na IA primeiro: prioridade ALTA / MÉDIA / BAIXA).
+- **Temporal** — evolução por dia e horários de pico, com filtros (abaixo).
+- **Usuários** — quem mais usa, taxa de resposta e assunto principal de cada pessoa.
+- **Recorrentes** — as 50 perguntas que mais se repetem.
+
+**Filtros da visão Temporal** (todos juntos; os números, os gráficos e a tabela "Consultas do filtro" acompanham):
+
+| Filtro | Como usar |
+|---|---|
+| **Período** | duas datas, ou os atalhos **7 / 30 / 90 dias / Tudo** (contam até a data do último log). |
+| **Usuário** | lista com a quantidade de consultas de cada pessoa. |
+| **Assunto** | lista dos assuntos (ver abaixo como são definidos). |
+| **Pergunta específica** | escolha uma na lista (ou clique numa das **Perguntas mais frequentes**) = **só aquela pergunta**; ou digite parte do texto = **todas que contêm** o texto (sem diferenciar maiúsculas/acentos). |
+
+Cada filtro ativo vira uma etiqueta com **×** para tirar só ele; **Limpar filtros** zera tudo. Nas outras visões, o botão **Ver no tempo** de cada linha
+(assunto, usuário ou pergunta) abre a Temporal já filtrada.
+
+Detalhes que valem saber:
+
+- **Horário de Brasília.** A data vem de `created_at` (relógio do servidor); se faltar, da coluna `timestamp`. Um log às 23h30 aparece no próprio dia (não no seguinte).
+- **Agrupamentos:** usuários sem diferenciar maiúsculas/acentos (`Ana.Silva` = `ana.silva`); perguntas iguais sem diferenciar maiúsculas, acentos e pontuação.
+- **"Encontrou" em branco** (log antigo) **não conta como falha** — aparece como "sem a informação".
+- **Assunto** é por palavras-chave, comparando palavra inteira (as regras estão em `admin/js/analise-core.js › REGRAS_CATEGORIA`; dá para acrescentar palavras ali).
+- **Origem** (IA / resposta rápida / ferramenta): o seletor no topo aparece quando os logs trazem a origem (SQL 02) e vale para todas as visões.
+- **Consumo do Supabase:** baixa todas as linhas de `logs` **sem a coluna `resposta`** (cerca de 1 MB a cada 5 mil logs), uma vez ao abrir a aba. Ao reabrir, só recarrega se passaram 10 min;
+  o botão ⟳ atualiza na hora. A aba **só lê** — não grava nada.
+
+**`Análise de Logs.html`** (arquivo avulso na pasta de cima, fora do GitHub) continua funcionando com planilha CSV/Excel e tem os mesmos filtros e o mesmo cálculo
+(o núcleo `admin/js/analise-core.js` está copiado dentro dele entre os marcadores `NÚCLEO` — se mudar um, copie para o outro).
 
 ---
 
@@ -323,6 +361,8 @@ inserir/atualizar `logs` e inserir/apagar `machine_learning` (como já fazia). S
   Caminhos são sempre relativos; arquivos de configuração são `<script>` que definem `window.BSOFT_*`.
 - **Painel**: cada aba é um arquivo `admin/js/aba-*.js` que chama `ADM.registrarAba({ id, titulo, icone, ordem, montar(ctx), abrir() })`.
   Monte a tela com `h('tag', {...}, filhos)` (texto sempre como texto); evite `innerHTML` com dados do banco.
+- **Gráficos do painel** não usam biblioteca: `admin/js/graficos.js` (`ADM.graf.linha/colunas/rosca/ranking`) desenha em SVG/CSS com as cores do tema (claro/escuro) e respeita a CSP.
+  A matemática da análise de logs fica em `admin/js/analise-core.js` (sem DOM e sem rede, reaproveitada no `Análise de Logs.html`).
 - **Escritas no banco** passam por `ADM.db.exigirAfetadas(resp)`: com RLS, um `update`/`delete` barrado **não dá erro** (volta 0 linhas) — essa checagem transforma isso em erro de verdade.
 - **Simulador**: `index.html?sim=1` → cliente do Supabase **somente leitura** (`js/core/supabase-client.js`) + histórico próprio descartável.
 - **Atualizar a versão do Supabase JS** (o `<script>` do CDN tem verificação de integridade SRI): troque a versão na URL e recalcule o hash:
