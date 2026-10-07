@@ -17,7 +17,7 @@
 alter table public.logs add column if not exists resposta           text;         -- texto da resposta mostrada ao usuário
 alter table public.logs add column if not exists fonte              text;         -- 'ia' (modelo de IA) | 'rapida' (resposta rápida aprovada) | 'ferramenta' (uso de Erros SEFAZ / Criar Regra / Relatórios / Parâmetros em aba)
 alter table public.logs add column if not exists modelo             text;         -- qual modelo respondeu (quando fonte = 'ia')
-alter table public.logs add column if not exists revisao            text;         -- pendente | aprovada | rejeitada | ignorada | nao_se_aplica
+alter table public.logs add column if not exists revisao            text;         -- pendente | aprovada | banco (salva no BancoDados) | rejeitada | ignorada | nao_se_aplica
 alter table public.logs add column if not exists revisao_nota       text;         -- motivo da rejeição / observação do revisor
 alter table public.logs add column if not exists revisado_em        timestamptz;
 alter table public.logs add column if not exists revisado_por       text;
