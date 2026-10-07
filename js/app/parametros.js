@@ -134,13 +134,14 @@ INSTRUÇÕES:
         const contentEl = document.getElementById('_pf' + ts);
         const feedbackEl = document.getElementById('_pff' + ts);
         const _revelacao = _criarRevelacaoFluida(contentEl); // ritmo fluido de exibição, independente da velocidade real do modelo
+        const _guarda = _criarGuardaIdioma(contentEl, _revelacao);   // resposta sempre em português do Brasil (se vier inglês, traduz antes de mostrar)
 
         const { finishReason: _pfFR } = await _readSSEStream(_resp, _pr, chunk => {
-            _revelacao.atualizar(_pfFilter.push(chunk));
+            _guarda.atualizar(_pfFilter.push(chunk));
         });
 
         const _pfRaw = _pfFilter.finish();
-        const finalText = _pfRaw.replace(/#finalizado\s*/gi, '').trim();
+        let finalText = _pfRaw.replace(/#finalizado\s*/gi, '').trim();
         // Truncado = API sinalizou limit de tokens. Ausência de #finalizado não é critério.
         const _pfTruncado = _pfFR === 'length' || _pfFR === 'max_tokens';
         if (_pfTruncado || !finalText) {
@@ -158,6 +159,7 @@ INSTRUÇÕES:
             ferrRolar(dest, true);
             return;
         }
+        finalText = (await _guarda.concluir(finalText)).texto;   // idioma: traduz se algum modelo respondeu em inglês
         // Sem forçar rolagem aqui: a revelação ainda pode estar no meio do caminho, e forçar
         // desceria a tela antes dela terminar de aparecer.
         _revelacao.atualizar(finalText);

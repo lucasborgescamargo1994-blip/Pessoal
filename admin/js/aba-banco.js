@@ -72,9 +72,10 @@
 
     /* ───────────── tabela ───────────── */
     function linhasVisiveis() {
-        const q = RRMatch.semAcento(E.filtro).trim();
+        const q = RRMatch.semAcento(E.filtro).trim(), porId = /^#(\d+)$/.exec(q);   // "#123" vai direto ao registro de id 123
         let l = E.linhas;
-        if (q) l = l.filter(r => { if (!r._busca) r._busca = RRMatch.semAcento(E.colunas.map(c => r[c] == null ? '' : (typeof r[c] === 'object' ? JSON.stringify(r[c]) : r[c])).join(' \u0001 ')); return r._busca.includes(q); });
+        if (porId) l = l.filter(r => String(r[E.pk]) === porId[1]);
+        else if (q) l = l.filter(r => { if (!r._busca) r._busca = RRMatch.semAcento(E.colunas.map(c => r[c] == null ? '' : (typeof r[c] === 'object' ? JSON.stringify(r[c]) : r[c])).join(' \u0001 ')); return r._busca.includes(q); });
         if (E.ordemCol) {
             const c = E.ordemCol, num = E.tipos[c] === 'numero';
             l = l.slice().sort((a, b) => { const x = a[c], y = b[c]; if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1; return (num ? x - y : String(x).localeCompare(String(y), 'pt-BR', { numeric: true, sensitivity: 'base' })) * E.ordemDir; });
@@ -194,13 +195,25 @@
         ADM.ui.toast(`${ADM.fmt.num(lista.length)} linha(s) exportada(s)${E.fim ? '' : ' (só as carregadas)'}.`, 'ok');
     }
 
+    // Chamado por outras abas (ex.: Revisão → "Abrir no banco de dados"): mostra a tabela pedida (padrão BancoDados) já filtrada no registro.
+    async function irPara(op) {
+        const tab = TABELAS.find(t => t.t === op.tabela) || TABELAS[0];
+        const filtro = op.id != null ? '#' + op.id : String(op.buscar || '');
+        if (tab !== E.tab) { E.tab = tab; E.ordemCol = null; E.linhas = []; E.fim = false; E.erro = null; R.sel.value = tab.t; R.dica.textContent = tab.dica || ''; }
+        E.filtro = filtro; R.busca.value = filtro; E.mostrando = LOTE;
+        while (E.carregando) await new Promise(r => setTimeout(r, 150));
+        // o registro recém-criado tem o maior id: se não está nas linhas já carregadas, baixa a tabela inteira
+        if (!E.linhas.length || !linhasVisiveis().length) await carregar(true, true);
+        else renderTudo();
+    }
+
     ADM.registrarAba({
         id: 'banco', titulo: 'Banco de dados', icone: 'database', ordem: 50,
         descricao: 'Edite o conteúdo que a IA consulta (base de conhecimento, parâmetros, rotinas…). Alterações valem na hora para todos.',
         montar(ctx) {
-            const sel = h('select', { 'aria-label': 'Tabela' }, TABELAS.map(t => h('option', { value: t.t }, t.rot)));
+            const sel = R.sel = h('select', { 'aria-label': 'Tabela' }, TABELAS.map(t => h('option', { value: t.t }, t.rot)));
             sel.addEventListener('change', () => { E.tab = TABELAS.find(t => t.t === sel.value); E.filtro = ''; E.ordemCol = null; R.busca.value = ''; R.dica.textContent = E.tab.dica || ''; carregar(true); });
-            R.busca = h('input', { type: 'search', placeholder: 'Filtrar registros…', 'aria-label': 'Filtrar registros' });
+            R.busca = h('input', { type: 'search', placeholder: 'Filtrar registros… (ou #123 para ir a um ID)', 'aria-label': 'Filtrar registros' });
             R.busca.addEventListener('input', debounce(() => { E.filtro = R.busca.value; E.mostrando = LOTE; renderStatus(); renderTabela(); }, 220));
             R.menuCols = h('details', { style: { position: 'relative' } });
             R.status = h('span', { class: 'mu nw' }, '');
@@ -212,6 +225,9 @@
                 h('button', { class: 'btn primario', type: 'button', onclick: () => abrirEdicao(null) }, I('plus', 16), 'Novo registro'));
             ctx.corpo.append(R.dica, R.tabela);
         },
-        abrir() { if (!E.linhas.length && !E.carregando && !E.erro) carregar(true); },
+        abrir(op) {
+            if (op && (op.id != null || op.buscar)) { irPara(op); return; }
+            if (!E.linhas.length && !E.carregando && !E.erro) carregar(true);
+        },
     });
 })();

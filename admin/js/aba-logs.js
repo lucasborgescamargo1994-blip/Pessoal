@@ -96,7 +96,7 @@
                 h('td', { class: 'nw' }, l.fonte === 'rapida' ? h('span', { class: 'sel pr', title: 'Resposta rápida #' + l.resposta_rapida_id }, '⚡ #' + l.resposta_rapida_id) : l.fonte === 'ia' ? h('span', { class: 'sel ml', title: l.modelo || '' }, '🤖 ' + (modeloCurto(l.modelo) || 'IA')) : l.fonte === 'ferramenta' ? h('span', { class: 'sel', title: 'Uso de uma ferramenta em aba (Erros SEFAZ, Criar Regra, Relatórios ou Parâmetros)' }, '🧰 Ferramenta') : h('span', { class: 'mu' }, '—')),
                 h('td', { class: 'tc' }, selFeedback(l.feedback)),
                 h('td', { style: { maxWidth: '300px', fontSize: '12.5px', wordBreak: 'break-word' } }, l.motivo ? h('div', { class: 'mu' }, '📝 ' + ADM.fmt.trunc(l.motivo, 120)) : null, l.retorno ? h('div', { style: { color: 'var(--ad-in)' } }, '📩 ' + ADM.fmt.trunc(l.retorno, 120)) : null),
-                h('td', { class: 'nw' }, l.revisao ? h('span', { class: 'sel ' + ({ aprovada: 'ok', rejeitada: 'er', pendente: 'wa' }[l.revisao] || '') }, l.revisao === 'nao_se_aplica' ? 'n/a' : l.revisao) : h('span', { class: 'mu' }, '—')),
+                h('td', { class: 'nw' }, l.revisao ? h('span', { class: 'sel ' + ({ aprovada: 'ok', banco: 'ok', rejeitada: 'er', pendente: 'wa' }[l.revisao] || '') }, l.revisao === 'nao_se_aplica' ? 'n/a' : l.revisao === 'banco' ? 'banco de dados' : l.revisao) : h('span', { class: 'mu' }, '—')),
                 h('td', { class: 'acoes' },
                     h('button', { class: 'btn peq fantasma', type: 'button', title: 'Ver detalhes e a resposta', 'aria-label': 'Ver detalhes', onclick: () => alternarDetalhe(l, tr) }, I('eye', 14)),
                     h('button', { class: 'btn peq', type: 'button', onclick: () => editar(l) }, I('edit', 13), 'Editar'),
@@ -142,7 +142,7 @@
         const iFb = h('select', null, ['Pendente', 'Positivo', 'Negativo'].map(v => h('option', { value: v }, { Pendente: '⏳ Pendente', Positivo: '👍 Positivo', Negativo: '👎 Negativo' }[v]))); iFb.value = l.feedback || 'Pendente';
         const iMot = h('textarea', { rows: 2 }); iMot.value = l.motivo || '';
         const iRet = h('textarea', { rows: 3, placeholder: 'Resposta do suporte ao usuário (aparece para ele em “Gestão de Feedback”).' }); iRet.value = l.retorno || '';
-        const iRev = h('select', null, ['', 'pendente', 'aprovada', 'rejeitada', 'ignorada', 'nao_se_aplica'].map(v => h('option', { value: v }, v || '(nenhuma)'))); iRev.value = l.revisao || '';
+        const iRev = h('select', null, ['', 'pendente', 'aprovada', 'banco', 'rejeitada', 'ignorada', 'nao_se_aplica'].map(v => h('option', { value: v }, v || '(nenhuma)'))); iRev.value = l.revisao || '';
         const iNota = h('input', { type: 'text' }); iNota.value = l.revisao_nota || '';
         ADM.ui.modal({
             titulo: 'Editar log #' + l.id, largura: 640, fecharFora: false,
@@ -204,7 +204,7 @@
             ctx.barra.append(busca, de, ate,
                 sel([['', 'Qualquer avaliação'], ['Positivo', '👍 Positivas'], ['Negativo', '👎 Negativas'], ['Pendente', '⏳ Sem avaliação']], v => { E.f.feedback = v; carregar(true); }, 'Avaliação'),
                 sel([['', 'Qualquer origem'], ['ia', '🤖 IA'], ['rapida', '⚡ Resposta rápida'], ['ferramenta', '🧰 Ferramenta (abas)']], v => { E.f.fonte = v; carregar(true); }, 'Origem'),
-                sel([['', 'Qualquer revisão'], ['pendente', 'Pendente'], ['aprovada', 'Aprovada'], ['rejeitada', 'Rejeitada'], ['ignorada', 'Ignorada']], v => { E.f.revisao = v; carregar(true); }, 'Revisão'),
+                sel([['', 'Qualquer revisão'], ['pendente', 'Pendente'], ['aprovada', 'Aprovada'], ['banco', 'Salva no banco de dados'], ['rejeitada', 'Rejeitada'], ['ignorada', 'Ignorada']], v => { E.f.revisao = v; carregar(true); }, 'Revisão'),
                 h('label', { class: 'marcar', style: { fontWeight: 500, fontSize: '12.5px' }, title: 'Avaliações 👎 que ainda não receberam “retorno do suporte”' }, semRet, '👎 sem retorno'),
                 h('button', { class: 'btn icone', type: 'button', title: 'Recarregar', 'aria-label': 'Recarregar', onclick: () => carregar(true) }, I('refresh', 17)),
                 h('button', { class: 'btn', type: 'button', onclick: exportarCSV }, I('download', 15), 'CSV'));

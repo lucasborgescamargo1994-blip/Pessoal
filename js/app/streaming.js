@@ -59,6 +59,34 @@ function _criarRevelacaoFluida(contentEl, opts = {}) {
     };
 }
 
+// Guarda do idioma: a resposta tem que sair em português do Brasil. A PREVENÇÃO é a instrução que vai em toda chamada à IA
+// (js/core/mcp.js → mcpComIdioma). Esta é a rede de segurança para quando um modelo (ex.: o fallback North Mini) responde em inglês
+// mesmo assim: não mostra o texto em inglês (espera ~140 caracteres para decidir), segura a revelação e, ao fim do stream, TRADUZ para
+// pt-BR e só então entrega o texto. Uso: g.atualizar(texto) no lugar de revelacao.atualizar(texto); await g.concluir(textoFinal).
+const _AVISO_TRADUZINDO = '<span class="stream-thinking">🌎 A IA respondeu em outro idioma — traduzindo para português do Brasil...</span><span class="stream-cursor"></span>';
+function _criarGuardaIdioma(contentEl, revelacao) {
+    let checado = false, ingles = false;
+    return {
+        atualizar(txt) {
+            if (!checado && txt.length >= 140) {
+                checado = true; ingles = mcpPareceIngles(txt);
+                if (ingles) { console.warn('[idioma] resposta começou em inglês — vai ser traduzida para pt-BR'); contentEl.innerHTML = _AVISO_TRADUZINDO; }
+            }
+            if (checado && !ingles) revelacao.atualizar(txt);
+        },
+        // devolve { texto, traduzido, falhou }: texto já em pt-BR (ou o original, se não deu para traduzir)
+        async concluir(txtFinal) {
+            if (!String(txtFinal || '').trim() || (!ingles && !mcpPareceIngles(txtFinal))) return { texto: txtFinal };
+            contentEl.innerHTML = _AVISO_TRADUZINDO;
+            try {
+                const t = await mcpTraduzirParaPtBr(txtFinal);
+                if (t && !mcpPareceIngles(t)) { console.info('[idioma] resposta em inglês traduzida para pt-BR'); return { texto: t, traduzido: true }; }
+            } catch (e) { console.warn('[idioma] não consegui traduzir:', e && e.message); }
+            return { texto: '**⚠️ Esta resposta saiu em inglês e não consegui traduzi-la agora. Clique em “Nova conversa” e pergunte de novo, ou reformule a pergunta.**\n\n' + txtFinal, falhou: true };
+        }
+    };
+}
+
 async function _readSSEStream(resp, provider, onChunk) {
     const reader = resp.body.getReader();
     const dec = new TextDecoder();

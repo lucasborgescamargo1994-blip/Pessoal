@@ -13,6 +13,29 @@ const PROVIDER_PRESETS = {
     google: { baseUrl:'https://generativelanguage.googleapis.com/v1beta', models:['gemma-4-26b-a4b-it','gemini-2.0-flash','gemini-2.0-flash-lite','gemini-2.5-flash'], defaultModel:'gemma-4-26b-a4b-it', chatEndpoint:'/models/{model}:generateContent', headers:()=>({'Content-Type':'application/json'}), formatRequestBody:(m,msgs,c={})=>{const cnt=msgs.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:typeof m.content==='string'?m.content:JSON.stringify(m.content)}]}));return{contents:cnt,generationConfig:{temperature:c.temperature||0.3,maxOutputTokens:c.maxTokens||4096,...(c.responseFormat?.type==='json_object'?{responseMimeType:'application/json'}:{})}};}, parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro Google');const p=d.candidates?.[0]?.content?.parts||[];return{text:p.filter(p=>p.text).map(p=>p.text).join(''),finishReason:d.candidates?.[0]?.finishReason||'',full:d};}, buildUrl:(b,m,e)=>`${b}${e.replace('{model}',m)}` },
     custom: { baseUrl:'',models:[],defaultModel:'',chatEndpoint:'/chat/completions', headers:(k)=>({Authorization:`Bearer ${k}`,'Content-Type':'application/json'}), formatRequestBody:(m,msgs,c={})=>({model:m,messages:msgs,temperature:c.temperature||0.3,max_tokens:c.maxTokens||4096,...(c.responseFormat?{response_format:c.responseFormat}:{})}), parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro API');return{text:d.choices?.[0]?.message?.content||'',finishReason:d.choices?.[0]?.finish_reason||'',full:d};} }
 };
+/* ═══════════ IDIOMA: SEMPRE português do Brasil ═══════════
+   Modelos pequenos/grátis (principalmente os de código, como o North Mini, que costuma ser o fallback) respondem em inglês quando
+   ninguém diz o idioma. Por isso TODA chamada à IA passa por mcpComIdioma(): a instrução vai no INÍCIO da primeira mensagem do
+   usuário e no FIM da última (o fim é o que os modelos pequenos mais obedecem). É feito aqui, dentro de formatRequestBody, para valer
+   para qualquer fluxo (chat, parâmetros, regras, relatórios, rascunho, painel admin) sem depender de cada um lembrar.
+   Rede de segurança (se mesmo assim sair inglês): mcpPareceIngles() + mcpTraduzirParaPtBr() — usadas por _criarGuardaIdioma() em streaming.js. */
+const MCP_IDIOMA_TXT = 'IDIOMA OBRIGATÓRIO: escreva TODA a resposta em português do Brasil (pt-BR), mesmo que a pergunta, o material de apoio ou o código estejam em inglês ou em outro idioma. NUNCA responda em inglês. Mantenha exatamente como estão: nomes de telas/menus/campos do sistema, códigos, fórmulas, trechos de regra e o formato pedido (ex.: JSON).';
+function mcpComIdioma(msgs, cfg) {
+    if ((cfg && cfg.idioma === false) || !Array.isArray(msgs) || !msgs.length) return msgs;
+    const ult = msgs.map(m => m && m.role).lastIndexOf('user'), pri = msgs.findIndex(m => m && m.role === 'user');
+    if (ult < 0) return msgs;
+    const tem = c => (typeof c === 'string' ? c.includes('IDIOMA OBRIGATÓRIO') : Array.isArray(c) && c.some(p => p && typeof p.text === 'string' && p.text.includes('IDIOMA OBRIGATÓRIO')));
+    if (tem(msgs[ult].content)) return msgs;   // já tem (as chamadas passam por camadas): não duplica
+    const out = msgs.slice();
+    const comFim = c => (typeof c === 'string' ? c + '\n\n' + MCP_IDIOMA_TXT : Array.isArray(c) ? c.concat([{ type: 'text', text: MCP_IDIOMA_TXT }]) : c);
+    const comInicio = c => (typeof c === 'string' ? MCP_IDIOMA_TXT + '\n\n' + c : Array.isArray(c) ? [{ type: 'text', text: MCP_IDIOMA_TXT }].concat(c) : c);
+    // fim da última mensagem do usuário (o que os modelos pequenos mais obedecem) + começo da primeira (vale também quando é a mesma mensagem)
+    out[ult] = Object.assign({}, msgs[ult], { content: comFim(msgs[ult].content) });
+    if (pri >= 0) out[pri] = Object.assign({}, out[pri], { content: comInicio(out[pri].content) });
+    return out;
+}
+Object.keys(PROVIDER_PRESETS).forEach(k => { const p = PROVIDER_PRESETS[k], orig = p.formatRequestBody; p.formatRequestBody = (m, msgs, c) => orig(m, mcpComIdioma(msgs, c), c); });
+
 // 08/09/2026: conferi ao vivo no catálogo da OpenRouter e vários modelos grátis usados aqui
 // tinham saído do ar (a versão :free foi descontinuada, ou o nome mudou) — por isso a chamada de
 // fallback dava 404. Troquei pelos que confirmei funcionando de verdade (chamada real, resposta
@@ -306,4 +329,21 @@ async function _continuarResposta(messagesOriginais, textoTruncado, config, maxC
         }
     }
     return texto;
+}
+
+/* ═══════════ IDIOMA: rede de segurança (detectar inglês e traduzir) ═══════════ */
+// Palavras bem típicas de cada idioma (fora as que existem nos dois: a, as, no, me, for, in...). Conta quantas aparecem na resposta.
+const _MCP_EN = new Set('the and you your with this that are will can please click then from which when have has was were not also into should would could there their they been these those than about after before only other just here what where how select enter open following below above need needs make sure using used use'.split(' '));
+const _MCP_PT = new Set('que para com uma não por mais como dos das nos nas seu sua seus suas você vocês está estão são foi ser tem ter pode podem então também quando onde qual quais isso este esta esse essa ele ela eles elas aqui já até sobre entre depois antes ainda clique selecione abra acesse deve precisa tela campo menu'.split(' '));
+function mcpPareceIngles(texto) {
+    let t = String(texto || '').replace(/```[\s\S]*?```/g, ' ').replace(/`[^`]*`/g, ' ').replace(/https?:\/\/\S+/g, ' ');
+    if (t.replace(/\s+/g, ' ').trim().length < 100) return false;   // curto demais para decidir
+    let en = 0, pt = 0;
+    (t.toLowerCase().match(/[a-zà-ú]+/g) || []).forEach(w => { if (_MCP_EN.has(w)) en++; else if (_MCP_PT.has(w)) pt++; });
+    return en >= 4 && en >= 2.5 * (pt + 1);
+}
+// Traduz uma resposta (Markdown) para português do Brasil usando a mesma cadeia de modelos. Lança erro se nenhum modelo responder.
+async function mcpTraduzirParaPtBr(texto) {
+    const r = await callMCPSemPensamento([{ role: 'user', content: 'Traduza o texto abaixo para português do Brasil (pt-BR). Mantenha EXATAMENTE a formatação Markdown (títulos, listas, negrito, tabelas), os números, os nomes de telas, menus e campos do sistema, os códigos, as fórmulas e os links. Não explique, não comente e não acrescente nada: responda somente com o texto traduzido.\n\n=== TEXTO ===\n' + String(texto || '') }], { temperature: 0.1, maxTokens: 16000 });
+    return String((r && r.text) || '').trim();
 }

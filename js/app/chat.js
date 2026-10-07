@@ -312,9 +312,10 @@ async function handleChat(opts) {
     const feedbackEl = document.getElementById('_sf' + ts);
     let lastVis = '', streamDone = false;
     const _revelacao = _criarRevelacaoFluida(contentEl); // ritmo fluido de exibição, independente da velocidade real do modelo
+    const _guarda = _criarGuardaIdioma(contentEl, _revelacao);   // a resposta TEM que sair em português do Brasil (se vier inglês, traduz antes de mostrar)
 
     _rascunhoPromise.then(rascunho => {
-        if (rascunho && !streamDone && !lastVis.trim()) {
+        if (rascunho && !streamDone && !lastVis.trim() && !mcpPareceIngles(rascunho)) {   // rascunho em inglês nunca aparece
             contentEl.innerHTML = `<div style="font-size:10.5px;color:#0369a1;margin-bottom:8px;">⚡ Resposta rápida — aprimorando com o modelo avançado...</div>` + renderMd(rascunho);
         }
     });
@@ -340,7 +341,7 @@ async function handleChat(opts) {
 
         const { finishReason: _hcFR } = await _readSSEStream(_resp, _pr, chunk => {
             lastVis = _filter.push(chunk);
-            _revelacao.atualizar(lastVis);
+            _guarda.atualizar(lastVis);
         });
 
         streamDone = true;
@@ -359,7 +360,7 @@ async function handleChat(opts) {
                     _apiMessages, { temperature: 0.4, maxTokens: 3000, skipModels: [_im] }
                 );
                 await _readSSEStream(_resp2, _pr2, chunk => {
-                    _revelacao.atualizar(_filter2.push(chunk));
+                    _guarda.atualizar(_filter2.push(chunk));
                 });
                 finalText = _filter2.finish();
                 _fbOk = !!finalText.trim();
@@ -384,6 +385,9 @@ async function handleChat(opts) {
             scrollToBottom(true);
             return;
         }
+
+        // Idioma: sempre português do Brasil. Se um modelo (ex.: o fallback North Mini) respondeu em inglês, traduz ANTES de mostrar e de guardar no log.
+        finalText = (await _guarda.concluir(finalText)).texto;
 
         // Entrega o texto final pra fila de revelação em vez de estampar tudo de uma vez — assim
         // o final da resposta continua aparecendo no mesmo ritmo fluido, mesmo que o modelo tenha
