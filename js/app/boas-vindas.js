@@ -52,6 +52,7 @@ async function btnWelcomeRegra() {
         if (_modoCte === 'dnd') mostrarWizardRegraDnd('');
         else if (_modoCte === 'classico') mostrarWizardRegra('');
     }
+    else if (_tipo === 'cte-nova') mostrarWizardRegraCteNova('');
     else if (_tipo === 'contrato') {
         const _modo = await perguntarModoContrato();
         if (_modo === 'dnd') mostrarWizardContratoDnd('');

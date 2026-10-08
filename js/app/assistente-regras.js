@@ -150,13 +150,20 @@ REGRA DE SINTAXE OBRIGATÓRIA:
 - Valores de "outros valores" do conhecimento usam obt('outrosValores[nomeInterno]') — troque nomeInterno pelo campo pedido.
 `;
 
+// ─── LIMITE DE TOKENS DA RESPOSTA DA IA NOS GERADORES DE REGRA ───
+// Vale para todos os geradores (Ct-e clássico e Nova Versão, Contrato de Frete, Faturamento e a conversa de criação de regra). Os prompts de regra são grandes (documentação +
+// regra montada + pedido) e os modelos grátis "pensam" antes de responder (o pensamento também gasta tokens): com 3000, a resposta chegava cortada e o mcp.js tinha que continuar
+// sozinho ("[Continuação 1/3] Resposta truncada detectada…" no console). 8000 dá folga e fica dentro do teto de 8192 dos modelos Gemini (provedor "google"). Se ainda aparecer
+// a continuação, a regra gerada é grande: suba aqui (e confira o teto do modelo).
+const REGRAS_MAX_TOKENS = 8000;
+
 // ─── WIZARD DE CRIAÇÃO DE REGRAS ───────────────────────────
 let _regraWizardResolve=null,_wizardQueryOriginal='',_wizardCteBase64=null,_wizardTabelaBase64=null;
 function _resolverEscolhaRegra(e){const c=document.getElementById('regraEscolhaCard');if(c)c.remove();if(_regraWizardResolve){_regraWizardResolve(e);_regraWizardResolve=null;}}
 function perguntarAuxilioRegra(){return new Promise(resolve=>{_regraWizardResolve=resolve;const s=document.getElementById('chatStream');const card=document.createElement('div');card.id='regraEscolhaCard';card.className='answer-card';card.innerHTML=`<div style="background:#f0fdf4;padding:8px 15px;border-bottom:1px solid #bbf7d0;font-size:11px;color:#166534;font-weight:600;">⚙️ Criação de Regras</div><div class="answer-section"><div class="section-content"><div style="font-size:13px;color:#374151;margin-bottom:10px;">Precisa de auxílio para criar/editar a regra?</div><div style="display:flex;gap:10px;"><button onclick="_resolverEscolhaRegra('sim')" style="flex:1;padding:10px 16px;background:#16a34a;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">✅ Sim — abrir assistente</button><button onclick="_resolverEscolhaRegra('nao')" style="flex:1;padding:10px 16px;background:#6b7280;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">🔍 Não — buscar no banco</button></div></div></div>`;s.appendChild(card);scrollToBottom(true);});}
 let _tipoRegraResolve=null,_wizardContratoQuery='';
 function _resolverTipoRegra(tipo){const c=document.getElementById('tipoRegraCard');if(c)c.remove();if(_tipoRegraResolve){_tipoRegraResolve(tipo);_tipoRegraResolve=null;}}
-function perguntarTipoRegra(){return new Promise(resolve=>{_tipoRegraResolve=resolve;const s=Ferr.stream('regra');const card=document.createElement('div');card.id='tipoRegraCard';card.className='answer-card';card.innerHTML=`<div style="background:#f5f3ff;padding:8px 15px;border-bottom:1px solid #ddd6fe;font-size:11px;color:#5b21b6;font-weight:600;">⚙️ Tipo de Regra</div><div class="answer-section"><div class="section-content"><div style="font-size:13px;color:#374151;margin-bottom:10px;">Para qual tipo de regra precisa de auxílio?</div><div style="display:flex;gap:10px;"><button onclick="_resolverTipoRegra('cte')" style="flex:1;padding:10px 16px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">📄 Ct-e / Conhecimento</button><button onclick="_resolverTipoRegra('contrato')" style="flex:1;padding:10px 16px;background:#7c3aed;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">🚛 Contrato de Frete</button><button onclick="_resolverTipoRegra('faturamento')" style="flex:1;padding:10px 16px;background:#059669;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">💰 Faturamento</button></div></div></div>`;s.appendChild(card);ferrRolar('regra', true);});}
+function perguntarTipoRegra(){return new Promise(resolve=>{_tipoRegraResolve=resolve;const s=Ferr.stream('regra');const card=document.createElement('div');card.id='tipoRegraCard';card.className='answer-card';card.innerHTML=`<div style="background:#f5f3ff;padding:8px 15px;border-bottom:1px solid #ddd6fe;font-size:11px;color:#5b21b6;font-weight:600;">⚙️ Tipo de Regra</div><div class="answer-section"><div class="section-content"><div style="font-size:13px;color:#374151;margin-bottom:10px;">Para qual tipo de regra precisa de auxílio?</div><div style="display:flex;flex-wrap:wrap;gap:10px;"><button onclick="_resolverTipoRegra('cte')" style="flex:1 1 calc(50% - 10px);min-width:220px;padding:10px 16px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">📄 Ct-e / Conhecimento</button><button onclick="_resolverTipoRegra('cte-nova')" style="flex:1 1 calc(50% - 10px);min-width:220px;padding:10px 16px;background:linear-gradient(135deg,#7c3aed,#2563eb);color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">✨ Ct-e / Conhecimento Nova Versão <span style="background:#fde047;color:#713f12;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:800;vertical-align:1px;">NOVO</span><span style="display:block;font-size:10.5px;font-weight:500;opacity:.92;margin-top:2px;">Passo a passo, uma tela por vez</span></button><button onclick="_resolverTipoRegra('contrato')" style="flex:1 1 calc(50% - 10px);min-width:220px;padding:10px 16px;background:#7c3aed;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">🚛 Contrato de Frete</button><button onclick="_resolverTipoRegra('faturamento')" style="flex:1 1 calc(50% - 10px);min-width:220px;padding:10px 16px;background:#059669;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">💰 Faturamento</button></div></div></div>`;s.appendChild(card);ferrRolar('regra', true);});}
 let _modoContratoResolve=null;
 function _resolverModoContrato(modo){const c=document.getElementById('modoContratoCard');if(c)c.remove();if(_modoContratoResolve){_modoContratoResolve(modo);_modoContratoResolve=null;}}
 // 09/09/2026, a pedido: formulário clássico de Contrato de Frete desativado — vai direto pro
@@ -479,7 +486,7 @@ async function enviarWizardRegra(){
     const ld=ferrCarregando('regra', '⚙️ Elaborando regra de frete...');
     const li=Date.now();
     try{
-        const result=await callMCPSemPensamento([{role:'system',content:sysMsg},{role:'user',content:userContent}],{temperature:0.15,maxTokens:3000});
+        const result=await callMCPSemPensamento([{role:'system',content:sysMsg},{role:'user',content:userContent}],{temperature:0.15,maxTokens: REGRAS_MAX_TOKENS});
         ld.remove();
         renderizarCardRegra(result.text,li,result._iaUsada,result._iaModelo,'cte',{query:_wizardQueryOriginal,estadoForm:_estadoForm,cteExtra:_cteExtra});
         ferrConversa('regra', 'ai',result.text);
@@ -671,12 +678,14 @@ Ferr.registrar('regra', {
     async iniciar(o) {
         const q = (o && o.consulta) || '';   // pergunta digitada no chat que levou até aqui (pré-preenche o montador)
         const tipo = await perguntarTipoRegra();
-        const nomes = { cte: 'Ct-e', contrato: 'Contrato de Frete', faturamento: 'Faturamento' };
+        const nomes = { cte: 'Ct-e', 'cte-nova': 'Ct-e (Nova Versão)', contrato: 'Contrato de Frete', faturamento: 'Faturamento' };
         if (tipo) ferrLog('regra', 'Criar Regra - ' + (nomes[tipo] || tipo), true);
         if (tipo === 'cte') {
             const modo = await perguntarModoCte();
             if (modo === 'dnd') { _regraAvisoMontador(); mostrarWizardRegraDnd(q); }
             else if (modo === 'classico') mostrarWizardRegra(q);
+        } else if (tipo === 'cte-nova') {
+            _regraAvisoMontador(); mostrarWizardRegraCteNova(q);
         } else if (tipo === 'contrato') {
             const modo = await perguntarModoContrato();
             if (modo === 'dnd') { _regraAvisoMontador(); mostrarWizardContratoDnd(q); }

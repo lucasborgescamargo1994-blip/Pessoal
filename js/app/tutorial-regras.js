@@ -162,7 +162,6 @@ function mostrarWizardRegraDnd(queryOriginal){
     const card=document.createElement('div');
     card.id='wizardRegraDndCard';
     card.className='builder-card';
-    const chipsHtml=_cteMontarPaletteHtml();
     const opcoesHtml=CTE_OPCOES_MONTAGEM.map((grupo,grupoIdx)=>`<div style="margin-bottom:8px;">
       <div style="font-size:10.5px;color:#6b7280;font-weight:700;margin:6px 0 3px;">${grupo.titulo}</div>
       ${grupo.itens.map(item=>`<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#374151;padding:4px 8px;cursor:pointer;border-radius:6px;">
@@ -200,7 +199,17 @@ function mostrarWizardRegraDnd(queryOriginal){
       <button id="wCteBtnEnviar" class="wizard-submit" onclick="enviarWizardRegraDnd()" style="margin-top:8px;">🚀 Gerar com IA</button>
     </div>
   </div>
-  <div class="builder-grid-main">
+  <div class="builder-grid-main">${_cteHtmlAreaMontagem()}</div>
+</div>`;
+    document.getElementById('builderModalBody').appendChild(card);
+    _cteRenderBlocos();
+    _abrirBuilderModal('cte');
+}
+// HTML da área de montagem (ações, campos, "Utiliza Valores outros", valor fixo, área de arrastar e prévia). É compartilhado pelo montador de Ct-e clássico
+// (acima) e pela "Nova Versão" (js/app/regra-cte-passos.js, passo 4): os dois mostram exatamente a mesma coisa e usam os mesmos ids.
+function _cteHtmlAreaMontagem(){
+    const chipsHtml=_cteMontarPaletteHtml();
+    return `
     <div class="wizard-section" id="wCteSecaoMontar" style="border:none;position:sticky;top:0;z-index:2;background:var(--surface);border-bottom:2px solid #bfdbfe;box-shadow:0 4px 8px -6px rgba(0,0,0,.2);">
       <div class="wizard-label">🧩 Monte sua regra arrastando os campos</div>
       <div style="font-size:12.5px;color:#1e40af;font-weight:700;margin-bottom:6px;">1. Clique ou arraste a ação pra ativar (fica destacada, vale pro próximo campo arrastado):</div>
@@ -245,11 +254,7 @@ function mostrarWizardRegraDnd(queryOriginal){
         <button id="wCteBtnGerar" onclick="_cteGerarRegraCustom()" style="flex:1;padding:8px 14px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;">🚀 Gerar Regra Montada</button>
       </div>
     </div>
-  </div>
-</div>`;
-    document.getElementById('builderModalBody').appendChild(card);
-    _cteRenderBlocos();
-    _abrirBuilderModal('cte');
+  `;
 }
 function _cteSelecionarAcao(acao){
     window._cteAcaoSel=acao;
@@ -687,21 +692,28 @@ function _cteAplicarOpcionais(){
     _cteRenderBlocos();
     _cteSincronizarEntradasOpcao();   // campos de valor das opções (aparecem/somem e mostram se o número digitado foi aplicado)
 }
-function _renderizarCardRegraCteDndSemIA(codigo){
-    const wCard=document.getElementById('wizardRegraDndCard');
-    const _estadoForm=wCard?_capturarEstadoForm(wCard):null;
-    // opcionaisBase = a área de montagem ANTES das opções "monte com um clique" serem aplicadas: guardada pro "Voltar" (sem ela, desmarcar
-    // uma opção depois de voltar não conseguiria devolver o que ela tinha sobreposto, ex.: a Base de Cálculo original).
+// Foto da área de montagem pro botão "Voltar" do cartão da regra gerada. opcionaisBase = a área ANTES das opções "monte com um clique" serem
+// aplicadas: guardada pro "Voltar" (sem ela, desmarcar uma opção depois de voltar não conseguiria devolver o que ela tinha sobreposto, ex.: a
+// Base de Cálculo original).
+function _cteEstadoCanvasParaVoltar(){
     const _opBase=window._cteOpcionaisBase;
-    const _cteExtraVoltar={acaoSel:window._cteAcaoSel,blocos:_clonarBlocos(window._cteBlocos),extras:(window._cteExtras||[]).map(e=>({...e})),
+    return {acaoSel:window._cteAcaoSel,blocos:_clonarBlocos(window._cteBlocos),extras:(window._cteExtras||[]).map(e=>({...e})),
         opcionaisBase:_opBase?{blocos:_clonarBlocos(_opBase.blocos),extras:(_opBase.extras||[]).map(e=>({...e}))}:null};
+}
+function _renderizarCardRegraCteDndSemIA(codigo){
+    // veio do assistente "Ct-e / Conhecimento Nova Versão" (js/app/regra-cte-passos.js)? Então o "Voltar" reabre ele, na tela em que estava
+    const _nova=!!document.getElementById('wizardRegraNovaCard');
+    const wCard=document.getElementById('wizardRegraDndCard')||document.getElementById('wizardRegraNovaCard');
+    const _estadoForm=wCard?_capturarEstadoForm(wCard):null;
+    const _cteExtraVoltar=_cteEstadoCanvasParaVoltar();
+    const _extraNova=_nova?{cteNova:{passo:_cnPasso}}:{};
     if(wCard)wCard.remove();
     _fecharBuilderModal();
     const s=Ferr.stream('regra');
     const c=document.createElement('div');c.className='answer-card';
     const ts=Date.now();
     c.id='_regraResultCard_'+ts;
-    window['_regraVoltar_'+ts]={tipo:'cte-dnd',query:_wizardRegraDndQuery,estadoForm:_estadoForm,cteExtraDnd:_cteExtraVoltar};
+    window['_regraVoltar_'+ts]={tipo:_nova?'cte-nova':'cte-dnd',query:_wizardRegraDndQuery,estadoForm:_estadoForm,cteExtraDnd:_cteExtraVoltar,..._extraNova};
     const escaped=codigo.replace(/</g,'&lt;').replace(/>/g,'&gt;');
     let h=`<div style="background:#eff6ff;padding:8px 15px;border-bottom:1px solid #bfdbfe;font-size:11px;color:#1e40af;font-weight:600;">📄 Regra de Ct-e — montada sem IA</div>`;
     h+=`<div class="answer-section"><div class="section-content"><div style="position:relative;margin:8px 0;"><pre class="regra-code">${escaped}</pre><button onclick="copiarRegra(this)" style="position:absolute;top:8px;right:8px;background:#313244;color:#a6e3a1;border:none;border-radius:5px;padding:3px 10px;font-size:11px;cursor:pointer;font-weight:600;">📋 Copiar</button></div></div></div>`;
@@ -721,29 +733,43 @@ async function enviarWizardRegraDnd(){
     // Agora manda os DOIS: o estado de verdade da área de montagem (_cteLinhasValidas — a mesma
     // fonte usada pelo "Gerar Regra Montada" sem IA) e o campo separado de colar regra (que é um
     // campo à parte, não ligado à área de montagem), com instrução pra IA unir tudo.
+    const _nova=!!document.getElementById('wizardRegraNovaCard');   // "Ct-e / Conhecimento Nova Versão" (js/app/regra-cte-passos.js): mesma IA, mesmo pedido
     const regraCola=(document.getElementById('wCteRegraCola')?.value||'').trim();
     const descricao=(document.getElementById('wCteDescricao')?.value||'').trim();
     const canvasTxt=_cteLinhasValidas().join('\n');
+    // Na Nova Versão a pessoa informa os campos personalizados do cliente na tela 2, em DOIS grupos que a IA precisa distinguir: os do Ct-e / Contrato de Frete (Tipos Valores Outros,
+    // "outros valores" do Ct-e: outrosValores[nome] — a documentação geral abaixo cita outro formato, o do montador usa este) e os da Tabela de Preços (tabelaPrecos.nome, SEM obt).
+    const nomesOutros=_nova?_cteNomesOutrosValores():[];
+    const nomesTabela=_nova?(window._cteTabelaCustom||[]):[];
     const configTxt=[
         canvasTxt?'REGRA JA MONTADA NA AREA DE ARRASTAR CAMPOS (una com a solicitacao abaixo -- NAO descarte o que ja foi montado, so ajuste/complete conforme pedido):\n'+canvasTxt:'',
         regraCola?'\nREGRA EXISTENTE PARA EDITAR (colada separadamente):\n'+regraCola:'',
+        nomesOutros.length?'\nCAMPOS PERSONALIZADOS DO CT-E (Tipos Valores Outros; nomes internos informados pelo usuario): '+nomesOutros.join(', ')+'\nNo Ct-e eles sao "outros valores": para LER use obt("outrosValores[nome]") e para DEFINIR use def("outrosValores[nome]", valor), trocando "nome" pelo nome interno. Isso vale mais que a documentacao geral.':'',
+        nomesTabela.length?'\nCAMPOS PERSONALIZADOS DA TABELA DE PRECOS (Tabela de preços Valores Outros; nomes internos informados pelo usuario): '+nomesTabela.join(', ')+'\nSao campos da tabela de precos do cliente: sao lidos SEM obt(), direto na forma tabelaPrecos.nome (ex.: tabelaPrecos.'+nomesTabela[0]+'). NUNCA use obt() nem outrosValores para eles.':'',
         descricao?'\nSOLICITACAO: '+descricao:'',
         _wizardRegraDndQuery?'\nCONTEXTO: '+_wizardRegraDndQuery:''
     ].filter(Boolean).join('\n');
     const sysMsg='Voce e um especialista em regras de Ct-e / Conhecimento do Bsoft TMS.\nGere APENAS o codigo da regra pronto para uso, entre triple backticks.\n\nUNIR REGRA JA MONTADA COM A SOLICITACAO:\nSe a mensagem do usuario tiver uma secao "REGRA JA MONTADA NA AREA DE ARRASTAR CAMPOS", essa e a regra que o usuario ja construiu manualmente (arrastando campos, marcando opcoes, carregando uma regra base) -- ela e o PONTO DE PARTIDA. NUNCA descarte nem reescreva do zero o que ja esta montado. Una com a "SOLICITACAO": mantenha tudo que ja esta la e so adicione, ajuste ou complete exatamente o que foi pedido. O resultado final tem que conter TANTO o que ja estava montado QUANTO o que foi solicitado, numa unica regra coerente.\n\nDEFINICAO DE CAMPOS OCULTOS ($SV):\nPara definir um campo oculto sem gerar erro de "campo nao encontrado", SEMPRE verifique se o elemento existe antes de usar $SV():\nif (document.getElementsByName(\'NOMECAMPO\').length > 0) {\n   $SV(\'NOMECAMPO\', obt("nomeInterno"));\n}\nNUNCA use $SV() direto sem essa verificacao.\n\nCONDICAO BASEADA EM CST (TAMBEM USANDO $SV):\nPara definir uma condicao que depende do CST (Codigo de Situacao Tributaria) do Ct-e, use $SV() dentro do if -- e a UNICA forma que funciona corretamente pra checar o CST, NAO use obt() nem comparacao direta pra isso. Exemplo real (zera aliquota, base de calculo e valor do ICMS quando o CST for 40):\nif ($SV("dados_CST", \'40\'))\ndef("aliquota", 0);\ndef("baseCalculo", 0);\ndef("valorICMS", 0);\nUse sempre esse mesmo padrao -- if ($SV("dados_CST", \'XX\')) -- trocando XX pelo CST desejado, toda vez que a regra precisar de uma condicao baseada em qual CST esta sendo usado.\n\nITERAR SOBRE NOTAS/MERCADORIAS SEM SABER A QUANTIDADE (try/catch):\nPara somar, filtrar ou ajustar algo em cima de cada nota/mercadoria do Ct-e SEM SABER quantas existem (o Ct-e pode ter 1 ou varias notas), percorra os indices de 1 ate um numero alto (ex.: 50) dentro de um try/catch -- o catch simplesmente ignora os indices que nao existem, sem gerar erro nem travar a regra numa quantidade fixa de notas. Exemplo real (desconta do peso as mercadorias da especie 23, seja qual for a quantidade de notas):\npeso = obt("merc_quantKg[]");\nfor (i = 1; i <= 50; i++) {\n   try {\n      if ( obt("merc_especie[" + i + "]") == 23 ) peso = peso - obt("merc_quantKg[" + i + "]");\n   } catch (e) { }\n}\nUse esse padrao sempre que precisar iterar sobre campos indexados (ex.: merc_*[i]) sem travar o resultado a uma quantidade fixa de notas.\n\nDOCUMENTACAO:\n'+CONTEXTO_REGRAS;
-    const wCard=document.getElementById('wizardRegraDndCard');
+    const wCard=document.getElementById('wizardRegraDndCard')||document.getElementById('wizardRegraNovaCard');
     const _estadoForm=wCard?_capturarEstadoForm(wCard):null;
+    // O "Voltar" da Nova Versão volta com tudo (área de montagem incluída) e na tela em que a pessoa estava; o do montador clássico segue como sempre (só os campos).
+    const _voltarNova=_nova?{cteExtraDnd:_cteEstadoCanvasParaVoltar(),cteNova:{passo:_cnPasso}}:{};
     if(wCard)wCard.remove();
     _fecharBuilderModal();
     ferrMsg('regra', 'system','📄 <strong>Gerando regra de Ct-e...</strong>');
     const ld=ferrCarregando('regra', '📄 Elaborando regra de Ct-e...');
     const li=Date.now();
     try{
-        const result=await callMCPSemPensamento([{role:'system',content:sysMsg},{role:'user',content:'Monte a regra conforme a solicitacao abaixo.\n'+configTxt}],{temperature:0.15,maxTokens:3000});
+        const result=await callMCPSemPensamento([{role:'system',content:sysMsg},{role:'user',content:'Monte a regra conforme a solicitacao abaixo.\n'+configTxt}],{temperature:0.15,maxTokens: REGRAS_MAX_TOKENS});
         ld.remove();
-        renderizarCardRegra(result.text,li,result._iaUsada,result._iaModelo,'cte-dnd',{query:_wizardRegraDndQuery,estadoForm:_estadoForm});
+        renderizarCardRegra(result.text,li,result._iaUsada,result._iaModelo,_nova?'cte-nova':'cte-dnd',{query:_wizardRegraDndQuery,estadoForm:_estadoForm,..._voltarNova});
         ferrConversa('regra', 'ai',result.text);
-    }catch(e){ld.remove();ferrMsg('regra', 'ai','❌ Erro ao gerar regra. Tente novamente.');}
+    }catch(e){
+        ld.remove();
+        // Nova Versão: o erro traz o "Voltar" (a janela já fechou e a pessoa não pode perder o que montou); o montador clássico segue com a mensagem simples de sempre.
+        if(_nova&&typeof _cnCardErroIA==='function')_cnCardErroIA({query:_wizardRegraDndQuery,estadoForm:_estadoForm,..._voltarNova});
+        else ferrMsg('regra', 'ai','❌ Erro ao gerar regra. Tente novamente.');
+    }
 }
 
 function ehCriacaoRegra(query) {
@@ -855,7 +881,7 @@ async function enviarWizardContrato(){
     const ld=ferrCarregando('regra', '🚛 Elaborando regra de contrato...');
     const li=Date.now();
     try{
-        const result=await callMCPSemPensamento([{role:'system',content:sysMsg},{role:'user',content:'Monte a regra conforme as configuracoes abaixo.\n'+configTxt}],{temperature:0.15,maxTokens:3000});
+        const result=await callMCPSemPensamento([{role:'system',content:sysMsg},{role:'user',content:'Monte a regra conforme as configuracoes abaixo.\n'+configTxt}],{temperature:0.15,maxTokens: REGRAS_MAX_TOKENS});
         ld.remove();
         renderizarCardRegra(result.text,li,result._iaUsada,result._iaModelo,'contrato',{query:_wizardContratoQuery,estadoForm:_estadoForm});
         ferrConversa('regra', 'ai',result.text);
@@ -1508,7 +1534,7 @@ async function enviarWizardContratoDnd(){
     const ld=ferrCarregando('regra', '🚛 Elaborando regra de contrato...');
     const li=Date.now();
     try{
-        const result=await callMCPSemPensamento([{role:'system',content:sysMsg},{role:'user',content:'Monte a regra conforme a solicitacao abaixo.\n'+configTxt}],{temperature:0.15,maxTokens:3000});
+        const result=await callMCPSemPensamento([{role:'system',content:sysMsg},{role:'user',content:'Monte a regra conforme a solicitacao abaixo.\n'+configTxt}],{temperature:0.15,maxTokens: REGRAS_MAX_TOKENS});
         ld.remove();
         renderizarCardRegra(result.text,li,result._iaUsada,result._iaModelo,'contrato-dnd',{query:_wizardContratoDndQuery,estadoForm:_estadoForm});
         ferrConversa('regra', 'ai',result.text);
@@ -2348,7 +2374,7 @@ async function enviarWizardFaturamento(){
     const ld=ferrCarregando('regra', '💰 Elaborando regra de faturamento...');
     const li=Date.now();
     try{
-        const result=await callMCPSemPensamento([{role:'system',content:sysMsg},{role:'user',content:'Monte a regra conforme a solicitacao abaixo.\n'+configTxt}],{temperature:0.15,maxTokens:3000});
+        const result=await callMCPSemPensamento([{role:'system',content:sysMsg},{role:'user',content:'Monte a regra conforme a solicitacao abaixo.\n'+configTxt}],{temperature:0.15,maxTokens: REGRAS_MAX_TOKENS});
         ld.remove();
         renderizarCardRegra(result.text,li,result._iaUsada,result._iaModelo,'faturamento',{query:_wizardFaturamentoQuery,estadoForm:_estadoForm});
         ferrConversa('regra', 'ai',result.text);
@@ -2364,7 +2390,7 @@ async function gerarRespostaCriacaoRegra(pergunta) {
     try {
         const result = await callMCPSemPensamento(
             [{ role: 'system', content: systemMsg }, { role: 'user', content: pergunta }],
-            { temperature: 0.2, maxTokens: 3000 }
+            { temperature: 0.2, maxTokens: REGRAS_MAX_TOKENS }
         );
         ld.remove();
         renderizarCardRegra(result.text, li, result._iaUsada, result._iaModelo);
@@ -2420,9 +2446,10 @@ function _voltarParaWizardRegra(ts) {
     const dados = window['_regraVoltar_' + ts];
     if (!dados) return;
     const cardResultado = document.getElementById('_regraResultCard_' + ts); if (cardResultado) cardResultado.remove();
-    const mapaCardId = { cte: 'wizardRegraCard', 'cte-dnd': 'wizardRegraDndCard', contrato: 'wizardContratoCard', 'contrato-dnd': 'wizardContratoDndCard', faturamento: 'wizardFaturamentoCard' };
+    const mapaCardId = { cte: 'wizardRegraCard', 'cte-dnd': 'wizardRegraDndCard', 'cte-nova': 'wizardRegraNovaCard', contrato: 'wizardContratoCard', 'contrato-dnd': 'wizardContratoDndCard', faturamento: 'wizardFaturamentoCard' };
     if (dados.tipo === 'cte') mostrarWizardRegra(dados.query || '');
     else if (dados.tipo === 'cte-dnd') mostrarWizardRegraDnd(dados.query || '');
+    else if (dados.tipo === 'cte-nova') mostrarWizardRegraCteNova(dados.query || '');   // "Ct-e / Conhecimento Nova Versão" (js/app/regra-cte-passos.js)
     else if (dados.tipo === 'contrato') mostrarWizardContrato(dados.query || '');
     else if (dados.tipo === 'contrato-dnd') mostrarWizardContratoDnd(dados.query || '');
     else if (dados.tipo === 'faturamento') mostrarWizardFaturamento(dados.query || '');
@@ -2443,7 +2470,7 @@ function _voltarParaWizardRegra(ts) {
             if (prev) prev.innerHTML = `<img src="${dados.cteExtra.tabelaB64}" style="max-width:100%;max-height:130px;border-radius:6px;margin-top:6px;">`;
         }
     }
-    if (dados.tipo === 'cte-dnd' && dados.cteExtraDnd) {
+    if ((dados.tipo === 'cte-dnd' || dados.tipo === 'cte-nova') && dados.cteExtraDnd) {
         window._cteBlocos = (dados.cteExtraDnd.blocos && dados.cteExtraDnd.blocos.length) ? _clonarBlocos(dados.cteExtraDnd.blocos) : [{destino:'',expr:null}];
         window._cteExtras = (dados.cteExtraDnd.extras || []).map(e => ({...e}));
         const ob = dados.cteExtraDnd.opcionaisBase;   // base das opções "monte com um clique" (ver _renderizarCardRegraCteDndSemIA)
@@ -2451,7 +2478,8 @@ function _voltarParaWizardRegra(ts) {
         _cteSelecionarAcao(dados.cteExtraDnd.acaoSel || null);
         _cteRenderBlocos();
     }
-    if (dados.tipo === 'cte-dnd') _cteSincronizarEntradasOpcao();   // campo de valor das opções marcadas (ex.: % de redução) volta a aparecer
+    if (dados.tipo === 'cte-dnd' || dados.tipo === 'cte-nova') _cteSincronizarEntradasOpcao();   // campo de valor das opções marcadas (ex.: % de redução) volta a aparecer
+    if (dados.tipo === 'cte-nova') _cnAposRestaurar(dados.cteNova);   // realinha as telas do assistente com o que foi restaurado e volta à tela em que estava
     if (dados.tipo === 'contrato-dnd' && dados.cfdExtra) {
         window._cfdBlocos = (dados.cfdExtra.blocos && dados.cfdExtra.blocos.length) ? _clonarBlocos(dados.cfdExtra.blocos) : [{destino:'',expr:null}];
         window._cfdExtras = (dados.cfdExtra.extras || []).map(e => ({...e}));

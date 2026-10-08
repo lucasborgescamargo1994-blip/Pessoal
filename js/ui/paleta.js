@@ -30,10 +30,12 @@ const Palette = (() => {
     function gather(q) {
         const nq = norm(q.trim()), out = [], W = Workspace;
         const usage = Prefs.get('usage') || {}, hidden = Prefs.get('hidden') || [];
-        let tools = Object.keys(TOOLS).filter(id => id === 'chat' || !hidden.includes(id) || W.isOpen(id)).map(id => ({ id, s: score(nq, TOOLS[id].label + ' ' + (TOOLS[id].kw || '')) })).filter(x => x.s > 0);
+        // Ferramentas ocultas da lateral (ex.: Blog e Repositório, que vêm ocultos de fábrica) só ficam fora da lista de abertura; ao DIGITAR elas aparecem (com a marca "oculta"),
+        // como diz o Personalizar: "Ferramentas ocultas continuam disponíveis em Ctrl K".
+        let tools = Object.keys(TOOLS).filter(id => id === 'chat' || !hidden.includes(id) || W.isOpen(id) || !!nq).map(id => ({ id, s: score(nq, TOOLS[id].label + ' ' + (TOOLS[id].kw || '')) })).filter(x => x.s > 0);
         tools.sort((a, b) => b.s - a.s || ((usage[b.id] || {}).n || 0) - ((usage[a.id] || {}).n || 0));
         tools.forEach(({ id, s }) => out.push({ group: 'Ir para', icon: TOOLS[id].icon, color: TOOLS[id].color, title: TOOLS[id].label, s,
-            sub: W.isVisible(id) ? 'Está na tela agora' : W.isOpen(id) ? 'Aba aberta — ir para ela' : TOOLS[id].desc, tag: W.isOpen(id) ? 'aberta' : '', run: e => W.open(id, { beside: !!(e && e.shiftKey) }) }));
+            sub: W.isVisible(id) ? 'Está na tela agora' : W.isOpen(id) ? 'Aba aberta — ir para ela' : TOOLS[id].desc, tag: W.isOpen(id) ? 'aberta' : hidden.includes(id) ? 'oculta' : '', run: e => W.open(id, { beside: !!(e && e.shiftKey) }) }));
         actions().map(a => ({ a, s: score(nq, a.title + ' ' + a.kw) })).filter(x => x.s > 0).slice(0, nq ? 5 : 6)
             .forEach(({ a, s }) => out.push({ group: 'Ações', icon: a.icon, title: a.title, sub: a.sub, s, run: a.run }));
         if (typeof conversas !== 'undefined') {

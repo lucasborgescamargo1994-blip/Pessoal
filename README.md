@@ -271,6 +271,32 @@ aba da ferramenta; fechar a aba (✕) também a reinicia.
   e vale em qualquer ordem de cliques. Sem um número válido nada é aplicado (o campo avisa). Como a definição é única, com alíquota 0 a base também fica reduzida (a que zerava a base some).
   Se a base da regra colada estiver escondida num bloco if/else ("Linha extra"), o montador não consegue trocar e avisa em vermelho.
 
+**Criar Regra › Ct-e / Conhecimento Nova Versão (v28.5)** — o mesmo montador de Ct-e, mas em **telas, uma de cada vez** (como slides), para quem se perde com tudo numa tela só.
+Ao abrir o **Criar Regra** aparecem dois botões lado a lado: **Ct-e / Conhecimento** (o montador de sempre, **intacto**) e **Ct-e / Conhecimento Nova Versão**. Não precisa de SQL nem de configuração.
+A trilha no topo mostra os 4 passos (dá para clicar para voltar a qualquer um):
+1. **Regra base** — colar a regra que o cliente já usa **ou** escolher uma das regras prontas (as mesmas do montador clássico). A regra é lida na hora ("N cálculos reconhecidos") e já vai para a montagem. Trocar a regra base recomeça a montagem (desmarca as opções do passo 3).
+2. **Campos personalizados** — "Irá utilizar campos personalizados?": **Não** (padrão) ou **Sim**. Com "Sim" aparecem **dois campos separados**, cada um com os nomes internos separados por vírgula (preencha só o que for usar):
+   - **Ct-e / Contrato de Frete** (criados em *Transporte › Configurações › Tipos Valores Outros*): vão para a caixa **Utiliza Valores outros (Campos Personalizados)?** da montagem, como chips rosa arrastáveis, e entram na regra como `obt('outrosValores[nome]')`.
+   - **Tabela de Preços** (criados em *Transporte › Tabelas de Preços › Tabela de preços Valores Outros*): vão para a faixa amarela **Campos personalizados da Tabela de Preços**, logo abaixo da caixa rosa, como chips amarelos arrastáveis, e entram na regra **sem `obt`**, como `tabelaPrecos.nome`.
+
+   Se a regra colada já usa `outrosValores[nome]`, a tela oferece **Usar estes nomes** (no campo do Ct-e). Nome = letras, números e `_` (sem espaço nem símbolo; os inválidos são listados no campo certo e ignorados); "Sim" sem nenhum nome válido nos dois campos não deixa avançar (um só campo preenchido basta).
+   Na regra feita com a IA, os dois grupos vão em linhas separadas do pedido, com o formato certo de cada um.
+3. **O que configurar** — no topo "Se preferir montar a regra manualmente, apenas clique em avançar para o próximo passo"; a pergunta **O que deseja configurar ou alterar?** com uma caixa que **filtra** todo o "Monte com um clique"
+   (por começo de palavra, sem diferenciar acento: `st`, `ton`, `gnre`, `reduzir`, `pedagio`…; **Esc** limpa o filtro); os grupos em negrito com as opções; uma faixa "Marcadas" (com ✕ para desmarcar, mesmo com o filtro escondendo a opção); e ao lado a caixa
+   **Ou se preferir, explique diretamente para a IA o que o cliente necessita, seja bem claro**. Rodapé: **Gerar Regra** e **Avançar para montagem manual**.
+   - **Gerar Regra** vai direto: se há texto para a IA, **a IA monta** (levando junto a regra base e o que foi marcado — o mesmo caminho do "Gerar com IA" do clássico, e os campos personalizados do passo 2 vão para a IA com o formato `outrosValores[nome]`);
+     se só há marcações e/ou regra base, gera **sem IA**; sem nada marcado, escrito ou carregado, avisa. Opção marcada que pede número (ex.: % da redução) ainda sem valor bloqueia o Gerar **e** o Avançar, levando ao campo.
+4. **Montagem manual** — a área de montagem de sempre (é o **mesmo HTML** do montador clássico: `_cteHtmlAreaMontagem()` em `tutorial-regras.js`), com o tutorial passo a passo (só os passos desta tela; abre sozinho na 1ª vez, a não ser que já tenham pedido para não mostrar).
+   Se houver instruções para a IA escritas no passo 3, um aviso lembra que o **Gerar Regra Montada** não as usa e oferece o botão **Gerar com a IA**.
+
+O **Voltar** do cartão da regra gerada (com ou sem IA) reabre o assistente **na tela em que estava e com tudo restaurado** (opções, números, filtro, textos e a montagem — inclusive o que foi arrastado à mão); se a IA falhar, o cartão de erro também traz o Voltar.
+O log da ferramenta registra **"Criar Regra - Ct-e (Nova Versão)"** (o clássico segue como "Ct-e"), então dá para contar o uso de cada versão na aba **Logs/Análise**.
+Arquivos: `js/app/regra-cte-passos.js` e `css/regra-passos.css` (novos); o resto reaproveita o `tutorial-regras.js`/`assistente-regras.js` — as 4 telas existem juntas na página (só uma visível) com os mesmos ids do clássico, então colar, regras prontas, opções, arrastar e gerar são feitos pelas mesmas funções `_cte*`.
+
+**Lateral — Blog e Repositório ocultos por padrão (v28.5):** os atalhos **Blog** e **Repositório** deixaram de aparecer na barra lateral (e no botão **+**), para as demais opções caberem sem rolar. Quem já usava o sistema também recebe a mudança
+**uma única vez** (marcador `railDefaults` nas preferências, que acompanham a pasta do Meu Espaço); depois disso vale o que a pessoa escolher em **Ajustes › Ferramentas visíveis** — é só clicar em **Blog**/**Repositório** ali para trazê-los de volta
+(**Restaurar padrões** volta a ocultá-los). Ocultos, ainda dá para abri-los digitando no **Ctrl K** (aparecem com a marca "oculta"). Para mudar o padrão no código: `HIDDEN_DEFAULT` em `js/ui/preferencias.js` (e some 1 em `RAIL_DEFAULTS` para a mudança chegar de novo a quem já tem preferências salvas).
+
 **Registro (log) — como funciona:**
 - **Toda pergunta feita no chat gera a sua própria linha de log — a 1ª da conversa e também as seguintes** (desde a v28.3). É isso que faz o log contar 100% do uso:
   cada pergunta tem a sua resposta (`fonte` = `ia` ou `rapida`, `modelo`), vai para a **Revisão** como qualquer outra e recebe o **seu** 👍/👎 (o botão de cada resposta
@@ -404,6 +430,8 @@ inserir/atualizar `logs` e inserir/apagar `machine_learning` (como já fazia). S
 | Um usuário novo diz "Usuário ou senha incorretos" | Confira se você fez **commit + push** do `config/admin-config.js` depois de **Salvar no arquivo…** e espere ~1 min. Usuário e senha não diferenciam maiúsculas/acentos no usuário (só na senha). Se foi desativado, a tela avisa depois de acertar a senha. |
 | Um usuário esqueceu a senha | Sistema → Usuários e acessos → botão **Senha** (gera uma nova) → Salvar no arquivo… → push. |
 | Um usuário diz que "não tem acesso a nenhuma aba" ou não vê uma aba | Sistema → Usuários e acessos → **Editar** → marque as abas → Salvar no arquivo… → push. Ele recebe a mudança ao recarregar (ou em até 5 min). |
+| No console aparece `[Continuação 1/3] Resposta truncada detectada — continuando automaticamente...` (ao gerar uma regra com a IA) | Não é erro: a IA parou no **limite de tokens** da resposta e o sistema pediu o resto sozinho (até 3 vezes). Nos geradores de regra (Ct-e clássico e Nova Versão, Contrato de Frete, Faturamento) o limite é `REGRAS_MAX_TOKENS` (8000, no começo de `js/app/assistente-regras.js`; era 3000 até a v28.5.0). Se ainda aparecer, a regra é muito grande ou o modelo escreve demais: suba o valor (no Gemini o teto é 8192) ou troque o modelo em **IA / MCP**. Desde a v28.5.1 a emenda das partes preserva o espaço/quebra de linha da divisa (antes podia colar palavras e até juntar uma linha de código num comentário `//…`). |
+| Sumiram o **Blog** e o **Repositório** da lateral | É o padrão desde a v28.5. Para trazê-los de volta: **Ajustes** (ícone na base da lateral) → **Ferramentas visíveis** → clique em **Blog** e/ou **Repositório**. Também abrem pelo **Ctrl K**. |
 | Mudei a IA e nada mudou para os usuários | Confirme o commit/push do `config/mcp-config.js` e aguarde ~1 min; o sistema confere ao abrir e a cada 2 h. No painel: **IA / MCP → Conferir arquivo publicado agora**. |
 | Simulador fica em "carregando a base…" | A base leva alguns segundos para carregar; se passar de 1 min, clique em **Recarregar** e confira a internet. |
 | Tela branca ao abrir `index.html` pelo disco | Confira se a pasta está completa (js/, css/, config/). Rode `tools/verificar-projeto.ps1`. |

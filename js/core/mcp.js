@@ -296,7 +296,7 @@ async function callMCPSemPensamento(messages, config = {}, maxTentativas = 3) {
         const { texto, eraPensamento } = filtrarPensamentoAlto(result.text);
         if (!eraPensamento) {
             const truncado = result.finishReason === 'length' || result.finishReason === 'MAX_TOKENS';
-            const finalText = truncado ? await _continuarResposta(messages, texto, config) : texto;
+            const finalText = truncado ? await _continuarResposta(messages, texto, config, 3, result.text) : texto;
             return { ...result, text: finalText };
         }
         console.warn('[AntiPensamento] tentativa ' + t + '/' + maxTentativas + ' — reprocessando...');
@@ -305,8 +305,11 @@ async function callMCPSemPensamento(messages, config = {}, maxTentativas = 3) {
     throw new Error('Resposta nao obtida apos ' + maxTentativas + ' tentativas.');
 }
 
-async function _continuarResposta(messagesOriginais, textoTruncado, config, maxContinuacoes = 3) {
+// brutoAnterior = o texto da parte cortada EXATAMENTE como a IA mandou (com o espaço/quebra de linha do fim). filtrarPensamentoAlto() faz trim(), então sem isso a emenda colava
+// palavras e linhas: "def(\"x\"," + "obt(...)" → "def(\"x\",obt(...)" e, pior, "//comentário\n" + "if (...)" → "//comentárioif (...)" (o código vira comentário).
+async function _continuarResposta(messagesOriginais, textoTruncado, config, maxContinuacoes = 3, brutoAnterior = textoTruncado) {
     let texto = textoTruncado;
+    let bruto = String(brutoAnterior == null ? textoTruncado : brutoAnterior);
     let msgs = messagesOriginais;
     for (let i = 1; i <= maxContinuacoes; i++) {
         try {
@@ -318,7 +321,9 @@ async function _continuarResposta(messagesOriginais, textoTruncado, config, maxC
             ];
             const cont = await callCurrentMCP(contMsgs, config);
             const { texto: cont_texto } = filtrarPensamentoAlto(cont.text);
-            texto = texto + cont_texto;
+            const contBruto = String(cont.text || '');
+            texto = texto + (bruto.match(/\s*$/)[0] + contBruto.match(/^\s*/)[0]) + cont_texto;   // emenda com o espaço/quebra que existia na divisa
+            bruto = contBruto;
             // para se a continuação também não foi cortada
             const novamenteTruncado = cont.finishReason === 'length' || cont.finishReason === 'MAX_TOKENS';
             if (!novamenteTruncado) break;
