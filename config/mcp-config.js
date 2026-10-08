@@ -11,9 +11,9 @@
    DevTools; use só chaves gratuitas/limitadas (ver README).
    ═══════════════════════════════════════════════════════════════════════════ */
 window.BSOFT_MCP_CONFIG = {
-  "versao": 3,
-  "atualizadoEm": "2026-10-06T15:29:12.265Z",
-  "atualizadoPor": "admin",
+  "versao": 4,
+  "atualizadoEm": "2026-10-08T20:10:49.326Z",
+  "atualizadoPor": "Lucas",
   "provedor": {
     "tipo": "openrouter",
     "baseUrl": "https://openrouter.ai/api/v1",
@@ -25,7 +25,7 @@ window.BSOFT_MCP_CONFIG = {
   },
   "cadeia": [
     {
-      "modelo": "inclusionai/ling-3.0-flash-sante:free",
+      "modelo": "laguna-s-2.1:free",
       "ativo": true
     },
     {
@@ -60,6 +60,8 @@ window.BSOFT_MCP_CONFIG = {
     "ativo": true,
     "limiarLexical": 0.65,
     "limiarSemantico": 0.92,
-    "minTermos": 2
+    "minTermos": 2,
+    "usarNoContexto": true,
+    "contextoMax": 3
   }
 };
