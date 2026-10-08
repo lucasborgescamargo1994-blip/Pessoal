@@ -188,8 +188,8 @@
 
 /* ── rodapé ── */
 .cn-rodape { flex-shrink: 0; padding: 10px 20px 12px; background: var(--surface, #fff); border-top: 1px solid var(--cn-bd); box-shadow: 0 -6px 14px -10px rgba(15, 23, 42, .25); }
-.cn-rodape-btns { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-.cn-rodape-dir { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; margin-left: auto; }
+.cn-rodape-btns { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.cn-rodape-dir { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; justify-content: flex-end; margin-left: auto; }
 .cn-msg { margin: 0 0 8px; font-size: 13.5px; font-weight: 700; line-height: 1.45; color: var(--cn-mudo); }
 .cn-msg:empty { display: none; }
 .cn-msg.erro { color: #b91c1c; }
@@ -208,6 +208,18 @@
 .cn-btn.sec:hover { background: var(--cn-fundo); border-color: #94a3b8; }
 .cn-btn.mini { padding: 6px 14px; font-size: 13px; border-radius: 9px; color: #fff; background: linear-gradient(135deg, #f59e0b, #d97706); }
 .cn-btn.peq { padding: 8px 16px; font-size: 13.5px; border-radius: 10px; }
+/* tela 3: botão "Avançar para montagem manual" travado (cinza) até marcar "Desejo fazer a montagem manual da regra" — o rodapé alinha tudo pela base */
+.cn-manual { display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
+.cn-manual-chk { display: flex; align-items: center; gap: 9px; padding: 6px 12px; border: 2px solid var(--cn-bd); border-radius: 10px; background: #fff; font-size: 14px; font-weight: 700; color: var(--cn-txt); cursor: pointer; user-select: none; transition: border-color .15s, background .15s; }
+.cn-manual-chk:hover { border-color: #93c5fd; }
+.cn-manual-chk input { width: 20px; height: 20px; accent-color: var(--cn-azul); cursor: pointer; flex: 0 0 auto; }
+.cn-manual-chk:has(input:checked) { border-color: var(--cn-azul); background: var(--cn-azul-cl); }
+.cn-manual-chk.chama { animation: cnChama .9s ease-in-out 2; }
+@keyframes cnChama { 0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); border-color: var(--cn-bd); } 50% { box-shadow: 0 0 0 5px rgba(245, 158, 11, .45); border-color: #f59e0b; } }
+/* sem movimento (preferência do sistema OU "Animações e vidro: Desligadas" do Personalizar, que zera toda animação): o destaque vira estático */
+@media (prefers-reduced-motion: reduce) { .cn-manual-chk.chama { animation: none; border-color: #f59e0b; box-shadow: 0 0 0 4px rgba(245, 158, 11, .45); } }
+html[data-efeitos="zero"] .cn-manual-chk.chama { animation: none; border-color: #f59e0b; box-shadow: 0 0 0 4px rgba(245, 158, 11, .45); }
+.cn-btn.bloq, .cn-btn.bloq:hover { color: #9ca3af; background: #e5e7eb; border-color: #e5e7eb; box-shadow: none; cursor: not-allowed; transform: none; }
 
 /* ── telas estreitas ── */
 @media (max-width: 960px) {
@@ -226,5 +238,6 @@
     .cn-h2 { font-size: 22px; }
     .cn-escolhas { grid-template-columns: 1fr; }
     .cn-rodape-btns, .cn-rodape-dir { width: 100%; }
+    .cn-manual { flex: 1 1 100%; }
     .cn-btn { flex: 1 1 100%; }
 }
