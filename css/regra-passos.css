@@ -1,0 +1,230 @@
+@charset "UTF-8";
+/* Criar Regra › "Ct-e / Conhecimento Nova Versão": assistente em telas (uma por vez, como slides).
+   O HTML é montado por js/app/regra-cte-passos.js dentro da janela ampla do criador de regras (#builderModalBody).
+   Tudo usa o prefixo .cn- para não encostar no montador clássico (.builder-grid-*, .wizard-*). */
+
+.cn-card {
+    --cn-azul: #2563eb; --cn-azul-esc: #1e40af; --cn-azul-cl: #eff6ff; --cn-azul-bd: #bfdbfe;
+    --cn-verde: #16a34a; --cn-verde-esc: #15803d; --cn-roxo: #7c3aed; --cn-roxo-esc: #5b21b6;
+    --cn-txt: #1e293b; --cn-mudo: #64748b; --cn-bd: #e2e8f0; --cn-fundo: #f8fafc;
+    background: var(--surface, #fff); color: var(--cn-txt);
+}
+/* o atributo hidden precisa vencer qualquer display:flex/grid daqui */
+.cn-card [hidden] { display: none !important; }
+
+/* ── topo: título + trilha dos passos ── */
+.cn-topo {
+    flex-shrink: 0; display: flex; align-items: center; gap: 14px 22px; flex-wrap: wrap;
+    padding: 10px 64px 10px 20px; background: var(--cn-azul-cl); border-bottom: 1px solid var(--cn-azul-bd);
+}
+.cn-titulo { display: flex; align-items: center; gap: 9px; font-size: 14.5px; font-weight: 800; color: var(--cn-azul-esc); white-space: nowrap; }
+.cn-selo {
+    font-size: 10.5px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; color: #fff;
+    background: linear-gradient(135deg, var(--cn-roxo), var(--cn-roxo-esc)); border-radius: 999px; padding: 2px 10px;
+}
+.cn-passos { list-style: none; display: flex; align-items: center; gap: 6px; margin: 0 0 0 auto; padding: 0; flex-wrap: wrap; }
+.cn-passo-btn {
+    display: inline-flex; align-items: center; gap: 8px; padding: 4px 14px 4px 4px; border: 2px solid var(--cn-azul-bd); border-radius: 999px;
+    background: #fff; color: #475569; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer;
+    transition: background .15s, border-color .15s, color .15s;
+}
+.cn-passo-btn:hover { border-color: #93c5fd; background: #f8fbff; }
+.cn-passo-btn:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
+.cn-num {
+    width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; flex: 0 0 auto;
+    background: #dbeafe; color: var(--cn-azul-esc); font-size: 13px; font-weight: 800;
+}
+.cn-passo-btn.feito .cn-num { background: var(--cn-verde); color: #fff; }
+.cn-passo-btn.atual { background: var(--cn-azul); border-color: var(--cn-azul); color: #fff; }
+.cn-passo-btn.atual .cn-num { background: #fff; color: var(--cn-azul); }
+
+/* ── corpo: cada tela é um "slide" ── */
+.cn-corpo { flex: 1; min-height: 0; overflow-y: auto; background: var(--surface, #fff); }
+.cn-slide { animation: cnEntra .3s ease-out; }
+@keyframes cnEntra { from { opacity: 0; transform: translateX(22px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .cn-slide { animation: none; } }
+.cn-wrap { max-width: 1020px; margin: 0 auto; padding: 26px 24px 40px; }
+.cn-slide-montagem .cn-wrap { max-width: none; padding: 14px 20px 30px; }
+
+.cn-etapa { font-size: 11.5px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; color: var(--cn-azul); margin-bottom: 4px; }
+.cn-h2 { margin: 0 0 8px; font-size: 27px; line-height: 1.2; font-weight: 900; color: var(--cn-txt); outline: none; }
+.cn-h2.pequeno { font-size: 21px; margin-bottom: 4px; }
+.cn-sub { margin: 0 0 20px; font-size: 15.5px; line-height: 1.55; color: #475569; }
+.cn-sub b { color: var(--cn-txt); }
+.cn-nota { margin-top: 18px; font-size: 13px; color: var(--cn-mudo); }
+.cn-dica { margin-top: 10px; font-size: 13px; line-height: 1.5; color: var(--cn-mudo); }
+
+/* ── cartões ── */
+.cn-cartao { background: var(--cn-fundo); border: 2px solid var(--cn-bd); border-radius: 16px; padding: 18px; min-width: 0; }
+.cn-cartao-titulo { display: block; margin: 0 0 10px; font-size: 15.5px; font-weight: 800; color: var(--cn-txt); line-height: 1.35; }
+.cn-colunas { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 14px; align-items: stretch; }
+.cn-ou { align-self: center; font-size: 14px; font-weight: 800; color: var(--cn-mudo); text-transform: uppercase; letter-spacing: .6px; }
+
+.cn-codigo {
+    width: 100%; min-height: 250px; box-sizing: border-box; padding: 12px; border: 2px solid var(--cn-bd); border-radius: 12px; background: #fff;
+    font-family: Consolas, 'Courier New', monospace; font-size: 12.5px; line-height: 1.5; color: #0f172a; resize: vertical;
+}
+.cn-codigo:focus, .cn-input:focus, .cn-filtro:focus, .cn-ia-texto:focus { outline: none; border-color: var(--cn-azul); box-shadow: 0 0 0 3px rgba(37, 99, 235, .18); }
+.cn-resumo { min-height: 18px; margin-top: 10px; font-size: 13px; line-height: 1.45; color: var(--cn-mudo); }
+.cn-resumo.ok { color: var(--cn-verde-esc); font-weight: 700; }
+.cn-resumo.aviso { color: #b45309; font-weight: 700; }
+
+/* regras prontas */
+.cn-prontas { display: flex; flex-direction: column; gap: 10px; }
+.cn-pre {
+    display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 13px 14px; border: 2px solid var(--cn-bd); border-radius: 12px;
+    background: #fff; cursor: pointer; font: inherit; font-size: 13.5px; font-weight: 700; line-height: 1.35; color: #334155;
+    transition: border-color .15s, background .15s, box-shadow .15s;
+}
+.cn-pre:hover { border-color: #93c5fd; background: #f8fbff; }
+.cn-pre:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
+.cn-pre.sel { border-color: var(--cn-azul); background: var(--cn-azul-cl); color: #1e3a8a; box-shadow: 0 0 0 3px rgba(37, 99, 235, .12); }
+.cn-pre-ic { font-size: 20px; flex: 0 0 auto; }
+.cn-pre-tx { flex: 1; min-width: 0; }
+.cn-pre-ok { display: none; flex: 0 0 auto; width: 24px; height: 24px; border-radius: 50%; place-items: center; background: var(--cn-azul); color: #fff; font-size: 13px; font-weight: 800; }
+.cn-pre.sel .cn-pre-ok { display: grid; }
+
+/* ── passo 2: campos personalizados ── */
+.cn-escolhas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 18px; max-width: 640px; }
+.cn-escolha {
+    display: flex; align-items: flex-start; gap: 12px; padding: 16px; border: 2px solid var(--cn-bd); border-radius: 14px; background: #fff; cursor: pointer;
+    transition: border-color .15s, background .15s;
+}
+.cn-escolha:hover { border-color: #93c5fd; }
+.cn-escolha:has(input:checked) { border-color: var(--cn-azul); background: var(--cn-azul-cl); }
+.cn-escolha input { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--cn-azul); flex: 0 0 auto; }
+.cn-escolha-corpo { display: flex; flex-direction: column; gap: 3px; }
+.cn-escolha-corpo b { font-size: 17px; color: var(--cn-txt); }
+.cn-escolha-corpo small { font-size: 13px; color: var(--cn-mudo); line-height: 1.4; }
+.cn-input {
+    width: 100%; box-sizing: border-box; padding: 13px 14px; border: 2px solid #f9a8d4; border-radius: 12px; background: #fff;
+    font-family: Consolas, 'Courier New', monospace; font-size: 15px; color: #9d174d;
+    min-height: 88px; line-height: 1.5; resize: vertical;
+}
+/* tela 2: dois campos lado a lado — Ct-e / Contrato de Frete (rosa) e Tabela de Preços (amarelo) */
+.cn-campos-grupo { max-width: 980px; }
+.cn-campos-instr { margin: 0 0 12px; font-size: 14.5px; font-weight: 700; line-height: 1.45; color: var(--cn-txt); }
+.cn-campos-duplo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.cn-campos-box { background: #fdf2f8; border-color: #f9a8d4; }
+.cn-campos-box.cn-tabela { background: #fffbeb; border-color: #fbbf24; }
+.cn-campos-origem { margin: -4px 0 10px; font-size: 12.5px; line-height: 1.4; color: var(--cn-mudo); }
+.cn-input.cn-tabela { border-color: #fbbf24; color: #92400e; }
+.cn-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.cn-chips:empty { display: none; }
+.cn-chip-campo {
+    display: inline-block; padding: 5px 13px; border: 1.5px solid #f9a8d4; border-radius: 16px; background: #fff;
+    font-family: Consolas, 'Courier New', monospace; font-size: 13px; font-weight: 700; color: #9d174d;
+}
+.cn-chip-campo.cn-tabela { border-color: #fbbf24; color: #92400e; }
+/* faixa da montagem com os campos personalizados da Tabela de Preços (logo abaixo da caixa "Utiliza Valores outros") */
+.cn-tab-custom { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; margin: 0 0 10px; padding: 6px 12px; border: 1.5px solid #fbbf24; border-radius: 8px; background: #fffbeb; }   /* numa linha só: o cabeçalho fixo da montagem já é alto */
+.cn-tab-custom-t { margin: 0; font-size: 11px; font-weight: 800; letter-spacing: .3px; text-transform: uppercase; color: #92400e; }
+.cn-tab-custom-t span { font-weight: 600; text-transform: none; }
+.cn-tab-custom .cn-chips { margin-top: 0; gap: 6px; }
+.cn-aviso { margin-top: 10px; font-size: 13px; line-height: 1.45; color: var(--cn-mudo); }
+.cn-aviso:empty { display: none; }
+.cn-aviso.erro { color: #b91c1c; font-weight: 700; }
+.cn-sugestao {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; max-width: 760px; margin: 0 0 16px; padding: 12px 14px;
+    border: 2px solid #fde68a; border-radius: 12px; background: #fffbeb; color: #78350f; font-size: 14px; line-height: 1.45;
+}
+
+/* ── passo 3: o que configurar ── */
+.cn-topo-aviso {
+    display: flex; align-items: center; gap: 10px; margin: 0 0 20px; padding: 13px 16px; border: 2px solid #fde047; border-radius: 12px;
+    background: #fef9c3; color: #713f12; font-size: 15px; font-weight: 700; line-height: 1.4;
+}
+.cn-filtro {
+    width: 100%; box-sizing: border-box; margin: 4px 0 12px; padding: 15px 16px; border: 2px solid var(--cn-azul-bd); border-radius: 14px; background: #fff;
+    font: inherit; font-size: 16px; color: var(--cn-txt);
+}
+.cn-filtro-info { min-height: 18px; margin: -4px 0 8px; font-size: 12.5px; color: var(--cn-mudo); }
+.cn-marcadas {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; padding: 10px 12px; border: 2px solid #86efac; border-radius: 12px;
+    background: #f0fdf4; font-size: 13.5px; color: #166534;
+}
+.cn-marcadas-t { font-weight: 800; }
+.cn-chip-marcada {
+    display: inline-flex; align-items: center; gap: 6px; padding: 3px 4px 3px 11px; border: 1.5px solid #86efac; border-radius: 16px; background: #fff;
+    font-size: 13px; font-weight: 700; color: #166534;
+}
+.cn-chip-marcada.falta { border-color: #fcd34d; color: #92400e; background: #fffbeb; }
+.cn-chip-x { border: none; background: none; cursor: pointer; font-size: 13px; line-height: 1; padding: 3px 6px; color: inherit; border-radius: 50%; }
+.cn-chip-x:hover { background: rgba(0, 0, 0, .08); }
+.cn-link { border: none; background: none; padding: 2px 4px; font: inherit; font-size: 13px; font-weight: 700; color: var(--cn-azul); text-decoration: underline; cursor: pointer; }
+
+.cn-colunas-opcoes { display: grid; grid-template-columns: minmax(0, 1fr) 370px; gap: 24px; align-items: start; }
+.cn-legenda { margin: 0 0 12px; font-size: 13px; font-weight: 800; letter-spacing: .4px; text-transform: uppercase; color: var(--cn-mudo); }
+.cn-grupo { border: 2px solid var(--cn-bd); border-radius: 16px; background: #fff; margin: 0 0 16px; overflow: hidden; }
+.cn-grupo-titulo {
+    margin: 0; padding: 13px 18px; font-size: 17px; line-height: 1.3; font-weight: 900; color: var(--cn-azul-esc);
+    background: var(--cn-azul-cl); border-bottom: 2px solid var(--cn-azul-bd);
+}
+.cn-opcao { border-top: 1px solid #eef2f7; }
+.cn-opcao:first-child { border-top: none; }
+.cn-opcao-rotulo { display: flex; align-items: center; gap: 13px; padding: 13px 18px; cursor: pointer; font-size: 15.5px; line-height: 1.35; color: var(--cn-txt); }
+.cn-opcao-rotulo:hover { background: var(--cn-fundo); }
+.cn-opcao-rotulo input { width: 21px; height: 21px; accent-color: var(--cn-azul); flex: 0 0 auto; cursor: pointer; }
+.cn-opcao:has(input:checked) { background: #f0f9ff; }
+.cn-opcao > [id^="wCteOpcEntradaWrap_"] { margin: 0 0 14px 52px !important; }
+.cn-sem-resultado { padding: 22px; border: 2px dashed var(--cn-bd); border-radius: 14px; text-align: center; font-size: 14.5px; line-height: 1.5; color: var(--cn-mudo); }
+
+.cn-ia { position: sticky; top: 16px; align-self: start; padding: 18px; border: 2px solid #c4b5fd; border-radius: 16px; background: #faf5ff; }
+.cn-ia-titulo { display: block; margin: 0 0 12px; font-size: 15.5px; font-weight: 800; line-height: 1.4; color: var(--cn-roxo-esc); }
+.cn-ia-texto {
+    width: 100%; min-height: 260px; box-sizing: border-box; padding: 12px; border: 2px solid #ddd6fe; border-radius: 12px; background: #fff;
+    font: inherit; font-size: 14.5px; line-height: 1.5; color: var(--cn-txt); resize: vertical;
+}
+
+/* ── passo 4: montagem manual ── */
+.cn-montagem-topo { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin: 0 0 12px; }
+.cn-montagem-topo .cn-sub { margin: 0; font-size: 14px; max-width: 760px; }
+.cn-tour.tour-btn-abrir { width: auto; margin: 0; padding: 9px 16px; flex: 0 0 auto; }
+.cn-montagem-acoes { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex: 0 0 auto; }
+.cn-ia-aviso {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px 16px; flex-wrap: wrap; margin: 0 0 14px; padding: 12px 14px;
+    border: 2px solid #c4b5fd; border-radius: 12px; background: #faf5ff; color: #4c1d95; font-size: 13.5px; line-height: 1.5;
+}
+
+/* ── rodapé ── */
+.cn-rodape { flex-shrink: 0; padding: 10px 20px 12px; background: var(--surface, #fff); border-top: 1px solid var(--cn-bd); box-shadow: 0 -6px 14px -10px rgba(15, 23, 42, .25); }
+.cn-rodape-btns { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.cn-rodape-dir { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; margin-left: auto; }
+.cn-msg { margin: 0 0 8px; font-size: 13.5px; font-weight: 700; line-height: 1.45; color: var(--cn-mudo); }
+.cn-msg:empty { display: none; }
+.cn-msg.erro { color: #b91c1c; }
+.cn-msg.aviso { color: #b45309; }
+.cn-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 22px; border: 2px solid transparent; border-radius: 12px;
+    font: inherit; font-size: 15px; font-weight: 800; line-height: 1.2; cursor: pointer; transition: transform .1s, box-shadow .15s, background .15s, border-color .15s;
+}
+.cn-btn:hover { transform: translateY(-1px); }
+.cn-btn:active { transform: none; }
+.cn-btn:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
+.cn-btn.pri { color: #fff; background: linear-gradient(135deg, #3b82f6, var(--cn-azul-esc)); box-shadow: 0 4px 12px -4px rgba(37, 99, 235, .55); }
+.cn-btn.ok { color: #fff; background: linear-gradient(135deg, #22c55e, var(--cn-verde-esc)); box-shadow: 0 4px 12px -4px rgba(22, 163, 74, .55); }
+.cn-btn.ia { color: #fff; background: linear-gradient(135deg, #8b5cf6, var(--cn-roxo-esc)); box-shadow: 0 4px 12px -4px rgba(124, 58, 237, .55); }
+.cn-btn.sec { color: #334155; background: #fff; border-color: #cbd5e1; }
+.cn-btn.sec:hover { background: var(--cn-fundo); border-color: #94a3b8; }
+.cn-btn.mini { padding: 6px 14px; font-size: 13px; border-radius: 9px; color: #fff; background: linear-gradient(135deg, #f59e0b, #d97706); }
+.cn-btn.peq { padding: 8px 16px; font-size: 13.5px; border-radius: 10px; }
+
+/* ── telas estreitas ── */
+@media (max-width: 960px) {
+    .cn-colunas { grid-template-columns: 1fr; }
+    .cn-campos-duplo { grid-template-columns: 1fr; }
+    .cn-ou { text-align: center; }
+    .cn-colunas-opcoes { grid-template-columns: 1fr; }
+    .cn-ia { position: static; }
+}
+@media (max-width: 680px) {
+    .cn-topo { padding-right: 52px; }
+    .cn-passos { margin-left: 0; width: 100%; }
+    .cn-passo-btn:not(.atual) { padding-right: 4px; }
+    .cn-passo-btn:not(.atual) .cn-nome { display: none; }
+    .cn-wrap { padding: 18px 14px 28px; }
+    .cn-h2 { font-size: 22px; }
+    .cn-escolhas { grid-template-columns: 1fr; }
+    .cn-rodape-btns, .cn-rodape-dir { width: 100%; }
+    .cn-btn { flex: 1 1 100%; }
+}
