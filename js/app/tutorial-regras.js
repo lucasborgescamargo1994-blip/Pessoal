@@ -706,7 +706,7 @@ function _renderizarCardRegraCteDndSemIA(codigo){
     const wCard=document.getElementById('wizardRegraDndCard')||document.getElementById('wizardRegraNovaCard');
     const _estadoForm=wCard?_capturarEstadoForm(wCard):null;
     const _cteExtraVoltar=_cteEstadoCanvasParaVoltar();
-    const _extraNova=_nova?{cteNova:{passo:_cnPasso}}:{};
+    const _extraNova=_nova?{cteNova:{passo:_cnPasso,manualOk:_cnManualOk}}:{};
     if(wCard)wCard.remove();
     _fecharBuilderModal();
     const s=Ferr.stream('regra');
@@ -753,7 +753,7 @@ async function enviarWizardRegraDnd(){
     const wCard=document.getElementById('wizardRegraDndCard')||document.getElementById('wizardRegraNovaCard');
     const _estadoForm=wCard?_capturarEstadoForm(wCard):null;
     // O "Voltar" da Nova Versão volta com tudo (área de montagem incluída) e na tela em que a pessoa estava; o do montador clássico segue como sempre (só os campos).
-    const _voltarNova=_nova?{cteExtraDnd:_cteEstadoCanvasParaVoltar(),cteNova:{passo:_cnPasso}}:{};
+    const _voltarNova=_nova?{cteExtraDnd:_cteEstadoCanvasParaVoltar(),cteNova:{passo:_cnPasso,manualOk:_cnManualOk}}:{};
     if(wCard)wCard.remove();
     _fecharBuilderModal();
     ferrMsg('regra', 'system','📄 <strong>Gerando regra de Ct-e...</strong>');

@@ -55,6 +55,7 @@ const CN_BUSCA = {
 let _cnPasso = 0;                 // tela atual (0 a 3)
 let _cnVisitados = new Set([0]);  // telas já abertas (a trilha do topo mostra ✓ nas anteriores)
 let _cnTourVisto = false;         // o tutorial da montagem só abre sozinho 1 vez por abertura da janela
+let _cnManualOk = false;          // "Desejo fazer a montagem manual da regra" (tela 3) marcado: só então o botão "Avançar para montagem manual" é liberado — vale também para a trilha do topo
 
 const _cnEl = id => document.getElementById(id);
 const _cnNorm = s => String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/\p{M}/gu, '');
@@ -141,7 +142,7 @@ function _cnHtmlOpcoes() {
         </section>`).join('');
     return `<section class="cn-slide" id="cnSlide2" aria-labelledby="cnT2" hidden>
       <div class="cn-wrap">
-        <div class="cn-topo-aviso" id="wCteNovaAvisoManual"><span aria-hidden="true">💡</span><span>Se preferir montar a regra manualmente, apenas clique em <b>avançar para o próximo passo</b></span></div>
+        <div class="cn-topo-aviso" id="wCteNovaAvisoManual"><span aria-hidden="true">💡</span><span>Se preferir montar a regra manualmente, marque a opção <b>“Desejo fazer a montagem manual da regra”</b> no rodapé e clique em <b>avançar para montagem manual</b></span></div>
         <div class="cn-etapa">Passo 3 de 4</div>
         <h2 class="cn-h2" id="cnT2" tabindex="-1">O que deseja configurar ou alterar?</h2>
         <input type="search" id="wCteNovaFiltro" class="cn-filtro" placeholder="🔎 Digite para filtrar as opções — ex.: frete, ICMS, seguro, pedágio, GNRE..." autocomplete="off" spellcheck="false" aria-label="O que deseja configurar ou alterar? Digite para filtrar as opções" oninput="_cnFiltrar()" onkeydown="_cnFiltroTecla(event)">
@@ -192,7 +193,7 @@ function mostrarWizardRegraCteNova(queryOriginal) {
     window._cteExtras = [];
     window._cteOpcionaisBase = null;
     window._cteTabelaCustom = [];   // campos personalizados da Tabela de Preços (tela 2); o montador clássico nunca preenche isto
-    _cnPasso = 0; _cnVisitados = new Set([0]); _cnTourVisto = false;
+    _cnPasso = 0; _cnVisitados = new Set([0]); _cnTourVisto = false; _cnManualOk = false;
     const corpo = _cnEl('builderModalBody');
     corpo.innerHTML = '';
     const card = document.createElement('div');
@@ -235,13 +236,40 @@ function _cnIrPara(n, opcoes) {
     if (!(opcoes && opcoes.semFoco)) { const t = _cnEl('cnT' + n); if (t) t.focus({ preventScroll: true }); }
     if (n === 3) _cnTourPrimeiraVez();
 }
-// Para ir adiante a pessoa resolve antes o que ficou pendente: "Sim" sem nenhum nome (tela 2) e opção marcada que pede um número sem valor (tela 3). Voltar é sempre livre.
+// Para ir adiante a pessoa resolve antes o que ficou pendente: "Sim" sem nenhum nome (tela 2), a caixa "Desejo fazer a montagem manual da regra" desmarcada (entrada na
+// montagem, tela 4 — vale pelo botão e pela trilha do topo, para ninguém pular a leitura da tela 3) e opção marcada que pede um número sem valor (tela 3). Voltar é sempre livre.
 function _cnIrPassoClicado(i) {
     if (i > _cnPasso) {
         if (_cnPasso === 1 && !_cnValidarCampos()) return;
+        if (i === 3 && _cnBloqueiaManual()) return;
         if (i === 3 && _cnBloqueiaOpcaoIncompleta()) return;
     }
     _cnIrPara(i);
+}
+// Tentou entrar na montagem manual sem marcar "Desejo fazer a montagem manual da regra": leva à tela 3 (se veio de outra), põe o cursor na caixa, pisca e explica. true = bloqueou.
+function _cnBloqueiaManual() {
+    if (_cnManualOk) return false;
+    if (_cnPasso !== 2) _cnIrPara(2, { semFoco: true });
+    const c = _cnEl('wCteNovaManualOk');
+    if (c) {
+        c.focus();
+        const rot = c.closest('.cn-manual-chk');
+        if (rot) { rot.classList.remove('chama'); void rot.offsetWidth; rot.classList.add('chama'); }   // reinicia a animação de destaque a cada tentativa
+    }
+    _cnMsg('Para ir para a montagem manual, marque primeiro a opção “Desejo fazer a montagem manual da regra”.', 'aviso');
+    return true;
+}
+// Marcar/desmarcar a caixa libera/trava o botão (sem refazer o rodapé, para o foco ficar na caixa).
+function _cnManualMudou(marcado) {
+    _cnManualOk = !!marcado;
+    const rot = document.querySelector('#wCteNovaRodape .cn-manual-chk'); if (rot) rot.classList.remove('chama');   // tira o destaque (com "reduzir movimento" ele é estático e ficaria preso)
+    const b = _cnEl('wCteNovaBtnManual');
+    if (b) {
+        b.classList.toggle('bloq', !_cnManualOk);
+        b.setAttribute('aria-disabled', _cnManualOk ? 'false' : 'true');
+        b.title = _cnManualOk ? '' : 'Marque a opção acima para liberar este botão';
+    }
+    _cnMsg('');
 }
 function _cnProximo() { _cnIrPassoClicado(_cnPasso + 1); }
 function _cnVoltar() { _cnIrPara(_cnPasso - 1); }
@@ -261,7 +289,16 @@ function _cnRodape() {
     const esq = n > 0 ? botao('sec', '_cnVoltar()', '◀ Voltar') : '<span></span>';
     let dir = '';
     if (n < 2) dir = botao('pri', '_cnProximo()', 'Avançar ▶');
-    else dir = botao('ok', '_cnGerar()', '✨ Gerar Regra', 'Gera a regra agora, com o que você marcou e/ou escreveu para a IA') + botao('pri', '_cnProximo()', 'Avançar para montagem manual ▶');
+    else {
+        // Tela 3: "Avançar para montagem manual" (sem seta) vem ANTES do "Gerar Regra" e começa travado e cinza; a caixa de cima o libera. Fica com aria-disabled (e não
+        // "disabled") de propósito: clicar no botão travado explica o que falta em vez de não fazer nada.
+        const ok = _cnManualOk;
+        const manual = `<div class="cn-manual">
+            <label class="cn-manual-chk"><input type="checkbox" id="wCteNovaManualOk"${ok ? ' checked' : ''} onchange="_cnManualMudou(this.checked)"><span>Desejo fazer a montagem manual da regra</span></label>
+            <button type="button" id="wCteNovaBtnManual" class="cn-btn pri${ok ? '' : ' bloq'}" aria-disabled="${ok ? 'false' : 'true'}" onclick="_cnProximo()"${ok ? '' : ' title="Marque a opção acima para liberar este botão"'}>Avançar para montagem manual</button>
+        </div>`;
+        dir = manual + botao('ok', '_cnGerar()', '✨ Gerar Regra', 'Gera a regra agora, com o que você marcou e/ou escreveu para a IA');
+    }
     r.innerHTML = `<div class="cn-msg" id="wCteNovaMsg" role="status" aria-live="polite"></div><div class="cn-rodape-btns">${esq}<div class="cn-rodape-dir">${dir}</div></div>`;
 }
 // Tela 4: quem escreveu instruções para a IA na tela 3 e mesmo assim veio para a montagem manual precisa saber que elas NÃO entram no "Gerar Regra Montada":
@@ -507,7 +544,7 @@ function _cnGerar() {
     if (_cnBloqueiaOpcaoIncompleta()) return;
     if (_cnTemInstrucoes()) { enviarWizardRegraDnd(); return; }
     if (_cteLinhasValidas().length) { _cteGerarRegraCustom(); return; }
-    _cnMsg('Ainda não há nada para gerar: marque pelo menos uma opção, explique para a IA o que precisa ou clique em “Avançar para montagem manual”.', 'aviso');
+    _cnMsg('Ainda não há nada para gerar: marque pelo menos uma opção, explique para a IA o que precisa ou, se prefere montar à mão, marque “Desejo fazer a montagem manual da regra” e clique em “Avançar para montagem manual”.', 'aviso');
 }
 
 // ── tela 4: montagem manual ──────────────────────────────────────────────────
@@ -548,6 +585,7 @@ function _cnAposRestaurar(info) {
     _cnFiltrar();
     const passo = info && Number.isInteger(info.passo) ? info.passo : 2;
     for (let i = 0; i < passo; i++) _cnVisitados.add(i);
+    _cnManualOk = !!(info && info.manualOk) || passo === 3;   // quem estava na montagem já tinha marcado; quem gerou da tela 3 volta com a caixa como estava
+    _cnTourVisto = true;   // quem voltou já viu a montagem: sem tutorial automático (tem que valer ANTES do _cnIrPara, que é quem dispara o tutorial ao chegar na tela 4)
     _cnIrPara(passo, { semFoco: true });
-    _cnTourVisto = true;   // quem voltou já viu a montagem: sem tutorial automático
 }
