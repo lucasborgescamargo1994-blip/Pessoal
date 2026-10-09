@@ -602,6 +602,12 @@ const CTE_OPCOES_MONTAGEM=[
         {id:'gris_merc_peso', label:'Em cima do total peso mercadorias', codigo:'if (tabelaPrecos.percGris > 0)\ndef("Gris", tabelaPrecos.percGris * obt("merc_quantKg[]"));'}
     ]}
 ];
+// Todos os grupos de opções "monte com um clique" que as funções _cte* precisam percorrer: os de CTE_OPCOES_MONTAGEM (que o montador clássico desenha) mais os que SÓ o
+// "Ct-e / Conhecimento Nova Versão" desenha (CN_OPCOES_DEMAIS, em js/app/regra-cte-passos.js). No montador clássico os ids desses últimos não existem na tela, então para ele
+// nada muda: cada função pula o que não encontra.
+function _cteGruposOpcoes(){
+    return typeof CN_OPCOES_DEMAIS!=='undefined' ? CTE_OPCOES_MONTAGEM.concat(CN_OPCOES_DEMAIS) : CTE_OPCOES_MONTAGEM;
+}
 let _wizardRegraDndQuery='';
 function _cteChip(c,corBorda,corFundo,corTexto){
     return `<span class="_cte-chip" draggable="true" data-campo="${c.campo}" title="${escapeHtml(c.campo)}" ondragstart="_cteDragStart(event)" style="display:inline-block;padding:6px 12px;background:${corFundo};border:1.5px solid ${corBorda};border-radius:16px;font-size:12px;cursor:grab;user-select:none;color:${corTexto};">${escapeHtml(c.label)}</span>`;

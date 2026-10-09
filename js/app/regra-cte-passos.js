@@ -52,6 +52,45 @@ const CN_BUSCA = {
     gris_merc_peso:     'gris gerenciamento risco percentual % tabela precos mercadorias peso kg'
 };
 
+// ── "Demais opções": as contas prontas "Somar X no Y" ─────────────────────────
+// Só esta versão desenha este grupo, no FIM da lista (o montador clássico não): uma opção (caixinha) para cada "Somar <campo> no <campo>", para quem digita no filtro
+// "Somar ICMS" já ver "Somar ICMS no Frete Valor". Marcada, a opção soma o campo dentro da conta que a regra JÁ faz do campo de destino (ver _aplicarSomaEmCampo).
+// Ficam de fora: somar um campo nele mesmo (ex.: Total do Serviço no Total Serviço, que dobraria o valor) e o Valor do ICMS na Base de Cálculo (é a base que gera o ICMS).
+// "Somar ICMS no Total Prestação" já existia (icms_somar, grupo do ICMS): continua sendo ela — a mesma opção — só que aparece aqui, junto das outras.
+const CN_TITULO_DEMAIS = '➕ Demais opções';
+const CN_SOMA_FONTES = {
+    valorICMS:                { curto: 'ICMS',             busca: 'icms imposto valor' },
+    valoresOutros:            { curto: 'Outros',           busca: 'outros valores' },
+    valorPedagioConhecimento: { curto: 'Pedágio',          busca: 'pedagio' },
+    Gris:                     { curto: 'Gris',             busca: 'gris gerenciamento risco' },
+    diaria:                   { curto: 'Diária',           busca: 'diaria' },
+    valorSeguro:              { curto: 'Seguro',           busca: 'seguro' },
+    valorSeguroAduaneiro:     { curto: 'Seg. Aduaneiro',   busca: 'seguro aduaneiro' },
+    totalServico:             { curto: 'Total do Serviço', busca: 'total servico' },
+    totalPrestacao:           { curto: 'Total Prestação',  busca: 'total prestacao' }
+};
+const CN_SOMA_ALVOS = [
+    { campo: 'valorFrete',     nome: 'Frete Valor',     prep: 'no', busca: 'frete valor',     fontes: ['valorICMS', 'valoresOutros', 'valorPedagioConhecimento', 'Gris', 'diaria', 'valorSeguro', 'valorSeguroAduaneiro', 'totalServico', 'totalPrestacao'] },
+    { campo: 'baseCalculo',    nome: 'Base de Cálculo', prep: 'na', busca: 'base calculo bc', fontes: ['valoresOutros', 'valorPedagioConhecimento', 'Gris', 'diaria', 'valorSeguro', 'valorSeguroAduaneiro', 'totalServico', 'totalPrestacao'] },
+    { campo: 'totalServico',   nome: 'Total Serviço',   prep: 'no', busca: 'total servico',   fontes: ['valorICMS', 'valoresOutros', 'valorPedagioConhecimento', 'Gris', 'diaria', 'valorSeguro', 'valorSeguroAduaneiro', 'totalPrestacao'] },
+    { campo: 'totalPrestacao', nome: 'Total Prestação', prep: 'no', busca: 'total prestacao', fontes: ['valorICMS', 'valoresOutros', 'valorPedagioConhecimento', 'Gris', 'diaria', 'valorSeguro', 'valorSeguroAduaneiro', 'totalServico'] }
+];
+// { ref } = opção que já existe em CTE_OPCOES_MONTAGEM (só é mostrada aqui); as demais são geradas e aplicadas por _cteAplicarOpcionais (modo:'somarEm').
+const CN_SOMA_BLOCOS = CN_SOMA_ALVOS.map(a => ({
+    titulo: 'Somar ' + a.prep + ' ' + a.nome,
+    itens: a.fontes.map(f => (a.campo === 'totalPrestacao' && f === 'valorICMS')
+        ? { ref: 'icms_somar' }
+        : {
+            id: 'somar_' + a.campo + '_' + f,
+            label: 'Somar ' + CN_SOMA_FONTES[f].curto + ' ' + a.prep + ' ' + a.nome,
+            grupoExclusivo: 'somar_' + a.campo + '_' + f,   // cada uma tem o seu: dá para marcar várias ao mesmo tempo
+            modo: 'somarEm', campoAlvo: a.campo, alvoNome: a.nome, termoNovo: { termo: "obt('" + f + "')", acao: '+' },
+            buscaExtra: 'somar soma adicionar incluir acrescentar ' + CN_SOMA_FONTES[f].busca + ' ' + a.busca
+        })
+}));
+const CN_OPCOES_DEMAIS = [{ titulo: CN_TITULO_DEMAIS, itens: CN_SOMA_BLOCOS.flatMap(b => b.itens).filter(it => !it.ref) }];
+const CN_MOVIDAS_PARA_DEMAIS = CN_SOMA_BLOCOS.flatMap(b => b.itens).filter(it => it.ref).map(it => it.ref);   // saem do grupo de origem (aqui) para não aparecerem duas vezes
+
 let _cnPasso = 0;                 // tela atual (0 a 3)
 let _cnVisitados = new Set([0]);  // telas já abertas (a trilha do topo mostra ✓ nas anteriores)
 let _cnTourVisto = false;         // o tutorial da montagem só abre sozinho 1 vez por abertura da janela
@@ -132,14 +171,30 @@ function _cnHtmlCampos() {
     </section>`;
 }
 // Tela 3 — tudo do "Monte com um clique", com filtro, mais a caixa para explicar à IA
+// Uma opção (caixinha) da tela 3. busca = palavras que o filtro compara (título do grupo + nome + palavras-chave); gi = grupo "de exclusividade" das opções que não têm o seu próprio.
+function _cnHtmlOpcao(item, gi, busca) {
+    return `<div class="cn-opcao" data-busca="${esc(_cnPalavras(busca + ' ' + item.label + ' ' + (CN_BUSCA[item.id] || item.buscaExtra || '')))}">
+            <label class="cn-opcao-rotulo"><input type="checkbox" id="wCteOpc_${item.id}" class="wCteOpcCheckbox" data-grupo="${esc(item.grupoExclusivo || gi)}" onchange="_cnOpcaoClicada(this)"><span>${esc(item.label)}</span></label>
+            ${item.entrada ? _cteEntradaOpcaoHtml(item) : ''}
+          </div>`;
+}
+// Recado fixo embaixo do título de um grupo
+function _cnNotaGrupo(grupo) {
+    if (/Cálculo do ICMS/.test(grupo.titulo)) return `<p class="cn-grupo-nota alerta"><span aria-hidden="true">⛔</span><span><b>O valor do ICMS não pode ser reduzido.</b> Ele tem que ser sempre <b>Base de Cálculo × Alíquota</b>: se não bater, a SEFAZ rejeita o Ct-e. Para pagar menos ICMS, reduza a <b>Base de Cálculo</b> (opção “Redução Base de cálculo?”, logo abaixo).</span></p>`;
+    return '';
+}
 function _cnHtmlOpcoes() {
     const grupos = CTE_OPCOES_MONTAGEM.map((grupo, gi) => `<section class="cn-grupo" aria-labelledby="cnG${gi}">
           <h3 class="cn-grupo-titulo" id="cnG${gi}">${esc(grupo.titulo)}</h3>
-          ${grupo.itens.map(item => `<div class="cn-opcao" data-busca="${esc(_cnPalavras(grupo.titulo + ' ' + item.label + ' ' + (CN_BUSCA[item.id] || '')))}">
-            <label class="cn-opcao-rotulo"><input type="checkbox" id="wCteOpc_${item.id}" class="wCteOpcCheckbox" data-grupo="${esc(item.grupoExclusivo || gi)}" onchange="_cnOpcaoClicada(this)"><span>${esc(item.label)}</span></label>
-            ${item.entrada ? _cteEntradaOpcaoHtml(item) : ''}
-          </div>`).join('')}
-        </section>`).join('');
+          ${_cnNotaGrupo(grupo)}
+          ${grupo.itens.filter(item => !CN_MOVIDAS_PARA_DEMAIS.includes(item.id)).map(item => _cnHtmlOpcao(item, gi, grupo.titulo)).join('')}
+        </section>`).join('')
+        // "Demais opções": por último, com as contas "Somar X no Y" separadas por campo de destino
+        + (gd => `<section class="cn-grupo" aria-labelledby="cnG${gd}">
+          <h3 class="cn-grupo-titulo" id="cnG${gd}">${esc(CN_TITULO_DEMAIS)}</h3>
+          <p class="cn-grupo-nota"><span aria-hidden="true">ℹ️</span><span>Contas prontas para somar um campo em outro (ex.: “Somar ICMS no Frete Valor”). Marque quantas precisar. Cada uma entra na conta que a regra base já faz do campo de destino: escolha uma regra base no passo 1 ou monte esse campo no passo 4.</span></p>
+          ${CN_SOMA_BLOCOS.map(bl => `<div class="cn-sub-bloco"><h4 class="cn-sub-titulo">${esc(bl.titulo)}</h4>${bl.itens.map(it => _cnHtmlOpcao(it.ref ? _cnTodasOpcoes().find(o => o.id === it.ref) : it, gd, CN_TITULO_DEMAIS + ' ' + bl.titulo)).join('')}</div>`).join('')}
+        </section>`)(CTE_OPCOES_MONTAGEM.length);
     return `<section class="cn-slide" id="cnSlide2" aria-labelledby="cnT2" hidden>
       <div class="cn-wrap">
         <div class="cn-topo-aviso" id="wCteNovaAvisoManual"><span aria-hidden="true">💡</span><span>Se preferir montar a regra manualmente, marque a opção <b>“Desejo fazer a montagem manual da regra”</b> no rodapé e clique em <b>avançar para montagem manual</b></span></div>
@@ -158,7 +213,9 @@ function _cnHtmlOpcoes() {
           <aside class="cn-ia" id="wCteNovaIA">
             <label class="cn-ia-titulo" for="wCteDescricao">✨ Ou se preferir, explique diretamente para a IA o que o cliente necessita, seja bem claro</label>
             <textarea id="wCteDescricao" class="cn-ia-texto" placeholder="Ex.: o cliente quer o frete calculado pelo peso em toneladas, com ICMS por dentro e seguro de 0,3% sobre o valor das notas."></textarea>
+            <div class="cn-aviso erro" id="wCteNovaAvisoIcmsTexto" role="alert"></div>
             <div class="cn-dica">A IA junta o que você marcou ao lado com o que você escrever aqui.</div>
+            <div class="cn-dica">⛔ Não peça para reduzir o <b>valor do ICMS</b>: a SEFAZ rejeita. Para pagar menos ICMS, peça a redução da <b>base de cálculo</b>.</div>
           </aside>
         </div>
       </div>
@@ -200,6 +257,7 @@ function mostrarWizardRegraCteNova(queryOriginal) {
     card.id = 'wizardRegraNovaCard';
     card.className = 'builder-card cn-card';
     card.innerHTML = _cnHtmlTopo()
+        + '<div class="cn-aviso-icms" id="wCteNovaAvisoIcms" role="alert" hidden></div>'   // trava do ICMS: aparece em qualquer tela enquanto a regra montada alterar o valor do ICMS (ver _cnAtualizarAvisoIcms)
         + '<div class="cn-corpo" id="wCteNovaCorpo">' + _cnHtmlBase() + _cnHtmlCampos() + _cnHtmlOpcoes() + _cnHtmlMontagem() + '</div>'
         + '<div class="cn-rodape" id="wCteNovaRodape"></div>';
     corpo.appendChild(card);
@@ -463,7 +521,13 @@ function _cnOpcaoClicada(chk) {
     _cnAtualizarMarcadas();
     _cnMsg('');
 }
-function _cnTodasOpcoes() { return CTE_OPCOES_MONTAGEM.flatMap(g => g.itens); }
+function _cnTodasOpcoes() { return _cteGruposOpcoes().flatMap(g => g.itens); }
+// Opção "Somar X no Y" marcada que não entrou em lugar nenhum porque a regra montada não calcula o campo Y (ver _aplicarSomaEmCampo): o termo não está em nenhuma definição dele.
+function _cnOpcaoSemEfeito(it) {
+    if (it.modo !== 'somarEm') return false;
+    const c = _cnEl('wCteOpc_' + it.id); if (!c || !c.checked) return false;
+    return !(window._cteBlocos || []).some(b => b.destino === it.campoAlvo && (b.termos || []).some(t => t.termo === it.termoNovo.termo));
+}
 function _cnAtualizarMarcadas() {
     const box = _cnEl('wCteNovaMarcadas'); if (!box) return;
     const marcadas = _cnTodasOpcoes().filter(it => { const c = _cnEl('wCteOpc_' + it.id); return c && c.checked; });
@@ -472,7 +536,8 @@ function _cnAtualizarMarcadas() {
     box.innerHTML = `<span class="cn-marcadas-t">✔ Marcadas (${marcadas.length}):</span>`
         + marcadas.map(it => {
             const falta = it.entrada && _cteLerEntradaOpcao(it) === null;
-            return `<span class="cn-chip-marcada${falta ? ' falta' : ''}">${esc(it.label)}${falta ? ' — falta o número' : ''}<button type="button" class="cn-chip-x" onclick="_cnDesmarcar('${it.id}')" aria-label="Desmarcar ${esc(it.label)}" title="Desmarcar">✕</button></span>`;
+            const sem = !falta && _cnOpcaoSemEfeito(it);
+            return `<span class="cn-chip-marcada${falta || sem ? ' falta' : ''}">${esc(it.label)}${falta ? ' — falta o número' : sem ? ' — sem efeito: a regra não calcula ' + esc(it.alvoNome) : ''}<button type="button" class="cn-chip-x" onclick="_cnDesmarcar('${it.id}')" aria-label="Desmarcar ${esc(it.label)}" title="Desmarcar">✕</button></span>`;
         }).join('')
         + `<button type="button" class="cn-link" onclick="_cnDesmarcarTodas()">Desmarcar todas</button>`;
 }
@@ -504,6 +569,7 @@ function _cnFiltrar() {
             if (ok) { algum = true; visiveis++; }
         });
         g.hidden = !algum;
+        g.querySelectorAll('.cn-sub-bloco').forEach(sb => { sb.hidden = !sb.querySelector('.cn-opcao:not([hidden])'); });   // "Demais opções": o subtítulo some junto quando nenhuma conta dele aparece
     });
     const vazio = _cnEl('wCteNovaSemResultado');
     if (vazio) {
@@ -521,6 +587,7 @@ function _cnFiltroTecla(e) {
 function _cnAoDigitar(e) {
     const t = e.target;
     if (t && typeof t.id === 'string' && t.id.indexOf('wCteOpcEntrada_') === 0) _cnAtualizarMarcadas();
+    if (t && t.id === 'wCteDescricao') _cnAvisoTextoIcms();
 }
 // Opção marcada que pede um número ainda sem um valor válido (não entra na regra enquanto estiver assim)
 function _cnOpcaoIncompleta() {
@@ -531,17 +598,159 @@ function _cnBloqueiaOpcaoIncompleta() {
     const falta = _cnOpcaoIncompleta();
     if (!falta) return false;
     if (_cnPasso !== 2) _cnIrPara(2, { semFoco: true });
+    _cnMostrarOpcao(falta.id);
     const campo = _cnEl('wCteOpcEntrada_' + falta.id);
     if (campo) { campo.scrollIntoView({ block: 'center' }); campo.focus(); }
     const e = falta.entrada || {};
     _cnMsg('Falta preencher o número de “' + falta.label + '” (de ' + e.min + ' a ' + e.max + ') para essa opção valer na regra. Digite o número ou desmarque a opção.', 'erro');
     return true;
 }
+// Se há uma opção "Somar X no Y" marcada que não entrou na regra (a regra montada não calcula Y): sem este aviso a regra sairia sem ela, em silêncio.
+function _cnBloqueiaOpcaoSemEfeito() {
+    const it = _cnTodasOpcoes().find(_cnOpcaoSemEfeito);
+    if (!it) return false;
+    if (_cnPasso !== 2) _cnIrPara(2, { semFoco: true });
+    _cnMostrarOpcao(it.id);
+    const c = _cnEl('wCteOpc_' + it.id); if (c) { c.scrollIntoView({ block: 'center' }); c.focus(); }
+    _cnMsg('A opção “' + it.label + '” não tem onde entrar: a regra montada ainda não calcula ' + it.alvoNome + '. Escolha uma regra base no passo 1 (ou monte esse campo na montagem manual) ou desmarque a opção.', 'erro');
+    return true;
+}
+// Garante que a opção apareça na lista (limpa o filtro da tela 3 se ele a estiver escondendo)
+function _cnMostrarOpcao(id) {
+    const c = _cnEl('wCteOpc_' + id), op = c && c.closest('.cn-opcao');
+    if (!op || !op.closest('[hidden]')) return;
+    const f = _cnEl('wCteNovaFiltro'); if (f) { f.value = ''; _cnFiltrar(); }
+}
 function _cnTemInstrucoes() { return ((_cnEl('wCteDescricao') || {}).value || '').trim() !== ''; }
+
+// ── trava: o valor do ICMS não pode ser reduzido ─────────────────────────────
+// A SEFAZ rejeita o Ct-e quando o valor do ICMS não é igual à Base de Cálculo × Alíquota. Por isso esta versão não gera regra que mexa no valor do ICMS (def("valorICMS", ...) com
+// outra conta), não aceita pedido escrito para a IA de "reduzir o ICMS" e manda a IA nunca fazer isso. Quem quer pagar menos ICMS reduz a BASE DE CÁLCULO (“Redução Base de cálculo?”).
+const CN_ICMS_PROMPT = 'TRAVA DO ICMS (OBRIGATORIA): o valor do ICMS NUNCA pode ser reduzido, descontado, abatido nem alterado diretamente. O valorICMS tem que ser SEMPRE igual a baseCalculo * (aliquota / 100); se nao bater, a SEFAZ rejeita o Ct-e. NUNCA escreva def("valorICMS", ...) com qualquer conta diferente de obt("baseCalculo") * (obt("aliquota")/100) (nada de multiplicar o valorICMS por um fator, subtrair desconto, somar outro campo etc.; apenas def("valorICMS", 0) junto com baseCalculo e aliquota zerados e permitido). Se o pedido for "reduzir o ICMS", reduza a BASE DE CALCULO e nunca o valor do ICMS: def("baseCalculo", obt("valorFrete") * (100 - PERCENTUAL) / 100); e depois calcule o ICMS normalmente: def("valorICMS", obt("baseCalculo") * (obt("aliquota")/100)).\n\n';
+const CN_ICMS_MSG = 'Não dá para reduzir o valor do ICMS: a SEFAZ rejeita o Ct-e quando o ICMS não é igual à Base de Cálculo × Alíquota. Para pagar menos ICMS, reduza a BASE DE CÁLCULO: marque a opção “Redução Base de cálculo?” ou escreva para a IA “reduzir a base de cálculo em X%”.';
+
+// Calculadora mínima (números, + - * / e parênteses, e as letras de `vars`), para conferir uma conta sem eval.
+function _cnCalc(expr, vars) {
+    const s = String(expr).replace(/\s+/g, ''); let i = 0;
+    const erro = () => { throw new Error('conta'); };
+    const prim = () => {
+        if (s[i] === '(') { i++; const v = soma(); if (s[i] !== ')') erro(); i++; return v; }
+        if (s[i] === '-') { i++; return -prim(); }
+        if (s[i] === '+') { i++; return prim(); }
+        let m = /^(\d+(\.\d+)?|\.\d+)/.exec(s.slice(i));
+        if (m) { i += m[0].length; return parseFloat(m[0]); }
+        m = /^[A-Za-z]\w*/.exec(s.slice(i));
+        if (m && Object.prototype.hasOwnProperty.call(vars, m[0])) { i += m[0].length; return vars[m[0]]; }
+        return erro();
+    };
+    const prod = () => { let v = prim(); while (s[i] === '*' || s[i] === '/') { const op = s[i++], d = prim(); v = op === '*' ? v * d : v / d; } return v; };
+    const soma = () => { let v = prod(); while (s[i] === '+' || s[i] === '-') { const op = s[i++], d = prod(); v = op === '+' ? v + d : v - d; } return v; };
+    const r = soma(); if (i !== s.length) erro();
+    return r;
+}
+// A conta do valor do ICMS dá sempre Base de Cálculo × Alíquota ÷ 100? true = sim (ou é só o número 0); false = não (altera o valor); null = não dá para saber (usa outras variáveis/funções) — só false trava.
+function _cnIcmsContaOk(expr) {
+    let e = String(expr == null ? '' : expr), n = 0;
+    const outros = {};
+    e = e.replace(/obt\(\s*["']([^"']+)["']\s*\)/g, (_, campo) => campo === 'baseCalculo' ? 'B' : campo === 'aliquota' ? 'A' : (outros['o:' + campo] = outros['o:' + campo] || 'X' + (++n)));
+    e = e.replace(/\btabelaPrecos\.[A-Za-z_]\w*/g, m => (outros[m] = outros[m] || 'X' + (++n)));
+    if (/[A-Za-z_]/.test(e.replace(/\b(?:B|A|X\d+)\b/g, ''))) return null;
+    const amostras = [[1000, 12], [2500, 7], [333.33, 18], [0, 12]];
+    const iguais = [], zeros = [];
+    try {
+        for (const [B, A] of amostras) {
+            const vars = { B, A }; for (let k = 1; k <= n; k++) vars['X' + k] = 37 + 53 * k + B / 100;
+            const v = _cnCalc(e, vars), esp = B * A / 100;
+            iguais.push(Math.abs(v - esp) <= 1e-6 * Math.max(1, Math.abs(esp)));
+            zeros.push(v === 0);
+        }
+    } catch (x) { return null; }
+    if (iguais.every(Boolean) || zeros.every(Boolean)) return true;
+    return false;
+}
+// Linhas da regra que definem o valorICMS com uma conta diferente de Base de Cálculo × Alíquota. Acompanha variáveis simples (valor = ...; def("valorICMS", valor);).
+function _cnIcmsLinhasInvalidas(codigo) {
+    const ruins = [], vars = {};
+    const subst = e => Object.keys(vars).reduce((acc, nome) => acc.replace(new RegExp('\\b' + nome + '\\b', 'g'), '(' + vars[nome] + ')'), e);
+    String(codigo || '').split('\n').forEach(linha => {
+        const l = linha.trim();
+        const d = l.match(/^def\(\s*["']valorICMS["']\s*,\s*(.+)\)\s*;?\s*$/);
+        if (d) { if (_cnIcmsContaOk(subst(d[1])) === false) ruins.push(l); return; }
+        const a = l.match(/^(?:var\s+|let\s+|const\s+)?([A-Za-z_]\w*)\s*=(?!=)\s*(.+?)\s*;?\s*$/);
+        if (a && !/^(?:if|else|for|while|def)\b/.test(l)) vars[a[1]] = subst(a[2]);
+    });
+    return ruins;
+}
+// O texto escrito para a IA pede para reduzir o valor do ICMS? Devolve a frase (ou ''). Só pega "reduzir/descontar/abater... o ICMS" (a palavra ICMS logo depois, com só palavras de ligação no meio);
+// "reduzir a base de cálculo do ICMS", "reduzir o frete" e frases com "não/sem" ficam livres.
+const CN_RED_RAIZ = /^(reduz|reduc|diminu|abat|descont|deduz|deduc|subtra|baix|minimiz)/;
+const CN_RED_LIGACAO = new Set(['o', 'a', 'os', 'as', 'um', 'uma', 'de', 'do', 'da', 'dos', 'das', 'no', 'na', 'nos', 'nas', 'em', 'ao', 'pelo', 'pela', 'por', 'para', 'ate', 'que', 'se', 'seja', 'ser', 'sera', 'deve', 'devem', 'deverao', 'precisa', 'pode', 'fica', 'ficar', 'fique', 'vai', 'com', 'valor', 'valores', 'total', 'imposto', 'cento', 'porcento', 'percentual', 'percentuais', 'pct', 'cliente', 'cobrado', 'cobrar', 'calculado', 'gerado']);
+const CN_RED_OUTRO_OBJETO = new Set(['base', 'calculo', 'bc', 'aliquota', 'frete', 'tarifa', 'peso', 'prestacao', 'servico', 'seguro', 'pedagio', 'gris', 'tabela', 'nota', 'notas', 'mercadoria', 'diaria', 'outros']);
+function _cnPedeReduzirIcms(texto) {
+    const solto = x => CN_RED_LIGACAO.has(x) || /^\d+%?$/.test(x) || x === '%';
+    for (const frase of String(texto || '').split(/[.;!?\n]+/)) {
+        const t = _cnPalavras(frase).split(' ').filter(Boolean);
+        for (let i = 0; i < t.length; i++) {
+            if (!CN_RED_RAIZ.test(t[i])) continue;
+            if (t.slice(Math.max(0, i - 3), i).some(x => x === 'nao' || x === 'sem' || x === 'nunca' || x === 'jamais' || x === 'evitar')) continue;
+            for (let j = i + 1; j < t.length && j <= i + 9; j++) { if (/icms/.test(t[j])) return frase.trim(); if (!solto(t[j])) break; }   // reduzir [o valor do] ICMS
+            let k = i + 1; while (k < t.length && solto(t[k])) k++;
+            if (k < t.length && CN_RED_OUTRO_OBJETO.has(t[k])) continue;                                                                                 // "ICMS com redução de base...": o que reduz é outra coisa
+            for (let j = i - 1; j >= 0 && j >= i - 9; j--) { if (/icms/.test(t[j])) return frase.trim(); if (!solto(t[j])) break; }              // ICMS [deve ser] reduzido
+        }
+    }
+    return '';
+}
+// Embaixo da caixa de texto da IA (tela 3): avisa enquanto a pessoa escreve
+function _cnAvisoTextoIcms() {
+    const el = _cnEl('wCteNovaAvisoIcmsTexto'); if (!el) return;
+    const pede = !!_cnPedeReduzirIcms((_cnEl('wCteDescricao') || {}).value);
+    el.textContent = pede ? '⛔ ' + CN_ICMS_MSG : '';
+    const msg = _cnEl('wCteNovaMsg');
+    if (!pede && msg && msg.textContent.indexOf(CN_ICMS_MSG) === 0) _cnMsg('');   // corrigiu o texto: some também a mensagem vermelha que o "Gerar Regra" deixou no rodapé
+}
+// Faixa vermelha no topo (qualquer tela) enquanto a regra montada alterar o valor do ICMS — vem de regra colada, regra base editada ou da montagem manual.
+function _cnAtualizarAvisoIcms(linhas) {
+    const el = _cnEl('wCteNovaAvisoIcms'); if (!el) return;
+    const ruins = _cnIcmsLinhasInvalidas((linhas || _cteLinhasValidas()).join('\n'));
+    if (!ruins.length) { el.hidden = true; el.innerHTML = ''; return; }
+    el.hidden = false;
+    el.innerHTML = `<span aria-hidden="true">⛔</span><span><b>A regra montada altera o valor do ICMS</b> (<code>${esc(ruins[0])}</code>${ruins.length > 1 ? ' e mais ' + (ruins.length - 1) : ''}). O ICMS tem que ser sempre <b>Base de Cálculo × Alíquota ÷ 100</b>, senão a SEFAZ rejeita o Ct-e — por isso a regra não pode ser gerada assim. Corrija na montagem manual (passo 4) ou, para pagar menos ICMS, reduza a Base de Cálculo (opção “Redução Base de cálculo?”, passo 3).</span>`;
+}
+// true = BLOQUEOU (quem chamou deve parar). soCodigo: só confere a regra montada (é o caso do "Gerar Regra Montada", onde o texto da IA não entra).
+function _cnBloqueiaReducaoIcms(opcoes) {
+    if (!_cnEl('wizardRegraNovaCard')) return false;   // só vale na Nova Versão: o montador clássico (que usa as mesmas funções de gerar) continua como sempre foi
+    if (!(opcoes && opcoes.soCodigo) && _cnTemInstrucoes() && _cnPedeReduzirIcms(_cnEl('wCteDescricao').value)) {
+        if (_cnPasso !== 2) _cnIrPara(2, { semFoco: true });
+        _cnAvisoTextoIcms();
+        const t = _cnEl('wCteDescricao'); if (t) { t.scrollIntoView({ block: 'center' }); t.focus(); }
+        _cnMsg(CN_ICMS_MSG + ' Ajuste o texto da IA para continuar.', 'erro');
+        return true;
+    }
+    if (_cnIcmsLinhasInvalidas(_cteLinhasValidas().join('\n')).length) {
+        _cnAtualizarAvisoIcms();
+        const el = _cnEl('wCteNovaAvisoIcms');
+        if (el) { el.classList.remove('chama'); void el.offsetWidth; el.classList.add('chama'); }   // pisca a faixa (ela fica no topo, visível em qualquer tela)
+        _cnMsg('A regra montada altera o valor do ICMS (veja a faixa vermelha no topo): corrija na montagem manual (passo 4) antes de gerar.', 'erro');
+        return true;
+    }
+    return false;
+}
+// Depois que a IA responde: se mesmo assim a regra define o valorICMS de outro jeito, o cartão abre com um alerta em cima.
+function _cnAvisoIcmsNaResposta(texto) {
+    const blocos = [...String(texto || '').matchAll(/```[\w]*\n?([\s\S]*?)```/g)].map(m => m[1]);
+    const ruins = _cnIcmsLinhasInvalidas(blocos.length ? blocos.join('\n') : texto);
+    if (!ruins.length) return texto;
+    const linha = ruins[0].replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return '**⚠️ Atenção — não use esta regra como está:** ela define o valor do ICMS de um jeito diferente de Base de Cálculo × Alíquota (' + linha + '), e a SEFAZ rejeita o Ct-e quando isso acontece. Gere de novo ou troque essa linha por def("valorICMS", obt("baseCalculo") * (obt("aliquota")/100)); para pagar menos ICMS, reduza a Base de Cálculo.\n\n' + texto;
+}
+
 // "Gerar Regra": com texto para a IA, a IA monta (usando também o que foi marcado/carregado); só com marcações/regra base, gera direto, sem IA.
 function _cnGerar() {
     _cnMsg('');
     if (_cnBloqueiaOpcaoIncompleta()) return;
+    if (_cnBloqueiaOpcaoSemEfeito()) return;
+    if (_cnBloqueiaReducaoIcms()) return;
     if (_cnTemInstrucoes()) { enviarWizardRegraDnd(); return; }
     if (_cteLinhasValidas().length) { _cteGerarRegraCustom(); return; }
     _cnMsg('Ainda não há nada para gerar: marque pelo menos uma opção, explique para a IA o que precisa ou, se prefere montar à mão, marque “Desejo fazer a montagem manual da regra” e clique em “Avançar para montagem manual”.', 'aviso');

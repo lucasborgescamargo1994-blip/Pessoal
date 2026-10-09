@@ -516,6 +516,7 @@ function _cteAtualizarPreview(){
     const linhas=_cteLinhasValidas();
     const preview=document.getElementById('wCteRegraPreview');
     if(preview)preview.textContent=linhas.length?linhas.join('\n'):'// defina um campo (nome + arraste algo pra área de montagem)';
+    if(typeof _cnAtualizarAvisoIcms==='function')_cnAtualizarAvisoIcms(linhas);   // "Nova Versão": avisa na hora se a regra montada altera o valor do ICMS (no clássico não faz nada)
 }
 function _cteLimparCanvas(){
     window._cteBlocos=[{destino:'',expr:null}];
@@ -528,6 +529,7 @@ function _cteLimparCanvas(){
 function _cteGerarRegraCustom(){
     const linhas=_cteLinhasValidas();
     if(linhas.length===0){alert('Defina ao menos um campo: dê um nome e arraste ao menos um campo pra área de montagem dele.');return;}
+    if(typeof _cnBloqueiaReducaoIcms==='function'&&_cnBloqueiaReducaoIcms({soCodigo:true}))return;   // "Nova Versão": não gera regra que altere o valor do ICMS (no clássico não faz nada)
     _renderizarCardRegraCteDndSemIA(linhas.join('\n'));
 }
 // Ao escolher uma regra pré-definida, ao invés de já gerar o resultado final, preenche o canvas
@@ -624,7 +626,7 @@ function _cteLerEntradaOpcao(item){
 // Mostra/esconde o campo de valor conforme a caixinha estar marcada e atualiza a mensagem de baixo:
 // vazio (âmbar) / inválido (vermelho) / aplicado (verde) / aplicado mas com outra definição do mesmo campo numa "linha extra" (vermelho).
 function _cteSincronizarEntradasOpcao(){
-    CTE_OPCOES_MONTAGEM.forEach(grupo=>grupo.itens.forEach(item=>{
+    _cteGruposOpcoes().forEach(grupo=>grupo.itens.forEach(item=>{
         if(!item.entrada)return;
         const chk=document.getElementById('wCteOpc_'+item.id), wrap=document.getElementById('wCteOpcEntradaWrap_'+item.id);
         const msg=document.getElementById('wCteOpcEntradaMsg_'+item.id), inp=document.getElementById('wCteOpcEntrada_'+item.id);
@@ -666,7 +668,7 @@ function _cteAplicarOpcionais(){
     let extras=window._cteOpcionaisBase.extras.map(e=>({...e}));
     // As opções são aplicadas NA ORDEM desta lista (não na ordem dos cliques): é isso que garante, por exemplo, que a redução da base
     // de cálculo (última do grupo de ICMS) sempre sobreponha o cálculo de ICMS marcado, qualquer que seja a ordem em que foram marcados.
-    CTE_OPCOES_MONTAGEM.forEach(grupo=>{
+    _cteGruposOpcoes().forEach(grupo=>{
         grupo.itens.forEach(item=>{
             const chk=document.getElementById('wCteOpc_'+item.id);
             if(chk && chk.checked){
@@ -679,6 +681,8 @@ function _cteAplicarOpcionais(){
                 }
                 if(item.modo==='somar'){
                     ({blocos,extras}=_aplicarSomaTermo(blocos,extras,item.campoAlvo,item.termoNovo));
+                }else if(item.modo==='somarEm'){
+                    ({blocos,extras}=_aplicarSomaEmCampo(blocos,extras,item.campoAlvo,item.termoNovo));
                 }else if(item.modo==='inserirApos'){
                     ({blocos,extras}=_inserirOpcaoAposAncora(blocos,extras,codigo,item.ancoraDestino,{ancoraUltima:item.ancoraUltima,substituirExistentes:item.substituirExistentes}));
                 }else{
@@ -725,6 +729,8 @@ function _renderizarCardRegraCteDndSemIA(codigo){
     ferrLog('regra', 'Criar Regra Ct-e (montada sem IA)',true);
 }
 async function enviarWizardRegraDnd(){
+    // "Nova Versão": não chama a IA para uma regra que altere o valor do ICMS (nem quando o pedido escrito é reduzir o ICMS) — ver _cnBloqueiaReducaoIcms
+    if(document.getElementById('wizardRegraNovaCard')&&typeof _cnBloqueiaReducaoIcms==='function'&&_cnBloqueiaReducaoIcms())return;
     const btn=document.getElementById('wCteBtnEnviar');
     if(btn){btn.disabled=true;btn.textContent='⏳ Gerando...';}
     // Antes só lia o campo "regra existente" (wCteRegraCola) e a descrição — o que já estava
@@ -749,7 +755,7 @@ async function enviarWizardRegraDnd(){
         descricao?'\nSOLICITACAO: '+descricao:'',
         _wizardRegraDndQuery?'\nCONTEXTO: '+_wizardRegraDndQuery:''
     ].filter(Boolean).join('\n');
-    const sysMsg='Voce e um especialista em regras de Ct-e / Conhecimento do Bsoft TMS.\nGere APENAS o codigo da regra pronto para uso, entre triple backticks.\n\nUNIR REGRA JA MONTADA COM A SOLICITACAO:\nSe a mensagem do usuario tiver uma secao "REGRA JA MONTADA NA AREA DE ARRASTAR CAMPOS", essa e a regra que o usuario ja construiu manualmente (arrastando campos, marcando opcoes, carregando uma regra base) -- ela e o PONTO DE PARTIDA. NUNCA descarte nem reescreva do zero o que ja esta montado. Una com a "SOLICITACAO": mantenha tudo que ja esta la e so adicione, ajuste ou complete exatamente o que foi pedido. O resultado final tem que conter TANTO o que ja estava montado QUANTO o que foi solicitado, numa unica regra coerente.\n\nDEFINICAO DE CAMPOS OCULTOS ($SV):\nPara definir um campo oculto sem gerar erro de "campo nao encontrado", SEMPRE verifique se o elemento existe antes de usar $SV():\nif (document.getElementsByName(\'NOMECAMPO\').length > 0) {\n   $SV(\'NOMECAMPO\', obt("nomeInterno"));\n}\nNUNCA use $SV() direto sem essa verificacao.\n\nCONDICAO BASEADA EM CST (TAMBEM USANDO $SV):\nPara definir uma condicao que depende do CST (Codigo de Situacao Tributaria) do Ct-e, use $SV() dentro do if -- e a UNICA forma que funciona corretamente pra checar o CST, NAO use obt() nem comparacao direta pra isso. Exemplo real (zera aliquota, base de calculo e valor do ICMS quando o CST for 40):\nif ($SV("dados_CST", \'40\'))\ndef("aliquota", 0);\ndef("baseCalculo", 0);\ndef("valorICMS", 0);\nUse sempre esse mesmo padrao -- if ($SV("dados_CST", \'XX\')) -- trocando XX pelo CST desejado, toda vez que a regra precisar de uma condicao baseada em qual CST esta sendo usado.\n\nITERAR SOBRE NOTAS/MERCADORIAS SEM SABER A QUANTIDADE (try/catch):\nPara somar, filtrar ou ajustar algo em cima de cada nota/mercadoria do Ct-e SEM SABER quantas existem (o Ct-e pode ter 1 ou varias notas), percorra os indices de 1 ate um numero alto (ex.: 50) dentro de um try/catch -- o catch simplesmente ignora os indices que nao existem, sem gerar erro nem travar a regra numa quantidade fixa de notas. Exemplo real (desconta do peso as mercadorias da especie 23, seja qual for a quantidade de notas):\npeso = obt("merc_quantKg[]");\nfor (i = 1; i <= 50; i++) {\n   try {\n      if ( obt("merc_especie[" + i + "]") == 23 ) peso = peso - obt("merc_quantKg[" + i + "]");\n   } catch (e) { }\n}\nUse esse padrao sempre que precisar iterar sobre campos indexados (ex.: merc_*[i]) sem travar o resultado a uma quantidade fixa de notas.\n\nDOCUMENTACAO:\n'+CONTEXTO_REGRAS;
+    const sysMsg='Voce e um especialista em regras de Ct-e / Conhecimento do Bsoft TMS.\nGere APENAS o codigo da regra pronto para uso, entre triple backticks.\n\nUNIR REGRA JA MONTADA COM A SOLICITACAO:\nSe a mensagem do usuario tiver uma secao "REGRA JA MONTADA NA AREA DE ARRASTAR CAMPOS", essa e a regra que o usuario ja construiu manualmente (arrastando campos, marcando opcoes, carregando uma regra base) -- ela e o PONTO DE PARTIDA. NUNCA descarte nem reescreva do zero o que ja esta montado. Una com a "SOLICITACAO": mantenha tudo que ja esta la e so adicione, ajuste ou complete exatamente o que foi pedido. O resultado final tem que conter TANTO o que ja estava montado QUANTO o que foi solicitado, numa unica regra coerente.\n\nDEFINICAO DE CAMPOS OCULTOS ($SV):\nPara definir um campo oculto sem gerar erro de "campo nao encontrado", SEMPRE verifique se o elemento existe antes de usar $SV():\nif (document.getElementsByName(\'NOMECAMPO\').length > 0) {\n   $SV(\'NOMECAMPO\', obt("nomeInterno"));\n}\nNUNCA use $SV() direto sem essa verificacao.\n\nCONDICAO BASEADA EM CST (TAMBEM USANDO $SV):\nPara definir uma condicao que depende do CST (Codigo de Situacao Tributaria) do Ct-e, use $SV() dentro do if -- e a UNICA forma que funciona corretamente pra checar o CST, NAO use obt() nem comparacao direta pra isso. Exemplo real (zera aliquota, base de calculo e valor do ICMS quando o CST for 40):\nif ($SV("dados_CST", \'40\'))\ndef("aliquota", 0);\ndef("baseCalculo", 0);\ndef("valorICMS", 0);\nUse sempre esse mesmo padrao -- if ($SV("dados_CST", \'XX\')) -- trocando XX pelo CST desejado, toda vez que a regra precisar de uma condicao baseada em qual CST esta sendo usado.\n\nITERAR SOBRE NOTAS/MERCADORIAS SEM SABER A QUANTIDADE (try/catch):\nPara somar, filtrar ou ajustar algo em cima de cada nota/mercadoria do Ct-e SEM SABER quantas existem (o Ct-e pode ter 1 ou varias notas), percorra os indices de 1 ate um numero alto (ex.: 50) dentro de um try/catch -- o catch simplesmente ignora os indices que nao existem, sem gerar erro nem travar a regra numa quantidade fixa de notas. Exemplo real (desconta do peso as mercadorias da especie 23, seja qual for a quantidade de notas):\npeso = obt("merc_quantKg[]");\nfor (i = 1; i <= 50; i++) {\n   try {\n      if ( obt("merc_especie[" + i + "]") == 23 ) peso = peso - obt("merc_quantKg[" + i + "]");\n   } catch (e) { }\n}\nUse esse padrao sempre que precisar iterar sobre campos indexados (ex.: merc_*[i]) sem travar o resultado a uma quantidade fixa de notas.\n\n'+(_nova&&typeof CN_ICMS_PROMPT!=='undefined'?CN_ICMS_PROMPT:'')+'DOCUMENTACAO:\n'+CONTEXTO_REGRAS;
     const wCard=document.getElementById('wizardRegraDndCard')||document.getElementById('wizardRegraNovaCard');
     const _estadoForm=wCard?_capturarEstadoForm(wCard):null;
     // O "Voltar" da Nova Versão volta com tudo (área de montagem incluída) e na tela em que a pessoa estava; o do montador clássico segue como sempre (só os campos).
@@ -762,8 +768,10 @@ async function enviarWizardRegraDnd(){
     try{
         const result=await callMCPSemPensamento([{role:'system',content:sysMsg},{role:'user',content:'Monte a regra conforme a solicitacao abaixo.\n'+configTxt}],{temperature:0.15,maxTokens: REGRAS_MAX_TOKENS});
         ld.remove();
-        renderizarCardRegra(result.text,li,result._iaUsada,result._iaModelo,_nova?'cte-nova':'cte-dnd',{query:_wizardRegraDndQuery,estadoForm:_estadoForm,..._voltarNova});
-        ferrConversa('regra', 'ai',result.text);
+        // Nova Versão: se, mesmo com a trava no pedido, a IA escreveu uma regra que altera o valor do ICMS, o cartão abre com um alerta em cima
+        const textoRegra=(_nova&&typeof _cnAvisoIcmsNaResposta==='function')?_cnAvisoIcmsNaResposta(result.text):result.text;
+        renderizarCardRegra(textoRegra,li,result._iaUsada,result._iaModelo,_nova?'cte-nova':'cte-dnd',{query:_wizardRegraDndQuery,estadoForm:_estadoForm,..._voltarNova});
+        ferrConversa('regra', 'ai',textoRegra);
     }catch(e){
         ld.remove();
         // Nova Versão: o erro traz o "Voltar" (a janela já fechou e a pessoa não pode perder o que montou); o montador clássico segue com a mensagem simples de sempre.
@@ -1902,6 +1910,22 @@ function _aplicarSomaTermo(blocosAcumulados, extrasAcumuladas, campoAlvo, termoN
     const jaTem=blocos[idx].termos.some(t=>t.termo===termoNovo.termo);
     if(!jaTem) blocos[idx].termos.push({...termoNovo});
     _recalcExprDeTermos(blocos[idx]);
+    return {blocos, extras:extrasAcumuladas};
+}
+// Versão do "Ct-e / Conhecimento Nova Versão" (opções "Somar X no Y", modo:'somarEm'): soma 1 termo em TODAS as definições do campo que realmente calculam algo
+// — as que só valem um número fixo (ex.: "se a alíquota é 0, baseCalculo = 0") ficam como estão, senão a base de uma regra com 2 definições ficaria errada.
+// Se a regra não calcula esse campo, NÃO inventa uma definição (def("totalPrestacao", só_o_termo) apagaria o cálculo do sistema, e somar o campo nele mesmo acumularia a
+// cada execução): devolve tudo como estava, e quem chama avisa que a opção ficou sem efeito (ver _cnOpcaoSemEfeito, em regra-cte-passos.js).
+function _aplicarSomaEmCampo(blocosAcumulados, extrasAcumuladas, campoAlvo, termoNovo){
+    const fixo=b=>{ const e=String(b.expr==null?'':b.expr).trim(); return !e||/^\(*\s*-?\d+([.,]\d+)?\s*\)*$/.test(e); };
+    const blocos=(blocosAcumulados||[]).map(b=>{
+        if(b.destino!==campoAlvo||fixo(b))return b;
+        const novo={...b, termos:(b.termos||[]).map(t=>({...t}))};
+        _seedTermosBase(novo);
+        if(!novo.termos.some(t=>t.termo===termoNovo.termo)) novo.termos.push({...termoNovo});
+        _recalcExprDeTermos(novo);
+        return novo;
+    });
     return {blocos, extras:extrasAcumuladas};
 }
 // ─── Decompõe uma expressão em termos individuais (usado pra "abrir" o valor de um campo vindo
