@@ -38,6 +38,17 @@
 .cn-passo-btn.atual { background: var(--cn-azul); border-color: var(--cn-azul); color: #fff; }
 .cn-passo-btn.atual .cn-num { background: #fff; color: var(--cn-azul); }
 
+/* ── trava do ICMS: faixa vermelha no topo, em qualquer tela, enquanto a regra montada alterar o valor do ICMS ── */
+.cn-aviso-icms {
+    flex-shrink: 0; display: flex; align-items: flex-start; gap: 10px; max-height: 32vh; overflow-y: auto; padding: 10px 20px;
+    background: #fef2f2; border-bottom: 2px solid #fca5a5; color: #991b1b; font-size: 13.5px; line-height: 1.5;
+}
+.cn-aviso-icms code { padding: 1px 6px; border-radius: 6px; background: #fee2e2; font-family: Consolas, 'Courier New', monospace; font-size: 12.5px; word-break: break-all; }
+.cn-aviso-icms.chama { animation: cnPiscaIcms .8s ease-in-out 2; }
+@keyframes cnPiscaIcms { 0%, 100% { background: #fef2f2; } 50% { background: #fecaca; } }
+@media (prefers-reduced-motion: reduce) { .cn-aviso-icms.chama { animation: none; } }
+html[data-efeitos="zero"] .cn-aviso-icms.chama { animation: none; }
+
 /* ── corpo: cada tela é um "slide" ── */
 .cn-corpo { flex: 1; min-height: 0; overflow-y: auto; background: var(--surface, #fff); }
 .cn-slide { animation: cnEntra .3s ease-out; }
@@ -168,6 +179,13 @@
 .cn-opcao:has(input:checked) { background: #f0f9ff; }
 .cn-opcao > [id^="wCteOpcEntradaWrap_"] { margin: 0 0 14px 52px !important; }
 .cn-sem-resultado { padding: 22px; border: 2px dashed var(--cn-bd); border-radius: 14px; text-align: center; font-size: 14.5px; line-height: 1.5; color: var(--cn-mudo); }
+/* recado embaixo do título de um grupo (ex.: o ICMS não pode ser reduzido) e subtítulos do grupo "Demais opções" */
+.cn-grupo-nota { display: flex; align-items: flex-start; gap: 10px; margin: 0; padding: 11px 18px; border-bottom: 1px solid #eef2f7; background: #f8fafc; font-size: 13.5px; line-height: 1.5; color: #475569; }
+.cn-grupo-nota.alerta { background: #fef2f2; border-bottom-color: #fecaca; color: #991b1b; }
+.cn-grupo-nota b { color: inherit; }
+.cn-sub-titulo { margin: 0; padding: 9px 18px; border-top: 1px solid #dbeafe; border-bottom: 1px solid #eef2f7; background: #f1f5f9; font-size: 13px; line-height: 1.3; font-weight: 800; letter-spacing: .3px; text-transform: uppercase; color: #475569; }
+.cn-sub-bloco:first-of-type .cn-sub-titulo { border-top: none; }
+.cn-sub-titulo + .cn-opcao { border-top: none; }
 
 .cn-ia { position: sticky; top: 16px; align-self: start; padding: 18px; border: 2px solid #c4b5fd; border-radius: 16px; background: #faf5ff; }
 .cn-ia-titulo { display: block; margin: 0 0 12px; font-size: 15.5px; font-weight: 800; line-height: 1.4; color: var(--cn-roxo-esc); }
