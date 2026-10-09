@@ -67,7 +67,7 @@
             }
             if (ultimo) throw ultimo;
             E.truncado = bruto.length >= MAX_LINHAS;
-            const r = A.normalizarLinhas(bruto);
+            const r = A.normalizarLinhas(bruto, { origem: 'supabase' });   // created_at vem sem fuso, mas é UTC (ver lerCriadoEm em analise-core.js)
             E.linhas = r.linhas; E.info = r.info; E.erro = null;
             contarOrigens(); montarOrigem(); recalcularBase();
             E.jaCarregou = true; E.carregadoEm = Date.now();

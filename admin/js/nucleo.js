@@ -58,9 +58,15 @@ const ADM = {
 
 /* ───────────── formatação ───────────── */
 ADM.fmt = {
+    // Data/hora do Supabase → Date. Colunas "timestamp without time zone" (created_at dos logs: "2026-10-08T11:18:06.865777") voltam SEM fuso mas são do relógio do servidor (UTC);
+    // `new Date(texto)` as leria como horário LOCAL e atrasaria/adiantaria 3 h. Texto com fuso (Z, +00:00) e data sem hora seguem como o navegador lê.
+    instante(v) {
+        if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2}(\.\d+)?)?$/.test(v.trim())) return new Date(v.trim().replace(' ', 'T').replace(/(\.\d{3})\d+$/, '$1') + 'Z');
+        return new Date(v);
+    },
     dataHora(v) {
         if (!v) return '—';
-        const d = new Date(v); if (isNaN(d)) return String(v);
+        const d = ADM.fmt.instante(v); if (isNaN(d)) return String(v);
         return d.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
     },
     // "timestamp" dos logs é horário de Brasília gravado com sufixo Z: lê os campos UTC direto (sem converter fuso de novo)
@@ -70,7 +76,7 @@ ADM.fmt = {
         return ADM.fmt.dataHora(l && l.created_at);
     },
     relativo(v) {
-        const d = new Date(v); if (isNaN(d)) return '';
+        const d = ADM.fmt.instante(v); if (isNaN(d)) return '';
         const s = Math.max(0, (Date.now() - d.getTime()) / 1000);
         if (s < 60) return 'agora';
         if (s < 3600) return Math.floor(s / 60) + ' min';

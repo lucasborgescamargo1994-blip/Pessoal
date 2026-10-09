@@ -4,7 +4,8 @@
 
    Horário: tudo é mostrado em horário de Brasília (UTC−3, sem horário de verão desde 2019). A data vem de created_at (relógio do servidor,
    confiável); se faltar, da coluna timestamp (relógio do computador do usuário, já em horário de Brasília — por isso o "Z" dela é ignorado).
-   Texto de data SEM fuso (planilhas) vale como está escrito; texto COM fuso (Z, +00, -03:00) é convertido. */
+   created_at é UTC, mas o Supabase o devolve SEM fuso ("2026-10-08T11:18:06.865777" = 08:18 em Brasília): ver lerCriadoEm. Nas outras colunas de
+   data (planilhas: data, data_hora…) o texto SEM fuso vale como está escrito; texto COM fuso (Z, +00, -03:00) é convertido. */
 const AnaliseLogs = (function () {
     'use strict';
     const FUSO_MS = -3 * 3600000;                         // Brasília = UTC−3
@@ -57,6 +58,21 @@ const AnaliseLogs = (function () {
         } else return null;
         if (!dataValida(a, mo, d, h, mi, s)) return null;
         return montarData(Date.UTC(a, mo - 1, d, h, mi, s) + deslocar);
+    }
+    // A coluna created_at guarda o relógio do SERVIDOR, que é UTC, mas o Supabase a entrega SEM fuso ("2026-10-08T11:18:06.865777" = 08:18 em Brasília). Lida "como está escrito"
+    // adiantava tudo em 3 h (o 1º atendimento das 08:18 virava 11h nos horários de pico e a noite caía no dia seguinte). Com fuso explícito (Z, +00) lerDataHora já converte.
+    // Sem fuso: dado lido direto do Supabase (doSupabase) é UTC com certeza; em planilha exportada vale a leitura (UTC ou já em Brasília) que mais se aproxima da coluna "timestamp" da
+    // MESMA linha (relógio do usuário, horário de Brasília) e, sem ela, UTC. Data sem hora (meia-noite exata) fica como está: não dá para saber que horas eram.
+    function lerCriadoEm(v, timestamp, doSupabase) {
+        const q = lerDataHora(v);
+        if (!q) return null;
+        const m = typeof v === 'string' ? RE_ISO.exec(v.trim()) : null;
+        if (m && m[7]) return q;                          // fuso explícito: já convertido
+        if (q.ms % 86400000 === 0) return q;              // só a data
+        const utc = montarData(q.ms + FUSO_MS);
+        if (doSupabase) return utc;
+        const t = lerDataHora(timestamp, { parede: true });
+        return t && Math.abs(q.ms - t.ms) < Math.abs(utc.ms - t.ms) ? q : utc;
     }
 
     /* dias são textos "AAAA-MM-DD" (ordenam como texto) */
@@ -115,8 +131,10 @@ const AnaliseLogs = (function () {
         return null;
     }
 
-    // brutas = linhas do Supabase ou de uma planilha (cabeçalhos em qualquer caixa). Devolve { linhas, info }.
-    function normalizarLinhas(brutas) {
+    // brutas = linhas do Supabase ou de uma planilha (cabeçalhos em qualquer caixa). opcoes.origem = 'supabase' quando vêm direto do banco (created_at sem fuso = UTC).
+    // Devolve { linhas, info }.
+    function normalizarLinhas(brutas, opcoes) {
+        const doSupabase = !!(opcoes && opcoes.origem === 'supabase');
         const linhas = [], info = { lidas: 0, semPergunta: 0, ignoradas: 0, semData: 0 };
         (brutas || []).forEach(b => {
             if (!b) return;
@@ -126,7 +144,7 @@ const AnaliseLogs = (function () {
             const pergunta = String(pBruta === undefined ? '' : pBruta).replace(/\s+/g, ' ').trim();
             if (!pergunta) { info.semPergunta++; return; }
             if (/^feedback\b/i.test(pergunta) || pergunta === 'Pendente') { info.ignoradas++; return; }   // sobras de versões antigas do sistema
-            let q = lerDataHora(pegar(r, ['created_at', 'data', 'data_hora', 'datahora']));
+            let q = vazio(r.created_at) ? lerDataHora(pegar(r, ['data', 'data_hora', 'datahora'])) : lerCriadoEm(r.created_at, r.timestamp, doSupabase);
             if (!q) q = lerDataHora(r.timestamp, { parede: true });
             if (!q) info.semData++;
             let usuario = pegar(r, ['usuario_windows', 'usuario', 'usuário', 'user', 'login']);
