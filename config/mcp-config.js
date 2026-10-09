@@ -11,8 +11,8 @@
    DevTools; use só chaves gratuitas/limitadas (ver README).
    ═══════════════════════════════════════════════════════════════════════════ */
 window.BSOFT_MCP_CONFIG = {
-  "versao": 4,
-  "atualizadoEm": "2026-10-08T20:10:49.326Z",
+  "versao": 6,
+  "atualizadoEm": "2026-10-09T12:35:18.844Z",
   "atualizadoPor": "Lucas",
   "provedor": {
     "tipo": "openrouter",
@@ -25,11 +25,15 @@ window.BSOFT_MCP_CONFIG = {
   },
   "cadeia": [
     {
-      "modelo": "laguna-s-2.1:free",
+      "modelo": "apodex-1.1-mini:free",
       "ativo": true
     },
     {
       "modelo": "cohere/north-mini-code:free",
+      "ativo": true
+    },
+    {
+      "modelo": "laguna-s-2.1:free",
       "ativo": true
     }
   ],
