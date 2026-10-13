@@ -44,10 +44,19 @@
     background: #fef2f2; border-bottom: 2px solid #fca5a5; color: #991b1b; font-size: 13.5px; line-height: 1.5;
 }
 .cn-aviso-icms code { padding: 1px 6px; border-radius: 6px; background: #fee2e2; font-family: Consolas, 'Courier New', monospace; font-size: 12.5px; word-break: break-all; }
+.cn-aviso-icms { max-height: 26vh; }   /* duas faixas podem aparecer juntas (ICMS e loop): cada uma rola por dentro */
+/* trava de loop: mesma faixa, em laranja para não se confundir com a do ICMS */
+.cn-aviso-loop { background: #fff7ed; border-bottom-color: #fdba74; color: #9a3412; }
+.cn-aviso-loop code { background: #ffedd5; }
+.cn-aviso-loop .cn-aviso-corpo { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.cn-aviso-loop .cn-loop-lista { margin: 2px 0; padding-left: 20px; }
+.cn-aviso-loop .cn-link { color: #9a3412; }
 .cn-aviso-icms.chama { animation: cnPiscaIcms .8s ease-in-out 2; }
+.cn-aviso-loop.chama { animation: cnPiscaLoop .8s ease-in-out 2; }
+@keyframes cnPiscaLoop { 0%, 100% { background: #fff7ed; } 50% { background: #fed7aa; } }
 @keyframes cnPiscaIcms { 0%, 100% { background: #fef2f2; } 50% { background: #fecaca; } }
-@media (prefers-reduced-motion: reduce) { .cn-aviso-icms.chama { animation: none; } }
-html[data-efeitos="zero"] .cn-aviso-icms.chama { animation: none; }
+@media (prefers-reduced-motion: reduce) { .cn-aviso-icms.chama, .cn-aviso-loop.chama { animation: none; } }
+html[data-efeitos="zero"] .cn-aviso-icms.chama, html[data-efeitos="zero"] .cn-aviso-loop.chama { animation: none; }
 
 /* ── corpo: cada tela é um "slide" ── */
 .cn-corpo { flex: 1; min-height: 0; overflow-y: auto; background: var(--surface, #fff); }
@@ -259,3 +268,328 @@ html[data-efeitos="zero"] .cn-manual-chk.chama { animation: none; border-color: 
     .cn-manual { flex: 1 1 100%; }
     .cn-btn { flex: 1 1 100%; }
 }
+
+/* ── "Ct-e / Conhecimento Beta" (js/app/regra-cte-beta.js): reaproveita tudo acima (.cn-*); só o que é próprio dele fica aqui ── */
+.cb-selo { background: linear-gradient(135deg, #f97316, #c2410c); }
+/* passo 1: a 3ª opção, "Para montar do zero clique em avançar" — bem nítida, em verde tracejado */
+.cb-zero-ou { margin: 18px 0 10px; text-align: center; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: .6px; color: var(--cn-mudo); }
+.cb-zero {
+    display: flex; align-items: center; gap: 18px; padding: 22px 26px; border: 3px dashed #22c55e; border-radius: 16px; background: #f0fdf4;
+    cursor: pointer; user-select: none; transition: border-color .15s, background .15s, box-shadow .15s;
+}
+.cb-zero:hover { background: #dcfce7; }
+.cb-zero:focus-within { outline: 3px solid #93c5fd; outline-offset: 3px; }
+.cb-zero input { width: 32px; height: 32px; accent-color: var(--cn-verde); flex: 0 0 auto; cursor: pointer; }
+.cb-zero-tx { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.cb-zero-tx b { font-size: 22px; line-height: 1.25; color: #14532d; }
+.cb-zero-tx small { font-size: 14px; line-height: 1.4; color: #166534; }
+.cb-zero:has(input:checked) { border-style: solid; border-color: var(--cn-verde); background: #dcfce7; box-shadow: 0 0 0 4px rgba(34, 197, 94, .2); }
+.cb-zero.chama { animation: cnChama .9s ease-in-out 2; }
+@media (prefers-reduced-motion: reduce) { .cb-zero.chama { animation: none; border-color: #f59e0b; box-shadow: 0 0 0 4px rgba(245, 158, 11, .45); } }
+html[data-efeitos="zero"] .cb-zero.chama { animation: none; border-color: #f59e0b; box-shadow: 0 0 0 4px rgba(245, 158, 11, .45); }
+@media (max-width: 680px) { .cb-zero { padding: 16px; gap: 12px; } .cb-zero-tx b { font-size: 18px; } }
+
+/* ═══ Beta: layout ANTI-SCROLL (.cb-anti) ═══════════════════════════════════════════════════════════════════════════════════════════════════════
+   Todos os campos do passo ficam visíveis na tela, sem barra de rolagem, em qualquer resolução: o conteúdo é diagramado em colunas e js/app/regra-cte-beta.js (_cbAjustar) encolhe o passo com
+   transform: scale() só o necessário para caber. Só aparece rolagem (.cb-rola) quando nem a escala mínima cabe — janela minúscula ou zoom alto do navegador. Tudo aqui é escopado em .cb-anti:
+   o montador clássico não muda (e a Nova Versão tem a sua própria cópia, .nv-anti, mais abaixo). */
+.cb-anti .cn-corpo { overflow: hidden; position: relative; }
+.cb-anti .cn-corpo.cb-rola { overflow: auto; }
+.cb-anti .cn-slide { height: 100%; animation: none; }
+.cb-anti .cn-wrap { max-width: none; margin: 0; padding: 12px 20px 8px; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; transform-origin: 0 0; }
+.cb-anti .cn-corpo.cb-rola .cn-wrap { overflow: visible; }
+.cb-anti .cn-wrap > * { flex-shrink: 0; }
+/* medição: mostra tudo o que o filtro esconde (a escala não pode variar com o que a pessoa digita) */
+.cn-card.cb-medindo .cn-opcao[hidden] { display: block !important; }
+.cn-card.cb-medindo .cn-sub-bloco[hidden], .cn-card.cb-medindo .cn-grupo[hidden] { display: grid !important; }
+/* a caixa "Somar no …" é um .cn-sub-bloco, mas na tela é display:block (não grid): na medição ela precisa continuar block, senão o título e as contas viram células de uma grade e a altura medida cresce (era isso que
+   encolhia o passo 5 ao digitar uma busca sem resultado nele) */
+.cn-card.cb-medindo .cb-sub-recolhivel[hidden] { display: block !important; }
+/* "Nenhuma opção encontrada…" só aparece quando TODAS as opções estão escondidas pelo filtro (sobra espaço de sobra), então na medição ele não conta: senão digitar uma busca sem resultado encolhia a tela */
+.cn-card.cb-medindo .cn-sem-resultado { display: none !important; }
+
+/* topo (título + trilha) e rodapé mais baixos */
+.cb-anti .cn-topo { padding: 6px 52px 6px 16px; gap: 4px 14px; }
+.cb-anti .cn-titulo { font-size: 13.5px; }
+.cb-anti .cn-passos { gap: 4px; }
+.cb-anti .cn-passo-btn { gap: 6px; padding: 3px 11px 3px 3px; border-width: 1.5px; font-size: 11.5px; }
+.cb-anti .cn-num { width: 22px; height: 22px; font-size: 12px; }
+.cb-anti .cn-aviso-icms { padding: 6px 16px; font-size: 12.5px; max-height: 22vh; }
+.cb-anti .cn-rodape { position: relative; padding: 7px 16px 9px; }
+.cb-anti .cn-rodape .cn-btn { padding: 9px 18px; font-size: 14px; }
+.cb-anti .cn-manual-chk { padding: 4px 10px; font-size: 13px; }
+/* a mensagem do rodapé flutua em cima dele (sem empurrar o conteúdo nem mudar a escala) */
+.cb-anti .cn-msg { position: absolute; left: 0; right: 0; bottom: 100%; z-index: 3; margin: 0; padding: 7px 16px; background: rgba(255, 255, 255, .97); border-top: 1px solid var(--cn-bd); box-shadow: 0 -6px 12px -10px rgba(15, 23, 42, .3); }
+
+/* cabeçalho de cada passo: "Passo N de 6" + nome na mesma linha */
+.cb-anti .cb-cab { display: flex; align-items: baseline; gap: 12px; margin: 0 0 6px; }
+.cb-anti .cb-cab .cn-etapa { margin: 0; white-space: nowrap; }
+.cb-anti .cn-h2 { margin: 0; font-size: 22px; }
+.cb-anti .cn-sub { margin: 0 0 8px; font-size: 14px; line-height: 1.45; }
+.cb-anti .cn-nota { margin-top: 6px; font-size: 12px; }
+
+/* passo 1: as colunas ocupam a altura que sobra (a caixa de colar cresce/encolhe) */
+.cb-anti #cbSlide0 .cn-colunas { flex: 1 1 auto; align-items: stretch; }
+.cb-anti #cbSlide0 .cn-cartao { display: flex; flex-direction: column; padding: 12px 14px; }
+.cb-anti #cbSlide0 .cn-cartao-titulo { margin: 0 0 8px; font-size: 14.5px; }
+.cb-anti #cbSlide0 .cn-codigo { flex: 1 1 auto; height: auto; min-height: 90px; font-size: 12px; }
+.cb-anti #cbSlide0 .cn-resumo { min-height: 0; margin-top: 6px; font-size: 12.5px; }
+.cb-anti #cbSlide0 .cn-prontas { gap: 6px; }
+.cb-anti .cn-pre { padding: 8px 12px; gap: 10px; font-size: 12.5px; }
+.cb-anti .cb-zero-ou { margin: 8px 0 6px; font-size: 12.5px; }
+.cb-anti .cb-zero { padding: 12px 18px; gap: 14px; }
+.cb-anti .cb-zero input { width: 28px; height: 28px; }
+.cb-anti .cb-zero-tx b { font-size: 19px; }
+.cb-anti .cb-zero-tx small { font-size: 12.5px; }
+
+/* passo 2 */
+.cb-anti .cn-escolhas { margin-bottom: 10px; max-width: 600px; gap: 10px; }
+.cb-anti .cn-escolha { padding: 10px 14px; }
+.cb-anti .cn-escolha-corpo b { font-size: 16px; }
+.cb-anti .cn-input { min-height: 64px; padding: 9px 12px; font-size: 14px; }
+.cb-anti .cn-campos-instr { margin: 0 0 8px; font-size: 13.5px; }
+.cb-anti .cn-campos-duplo { gap: 12px; }
+.cb-anti #cbSlide1 .cn-cartao { padding: 12px 14px; }
+.cb-anti .cn-campos-origem { margin: -2px 0 6px; font-size: 12px; }
+.cb-anti #cbSlide1 .cn-cartao-titulo { margin: 0 0 6px; font-size: 14.5px; }
+.cb-anti .cn-sugestao { margin: 0 0 10px; padding: 8px 12px; font-size: 13px; }
+
+/* passos 3, 4 e 5: filtro + faixa "Marcadas" + opções em colunas | caixa da IA */
+.cb-anti .cn-topo-aviso { margin: 0 0 8px; padding: 7px 12px; font-size: 13px; }
+.cb-anti .cb-filtro-linha { display: flex; align-items: center; gap: 12px; margin: 0 0 8px; }
+/* O campo ocupa só o que sobra da linha (width:auto + min-width:0): sem isso o "width:100%" do .cn-filtro soma com o texto ao lado e a linha estoura — com buscas que acham contas dentro das caixas "Somar" o texto
+   "Mostrando 0 de 4 opções (+9 na caixa “Somar”)." é longo, o ajuste anti-scroll nunca achava uma escala que coubesse e encolhia a tela inteira até o mínimo. */
+.cb-anti .cn-filtro { flex: 1 1 0; width: auto; min-width: 120px; margin: 0; padding: 9px 14px; font-size: 15px; }
+.cb-anti .cn-filtro-info { flex: 0 0 auto; margin: 0; min-width: 150px; text-align: right; white-space: nowrap; }
+.cb-anti .cn-marcadas { box-sizing: border-box; min-height: 40px; margin: 0 0 8px; padding: 5px 10px; font-size: 13px; }
+.cb-anti .cn-marcadas.vazio { border: 2px dashed #cbd5e1; background: #f8fafc; color: var(--cn-mudo); }
+.cb-anti .cn-colunas-opcoes { flex: 1 1 auto; grid-template-columns: minmax(0, 1fr) 330px; gap: 16px; align-items: stretch; }
+.cb-anti .cn-legenda { margin: 0 0 6px; font-size: 12px; }
+.cb-anti .cn-grupo { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); margin: 0 0 8px; border-radius: 12px; }
+.cb-anti .cn-grupo-titulo, .cb-anti .cn-grupo-nota, .cb-anti .cn-sub-bloco { grid-column: 1 / -1; }
+.cb-anti .cn-grupo-titulo { padding: 8px 14px; font-size: 15px; }
+.cb-anti .cn-grupo-nota { padding: 6px 14px; font-size: 12.5px; line-height: 1.4; }
+.cb-anti .cn-sub-bloco { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.cb-anti .cn-sub-titulo { grid-column: 1 / -1; padding: 6px 14px; font-size: 12px; }
+.cb-anti .cn-opcao, .cb-anti .cn-opcao:first-child { min-width: 0; border-top: 1px solid #eef2f7; border-right: 1px solid #eef2f7; }
+.cb-anti .cn-sub-titulo + .cn-opcao { border-top: 1px solid #eef2f7; }
+.cb-anti .cn-opcao-rotulo { padding: 8px 12px; gap: 10px; font-size: 14px; }
+.cb-anti .cn-opcao-rotulo input { width: 18px; height: 18px; }
+.cb-anti .cn-opcao > [id^="wCteOpcEntradaWrap_"] { margin: 0 0 10px 40px !important; }
+.cb-anti .cn-sem-resultado { padding: 14px; font-size: 13.5px; }
+.cb-anti .cn-ia { position: static; display: flex; flex-direction: column; padding: 12px; }
+.cb-anti .cn-ia-titulo { margin: 0 0 8px; font-size: 14px; }
+.cb-anti .cn-ia-texto { flex: 1 1 auto; height: auto; min-height: 90px; font-size: 14px; }
+.cb-anti .cn-dica { margin-top: 6px; font-size: 12px; line-height: 1.4; }
+
+/* passo 6: a montagem em duas colunas (ferramentas | área de montagem), os campos soltos em colunas */
+.cb-anti #cbSlide3 .cn-wrap { padding: 8px 14px 6px; }
+.cb-anti .cn-montagem-topo { margin: 0 0 6px; gap: 8px 14px; }
+.cb-anti .cn-montagem-topo .cn-sub { margin: 0; font-size: 12.5px; }
+.cb-anti .cn-ia-aviso { margin: 0 0 8px; padding: 7px 12px; font-size: 12.5px; }
+.cb-anti .cb-montagem-grid { flex: 1 1 auto; display: grid; grid-template-columns: minmax(300px, 26%) minmax(0, 1fr); gap: 14px; align-items: start; }
+.cb-anti .cb-montagem-grid > .wizard-section { min-width: 0; padding: 0 !important; }
+.cb-anti #wCteSecaoMontar { position: static !important; box-shadow: none !important; }
+.cb-anti #wCteCamposPalette, .cb-anti #wCteOutrosValoresChips { max-height: none !important; overflow: visible !important; }
+.cb-anti #wCteBlocosContainer { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 6px; align-items: start; }
+.cb-anti #wCteBlocosContainer > div { margin-bottom: 0 !important; padding: 6px 8px !important; }
+/* blocos compactos (os estilos vêm inline do _cteRenderBlocos, por isso o !important): linha do campo, "Definir condição?", condição e área de arrastar mais baixas */
+.cb-anti #wCteBlocosContainer > div > div:first-child { margin-bottom: 4px !important; }
+.cb-anti #wCteBlocosContainer > div > div:first-child input { padding: 4px 8px !important; }
+.cb-anti #wCteBlocosContainer > div > label { margin: 2px 0 4px !important; }
+.cb-anti #wCteBlocosContainer > div > div[style*="border-left"] { margin: 0 0 4px !important; }
+.cb-anti #wCteBlocosContainer [ondrop] { min-height: 30px !important; padding: 6px 8px !important; }
+.cb-anti #wCteBlocosContainer > div > div[style*="text-align:right"] { margin-top: 2px !important; }
+.cb-anti #wCteRegraPreview { columns: 340px; column-gap: 14px; margin-bottom: 6px !important; padding: 6px 8px !important; font-size: 11px !important; line-height: 1.35; }
+/* ferramentas da montagem mais compactas (botões de ação, paleta de campos, caixa rosa, valor fixo): os estilos são inline do _cteHtmlAreaMontagem/_cteChip, por isso o !important */
+.cb-anti #wCteSecaoMontar ._cte-acao-btn { padding: 4px 9px !important; font-size: 11.5px !important; }
+.cb-anti #wCteSecaoMontar > div { margin-bottom: 4px !important; }
+.cb-anti #wCteSecaoMontar > div[style*="font-size:12.5px"], .cb-anti #wCteSecaoMontar > div[style*="font-size:11px"] { margin-bottom: 3px !important; }
+.cb-anti #wCteSecaoMontar .wizard-label { margin-bottom: 4px !important; font-size: 13px !important; }
+.cb-anti #wCteCamposPalette { gap: 4px !important; padding: 6px !important; margin-bottom: 6px !important; }
+.cb-anti #wCteCamposPalette > span, .cb-anti #wCteOutrosValoresChips > span, .cb-anti #wCteTabCustomChips > span { padding: 3px 9px !important; font-size: 11.5px !important; }
+.cb-anti #wCteSecaoMontar input[type="text"] { padding: 4px 8px !important; }
+.cb-anti #wCteSecaoMontar > div[style*="background:#fdf2f8"] { padding: 6px 10px !important; margin-bottom: 6px !important; }
+.cb-anti #wCteValorChip { padding: 4px 10px !important; }
+.cb-anti .cn-tab-custom { margin: 0 0 6px; padding: 4px 10px; }
+.cb-anti #wCteExtrasContainer > div { padding: 5px 8px !important; margin-bottom: 4px !important; }
+.cb-anti #wCteExtrasContainer pre { margin: 0 0 4px !important; font-size: 11px !important; }
+.cb-anti .cb-montagem-grid > .wizard-section:last-child > div[style*="font-size:12.5px"] { margin-bottom: 4px !important; }
+.cb-anti .cb-montagem-grid > .wizard-section:last-child > button { padding: 5px !important; margin-bottom: 6px !important; }
+.cb-anti .cb-montagem-grid > .wizard-section:last-child > div[style*="display:flex"] button { padding: 6px 12px !important; }
+
+/* caixas "Somar no <campo>": a linha do título vira uma caixa de marcação; as contas prontas só aparecem com ela marcada */
+.cb-anti .cb-sub-recolhivel { display: block; grid-column: 1 / -1; }
+.cb-anti .cb-sub-toggle { display: flex; align-items: center; gap: 10px; margin: 0; cursor: pointer; user-select: none; text-transform: uppercase; }
+.cb-anti .cb-sub-toggle:hover { background: #e2e8f0; }
+.cb-anti .cb-sub-toggle:has(input:checked) { background: #e0f2fe; color: var(--cn-azul-esc); }
+.cb-anti .cb-sub-toggle input { width: 20px; height: 20px; flex: 0 0 auto; accent-color: var(--cn-azul); cursor: pointer; }
+.cb-anti .cb-sub-dica { margin-left: auto; flex: 0 1 auto; min-width: 0; max-width: 70%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--cn-mudo); }   /* uma linha só: o texto muda com a busca e não pode mudar a altura da caixa (nem estourar a largura) */
+.cb-anti .cb-sub-dica.achou { padding: 2px 10px; border-radius: 999px; background: #fef3c7; color: #92400e; font-weight: 800; }
+.cb-anti .cb-sub-itens { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.cb-anti .cb-sub-itens > .cn-opcao:first-child { border-top: 1px solid #eef2f7; }
+
+/* nota curta ao lado do nome de uma opção (ex.: "Somar ICMS — soma o Valor do ICMS no Total Prestação (passo 5)") */
+.cb-anti .cb-opc-nota { font-size: 11.5px; font-weight: 500; color: var(--cn-mudo); }
+/* ── "Ct-e / Conhecimento Nova Versão" (js/app/regra-cte-nova.js): CÓPIA do bloco do Beta (.cb-… → .nv-…), gerada por tools/gerar-nova-do-beta.js; reaproveita tudo acima (.cn-*) ── */
+.nv-selo { background: linear-gradient(135deg, #f97316, #c2410c); }
+/* passo 1: a 3ª opção, "Para montar do zero clique em avançar" — bem nítida, em verde tracejado */
+.nv-zero-ou { margin: 18px 0 10px; text-align: center; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: .6px; color: var(--cn-mudo); }
+.nv-zero {
+    display: flex; align-items: center; gap: 18px; padding: 22px 26px; border: 3px dashed #22c55e; border-radius: 16px; background: #f0fdf4;
+    cursor: pointer; user-select: none; transition: border-color .15s, background .15s, box-shadow .15s;
+}
+.nv-zero:hover { background: #dcfce7; }
+.nv-zero:focus-within { outline: 3px solid #93c5fd; outline-offset: 3px; }
+.nv-zero input { width: 32px; height: 32px; accent-color: var(--cn-verde); flex: 0 0 auto; cursor: pointer; }
+.nv-zero-tx { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.nv-zero-tx b { font-size: 22px; line-height: 1.25; color: #14532d; }
+.nv-zero-tx small { font-size: 14px; line-height: 1.4; color: #166534; }
+.nv-zero:has(input:checked) { border-style: solid; border-color: var(--cn-verde); background: #dcfce7; box-shadow: 0 0 0 4px rgba(34, 197, 94, .2); }
+.nv-zero.chama { animation: cnChama .9s ease-in-out 2; }
+@media (prefers-reduced-motion: reduce) { .nv-zero.chama { animation: none; border-color: #f59e0b; box-shadow: 0 0 0 4px rgba(245, 158, 11, .45); } }
+html[data-efeitos="zero"] .nv-zero.chama { animation: none; border-color: #f59e0b; box-shadow: 0 0 0 4px rgba(245, 158, 11, .45); }
+@media (max-width: 680px) { .nv-zero { padding: 16px; gap: 12px; } .nv-zero-tx b { font-size: 18px; } }
+
+/* ═══ Nova Versão: layout ANTI-SCROLL (.nv-anti) ═══════════════════════════════════════════════════════════════════════════════════════════════════════
+   Todos os campos do passo ficam visíveis na tela, sem barra de rolagem, em qualquer resolução: o conteúdo é diagramado em colunas e js/app/regra-cte-nova.js (_nvAjustar) encolhe o passo com
+   transform: scale() só o necessário para caber. Só aparece rolagem (.nv-rola) quando nem a escala mínima cabe — janela minúscula ou zoom alto do navegador. Tudo aqui é escopado em .nv-anti:
+   o montador clássico não muda (o Beta tem a sua própria cópia, .cb-anti, mais acima). */
+.nv-anti .cn-corpo { overflow: hidden; position: relative; }
+.nv-anti .cn-corpo.nv-rola { overflow: auto; }
+.nv-anti .cn-slide { height: 100%; animation: none; }
+.nv-anti .cn-wrap { max-width: none; margin: 0; padding: 12px 20px 8px; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; transform-origin: 0 0; }
+.nv-anti .cn-corpo.nv-rola .cn-wrap { overflow: visible; }
+.nv-anti .cn-wrap > * { flex-shrink: 0; }
+/* medição: mostra tudo o que o filtro esconde (a escala não pode variar com o que a pessoa digita) */
+.cn-card.nv-medindo .cn-opcao[hidden] { display: block !important; }
+.cn-card.nv-medindo .cn-sub-bloco[hidden], .cn-card.nv-medindo .cn-grupo[hidden] { display: grid !important; }
+/* a caixa "Somar no …" é um .cn-sub-bloco, mas na tela é display:block (não grid): na medição ela precisa continuar block, senão o título e as contas viram células de uma grade e a altura medida cresce (era isso que
+   encolhia o passo 5 ao digitar uma busca sem resultado nele) */
+.cn-card.nv-medindo .nv-sub-recolhivel[hidden] { display: block !important; }
+/* "Nenhuma opção encontrada…" só aparece quando TODAS as opções estão escondidas pelo filtro (sobra espaço de sobra), então na medição ele não conta: senão digitar uma busca sem resultado encolhia a tela */
+.cn-card.nv-medindo .cn-sem-resultado { display: none !important; }
+
+/* topo (título + trilha) e rodapé mais baixos */
+.nv-anti .cn-topo { padding: 6px 52px 6px 16px; gap: 4px 14px; }
+.nv-anti .cn-titulo { font-size: 13.5px; }
+.nv-anti .cn-passos { gap: 4px; }
+.nv-anti .cn-passo-btn { gap: 6px; padding: 3px 11px 3px 3px; border-width: 1.5px; font-size: 11.5px; }
+.nv-anti .cn-num { width: 22px; height: 22px; font-size: 12px; }
+.nv-anti .cn-aviso-icms { padding: 6px 16px; font-size: 12.5px; max-height: 22vh; }
+.nv-anti .cn-rodape { position: relative; padding: 7px 16px 9px; }
+.nv-anti .cn-rodape .cn-btn { padding: 9px 18px; font-size: 14px; }
+.nv-anti .cn-manual-chk { padding: 4px 10px; font-size: 13px; }
+/* a mensagem do rodapé flutua em cima dele (sem empurrar o conteúdo nem mudar a escala) */
+.nv-anti .cn-msg { position: absolute; left: 0; right: 0; bottom: 100%; z-index: 3; margin: 0; padding: 7px 16px; background: rgba(255, 255, 255, .97); border-top: 1px solid var(--cn-bd); box-shadow: 0 -6px 12px -10px rgba(15, 23, 42, .3); }
+
+/* cabeçalho de cada passo: "Passo N de 6" + nome na mesma linha */
+.nv-anti .nv-cab { display: flex; align-items: baseline; gap: 12px; margin: 0 0 6px; }
+.nv-anti .nv-cab .cn-etapa { margin: 0; white-space: nowrap; }
+.nv-anti .cn-h2 { margin: 0; font-size: 22px; }
+.nv-anti .cn-sub { margin: 0 0 8px; font-size: 14px; line-height: 1.45; }
+.nv-anti .cn-nota { margin-top: 6px; font-size: 12px; }
+
+/* passo 1: as colunas ocupam a altura que sobra (a caixa de colar cresce/encolhe) */
+.nv-anti #nvSlide0 .cn-colunas { flex: 1 1 auto; align-items: stretch; }
+.nv-anti #nvSlide0 .cn-cartao { display: flex; flex-direction: column; padding: 12px 14px; }
+.nv-anti #nvSlide0 .cn-cartao-titulo { margin: 0 0 8px; font-size: 14.5px; }
+.nv-anti #nvSlide0 .cn-codigo { flex: 1 1 auto; height: auto; min-height: 90px; font-size: 12px; }
+.nv-anti #nvSlide0 .cn-resumo { min-height: 0; margin-top: 6px; font-size: 12.5px; }
+.nv-anti #nvSlide0 .cn-prontas { gap: 6px; }
+.nv-anti .cn-pre { padding: 8px 12px; gap: 10px; font-size: 12.5px; }
+.nv-anti .nv-zero-ou { margin: 8px 0 6px; font-size: 12.5px; }
+.nv-anti .nv-zero { padding: 12px 18px; gap: 14px; }
+.nv-anti .nv-zero input { width: 28px; height: 28px; }
+.nv-anti .nv-zero-tx b { font-size: 19px; }
+.nv-anti .nv-zero-tx small { font-size: 12.5px; }
+
+/* passo 2 */
+.nv-anti .cn-escolhas { margin-bottom: 10px; max-width: 600px; gap: 10px; }
+.nv-anti .cn-escolha { padding: 10px 14px; }
+.nv-anti .cn-escolha-corpo b { font-size: 16px; }
+.nv-anti .cn-input { min-height: 64px; padding: 9px 12px; font-size: 14px; }
+.nv-anti .cn-campos-instr { margin: 0 0 8px; font-size: 13.5px; }
+.nv-anti .cn-campos-duplo { gap: 12px; }
+.nv-anti #nvSlide1 .cn-cartao { padding: 12px 14px; }
+.nv-anti .cn-campos-origem { margin: -2px 0 6px; font-size: 12px; }
+.nv-anti #nvSlide1 .cn-cartao-titulo { margin: 0 0 6px; font-size: 14.5px; }
+.nv-anti .cn-sugestao { margin: 0 0 10px; padding: 8px 12px; font-size: 13px; }
+
+/* passos 3, 4 e 5: filtro + faixa "Marcadas" + opções em colunas | caixa da IA */
+.nv-anti .cn-topo-aviso { margin: 0 0 8px; padding: 7px 12px; font-size: 13px; }
+.nv-anti .nv-filtro-linha { display: flex; align-items: center; gap: 12px; margin: 0 0 8px; }
+/* O campo ocupa só o que sobra da linha (width:auto + min-width:0): sem isso o "width:100%" do .cn-filtro soma com o texto ao lado e a linha estoura — com buscas que acham contas dentro das caixas "Somar" o texto
+   "Mostrando 0 de 4 opções (+9 na caixa “Somar”)." é longo, o ajuste anti-scroll nunca achava uma escala que coubesse e encolhia a tela inteira até o mínimo. */
+.nv-anti .cn-filtro { flex: 1 1 0; width: auto; min-width: 120px; margin: 0; padding: 9px 14px; font-size: 15px; }
+.nv-anti .cn-filtro-info { flex: 0 0 auto; margin: 0; min-width: 150px; text-align: right; white-space: nowrap; }
+.nv-anti .cn-marcadas { box-sizing: border-box; min-height: 40px; margin: 0 0 8px; padding: 5px 10px; font-size: 13px; }
+.nv-anti .cn-marcadas.vazio { border: 2px dashed #cbd5e1; background: #f8fafc; color: var(--cn-mudo); }
+.nv-anti .cn-colunas-opcoes { flex: 1 1 auto; grid-template-columns: minmax(0, 1fr) 330px; gap: 16px; align-items: stretch; }
+.nv-anti .cn-legenda { margin: 0 0 6px; font-size: 12px; }
+.nv-anti .cn-grupo { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); margin: 0 0 8px; border-radius: 12px; }
+.nv-anti .cn-grupo-titulo, .nv-anti .cn-grupo-nota, .nv-anti .cn-sub-bloco { grid-column: 1 / -1; }
+.nv-anti .cn-grupo-titulo { padding: 8px 14px; font-size: 15px; }
+.nv-anti .cn-grupo-nota { padding: 6px 14px; font-size: 12.5px; line-height: 1.4; }
+.nv-anti .cn-sub-bloco { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.nv-anti .cn-sub-titulo { grid-column: 1 / -1; padding: 6px 14px; font-size: 12px; }
+.nv-anti .cn-opcao, .nv-anti .cn-opcao:first-child { min-width: 0; border-top: 1px solid #eef2f7; border-right: 1px solid #eef2f7; }
+.nv-anti .cn-sub-titulo + .cn-opcao { border-top: 1px solid #eef2f7; }
+.nv-anti .cn-opcao-rotulo { padding: 8px 12px; gap: 10px; font-size: 14px; }
+.nv-anti .cn-opcao-rotulo input { width: 18px; height: 18px; }
+.nv-anti .cn-opcao > [id^="wCteOpcEntradaWrap_"] { margin: 0 0 10px 40px !important; }
+.nv-anti .cn-sem-resultado { padding: 14px; font-size: 13.5px; }
+.nv-anti .cn-ia { position: static; display: flex; flex-direction: column; padding: 12px; }
+.nv-anti .cn-ia-titulo { margin: 0 0 8px; font-size: 14px; }
+.nv-anti .cn-ia-texto { flex: 1 1 auto; height: auto; min-height: 90px; font-size: 14px; }
+.nv-anti .cn-dica { margin-top: 6px; font-size: 12px; line-height: 1.4; }
+
+/* passo 6: a montagem em duas colunas (ferramentas | área de montagem), os campos soltos em colunas */
+.nv-anti #nvSlide3 .cn-wrap { padding: 8px 14px 6px; }
+.nv-anti .cn-montagem-topo { margin: 0 0 6px; gap: 8px 14px; }
+.nv-anti .cn-montagem-topo .cn-sub { margin: 0; font-size: 12.5px; }
+.nv-anti .cn-ia-aviso { margin: 0 0 8px; padding: 7px 12px; font-size: 12.5px; }
+.nv-anti .nv-montagem-grid { flex: 1 1 auto; display: grid; grid-template-columns: minmax(300px, 26%) minmax(0, 1fr); gap: 14px; align-items: start; }
+.nv-anti .nv-montagem-grid > .wizard-section { min-width: 0; padding: 0 !important; }
+.nv-anti #wCteSecaoMontar { position: static !important; box-shadow: none !important; }
+.nv-anti #wCteCamposPalette, .nv-anti #wCteOutrosValoresChips { max-height: none !important; overflow: visible !important; }
+.nv-anti #wCteBlocosContainer { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 6px; align-items: start; }
+.nv-anti #wCteBlocosContainer > div { margin-bottom: 0 !important; padding: 6px 8px !important; }
+/* blocos compactos (os estilos vêm inline do _cteRenderBlocos, por isso o !important): linha do campo, "Definir condição?", condição e área de arrastar mais baixas */
+.nv-anti #wCteBlocosContainer > div > div:first-child { margin-bottom: 4px !important; }
+.nv-anti #wCteBlocosContainer > div > div:first-child input { padding: 4px 8px !important; }
+.nv-anti #wCteBlocosContainer > div > label { margin: 2px 0 4px !important; }
+.nv-anti #wCteBlocosContainer > div > div[style*="border-left"] { margin: 0 0 4px !important; }
+.nv-anti #wCteBlocosContainer [ondrop] { min-height: 30px !important; padding: 6px 8px !important; }
+.nv-anti #wCteBlocosContainer > div > div[style*="text-align:right"] { margin-top: 2px !important; }
+.nv-anti #wCteRegraPreview { columns: 340px; column-gap: 14px; margin-bottom: 6px !important; padding: 6px 8px !important; font-size: 11px !important; line-height: 1.35; }
+/* ferramentas da montagem mais compactas (botões de ação, paleta de campos, caixa rosa, valor fixo): os estilos são inline do _cteHtmlAreaMontagem/_cteChip, por isso o !important */
+.nv-anti #wCteSecaoMontar ._cte-acao-btn { padding: 4px 9px !important; font-size: 11.5px !important; }
+.nv-anti #wCteSecaoMontar > div { margin-bottom: 4px !important; }
+.nv-anti #wCteSecaoMontar > div[style*="font-size:12.5px"], .nv-anti #wCteSecaoMontar > div[style*="font-size:11px"] { margin-bottom: 3px !important; }
+.nv-anti #wCteSecaoMontar .wizard-label { margin-bottom: 4px !important; font-size: 13px !important; }
+.nv-anti #wCteCamposPalette { gap: 4px !important; padding: 6px !important; margin-bottom: 6px !important; }
+.nv-anti #wCteCamposPalette > span, .nv-anti #wCteOutrosValoresChips > span, .nv-anti #wCteTabCustomChips > span { padding: 3px 9px !important; font-size: 11.5px !important; }
+.nv-anti #wCteSecaoMontar input[type="text"] { padding: 4px 8px !important; }
+.nv-anti #wCteSecaoMontar > div[style*="background:#fdf2f8"] { padding: 6px 10px !important; margin-bottom: 6px !important; }
+.nv-anti #wCteValorChip { padding: 4px 10px !important; }
+.nv-anti .cn-tab-custom { margin: 0 0 6px; padding: 4px 10px; }
+.nv-anti #wCteExtrasContainer > div { padding: 5px 8px !important; margin-bottom: 4px !important; }
+.nv-anti #wCteExtrasContainer pre { margin: 0 0 4px !important; font-size: 11px !important; }
+.nv-anti .nv-montagem-grid > .wizard-section:last-child > div[style*="font-size:12.5px"] { margin-bottom: 4px !important; }
+.nv-anti .nv-montagem-grid > .wizard-section:last-child > button { padding: 5px !important; margin-bottom: 6px !important; }
+.nv-anti .nv-montagem-grid > .wizard-section:last-child > div[style*="display:flex"] button { padding: 6px 12px !important; }
+
+/* caixas "Somar no <campo>": a linha do título vira uma caixa de marcação; as contas prontas só aparecem com ela marcada */
+.nv-anti .nv-sub-recolhivel { display: block; grid-column: 1 / -1; }
+.nv-anti .nv-sub-toggle { display: flex; align-items: center; gap: 10px; margin: 0; cursor: pointer; user-select: none; text-transform: uppercase; }
+.nv-anti .nv-sub-toggle:hover { background: #e2e8f0; }
+.nv-anti .nv-sub-toggle:has(input:checked) { background: #e0f2fe; color: var(--cn-azul-esc); }
+.nv-anti .nv-sub-toggle input { width: 20px; height: 20px; flex: 0 0 auto; accent-color: var(--cn-azul); cursor: pointer; }
+.nv-anti .nv-sub-dica { margin-left: auto; flex: 0 1 auto; min-width: 0; max-width: 70%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--cn-mudo); }   /* uma linha só: o texto muda com a busca e não pode mudar a altura da caixa (nem estourar a largura) */
+.nv-anti .nv-sub-dica.achou { padding: 2px 10px; border-radius: 999px; background: #fef3c7; color: #92400e; font-weight: 800; }
+.nv-anti .nv-sub-itens { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.nv-anti .nv-sub-itens > .cn-opcao:first-child { border-top: 1px solid #eef2f7; }
+
+/* nota curta ao lado do nome de uma opção (ex.: "Somar ICMS — soma o Valor do ICMS no Total Prestação (passo 5)") */
+.nv-anti .nv-opc-nota { font-size: 11.5px; font-weight: 500; color: var(--cn-mudo); }
