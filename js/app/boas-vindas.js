@@ -53,6 +53,7 @@ async function btnWelcomeRegra() {
         else if (_modoCte === 'classico') mostrarWizardRegra('');
     }
     else if (_tipo === 'cte-nova') mostrarWizardRegraCteNova('');
+    else if (_tipo === 'cte-beta') mostrarWizardRegraCteBeta('');
     else if (_tipo === 'contrato') {
         const _modo = await perguntarModoContrato();
         if (_modo === 'dnd') mostrarWizardContratoDnd('');

@@ -39,6 +39,9 @@ const Personalizar = (() => {
             ${sw('agSound', 'Tocar um som no lembrete', '', !!p.agSound)}
             <div class="dr-row"><span class="dr-lbl">A semana começa em</span>${seg('agWeek', [['dom', 'Domingo'], ['seg', 'Segunda']], p.agWeek || 'dom')}</div>
           </section>
+          <section class="dr-sec"><h3>${icon('sparkles', 13)}Recursos em teste (Beta)</h3>
+            ${sw('betaRegra', 'Criador de regra Beta (Ct-e / Conhecimento)', 'Mostra mais uma opção em Criar Regra: a versão em desenvolvimento do assistente em 6 passos (a “Nova Versão”). As novidades são testadas aqui primeiro e chegam à Nova Versão aos poucos. Pode mudar e ter falhas. As outras opções do Criar Regra não são afetadas.', !!p.betaRegra)}
+          </section>
           <section class="dr-sec"><h3>${icon('note', 13)}Meu Espaço — seus dados</h3>
             <div class="dr-card"><div class="dc-top"><span class="dc-ic">${icon('folder', 19)}</span><div><b>${st[1]}</b><small>${st[2]}</small></div></div>
               <div class="dr-btns"><button class="dr-btn primary" data-a="folder" type="button">${icon('folder', 14)}${m.status === 'conectado' ? 'Trocar a pasta' : 'Escolher a pasta'}</button><button class="dr-btn" data-a="export" type="button">${icon('download', 14)}Exportar backup</button><button class="dr-btn" data-a="import" type="button">${icon('upload', 14)}Importar</button></div></div>

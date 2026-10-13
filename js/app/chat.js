@@ -55,6 +55,7 @@ async function handleChat(opts) {
                 return;
             }
             if (_tipo === 'cte-nova') { logSearch(query, true); mostrarWizardRegraCteNova(query); return; }
+            if (_tipo === 'cte-beta') { logSearch(query, true); mostrarWizardRegraCteBeta(query); return; }
             if (_tipo === 'contrato') {
                 const _modo = await perguntarModoContrato();
                 if (_modo === 'dnd') { logSearch(query, true); mostrarWizardContratoDnd(query); return; }

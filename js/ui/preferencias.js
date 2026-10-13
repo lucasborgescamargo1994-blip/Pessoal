@@ -10,7 +10,9 @@ const Prefs = (() => {
     const base = () => ({ accent: null, accentRgb: null, bg: 'aurora', efeitos: 'completo', density: 'confortavel', startup: 'restore', sidebar: 'open',
         railOrder: 'fixa', railLabels: true, smartDock: true, rememberSide: true, hidden: HIDDEN_DEFAULT.slice(), railDefaults: RAIL_DEFAULTS, ws: null, usage: {}, newsSeen: 0, updated: 0,
         // Agenda: forma de ver (calendário/lista/cronograma), quadro ao abrir o sistema, avisos e início da semana
-        agView: 'cal', agCrono: 28, agBoard: 'sempre', agToast: true, agNotify: false, agSound: false, agWeek: 'dom' });
+        agView: 'cal', agCrono: 28, agBoard: 'sempre', agToast: true, agNotify: false, agSound: false, agWeek: 'dom',
+        // Recursos em teste (Personalizar › Recursos em teste): todos nascem DESLIGADOS. betaRegra = mostra o "Ct-e / Conhecimento Beta" no Criar Regra (js/app/regra-cte-beta.js): a versão em desenvolvimento do assistente; a "Nova Versão" (js/app/regra-cte-nova.js) é a cópia estável dele.
+        betaRegra: false });
     // Preferências antigas (sem o marcador railDefaults) ganham os atalhos ocultos de fábrica. Confere o objeto GUARDADO/recebido (o base() já traz o marcador) e mexe no `atual`.
     function migrar(guardadas, atual) {
         if ((guardadas.railDefaults || 0) >= RAIL_DEFAULTS) return false;

@@ -163,7 +163,9 @@ function _resolverEscolhaRegra(e){const c=document.getElementById('regraEscolhaC
 function perguntarAuxilioRegra(){return new Promise(resolve=>{_regraWizardResolve=resolve;const s=document.getElementById('chatStream');const card=document.createElement('div');card.id='regraEscolhaCard';card.className='answer-card';card.innerHTML=`<div style="background:#f0fdf4;padding:8px 15px;border-bottom:1px solid #bbf7d0;font-size:11px;color:#166534;font-weight:600;">⚙️ Criação de Regras</div><div class="answer-section"><div class="section-content"><div style="font-size:13px;color:#374151;margin-bottom:10px;">Precisa de auxílio para criar/editar a regra?</div><div style="display:flex;gap:10px;"><button onclick="_resolverEscolhaRegra('sim')" style="flex:1;padding:10px 16px;background:#16a34a;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">✅ Sim — abrir assistente</button><button onclick="_resolverEscolhaRegra('nao')" style="flex:1;padding:10px 16px;background:#6b7280;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">🔍 Não — buscar no banco</button></div></div></div>`;s.appendChild(card);scrollToBottom(true);});}
 let _tipoRegraResolve=null,_wizardContratoQuery='';
 function _resolverTipoRegra(tipo){const c=document.getElementById('tipoRegraCard');if(c)c.remove();if(_tipoRegraResolve){_tipoRegraResolve(tipo);_tipoRegraResolve=null;}}
-function perguntarTipoRegra(){return new Promise(resolve=>{_tipoRegraResolve=resolve;const s=Ferr.stream('regra');const card=document.createElement('div');card.id='tipoRegraCard';card.className='answer-card';card.innerHTML=`<div style="background:#f5f3ff;padding:8px 15px;border-bottom:1px solid #ddd6fe;font-size:11px;color:#5b21b6;font-weight:600;">⚙️ Tipo de Regra</div><div class="answer-section"><div class="section-content"><div style="font-size:13px;color:#374151;margin-bottom:10px;">Para qual tipo de regra precisa de auxílio?</div><div style="display:flex;flex-wrap:wrap;gap:10px;"><button onclick="_resolverTipoRegra('cte')" style="flex:1 1 calc(50% - 10px);min-width:220px;padding:10px 16px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">📄 Ct-e / Conhecimento</button><button onclick="_resolverTipoRegra('cte-nova')" style="flex:1 1 calc(50% - 10px);min-width:220px;padding:10px 16px;background:linear-gradient(135deg,#7c3aed,#2563eb);color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">✨ Ct-e / Conhecimento Nova Versão <span style="background:#fde047;color:#713f12;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:800;vertical-align:1px;">NOVO</span><span style="display:block;font-size:10.5px;font-weight:500;opacity:.92;margin-top:2px;">Passo a passo, uma tela por vez</span></button><button onclick="_resolverTipoRegra('contrato')" style="flex:1 1 calc(50% - 10px);min-width:220px;padding:10px 16px;background:#7c3aed;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">🚛 Contrato de Frete</button><button onclick="_resolverTipoRegra('faturamento')" style="flex:1 1 calc(50% - 10px);min-width:220px;padding:10px 16px;background:#059669;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">💰 Faturamento</button></div></div></div>`;s.appendChild(card);ferrRolar('regra', true);});}
+function perguntarTipoRegra(){return new Promise(resolve=>{_tipoRegraResolve=resolve;const s=Ferr.stream('regra');const card=document.createElement('div');card.id='tipoRegraCard';card.className='answer-card';card.innerHTML=`<div style="background:#f5f3ff;padding:8px 15px;border-bottom:1px solid #ddd6fe;font-size:11px;color:#5b21b6;font-weight:600;">⚙️ Tipo de Regra</div><div class="answer-section"><div class="section-content"><div style="font-size:13px;color:#374151;margin-bottom:10px;">Para qual tipo de regra precisa de auxílio?</div><div style="display:flex;flex-wrap:wrap;gap:10px;"><button onclick="_resolverTipoRegra('cte-nova')" style="flex:1 1 calc(50% - 10px);min-width:220px;padding:10px 16px;background:linear-gradient(135deg,#7c3aed,#2563eb);color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">✨ Ct-e / Conhecimento Nova Versão <span style="background:#fde047;color:#713f12;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:800;vertical-align:1px;">NOVO</span><span style="display:block;font-size:10.5px;font-weight:500;opacity:.92;margin-top:2px;">Regra base → campos → Frete, ICMS e Total Prestação → montagem</span></button><button onclick="_resolverTipoRegra('contrato')" style="flex:1 1 calc(50% - 10px);min-width:220px;padding:10px 16px;background:#7c3aed;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">🚛 Contrato de Frete</button><button onclick="_resolverTipoRegra('faturamento')" style="flex:1 1 calc(50% - 10px);min-width:220px;padding:10px 16px;background:#059669;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">💰 Faturamento</button><button onclick="_resolverTipoRegra('cte')" style="flex:1 1 calc(50% - 10px);min-width:220px;padding:10px 16px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">📄 Ct-e / Conhecimento (Antigo)</button>${_betaRegraAtivo()?`<button onclick="_resolverTipoRegra('cte-beta')" style="flex:1 1 100%;padding:10px 16px;background:#fff7ed;color:#9a3412;border:2px dashed #fb923c;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;">🧪 Ct-e / Conhecimento Beta <span style="background:#fb923c;color:#fff;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:800;vertical-align:1px;">EM TESTE</span><span style="display:block;font-size:10.5px;font-weight:500;opacity:.9;margin-top:2px;">Versão em desenvolvimento: as novidades chegam à Nova Versão aos poucos</span></button>`:''}</div></div></div>`;s.appendChild(card);ferrRolar('regra', true);});}
+// "Ct-e / Conhecimento Beta" (js/app/regra-cte-beta.js): a versão em DESENVOLVIMENTO da Nova Versão; só aparece se a pessoa ligou o "Criador de regra Beta" em Personalizar › Recursos em teste (vem DESLIGADO)
+function _betaRegraAtivo(){ try { return typeof Prefs!=='undefined' && !!Prefs.get('betaRegra'); } catch(e){ return false; } }
 let _modoContratoResolve=null;
 function _resolverModoContrato(modo){const c=document.getElementById('modoContratoCard');if(c)c.remove();if(_modoContratoResolve){_modoContratoResolve(modo);_modoContratoResolve=null;}}
 // 09/09/2026, a pedido: formulário clássico de Contrato de Frete desativado — vai direto pro
@@ -219,6 +221,7 @@ const REGRAS_PREDEFINIDAS_CONTRATO={
 };
 
 function mostrarWizardRegra(queryOriginal){
+    window._cteAssistenteAberto=null;   // formulário clássico: nenhum assistente em telas (Nova Versão/Beta) em uso — ver _cteGruposOpcoes
     _wizardQueryOriginal=queryOriginal; _wizardCteBase64=null; _wizardTabelaBase64=null;
     const s=Ferr.stream('regra');
     const card=document.createElement('div');
@@ -602,11 +605,28 @@ const CTE_OPCOES_MONTAGEM=[
         {id:'gris_merc_peso', label:'Em cima do total peso mercadorias', codigo:'if (tabelaPrecos.percGris > 0)\ndef("Gris", tabelaPrecos.percGris * obt("merc_quantKg[]"));'}
     ]}
 ];
-// Todos os grupos de opções "monte com um clique" que as funções _cte* precisam percorrer: os de CTE_OPCOES_MONTAGEM (que o montador clássico desenha) mais os que SÓ o
-// "Ct-e / Conhecimento Nova Versão" desenha (CN_OPCOES_DEMAIS, em js/app/regra-cte-passos.js). No montador clássico os ids desses últimos não existem na tela, então para ele
-// nada muda: cada função pula o que não encontra.
+// Todos os grupos de opções "monte com um clique" que as funções _cte* precisam percorrer: os de CTE_OPCOES_MONTAGEM (que o montador clássico desenha) mais os que SÓ os assistentes em telas
+// desenham — o "Demais opções" compartilhado (CN_OPCOES_DEMAIS, em js/app/regra-cte-passos.js) e os do assistente aberto (opcoesExtras / grupoApos do registro dele em window.CTE_ASSISTENTES:
+// "Ct-e / Conhecimento Nova Versão", js/app/regra-cte-nova.js, ou "Beta", js/app/regra-cte-beta.js — cada um traz as SUAS opções, então os dois podem coexistir sem se misturar).
+// No montador clássico os ids desses últimos não existem na tela, então para ele nada muda: cada função pula o que não encontra.
+// Ordem de aplicação (é a da lista): grupos do clássico (com as opções "grupoApos" do assistente no meio), depois opcoesExtras do assistente (a opção que CRIA o Total Prestação entra antes das contas
+// "Somar" que dependem dele), depois CN_OPCOES_DEMAIS.
+// Opções que entram no MEIO de um grupo do clássico (grupoApos: id da opção do clássico -> opções logo depois dela) mantêm a ordem de aplicação do grupo:
+// ex.: "Somar ICMS" vem depois de Cálculo Inverso e ANTES de "Somar ICMS no Total Prestação", para o total ler o valorICMS já calculado. Nos outros criadores elas não têm caixinha na tela e o motor as ignora.
+// Qual assistente? O que tem o cartão na tela; antes de o cartão existir (a montagem das caixinhas acontece ANTES de ele entrar na tela) vale o último aberto (window._cteAssistenteAberto, que cada
+// mostrarWizardRegraCte* grava ao abrir).
+let _cteGruposMeio={};   // memo por assistente (tipo -> grupos do clássico já com as opções "grupoApos" dele)
 function _cteGruposOpcoes(){
-    return typeof CN_OPCOES_DEMAIS!=='undefined' ? CTE_OPCOES_MONTAGEM.concat(CN_OPCOES_DEMAIS) : CTE_OPCOES_MONTAGEM;
+    const _as=(typeof _cteAssistenteAtivo==='function'&&_cteAssistenteAtivo())||(window.CTE_ASSISTENTES||{})[window._cteAssistenteAberto]||null;
+    const extra=[];
+    if(_as&&_as.opcoesExtras)extra.push(..._as.opcoesExtras);
+    if(typeof CN_OPCOES_DEMAIS!=='undefined')extra.push(...CN_OPCOES_DEMAIS);
+    let base=CTE_OPCOES_MONTAGEM;
+    if(_as&&_as.grupoApos){
+        if(!_cteGruposMeio[_as.tipo])_cteGruposMeio[_as.tipo]=CTE_OPCOES_MONTAGEM.map(g=>({...g, itens:g.itens.flatMap(it=>[it].concat(_as.grupoApos[it.id]||[]))}));
+        base=_cteGruposMeio[_as.tipo];
+    }
+    return extra.length ? base.concat(extra) : base;
 }
 let _wizardRegraDndQuery='';
 function _cteChip(c,corBorda,corFundo,corTexto){
@@ -684,7 +704,7 @@ Ferr.registrar('regra', {
     async iniciar(o) {
         const q = (o && o.consulta) || '';   // pergunta digitada no chat que levou até aqui (pré-preenche o montador)
         const tipo = await perguntarTipoRegra();
-        const nomes = { cte: 'Ct-e', 'cte-nova': 'Ct-e (Nova Versão)', contrato: 'Contrato de Frete', faturamento: 'Faturamento' };
+        const nomes = { cte: 'Ct-e', 'cte-nova': 'Ct-e (Nova Versão)', 'cte-beta': 'Ct-e (Beta)', contrato: 'Contrato de Frete', faturamento: 'Faturamento' };
         if (tipo) ferrLog('regra', 'Criar Regra - ' + (nomes[tipo] || tipo), true);
         if (tipo === 'cte') {
             const modo = await perguntarModoCte();
@@ -692,6 +712,8 @@ Ferr.registrar('regra', {
             else if (modo === 'classico') mostrarWizardRegra(q);
         } else if (tipo === 'cte-nova') {
             _regraAvisoMontador(); mostrarWizardRegraCteNova(q);
+        } else if (tipo === 'cte-beta') {
+            _regraAvisoMontador(); mostrarWizardRegraCteBeta(q);
         } else if (tipo === 'contrato') {
             const modo = await perguntarModoContrato();
             if (modo === 'dnd') { _regraAvisoMontador(); mostrarWizardContratoDnd(q); }
