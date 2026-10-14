@@ -514,7 +514,15 @@ function _relCampoDragStart(e) {
     e.dataTransfer.setData('text/plain', 'campo:'+e.target.dataset.exp);
     e.dataTransfer.effectAllowed = 'copy';
 }
-function _relDropZoneDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; }
+// O alvo é o quadro inteiro da coluna (e.currentTarget); a área azul (data-rel-zona) só ganha o destaque enquanto o campo está por cima, em qualquer parte do quadro.
+function _relZonaDestaque(e, ligado) {
+    const z = e.currentTarget && e.currentTarget.querySelector && e.currentTarget.querySelector('[data-rel-zona]');
+    if (!z) return;
+    z.style.borderColor = ligado ? '#2563eb' : '#93c5fd';
+    z.style.background = ligado ? '#dbeafe' : '#eff6ff';
+}
+function _relDropZoneDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; _relZonaDestaque(e, true); }
+function _relDropZoneDragLeave(e) { if (e.currentTarget && e.relatedTarget && e.currentTarget.contains(e.relatedTarget)) return; _relZonaDestaque(e, false); }
 // Diferente do selo do criador de regras (_acaoBadgeHtml), aqui NÃO mostra aviso vermelho quando
 // nenhuma ação está selecionada -- pra relatório a ação é sempre opcional (só entra em jogo se o
 // usuário realmente soltar 2 campos na mesma coluna), então não tem porque cobrar isso de cara.
@@ -560,12 +568,15 @@ function _relFormulaDeTermos(termos){
 // Se o nome da coluna ainda estiver vazio, sugere o rótulo do PRIMEIRO campo (o usuário pode
 // reescrever).
 function _relDropZoneDrop(e, idx) {
-    e.preventDefault();
+    _relZonaDestaque(e, false);
     const raw = e.dataTransfer.getData('text/plain');
-    if (!raw) return;
+    const nosso = !!raw && (raw.startsWith('acao:') || _relTermoDeRaw(raw) !== null);   // campo, valor ou ação arrastados daqui
+    // Texto de FORA solto no campo do nome da coluna continua sendo digitado nele (comportamento normal do navegador); fora disso nada solto vaza para a página.
+    if (!nosso && e.target && e.target.tagName === 'INPUT') return;
+    e.preventDefault();
+    if (!nosso) return;
     if (raw.startsWith('acao:')) { _relSelecionarAcao(raw.slice(5)); return; }
     const termo = _relTermoDeRaw(raw);
-    if (termo === null) return;
     const col = window._relColunas[idx]; if (!col) return;
     if (!col.termos) col.termos = [];
     col.termos.push({ termo, acao: col.termos.length ? (window._relAcaoSel || '+') : null });
@@ -626,12 +637,13 @@ function _relRenderColunas() {
         const btnLimpar = termos.length > 1
             ? `<div style="text-align:right;margin-top:4px;"><button onclick="_relLimparTermosColuna(${idx})" title="Remover tudo o que foi arrastado (mantém o nome da coluna)" style="padding:2px 6px;background:none;border:1px dashed #93c5fd;border-radius:6px;color:#2563eb;cursor:pointer;font-size:10px;">🧹 limpar</button></div>`
             : '';
-        return `<div style="flex:0 0 210px;width:210px;border:1.5px solid #e5e7eb;border-radius:8px;padding:10px;box-sizing:border-box;">
+        // O quadro INTEIRO da coluna (nome + área azul) recebe o campo arrastado: soltar sem querer em cima do nome da coluna não preenche mais o nome, vai para a área azul do mesmo jeito.
+        return `<div ondragover="_relDropZoneDragOver(event)" ondragleave="_relDropZoneDragLeave(event)" ondrop="_relDropZoneDrop(event,${idx})" style="flex:0 0 210px;width:210px;border:1.5px solid #e5e7eb;border-radius:8px;padding:10px;box-sizing:border-box;">
             <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;">
                 <input type="text" class="wRelNomeColunaInput" value="${escapeHtml(col.nomeColuna)}" oninput="_relNomeColunaInput(${idx}, this.value)" placeholder="Nome da coluna *" style="flex:1;min-width:0;padding:7px 8px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;outline:none;box-sizing:border-box;">
                 ${btnRemover}
             </div>
-            <div ondragover="_relDropZoneDragOver(event)" ondrop="_relDropZoneDrop(event,${idx})" style="position:relative;min-height:40px;padding:8px 10px;border:1.5px dashed #93c5fd;border-radius:8px;background:#eff6ff;display:flex;align-items:center;flex-wrap:wrap;">
+            <div data-rel-zona style="position:relative;min-height:40px;padding:8px 10px;border:1.5px dashed #93c5fd;border-radius:8px;background:#eff6ff;display:flex;align-items:center;flex-wrap:wrap;">
                 ${_relAcaoBadgeHtml(window._relAcaoSel, '#93c5fd', '#1e40af')}
                 ${canvasConteudo}
             </div>

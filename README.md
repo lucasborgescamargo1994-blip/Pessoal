@@ -356,6 +356,7 @@ Cuidados: o `regra-cte-passos.js` (catálogo, regras prontas, travas de ICMS/loo
 - Cada ferramenta tem o **seu próprio registro**, 1 por sessão da ferramenta (gravado na primeira consulta de verdade, não ao abrir a aba), com a coluna
   `fonte = 'ferramenta'`. No painel (**Logs**) aparece como **🧰 Ferramenta** e dá para filtrar. O 👍/👎 dentro da ferramenta vai para o registro dela.
 - Se você digitar no chat "criar regra…" ou "assistente de relatórios…", o chat registra a pergunta e **abre a ferramenta
+- **Assistente de Relatórios — o quadro inteiro da coluna recebe o campo (v28.15.1):** ao arrastar um campo, soltar **em cima do nome da coluna** (ou em qualquer parte do quadro da coluna) agora coloca o campo na área azul, igual a soltar nela; antes o texto do campo caía dentro do nome da coluna. A área azul ganha destaque enquanto o campo está por cima. Texto arrastado de fora (não do assistente) solto no nome da coluna continua sendo digitado nele. Código: `_relDropZoneDragOver/DragLeave/Drop` em `js/app/assistente-relatorios.js` (os eventos ficam no quadro da coluna, não mais só na área azul).
   na aba reaproveitando esse mesmo registro** (sem duplicar).
 - No Copilot (janela flutuante) e no simulador não existem abas: lá as ferramentas continuam funcionando dentro do chat (e registram 1 vez por conversa, como antes).
 - Atenção ao ler os números: o total de linhas do log agora é o total de **perguntas**, não de conversas (antes era quase 1 por conversa). Perguntas de continuação
