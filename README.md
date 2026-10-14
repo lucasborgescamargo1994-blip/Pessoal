@@ -25,10 +25,11 @@ Assistente de suporte do Bsoft TMS: responde dúvidas com a base de conhecimento
 7. [Análise de logs (aba Análise)](#análise-de-logs-aba-análise)
 8. [Ferramentas em abas (Sefaz, Regras, Relatórios, Parâmetros)](#ferramentas-em-abas-sefaz-regras-relatórios-parâmetros)
 9. [Agenda (tarefas, cronograma e lembretes)](#agenda-tarefas-cronograma-e-lembretes)
-10. [IA / MCP: trocar modelos e chaves](#ia--mcp-trocar-modelos-e-chaves)
-11. [Segurança — leia](#segurança--leia)
-12. [Problemas comuns](#problemas-comuns)
-13. [Para quem vai mexer no código](#para-quem-vai-mexer-no-código)
+10. [Latitude e longitude no chat](#latitude-e-longitude-no-chat-v2813)
+11. [IA / MCP: trocar modelos e chaves](#ia--mcp-trocar-modelos-e-chaves)
+12. [Segurança — leia](#segurança--leia)
+13. [Problemas comuns](#problemas-comuns)
+14. [Para quem vai mexer no código](#para-quem-vai-mexer-no-código)
 
 ---
 
@@ -367,7 +368,7 @@ Cuidados: o `regra-cte-passos.js` (catálogo, regras prontas, travas de ICMS/loo
 
 ## Agenda (tarefas, cronograma e lembretes)
 
-A **Agenda** é uma **aba própria** (ícone **Agenda** na barra lateral, botão **+**, `Ctrl K`, atalho **Minha agenda** da tela inicial ou o botão **Agenda** do Meu Espaço),
+A **Agenda** é uma **aba própria** (ícone **Agenda** na barra lateral, botão **+**, `Ctrl K` ou o botão **Agenda** do Meu Espaço),
 para organizar tarefas e responsabilidades. Ela abre em uma nova guia, então dá para alternar com o chat sem perder a conversa — ou ver as duas lado a lado (tela dividida).
 Em **Personalizar › Abas e atalhos › Ao abrir o sistema** dá para escolher abrir direto nela.
 
@@ -396,6 +397,27 @@ Nada é enviado ao Supabase, à IA ou a qualquer servidor — nem pelo chat. Que
 O backup (**Exportar backup**) inclui as tarefas.
 
 ---
+
+## Latitude e longitude no chat (v28.13)
+
+Digite no chat o pedido com o endereço, por exemplo:
+
+```
+latitude e longitude de AC ALTO PARAISO, 10 10, CENTRO — ALTO PARAÍSO - PR
+```
+
+O endereço no formato do Bsoft (`RUA, NÚMERO, BAIRRO — CIDADE - UF`) também funciona **sozinho**, sem as palavras "latitude e longitude". Outros jeitos aceitos: `coordenadas de Av. Brasil, 1000, Zona 01, Maringá - PR`, `lat/long de Rua XV de Novembro, Centro, Curitiba, PR`, `latitude e longitude de Alto Paraíso - PR` (só a cidade). A UF pode vir como `PR`, `/PR` ou o nome do estado; CEP e "Brasil" no fim são ignorados.
+
+- **Atalho na tela inicial (v28.15):** o card **📍 Pesquisa Latitude/Longitude** (no lugar do antigo "Minha agenda", que continua no menu lateral, no `Ctrl K` e no botão do Meu Espaço) abre no chat um cartão com o campo do endereço e o botão **🔎 Pesquisar** (Enter também); daí em diante é o mesmo fluxo de quando o pedido é digitado. Clicar de novo com um cartão já esperando só leva até ele. Código: `Geo.abrirPesquisa()` e o card em `js/app/boas-vindas.js`.
+- **Pergunta antes de calcular, e rota entre dois endereços (v28.14):** assim que o chat reconhece o endereço, ele mostra o endereço 1 como foi entendido e pergunta **"Deseja informar mais um endereço para calcular a distância?"**, já com o campo do **endereço 2** e o botão **▶ Executar** (Enter no campo também executa). Com o endereço 2: calcula o endereço 1, depois o 2 (cada um com a ordem de busca abaixo) e mostra as coordenadas dos dois e os links **Ver rota no Maps (Total KM Percurso)** e **Rota no OpenStreetMap** — o trajeto e os **km** só aparecem no mapa, ao abrir a rota. **De propósito o cartão não mostra nenhuma distância** (a em linha reta poderia ser usada como se fosse a real). Campo vazio + Executar, ou **"Não, só este endereço"**, calcula só o endereço 1. Nada é consultado ao serviço de mapas antes do clique (exceto, em silêncio, a conferência de uma frase solta com só "cidade - UF"). Se o endereço 2 não for entendido, o cartão avisa e o campo continua livre para corrigir; se o 2 não for achado, aparece o 1 e a explicação, sem link de rota; sem conexão no 1, o 2 nem é consultado.
+- **Quem responde:** o próprio sistema, **na tela e sem IA** (a IA não consulta mapas e a regra 13 do prompt proíbe que ela invente coordenadas). A consulta vai direto do navegador para o serviço gratuito **OpenStreetMap / Nominatim** (sem chave, sem cadastro; só o endereço digitado é enviado a ele).
+- **Ordem da busca** (para na primeira que achar): **1)** Rua + Bairro + Cidade + Estado → **2)** Bairro + Cidade + Estado → **3)** Cidade + Estado. Sem bairro, o passo 1 vira Rua + Cidade + Estado; sem rua, começa no 2. **O número da casa não entra na busca.** Abreviaturas (`AV`, `R`, `AC`…) são tentadas por extenso e, se não achar, do jeito digitado. **Extra (não estava no pedido original):** quando há rua **e** bairro e os passos 1 e 2 falham, antes de cair para a cidade o sistema tenta **Rua + Cidade + Estado** — a rua costuma existir no mapa mesmo quando o nome do bairro dos Correios não bate com o do OpenStreetMap (ex.: "Centro" × "Glicério" na Rua 25 de Março, São Paulo). Esse resultado vem com o aviso "o bairro informado não bateu"; para tirar esse passo extra, apague a linha `semBairro` em `tentativas()`.
+- **Cada resultado é conferido antes de valer:** o estado tem que ser o informado e o município também (assim "Alto Paraíso" do Paraná não volta com o de Goiás nem com um povoado de mesmo nome em outra cidade); a rua tem que ter o nome pedido; uma rua que só existe em **outro bairro** da cidade não serve para o passo 1. Se não bate, desce para o passo seguinte. Se só existir um povoado/distrito com o nome da cidade, ou uma estação/prédio com o nome do bairro, o resultado vale só como último recurso e o cartão avisa. Nomes que o IBGE e o OSM escrevem diferente (Santana × Sant'Ana do Livramento) são tratados como iguais; rodovia pedida pelo código (`BR-376`) é achada pelo campo `ref` do mapa.
+- **O cartão (enxuto, para caber sem rolar até os links):** o endereço como foi entendido **numa linha só, em fonte pequena** (Rua · Número · Bairro · Cidade · Estado por extenso), **Latitude e Longitude lado a lado**, botões de copiar (cada uma e "latitude, longitude") **com os links "Ver no OpenStreetMap" e "Abrir no Google Maps" na mesma linha** (quebram para a linha de baixo só se o chat estiver estreito), uma linha "Encontrado por … · Precisão …" (rua = ponto sobre a rua, **não** o número exato; bairro e cidade = o centro), o aviso (quando há) em fonte pequena numa linha e a atribuição do OpenStreetMap (licença ODbL). O passo a passo "Como a busca andou" foi retirado: o "Encontrado por" já diz qual das buscas achou.
+- **Limites do serviço:** no máximo 1 consulta por segundo (o sistema espera entre uma e outra; no pior caso são 5 consultas ≈ 6 s) e a mesma consulta não é repetida na sessão (cache só em memória; falha não fica guardada). Cada consulta tem 12 s de limite. Sem internet, ou se o serviço limitar/falhar, o cartão diz isso — **nunca** inventa coordenadas. O OpenStreetMap tem pouca cobertura de número de casa e de bairros de cidades pequenas (ex.: o "Centro" de Alto Paraíso-PR não existe lá em 14/10/2026), por isso muitos endereços acabam no passo 3.
+- **Log e privacidade:** a tabela `logs` recebe **uma linha por pedido, quando o cálculo roda (ao Executar)** — só **"Geolocalização - CIDADE/UF (rua|bairro|cidade|erro|não achou)"** ou, com dois endereços, **"Geolocalização rota - CIDADE/UF (nível) → CIDADE/UF (nível)"** (fonte "ferramenta"); quem vê a pergunta e não clica em nada não gera linha — a rua e o número **não** vão para o banco. A pergunta digitada fica no histórico local da conversa, como qualquer outra — e, como qualquer mensagem da conversa, **vai junto no histórico enviado à IA nas perguntas seguintes** (o endereço não é enviado à IA por este recurso, só pelo histórico). Não precisa de SQL.
+- **Perguntas de "como fazer"** (ex.: "como preencher a latitude do cliente") **continuam indo para a IA**: só é tratado como pedido de coordenadas quando há um endereço com **cidade e UF** (ou o formato do Bsoft completo). Frases de suporte que só citam latitude/longitude e terminam em UF ("latitude errada para Londrina - PR") também seguem para a IA: palavras que não são nome de cidade barram a leitura e, quando a frase passa mas o mapa **não conhece** a "cidade", o chat volta para a IA em vez de mostrar "não encontrei". Dois endereços no mesmo pedido também vão para a IA (ela orienta a mandar um de cada vez).
+- **Para mexer:** `js/app/geolocalizacao.js` (global `Geo`: `interpretar`, `buscar`, `responder`; `Geo.config.espacoMs`/`tempoMs`) e o gancho logo abaixo da Agenda no começo do `handleChat` (`js/app/chat.js`). Para trocar de provedor de mapas, só a função `consultar()` e a validação `avaliar()`.
 
 ## IA / MCP: trocar modelos e chaves
 
@@ -483,6 +505,8 @@ inserir/atualizar `logs` e inserir/apagar `machine_learning` (como já fazia). S
 | No **Criar Regra › Nova Versão** aparece "Não dá para reduzir o valor do ICMS…" ou uma faixa vermelha "A regra montada altera o valor do ICMS" | É a trava do ICMS (v28.6): a SEFAZ rejeita o Ct-e quando o valor do ICMS não é Base de Cálculo × Alíquota. Para pagar menos ICMS, use **Redução Base de cálculo?** (passo 3) ou peça à IA "reduzir a base de cálculo em X%". A faixa some sozinha quando a linha `def("valorICMS", …)` volta a ser `baseCalculo * (aliquota/100)` (corrija na montagem manual ou na regra colada). Para mudar a lista de frases pedidas, veja `CN_RED_RAIZ` em `js/app/regra-cte-passos.js`. |
 | Na **Análise** os horários (ex.: "Horários de pico") estão 3 h adiantados em relação ao uso real | Era um erro até a v28.6.0 (o `created_at` do Supabase vem sem fuso, mas é UTC). Corrigido na v28.6.1: publique a pasta inteira e faça **Ctrl+F5** no painel (o painel guarda os arquivos em cache) e clique em **Atualizar** na aba Análise. O arquivo avulso `Análise de Logs.html` (fora do GitHub) também recebeu a correção — abra a versão nova dele. |
 | No **Criar Regra › Nova Versão** aparece uma faixa laranja "Loop na regra: Frete Valor → Total Prestação → Frete Valor" e o Gerar Regra não gera | É a trava de loop (v28.7): dois ou mais campos dependem um do outro, então a conta nunca fecha. A faixa mostra o caminho, as linhas e a opção marcada que causa o loop: desmarque-a, ajuste o pedido para a IA ou corrija a regra colada/montagem manual para que um dos campos seja calculado só dos campos de origem. Se foi a IA que devolveu a regra com loop, o assistente volta ao passo 3 sozinho. A detecção está em `_cnLoopsDoCodigo` (`js/app/regra-cte-passos.js`). |
+| Pedi **latitude e longitude** no chat e o cartão diz "Não foi possível consultar" | O serviço de mapas (OpenStreetMap) não respondeu: sem internet, bloqueio de rede da empresa para `nominatim.openstreetmap.org`, ou o serviço limitou as consultas (espere um minuto). Nada é inventado — tente de novo. |
+| Pedi **latitude e longitude** e o cartão diz "Não encontrei" ou veio um lugar aproximado (cidade) | O OpenStreetMap não conhece aquela rua/bairro. Confira a grafia da cidade e a **UF**; o cartão mostra qual das buscas achou ("Encontrado por"). Quando só a cidade é achada, a coordenada é o centro dela. |
 | Não aparece o botão **Ct-e / Conhecimento Beta** no Criar Regra | É de propósito: o Beta vem oculto. Ligue em **Personalizar › Recursos em teste (Beta) › Criador de regra Beta** (vale só neste navegador/pasta de preferências) e abra o Criar Regra de novo. |
 | Marquei "Somar … no …" e a faixa "Marcadas" diz "sem efeito" | A regra montada não calcula o campo de destino (ex.: "Total Prestação"), então não há onde somar. Escolha uma **regra base** no passo 1 (ela já calcula frete, base, total prestação e total serviço) ou monte o campo na montagem manual; trocar a regra base desmarca as opções, então marque as contas de novo. |
 | Mudei a IA e nada mudou para os usuários | Confirme o commit/push do `config/mcp-config.js` e aguarde ~1 min; o sistema confere ao abrir e a cada 2 h. No painel: **IA / MCP → Conferir arquivo publicado agora**. |
@@ -498,6 +522,7 @@ inserir/atualizar `logs` e inserir/apagar `machine_learning` (como já fazia). S
 - **Ordem dos scripts** (fim do `index.html` e do `admin/index.html`): `config/*` → `js/core/*` → `js/app/*` → `js/ui/*`. Cada arquivo declara
   funções/variáveis globais; um arquivo novo precisa ser listado nos dois HTMLs que o usam (e `tools/atualizar-versao.ps1` cuida do `?v=`).
 - **Criar Regra › Ct-e (assistentes em telas)**: `regra-cte-passos.js` (biblioteca compartilhada, carrega primeiro) → `regra-cte-beta.js` (desenvolvimento) → `regra-cte-nova.js` (cópia estável, **gerada do Beta** por `tools/gerar-nova-do-beta.js`; veja "Promover do Beta para a Nova Versão"). Não edite a Nova Versão à mão sem levar a mudança ao Beta.
+- **Prompt do chat**: o `handleChat` (`js/app/chat.js`, variável `ps`) leva uma lista numerada de **REGRAS OBRIGATÓRIAS** para a IA. A **12** (v28.12.2) proíbe confundir **NF-e** (nota de produtos/mercadorias) com **NFS-e** (nota de serviço, da prefeitura): a IA não aplica conteúdo de um ao outro, não mistura as siglas e, se a pergunta disser só "nota fiscal" sem dar para saber qual é, pede ao cliente para informar. A regra 8 ("Diferencie: CT-e, MDF-e, NF-e, NFS-e…") continua valendo.
 - **Nada de `import`, `fetch` de arquivo local nem caminho absoluto** (`/js/...`): quebram no `file://` e/ou em subpasta do GitHub Pages.
   Caminhos são sempre relativos; arquivos de configuração são `<script>` que definem `window.BSOFT_*`.
 - **Painel**: cada aba é um arquivo `admin/js/aba-*.js` que chama `ADM.registrarAba({ id, titulo, icone, ordem, montar(ctx), abrir() })`.

@@ -9,7 +9,7 @@ function _menuBtnsHtml() {
         ['⚙️', 'Parâmetros / Funcionalidades', 'Busca parâmetros e funcionalidades do sistema', 'btnWelcomeParametros()', '#0891b2'],
         ['🖥️', 'Analisar tela', 'Compartilhe a tela e a IA analisa pra você', 'btnWelcomeAnalisarTela()', '#059669'],
         isPiP ? null : ['🗒️', 'Meu Espaço', 'Suas anotações pessoais — ficam só no seu computador', "Workspace.open('space')", '#d97706'],
-        isPiP ? null : ['📅', 'Minha agenda', 'Tarefas, cronograma e lembretes — abre em uma aba', 'btnWelcomeAgenda()', '#ea580c'],
+        ['📍', 'Pesquisa Latitude/Longitude', 'Latitude e longitude de um endereço — e a rota entre dois', 'btnWelcomeLatLong()', '#0d9488'],   // (a Agenda saiu daqui: abre pelo menu lateral)
         isPiP ? null : ['🤖', 'Modo Copilot', 'Abre o assistente em janela flutuante', 'abrirCopilot()', '#6d28d9'],
         ['💬', 'Gestão de Feedback', 'Veja seus feedbacks e retornos do suporte', 'btnWelcomeFeedback()', '#be185d'],
     ].filter(Boolean);
@@ -80,8 +80,9 @@ function btnWelcomeParametros() {
     input.placeholder = 'Ex: CIOT, NF-e automática, exclusão de CT-e...';
     input.focus();
 }
-// "Minha agenda": abre a Agenda na própria aba (calendário já no dia de hoje). Para ver as tarefas no chat: pergunte "quais tarefas tenho hoje?" ou use "Mostrar no chat" na agenda.
-function btnWelcomeAgenda() { if (typeof V !== 'undefined' && V.Agenda && V.Agenda.abrir) V.Agenda.abrir({ date: V.Agenda.today(), view: 'cal' }); }
+// "Pesquisa Latitude/Longitude" (js/app/geolocalizacao.js): abre no chat um campo para o endereço; depois pergunta se há um segundo endereço (rota). Digitar o pedido direto no chat continua funcionando.
+// A Agenda (antes "Minha agenda" aqui) abre pelo menu lateral; no chat, perguntar "quais tarefas tenho hoje?" ainda funciona.
+function btnWelcomeLatLong() { if (typeof Geo !== 'undefined' && Geo.abrirPesquisa) Geo.abrirPesquisa(); }
 async function btnWelcomeFeedback() {
     const welcome = document.getElementById('welcomeMsg');
     if (welcome) welcome.remove();
