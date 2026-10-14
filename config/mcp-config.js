@@ -11,9 +11,9 @@
    DevTools; use só chaves gratuitas/limitadas (ver README).
    ═══════════════════════════════════════════════════════════════════════════ */
 window.BSOFT_MCP_CONFIG = {
-  "versao": 7,
-  "atualizadoEm": "2026-10-09T13:03:34.276Z",
-  "atualizadoPor": "Lucas",
+  "versao": 10,
+  "atualizadoEm": "2026-10-14T12:09:36.781Z",
+  "atualizadoPor": "admin",
   "provedor": {
     "tipo": "openrouter",
     "baseUrl": "https://openrouter.ai/api/v1",
@@ -25,15 +25,15 @@ window.BSOFT_MCP_CONFIG = {
   },
   "cadeia": [
     {
-      "modelo": "apodex-1.1-mini:free",
-      "ativo": true
-    },
-    {
       "modelo": "cohere/north-mini-code:free",
       "ativo": true
     },
     {
       "modelo": "laguna-s-2.1:free",
+      "ativo": true
+    },
+    {
+      "modelo": "nemotron-3-ultra-550b-a55b:free",
       "ativo": true
     }
   ],
