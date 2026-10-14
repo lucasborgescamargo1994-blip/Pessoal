@@ -11,8 +11,8 @@
    DevTools; use só chaves gratuitas/limitadas (ver README).
    ═══════════════════════════════════════════════════════════════════════════ */
 window.BSOFT_MCP_CONFIG = {
-  "versao": 10,
-  "atualizadoEm": "2026-10-14T12:09:36.781Z",
+  "versao": 12,
+  "atualizadoEm": "2026-10-14T12:51:25.292Z",
   "atualizadoPor": "admin",
   "provedor": {
     "tipo": "openrouter",
@@ -26,6 +26,10 @@ window.BSOFT_MCP_CONFIG = {
   "cadeia": [
     {
       "modelo": "cohere/north-mini-code:free",
+      "ativo": true
+    },
+    {
+      "modelo": "lfm-2.5-2.6b:free",
       "ativo": true
     },
     {
