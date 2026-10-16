@@ -193,9 +193,13 @@ ADM.editarArtigoBanco = async function (id, opcoes) {
     // chave do artigo como número: vem de um JSON gravado por qualquer navegador — nunca vai direto para a consulta sem checar
     const chaveId = Number(id);
     if (!Number.isFinite(chaveId)) { ADM.ui.toast('Este item não tem um número de artigo válido.', 'wa'); return null; }
-    let linha;
+    let linha, semColunaCaminho = false;
     try {
-        const r = await ADM.sb.from('BancoDados').select('id, titulo, conteudo, como_emitir, categoria').eq('id', chaveId).maybeSingle();
+        let r = await ADM.sb.from('BancoDados').select('id, titulo, conteudo, como_emitir, categoria, caminho_menu').eq('id', chaveId).maybeSingle();
+        if (r.error && ADM.db.ehColunaAusente(r.error)) {   // SQL 05 ainda não rodado: o artigo abre igual, só sem o campo do caminho no menu
+            semColunaCaminho = true;
+            r = await ADM.sb.from('BancoDados').select('id, titulo, conteudo, como_emitir, categoria').eq('id', chaveId).maybeSingle();
+        }
         if (r.error) throw r.error;
         linha = r.data;
     } catch (e) { ADM.ui.toast('Não consegui abrir o artigo #' + chaveId + ': ' + ADM.db.erroTexto(e), 'er', 9000); return null; }
@@ -205,6 +209,10 @@ ADM.editarArtigoBanco = async function (id, opcoes) {
     const iTit = h('input', { type: 'text', maxlength: 400 }); iTit.value = linha.titulo || '';
     const dl = h('datalist', { id: 'dlCatArtigoBD' }, (opcoes.categorias || []).map(c => h('option', { value: c })));
     const iCat = h('input', { type: 'text', list: 'dlCatArtigoBD', maxlength: 60, placeholder: 'Ex.: CT-e' }); iCat.value = linha.categoria || '';
+    // Caminho no menu (coluna caminho_menu — sql/05_bancodados_caminho_menu.sql): o que for escrito aqui é gravado direto no banco e a IA o escreve junto da resposta
+    if (!semColunaCaminho) linha.caminho_menu = ADM.normalizarCaminhoMenu(linha.caminho_menu);
+    const iCm = h('input', { type: 'text', maxlength: 300, placeholder: semColunaCaminho ? 'Rode o sql/05_bancodados_caminho_menu.sql no Supabase para habilitar' : 'Ex.: Transporte > Configurações > Informações de cobrança padrão' });
+    iCm.value = linha.caminho_menu || ''; iCm.disabled = semColunaCaminho;
     const ed = ADM.editorResposta({ valor: linha.conteudo || '', rotulo: 'Conteúdo do artigo', rotuloPrevia: 'Visualização', placeholder: 'O texto que a IA recebe como conhecimento. Corrija o que estiver errado ou desatualizado.' });
     const iEmit = h('textarea', { rows: 4, placeholder: 'Opcional. Passo a passo de como emitir (a IA também recebe este texto).' }); iEmit.value = linha.como_emitir || '';
     const emitir = h('details', { open: !!canon(linha.como_emitir) }, h('summary', { style: { cursor: 'pointer', fontWeight: 700, fontSize: '12.5px' } }, 'Como emitir (opcional)'), h('div', { style: { marginTop: '8px' } }, iEmit));
@@ -221,7 +229,8 @@ ADM.editarArtigoBanco = async function (id, opcoes) {
         blocoCtx,
         h('div', { class: 'g2' },
             h('label', { class: 'campo' }, h('span', { class: 'rot' }, 'Título (a dúvida que o artigo responde)'), iTit),
-            h('label', { class: 'campo' }, h('span', { class: 'rot' }, 'Categoria (opcional)'), iCat, dl)),
+            h('label', { class: 'campo' }, h('span', { class: 'rot' }, 'Categoria (opcional)'), iCat, dl),
+            h('label', { class: 'campo', style: { gridColumn: '1 / -1' } }, h('span', { class: 'rot' }, 'Caminho no menu (opcional — grava na coluna caminho_menu do banco de dados)'), iCm)),
         ed.el,
         emitir,
     ];
@@ -231,12 +240,13 @@ ADM.editarArtigoBanco = async function (id, opcoes) {
             rotulo: 'Salvar no banco de dados', tipo: 'primario', fechar: false,
             acao: async (btn, api) => {
                 const novo = { titulo: iTit.value, conteudo: ed.obter(), categoria: iCat.value, como_emitir: iEmit.value };
+                if (!semColunaCaminho) novo.caminho_menu = ADM.normalizarCaminhoMenu(iCm.value);
                 if (canon(novo.titulo) === null || canon(novo.titulo).length < 3) { ADM.ui.toast('Escreva o título do artigo.', 'wa'); iTit.focus(); return false; }
                 if (canon(novo.conteudo) === null || canon(novo.conteudo).length < 5) { ADM.ui.toast('O conteúdo do artigo está vazio.', 'wa'); ed.textarea.focus(); return false; }
                 const payload = {};
                 Object.keys(novo).forEach(c => { if (canon(novo[c]) !== canon(linha[c])) payload[c] = canon(novo[c]); });
                 if (!Object.keys(payload).length) { ADM.ui.toast('Nada foi alterado.', 'wa'); return false; }
-                payload.embedding = null;   // o texto mudou: o vetor de busca antigo não vale mais (igual à aba Banco de dados)
+                if (Object.keys(payload).some(c => c !== 'caminho_menu')) payload.embedding = null;   // o texto mudou: o vetor de busca antigo não vale mais (igual à aba Banco de dados). Só o caminho no menu mudou? O vetor não depende dele: fica
                 const r = await ADM.sb.from('BancoDados').update(payload).eq('id', linha.id).select('id, titulo, categoria');
                 ADM.db.exigirAfetadas(r);
                 ADM.ui.toast(`Artigo #${linha.id} atualizado no banco de dados. A IA passa a usar o texto novo quando o sistema for aberto de novo (o vetor de busca é recalculado sozinho).`, 'ok', 8000);
@@ -245,4 +255,11 @@ ADM.editarArtigoBanco = async function (id, opcoes) {
             },
         }],
     });
+};
+
+/* ───────────── caminho no menu (BancoDados.caminho_menu — sql/05_bancodados_caminho_menu.sql) ───────────── */
+// O separador digitado vira sempre " > " (aceita › » → -> |); níveis vazios somem. Usado nos formulários da Revisão (Salvar no banco de dados e Corrigir artigo).
+ADM.normalizarCaminhoMenu = function (txt) {
+    // separa nos níveis (qualquer separador aceito), descarta pedaços vazios (">>", ">" nas pontas) e junta de novo com " > "
+    return String(txt == null ? '' : txt).replace(/\s+/g, ' ').split(/\s*(?:›|»|→|->|\||>)\s*/).map(p => p.trim()).filter(Boolean).join(' > ');
 };

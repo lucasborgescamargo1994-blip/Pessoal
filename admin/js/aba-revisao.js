@@ -237,7 +237,7 @@
 
     /* ───────────── detalhe ───────────── */
     function iniciarForm(g, L) {
-        E.form = { chave: g.chave, logId: L.id, pergunta: String(L.pergunta || '').trim(), variantes: '', categoria: '', incluirIguais: true, extras: new Set(), rrIdCriado: null };
+        E.form = { chave: g.chave, logId: L.id, pergunta: String(L.pergunta || '').trim(), variantes: '', categoria: '', caminhoMenu: '', incluirIguais: true, extras: new Set(), rrIdCriado: null };
     }
 
     function renderDetalhe() {
@@ -273,6 +273,8 @@
         const iVar = h('textarea', { rows: 4, placeholder: 'Uma por linha (opcional). Outras formas de perguntar a mesma coisa.' }); iVar.value = f.variantes; iVar.addEventListener('input', () => { f.variantes = iVar.value; });
         const dl = h('datalist', { id: 'dlCatRev' }, categoriasSugeridas().map(c => h('option', { value: c })));
         const iCat = h('input', { type: 'text', list: 'dlCatRev', maxlength: 60, placeholder: 'Ex.: CT-e' }); iCat.value = f.categoria; iCat.addEventListener('input', () => { f.categoria = iCat.value; });
+        // Caminho no menu: vai para a coluna caminho_menu da tabela BancoDados (sql/05_bancodados_caminho_menu.sql). Só vale para "Salvar no banco de dados" (a resposta rápida não tem essa coluna).
+        const iCm = h('input', { type: 'text', maxlength: 300, placeholder: 'Ex.: Transporte > Configurações > Informações de cobrança padrão' }); iCm.value = f.caminhoMenu || ''; iCm.addEventListener('input', () => { f.caminhoMenu = iCm.value; });
         const ed = ADM.editorResposta({ valor: f.resposta !== undefined ? f.resposta : L.resposta });
         if (f.resposta === undefined) f.resposta = L.resposta;
         ed.textarea.addEventListener('input', () => { f.resposta = ed.obter(); });
@@ -283,10 +285,11 @@
                 h('button', { class: 'btn peq fantasma', type: 'button', title: 'Voltar ao texto original da IA', onclick: () => { ed.definir(L.resposta); f.resposta = L.resposta; } }, I('undo', 14), 'Restaurar original')),
             h('div', { class: 'cartao-corpo' },
                 h('div', { class: 'dica' }, h('b', null, '⚡ Aprovar e criar resposta rápida:'), ' resposta pronta, na hora e sem gastar IA, para perguntas parecidas. ',
-                    h('b', null, 'Salvar no banco de dados:'), ' vira artigo da base de conhecimento — a IA consulta e monta a resposta com ele (melhor para temas amplos). Aqui só vão a pergunta (título), a categoria e a resposta; as variantes não.'),
+                    h('b', null, 'Salvar no banco de dados:'), ' vira artigo da base de conhecimento — a IA consulta e monta a resposta com ele (melhor para temas amplos). Aqui só vão a pergunta (título), a categoria, o caminho no menu e a resposta; as variantes não.'),
                 h('div', { class: 'g2' },
                     h('label', { class: 'campo' }, h('span', { class: 'rot' }, 'Pergunta principal (título no banco de dados)'), iPerg),
-                    h('label', { class: 'campo' }, h('span', { class: 'rot' }, 'Categoria (opcional)'), iCat, dl)),
+                    h('label', { class: 'campo' }, h('span', { class: 'rot' }, 'Categoria (opcional)'), iCat, dl),
+                    h('label', { class: 'campo', style: { gridColumn: '1 / -1' } }, h('span', { class: 'rot' }, 'Caminho no menu (opcional — grava na coluna caminho_menu do banco de dados; só vai com “Salvar no banco de dados”)'), iCm)),
                 h('label', { class: 'campo' }, h('span', { class: 'rot' }, 'Variantes da pergunta (só da resposta rápida)'), iVar),
                 ed.el));
 
@@ -427,7 +430,7 @@
     const salvarNoBanco = exclusivo(async btn => {
         const g = grupoSel(); if (!g) return;
         const L = g.itens[E.idxResp] || g.itens[0], f = E.form;
-        const titulo = f.pergunta.trim(), conteudo = f.ed.obter().trim(), categoria = f.categoria.trim();
+        const titulo = f.pergunta.trim(), conteudo = f.ed.obter().trim(), categoria = f.categoria.trim(), caminhoMenu = ADM.normalizarCaminhoMenu(f.caminhoMenu);
         if (titulo.length < 3) return ADM.ui.toast('Escreva a pergunta principal — ela vira o título do artigo.', 'wa');
         if (conteudo.length < 5) return ADM.ui.toast('A resposta está vazia.', 'wa');
         if (f.rrIdCriado) return ADM.ui.toast(`A resposta rápida #${f.rrIdCriado} já foi criada nesta tela — clique em “Aprovar” para concluir (ou exclua-a na aba Respostas rápidas antes de salvar no banco de dados).`, 'wa', 10000);
@@ -442,14 +445,18 @@
                 if (!id) {
                     const artigo = { titulo, conteudo };
                     if (categoria) artigo.categoria = categoria;
+                    if (caminhoMenu) artigo.caminho_menu = caminhoMenu;
                     const r = await ADM.sb.from('BancoDados').insert(artigo).select('id');
                     ADM.db.exigirAfetadas(r); id = r.data[0].id; f.bancoIdCriado = id;
                     if (BD.itens) { BD.itens.push({ id, titulo, categoria: categoria || null }); sugerirCategorias(); }
                 }
                 await resolver(logsAfetados(g, L, f), { revisao: 'banco', resposta_rapida_id: null, revisao_nota: 'Salvo no banco de dados (#' + id + ')' });
-                ADM.ui.toast(`Salvo no banco de dados (artigo #${id}). Vale para quem abrir o sistema daqui para frente — o vetor de busca é calculado sozinho na abertura.`, 'ok', 8000);
+                ADM.ui.toast(`Salvo no banco de dados (artigo #${id}${caminhoMenu ? ', com o caminho no menu' : ''}). Vale para quem abrir o sistema daqui para frente — o vetor de busca é calculado sozinho na abertura.`, 'ok', 8000);
             } catch (e) {
-                ADM.ui.toast((f.bancoIdCriado ? `O artigo #${f.bancoIdCriado} foi criado no banco de dados, mas não consegui marcar os logs — clique em Salvar no banco de dados de novo para concluir. ` : '') + ADM.db.erroTexto(e), 'er', 12000);
+                const semColunaCaminho = caminhoMenu && !f.bancoIdCriado && ADM.db.ehColunaAusente(e);   // a coluna caminho_menu ainda não existe: o insert inteiro foi recusado, nada ficou salvo
+                ADM.ui.toast(semColunaCaminho
+                    ? 'O banco de dados ainda não tem a coluna “caminho_menu” na tabela BancoDados, então NADA foi salvo. Rode o arquivo sql/05_bancodados_caminho_menu.sql uma vez no SQL Editor do Supabase (a aba Sistema tem o botão de copiar) e clique em Salvar no banco de dados de novo — ou apague o caminho para salvar sem ele.'
+                    : (f.bancoIdCriado ? `O artigo #${f.bancoIdCriado} foi criado no banco de dados, mas não consegui marcar os logs — clique em Salvar no banco de dados de novo para concluir. ` : '') + ADM.db.erroTexto(e), 'er', 14000);
             }
         });
     });

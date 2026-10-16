@@ -41,6 +41,8 @@
             catch (e) { add('wa', 'Coluna “retorno” em “logs”', ADM.db.ehColunaAusente(e) ? 'não existe — a Gestão de Feedback dos usuários não mostra o retorno do suporte' : ADM.db.erroTexto(e)); }
             try { const r = await ADM.sb.from('logs').select('fontes_banco').limit(1); if (r.error) throw r.error; add('ok', 'Coluna “fontes_banco” em “logs” (quais dados do banco a IA usou — aba Revisão)', 'presente'); }
             catch (e) { add('wa', 'Coluna “fontes_banco” em “logs”', ADM.db.ehColunaAusente(e) ? 'não existe — a Revisão não mostra quais dados do banco a IA usou em cada resposta. Rode sql/04_logs_fontes_banco.sql' : ADM.db.erroTexto(e), '04_logs_fontes_banco.sql'); }
+            try { const r = await ADM.sb.from('BancoDados').select('caminho_menu').limit(1); if (r.error) throw r.error; add('ok', 'Coluna “caminho_menu” em “BancoDados” (caminho no menu do artigo — campo da aba Revisão)', 'presente'); }
+            catch (e) { add('wa', 'Coluna “caminho_menu” em “BancoDados”', ADM.db.ehColunaAusente(e) ? 'não existe — o campo “Caminho no menu” da Revisão não consegue gravar. Rode sql/05_bancodados_caminho_menu.sql' : ADM.db.erroTexto(e), '05_bancodados_caminho_menu.sql'); }
 
             // segurança
             let sessao = 'anônima (chave pública)';
