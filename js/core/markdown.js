@@ -12,11 +12,62 @@ function filtrarPensamentoAlto(texto) {
     if (teveBlocos && limpo.length < 30) return { texto: '', eraPensamento: true };
     return { texto: texto.trim(), eraPensamento: false };
 }
+// ── Link de ROTINA do Bsoft (tela do sistema) ────────────────────────────────────────────────────────────────────────────────────────────────
+// A IA indica a tela com o link-modelo  https://NOMEDOCLIENTE.bsoft.app/versoes/versao5.0/rotinas/c.php?id=<nome interno>&menu=s  (cada cliente tem o seu endereço). Em vez de mostrar esse link que não abre,
+// o texto da resposta ganha um CAMPO para a pessoa colar o endereço do sistema dela e o botão "Acessar tela", que monta o link certo e abre numa nova guia. Vale para o link completo com o endereço-modelo
+// (NOMEDOCLIENTE, SEUCLIENTE, CLIENTE, XXXX), para o caminho sem endereço (/versoes/…/rotinas/c.php?id=…) e para o link dentro de [texto](link). Link com endereço REAL de cliente continua sendo um link comum.
+// O endereço colado fica guardado neste navegador (bsoft_dominio_cliente) e já aparece preenchido nas próximas telas. O id só aceita letras, números, _ . - (nada vai para o HTML sem passar por aí).
+const _ROTINA_RE = new RegExp('(?:https?:\\/\\/(?:nome[-_]?do[-_]?cliente|seu[-_]?cliente|cliente|xxx+)\\.bsoft\\.app|(?<![A-Za-z0-9._\\-\\/]))\\/versoes\\/([A-Za-z0-9._\\-]+)\\/rotinas\\/c\\.php\\?id=([A-Za-z0-9_.\\-]+)(?:&(?:amp;)?menu=s)?', 'gi');
+const _ROTINA_CHAVE_DOMINIO = 'bsoft_dominio_cliente';
+function _rotinaEsc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+// O que a pessoa colou -> endereço do sistema (só a origem: https://empresa.bsoft.app), ou null se não parece um endereço (ou ainda é o exemplo NOMEDOCLIENTE).
+function rotinaNormalizarDominio(txt) {
+    let t = String(txt || '').trim();
+    if (!t) return null;
+    if (!/^[a-z][a-z0-9+.\-]*:\/\//i.test(t)) t = 'https://' + t;
+    let u;
+    try { u = new URL(t); } catch (e) { return null; }
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') return null;
+    if (!/^[a-z0-9.\-]+$/i.test(u.hostname) || u.hostname.indexOf('.') < 1 || /nome[-_]?do[-_]?cliente|seu[-_]?cliente/i.test(u.hostname)) return null;
+    return u.origin;
+}
+function _rotinaWidgetHtml(versao, id) {
+    let salvo = '';
+    try { salvo = rotinaNormalizarDominio(localStorage.getItem(_ROTINA_CHAVE_DOMINIO)) || ''; } catch (e) { /* sem armazenamento: o campo só nasce vazio */ }
+    const caminho = '/versoes/' + versao + '/rotinas/c.php?id=' + id + '&menu=s';
+    // (uma linha só e sem * | ` — o resto do renderMd roda depois e não pode mexer neste HTML)
+    return '<span class="rotina-link" data-ver="' + _rotinaEsc(versao) + '" data-id="' + _rotinaEsc(id) + '" style="display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px;margin:4px 0;padding:6px 8px;border:1.5px solid #bfdbfe;border-radius:10px;background:#eff6ff;vertical-align:middle;max-width:100%;">'
+        + '<input type="text" class="rotina-dominio" value="' + _rotinaEsc(salvo) + '" placeholder="Cole aqui o endereço do seu sistema (https://NOMEDOCLIENTE.bsoft.app)" aria-label="Endereço do seu sistema Bsoft" onkeydown="if(event.key===\'Enter\'){event.preventDefault();rotinaAbrir(this);}" style="width:470px;flex:1 1 470px;max-width:100%;padding:6px 9px;border:1.5px solid #93c5fd;border-radius:8px;font-size:12.5px;background:#fff;color:inherit;">'
+        + '<button type="button" onclick="rotinaAbrir(this)" style="padding:6px 13px;border:none;border-radius:8px;background:#2563eb;color:#fff;font-size:12.5px;font-weight:700;cursor:pointer;">🔗 Acessar tela</button>'
+        + '<span style="flex-basis:100%;font-size:11px;color:#6b7280;word-break:break-all;">' + _rotinaEsc(caminho) + '</span>'
+        + '<span class="rotina-erro" style="flex-basis:100%;font-size:12px;color:#b91c1c;"></span></span>';
+}
+// Clique em "Acessar tela" (ou Enter no campo): monta endereço + caminho da rotina e abre numa nova guia.
+function rotinaAbrir(el) {
+    const w = el && el.closest ? el.closest('.rotina-link') : null;
+    if (!w) return;
+    const campo = w.querySelector('.rotina-dominio'), erro = w.querySelector('.rotina-erro');
+    const origem = rotinaNormalizarDominio(campo ? campo.value : '');
+    if (!origem) {
+        if (erro) erro.textContent = 'Cole o endereço do SEU sistema, por exemplo https://suaempresa.bsoft.app (o nome da sua empresa no lugar de NOMEDOCLIENTE).';
+        if (campo && campo.focus) campo.focus();
+        return;
+    }
+    if (erro) erro.textContent = '';
+    if (campo) campo.value = origem;
+    try { localStorage.setItem(_ROTINA_CHAVE_DOMINIO, origem); } catch (e) { /* só deixa de lembrar */ }
+    try { document.querySelectorAll('.rotina-dominio').forEach(i => { if (!i.value.trim()) i.value = origem; }); } catch (e) { /* conforto */ }
+    window.open(origem + '/versoes/' + w.dataset.ver + '/rotinas/c.php?id=' + encodeURIComponent(w.dataset.id) + '&menu=s', '_blank', 'noopener,noreferrer');
+}
 // Converte links em markdown [texto](url) e URLs soltas (http/https) em <a> clicável, abrindo em nova guia.
 function _linkify(txt) {
     const _links = [];
+    // Links de rotina do Bsoft viram campo + botão (ver acima); entram antes de tudo para o resto não tratá-los como link comum
+    const _viraCampo = (_, ver, id) => { _links.push(_rotinaWidgetHtml(ver, id)); return ` L${_links.length - 1} `; };
+    let h = txt.replace(new RegExp('\\[[^\\[\\]]+\\]\\(' + _ROTINA_RE.source + '\\)', 'gi'), _viraCampo)   // [texto](link da rotina): o texto do link some, entra o campo
+               .replace(_ROTINA_RE, _viraCampo);
     // (aspas e < > ficam de fora da URL: senão dava para "fechar" o href e injetar atributos como onmouseover)
-    let h = txt.replace(/\[([^\[\]]+)\]\((https?:\/\/[^\s()`*"'<>]+)\)/g, (_, label, url) => {
+    h = h.replace(/\[([^\[\]]+)\]\((https?:\/\/[^\s()`*"'<>]+)\)/g, (_, label, url) => {
         _links.push(`<a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`);
         return ` L${_links.length - 1} `;
     });

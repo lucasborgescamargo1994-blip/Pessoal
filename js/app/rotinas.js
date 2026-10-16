@@ -28,7 +28,12 @@ function _buscarRotinasRelevantes(texto, limite=5){
 // sistema, que o usuário completa com o endereço do sistema dele.
 function _formatarRotinaParaPrompt(r){
     const nomeInterno=(r['Nome Interno']||'').trim();
-    const caminho=nomeInterno?`/versoes/versao5.0/rotinas/c.php?id=${nomeInterno}&menu=s`:'';
+    const caminho=nomeInterno?`https://NOMEDOCLIENTE.bsoft.app/versoes/versao5.0/rotinas/c.php?id=${nomeInterno}&menu=s`:'';
+    // O link vai COM o endereço-modelo NOMEDOCLIENTE de propósito: o renderizador de respostas (renderMd, em js/core/markdown.js) troca esse link por um campo onde a pessoa cola o endereço do
+    // sistema dela e por um botão "Acessar tela" que monta o link certo e abre numa nova guia. Por isso a IA deve copiá-lo EXATAMENTE como está.
+    // "Menu" da tabela Rotinas é só Sim/Não (a rotina aparece como item do menu do sistema ou não) — NÃO traz o caminho do menu; esse só vale se estiver nos artigos
+    const noMenu=String(r['Menu']||'').trim();
     return `Nome oficial: ${r['Descrição']||''}\nNome interno (id da rotina): ${nomeInterno||'(não informado)'}`+
-        (caminho?`\nCaminho técnico (o usuário precisa completar ANTES com o endereço do sistema dele, ex.: https://NOMEDOCLIENTE.bsoft.app): ${caminho}`:'');
+        (noMenu?`\nAparece como item no menu do sistema: ${noMenu}`:'')+
+        (caminho?`\nLink da tela (copie EXATAMENTE este link na resposta, sem trocar NOMEDOCLIENTE nem explicar como montar a URL: o sistema o transforma sozinho num campo onde a pessoa cola o endereço do sistema dela e num botão "Acessar tela"): ${caminho}`:'');
 }

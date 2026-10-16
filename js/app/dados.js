@@ -49,12 +49,19 @@ async function _carregarTabelaCompleta(tabela){
     }
     return {data:todas};
 }
+// Artigos da base de conhecimento. A coluna caminho_menu (sql/05_bancodados_caminho_menu.sql: o caminho da tela no menu, escrito na Revisão) vem junto; se o SQL ainda não foi rodado o banco recusa a coluna
+// e a carga é refeita sem ela — o sistema nunca deixa de abrir por causa disso.
+async function _carregarBancoDados() {
+    let r = await sb.from('BancoDados').select('id, titulo, conteudo, como_emitir, categoria, caminho_menu');
+    if (r.error && /caminho_menu|42703|PGRST204/.test(String(r.error.code || '') + ' ' + String(r.error.message || ''))) r = await sb.from('BancoDados').select('id, titulo, conteudo, como_emitir, categoria');
+    return r;
+}
 async function loadData() {
     const b = document.getElementById('statusBadge');
     try {
         b.innerText = `Carregando banco de dados...`;
         const [rB, rP, rF, rL, rM, rR] = await Promise.allSettled([
-            sb.from('BancoDados').select('id, titulo, conteudo, como_emitir, categoria'), // embedding vem do cache local
+            _carregarBancoDados(), // embedding vem do cache local
             _carregarTabelaCompleta('Parametros'),
             _carregarTabelaCompleta('Funcionalidades'),
             sb.from('logs').select('pergunta, timestamp, created_at').order('created_at', {ascending: false}).limit(100),
@@ -128,7 +135,7 @@ async function loadData() {
     }
 }
 function popularBarraEmAlta(logsData){try{const isO=Array.isArray(logsData)&&logsData.length>0&&typeof logsData[0]==='object'&&!Array.isArray(logsData[0]);const rows=Array.isArray(logsData)?logsData:[];if(!rows.length)return;const cont={};const po=[];const agora=Date.now();const seteD=7*24*60*60*1000;rows.forEach((row)=>{let p="",ts=0;if(isO){p=(row.pergunta||row.Pergunta||"").toString().trim();if(row.data){const d=new Date(row.data);if(!isNaN(d.getTime()))ts=d.getTime();}}else{p=(row[1]||"").toString().trim();}if(!p||p.length<3||p.toUpperCase().startsWith("FEEDBACK")||p==="Pendente")return;if(!cont[p]){cont[p]={freq:0};po.push(p);}cont[p].freq++;if((agora-ts)<seteD&&ts>0)cont[p].recente=true;});if(Object.keys(cont).length===0)return;const u4=po.filter(p=>cont[p].recente).slice(0,4);const su4=new Set(u4);const rec=Object.entries(cont).filter(([k])=>!su4.has(k)&&cont[k].freq>=2).sort((a,b)=>b[1].freq-a[1].freq).map(([k])=>k);let lf=[...u4,...rec].filter((v,i,a)=>a.indexOf(v)===i).slice(0,8);const bar=document.getElementById('topTermsBar');if(!bar||!lf.length)return;bar.innerHTML='<span>Em alta:</span>';lf.forEach(t=>{const a=document.createElement('a');a.textContent=t.length>35?t.substring(0,33)+'…':t;a.title=t;a.onclick=()=>fillAndSend(t);bar.appendChild(a);});}catch(e){}}
-function carregarVetoresExistentes(dados){if(!dados.length)return{linhasComVetor:0,linhasSemVetor:[],chaves:[]};const chaves=Object.keys(dados[0]);const cv=chaves.find(k=>k.toLowerCase().trim()==='vetor'||k.toLowerCase().trim()==='embedding');const ce=chaves.find(k=>k.toLowerCase().trim()==='erro'||k.toLowerCase().trim()==='titulo');const cs=chaves.find(k=>k.toLowerCase().trim()==='solucao'||k.toLowerCase().trim()==='solução'||k.toLowerCase().trim()==='conteudo');const cc=chaves.find(k=>k.toLowerCase().trim()==='categoria');const cem=chaves.find(k=>{const kn=k.toLowerCase().trim();return kn==='como emitir'||kn==='como_emitir'||kn==='emissao'||kn==='emissão'||kn==='emitir';});if(!cv)return{linhasComVetor:0,linhasSemVetor:[],chaves};let lcv=0;const lsv=[];dados.forEach((linha,i)=>{const te=linha[ce]||"";const ts=linha[cs]||"";const tc=cc?(linha[cc]||""):"";const tem=cem?(linha[cem]||""):"";if(!te&&!ts)return;const tc2=`DÚVIDA: ${te} | PROCEDIMENTO: ${ts}${tem?' | COMO EMITIR: '+tem:''}${tc?' | CATEGORIA: '+tc:''}`;const ve=linha[cv];let veArray=null;if(Array.isArray(ve)){veArray=ve;}else if(ve&&typeof ve==='string'&&ve.trim().startsWith('[')){try{veArray=JSON.parse(ve);}catch(e){veArray=null;}}
+function carregarVetoresExistentes(dados){if(!dados.length)return{linhasComVetor:0,linhasSemVetor:[],chaves:[]};const chaves=Object.keys(dados[0]);const cv=chaves.find(k=>k.toLowerCase().trim()==='vetor'||k.toLowerCase().trim()==='embedding');const ce=chaves.find(k=>k.toLowerCase().trim()==='erro'||k.toLowerCase().trim()==='titulo');const cs=chaves.find(k=>k.toLowerCase().trim()==='solucao'||k.toLowerCase().trim()==='solução'||k.toLowerCase().trim()==='conteudo');const cc=chaves.find(k=>k.toLowerCase().trim()==='categoria');const cem=chaves.find(k=>{const kn=k.toLowerCase().trim();return kn==='como emitir'||kn==='como_emitir'||kn==='emissao'||kn==='emissão'||kn==='emitir';});const ccm=chaves.find(k=>k.toLowerCase().trim()==='caminho_menu');if(!cv)return{linhasComVetor:0,linhasSemVetor:[],chaves};let lcv=0;const lsv=[];dados.forEach((linha,i)=>{const te=linha[ce]||"";const ts=linha[cs]||"";const tc=cc?(linha[cc]||""):"";const tem=cem?(linha[cem]||""):"";const tcm=ccm?String(linha[ccm]||"").trim():"";if(!te&&!ts)return;const tc2=`DÚVIDA: ${te} | PROCEDIMENTO: ${ts}${tem?' | COMO EMITIR: '+tem:''}${tc?' | CATEGORIA: '+tc:''}`;const ve=linha[cv];let veArray=null;if(Array.isArray(ve)){veArray=ve;}else if(ve&&typeof ve==='string'&&ve.trim().startsWith('[')){try{veArray=JSON.parse(ve);}catch(e){veArray=null;}}
 // Confere se o conteúdo mudou desde a última vetorização (ver _hashConteudo/_saveEmbToCache) --
 // hash diferente do salvo = registro foi editado, vetor em cache tá desatualizado, trata como se
 // não tivesse vetor (cai em linhasSemVetor e revetoriza sozinho). Hash ainda não registrado (cache
@@ -140,7 +147,7 @@ if(veArray&&veArray.length>0&&linha.id!=null){
     if(hashSalvo&&hashSalvo!==hashAtual)veArray=null;
     else if(!hashSalvo)_saveEmbToCache(linha.id,veArray,hashAtual);
 }
-if(veArray&&veArray.length>0){manualVetorizado.push({texto:tc2,erro:te,solucao:ts,emitir:tem,categoria:tc,vetor:veArray,idSupabase:linha.id});lcv++;}else{lsv.push({linha,textoCompleto:tc2,textoErro:te,textoSolucao:ts,textoEmitir:tem,textoCategoria:tc,indexPlanilha:i+2,chaveVetor:cv,chaves,idSupabase:linha.id});}});return{linhasComVetor:lcv,linhasSemVetor:lsv,chaves};}
+if(veArray&&veArray.length>0){manualVetorizado.push({texto:tc2,erro:te,solucao:ts,emitir:tem,categoria:tc,caminhoMenu:tcm,vetor:veArray,idSupabase:linha.id});lcv++;}else{lsv.push({linha,textoCompleto:tc2,textoErro:te,textoSolucao:ts,textoEmitir:tem,textoCategoria:tc,textoCaminhoMenu:tcm,indexPlanilha:i+2,chaveVetor:cv,chaves,idSupabase:linha.id});}});return{linhasComVetor:lcv,linhasSemVetor:lsv,chaves};}
 async function vetorizarEmBackground(lsv,chaves){
     const b=document.getElementById('statusBadge');
     const overlay=document.getElementById('vecOverlay');
@@ -167,7 +174,7 @@ async function vetorizarEmBackground(lsv,chaves){
         await new Promise(r=>setTimeout(r,500));
         const nv=await gerarEmbeddingComRetry(item.textoCompleto);
         if(nv){
-            manualVetorizado.push({texto:item.textoCompleto,erro:item.textoErro,solucao:item.textoSolucao,emitir:item.textoEmitir||"",categoria:item.textoCategoria,vetor:nv,idSupabase:item.idSupabase});
+            manualVetorizado.push({texto:item.textoCompleto,erro:item.textoErro,solucao:item.textoSolucao,emitir:item.textoEmitir||"",categoria:item.textoCategoria,caminhoMenu:item.textoCaminhoMenu||"",vetor:nv,idSupabase:item.idSupabase});
             salvarVetorNoSupabase(item.idSupabase,nv,_hashConteudo(item.textoCompleto));
             es=0;
         } else{es++;await new Promise(r=>setTimeout(r,10000));}
