@@ -747,7 +747,8 @@ function _renderizarCardResultadoRelatorio(nomeRelatorio, camposTxt, encontrados
         <li>Clique em <b>➕</b> para adicionar um novo relatório.</li>
         <li>Clique em <b>"Escolher arquivo"</b> e selecione o arquivo que você baixou.</li>
         <li>Clique em <b>Salvar</b>. Pronto — relatório criado com sucesso.</li>
-    </ol></div></div>`;
+    </ol>
+    <div style="margin-top:10px;padding:8px 12px;border-left:3px solid #f59e0b;background:#fffbeb;border-radius:0 6px 6px 0;font-size:12.5px;line-height:1.6;color:#78350f;">Obs. Se tiver Erro Query, segue significados e correções:<br><b>Erro Query (1064) :</b> Verifique no sistema os campos Valores Tipos Outros se algum contém uma barra "/" e remova a barra dos que tiver.<br><b>Erro (1054):</b> Se misturou dados de diferentes Origens, orientar abrir ticket para desenvolver relatório, ou se utilizou operadores de soma, subtração, divisão ou multiplicação verifique se foi digitado corretamente, teste colocando parênteses entre as contas "(" ")"</div></div></div>`;
     const ts = Date.now();
     card.id = '_relatorioResultCard_' + ts;
     window['_relatorioDat_' + ts] = { conteudo: conteudoSerializado, nomeArquivo: nomeArquivoSugerido, nome: nomeRelatorio, camposTxt, origemSel, colunasRascunho };
