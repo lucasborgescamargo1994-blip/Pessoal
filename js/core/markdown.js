@@ -81,8 +81,28 @@ function _linkify(txt) {
     });
     return h.replace(/ L(\d+) /g, (_, i) => _links[i]);
 }
+// Fórmula em LaTeX (\[ ... \], \( ... \), \frac{}{}, \text{}) que a IA às vezes escreve apesar da regra: o chat não tem como "desenhar"
+// LaTeX, então vira texto comum e legível (ex.: "Base = Valor Líquido ÷ ((100 − Alíquota) ÷ 100)"). Texto sem LaTeX passa direto, sem custo.
+function _latexParaTexto(txt) {
+    if (!/\\(?:\[|\]|\(|\)|frac|text|approx|times|cdot|div|left|right|%)/.test(txt)) return txt;
+    let t = txt;
+    t = t.replace(/\\\[([\s\S]*?)\\\]/g, (_, f) => '\n' + f.trim() + '\n');   // fórmula em linha própria
+    t = t.replace(/\\\(([\s\S]*?)\\\)/g, (_, f) => f.trim());                  // fórmula dentro da frase
+    t = t.replace(/\\(?:text|mathrm|mathbf|textbf|operatorname)\s*\{([^{}]*)\}/g, '$1');
+    const _env = s => (/[+\-−×÷*/=]/.test(s) ? '(' + s + ')' : s);
+    for (let i = 0; i < 8 && /\\d?frac\s*\{/.test(t); i++) {                   // de dentro para fora (frações aninhadas)
+        t = t.replace(/\\d?frac\s*\{([^{}]*)\}\s*\{([^{}]*)\}/g, (_, a, b) => _env(a.trim()) + ' ÷ ' + _env(b.trim()));
+    }
+    t = t.replace(/\\(?:left|right)\s*/g, '').replace(/\\approx/g, '≈').replace(/\\times|\\cdot/g, '×').replace(/\\div/g, '÷').replace(/\\leq?\b/g, '≤').replace(/\\geq?\b/g, '≥').replace(/\\neq/g, '≠')
+         .replace(/\\%/g, '%').replace(/\\[,;:! ]/g, ' ').replace(/\\\$/g, '$');
+    // cálculo inverso: a fórmula do Bsoft é sempre "(100 − Alíquota) ÷ 100" (primeiro 100 menos a alíquota, depois ÷ 100), nunca "1 − Alíquota ÷ 100"
+    t = t.replace(/\(\s*1\s*[−-]\s*([A-Za-zÀ-ú_]+)\s*÷\s*100\s*\)/g, '((100 − $1) ÷ 100)');
+    t = t.replace(/\(\s*1\s*[−-]\s*0,(\d{1,3})\s*\)/g, (_, d) => '((100 − ' + String(Math.round(parseFloat('0.' + d) * 1000) / 10).replace('.', ',') + ') ÷ 100)');   // (1 − 0,18) → ((100 − 18) ÷ 100)
+    return t.replace(/(\d) - (\d)/g, '$1 − $2');
+}
 function renderMd(txt) {
     if (!txt) return '';
+    txt = _latexParaTexto(txt);
     // Escape HTML
     let h = txt.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     // Links (markdown e URLs soltas) — antes dos demais estilos para não quebrar a sintaxe
