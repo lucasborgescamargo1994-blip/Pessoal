@@ -89,6 +89,13 @@
         if (ra.minTermos !== rb.minTermos) d.push(`Mínimo de termos: ${ra.minTermos} → ${rb.minTermos}`);
         if ((ra.usarNoContexto !== false) !== (rb.usarNoContexto !== false)) d.push('Respostas aprovadas como conhecimento da IA: ' + (rb.usarNoContexto !== false ? 'ligado' : 'desligado'));
         if (ra.contextoMax !== rb.contextoMax) d.push(`Respostas aprovadas dadas à IA: ${ra.contextoMax} → ${rb.contextoMax}`);
+        const da = a.desambiguacao, db = b.desambiguacao;
+        if (da.ativo !== db.ativo) d.push('Pergunta vaga (botões “qual é o seu caso?”): ' + (db.ativo ? 'ligada' : 'desligada'));
+        if (da.margem !== db.margem) d.push(`Pergunta vaga — margem de empate: ${ADM.fmt.pct(da.margem)} → ${ADM.fmt.pct(db.margem)}`);
+        if (da.certeza !== db.certeza) d.push(`Pergunta vaga — certeza do 1º assunto: ${ADM.fmt.pct(da.certeza)} → ${ADM.fmt.pct(db.certeza)}`);
+        if (da.minSimilaridade !== db.minSimilaridade) d.push(`Pergunta vaga — semelhança mínima do assunto: ${ADM.fmt.pct(da.minSimilaridade)} → ${ADM.fmt.pct(db.minSimilaridade)}`);
+        if (da.maxOpcoes !== db.maxOpcoes) d.push(`Pergunta vaga — botões: ${da.maxOpcoes} → ${db.maxOpcoes}`);
+        if (da.maxTermos !== db.maxTermos) d.push(`Pergunta vaga — máximo de termos: ${da.maxTermos} → ${db.maxTermos}`);
         return d;
     }
 
@@ -265,6 +272,24 @@
             campo('Quantas respostas aprovadas dar à IA', ctxMax, 'De 1 a 6. Mais respostas = mais contexto (e mais tokens por pergunta). Recomendado: 3.')]);
     }
 
+    // Pergunta vaga: botões "qual é o seu caso?" antes de responder (js/app/desambiguacao.js). Sem IA: usa os resultados da busca por significado.
+    function secDesambiguacao() {
+        const r = M.rascunho.desambiguacao;
+        const ch = ADM.ui.chave(r.ativo !== false, v => { r.ativo = v; mudou(); }, 'Perguntar quando a pergunta estiver vaga');
+        const slider = (rot, chave, min, max, passo, dica) => {
+            const sel = h('input', { type: 'range', min, max, step: passo, value: r[chave], 'aria-label': rot }), num = h('span', { class: 'pct alto' }, ADM.fmt.pct(r[chave]));
+            sel.addEventListener('input', () => { r[chave] = Number(sel.value); num.textContent = ADM.fmt.pct(r[chave]); mudou(); });
+            return h('div', { class: 'campo' }, h('div', { class: 'linha', style: { justifyContent: 'space-between' } }, h('span', { class: 'rot' }, rot), num), sel, h('span', { class: 'dica' }, dica));
+        };
+        const numero = (chave, min, max, padrao) => { const i = h('input', { type: 'number', min, max, step: 1, value: r[chave] || padrao }); i.addEventListener('input', () => { r[chave] = Math.min(max, Math.max(min, parseInt(i.value, 10) || padrao)); mudou(); }); return i; };
+        return cartao('Pergunta vaga — “qual é o seu caso?”', 'info', [
+            h('label', { class: 'linha' }, ch.el, h('span', null, h('b', null, 'Perguntar antes de responder'), h('span', { class: 'mu' }, ' — quando a pergunta pode ser sobre mais de um assunto (ex.: “preciso habilitar emissor de nf-e”: o módulo ou o erro?), o chat mostra botões e responde só sobre o escolhido. Não usa IA: é instantâneo. Teste no Simulador: ele mostra os assuntos e as porcentagens.'))),
+            slider('Margem de empate', 'margem', 0.01, 0.15, 0.01, 'Só conta como dúvida se o 2º assunto estiver a até esta diferença do 1º. Quanto MAIOR, mais perguntas viram botões. Recomendado: 4%.'),
+            slider('Certeza do 1º assunto', 'certeza', 0.6, 1, 0.01, 'Se o assunto mais parecido passar disto, o chat responde direto, sem perguntar. Quanto MENOR, mais perguntas viram botões. Recomendado: 82%.'),
+            slider('Semelhança mínima de um assunto', 'minSimilaridade', 0.3, 0.9, 0.01, 'Assuntos abaixo disto nem aparecem como botão. Recomendado: 50%.'),
+            h('div', { class: 'g2' }, campo('Máximo de botões', numero('maxOpcoes', 2, 4, 3), 'De 2 a 4 assuntos (mais o botão “nenhum desses”). Recomendado: 3.'), campo('Máximo de termos da pergunta', numero('maxTermos', 1, 20, 7), 'Perguntas mais detalhadas que isso são tratadas como específicas e nunca perguntam. Recomendado: 7.'))]);
+    }
+
     /* ───────────── status / publicação (direita) ───────────── */
     function textoArquivo(cfg, mascarar) {
         const c = clone(cfg);
@@ -374,7 +399,7 @@
     /* ───────────── montagem ───────────── */
     function construir() {
         R.dl = R.dl || h('datalist', { id: 'dlModelos' });
-        limpar(R.esq).append(R.dl, secProvedor(), secCadeia(), secRascunho(), secPrioritario(), secVisao(), secEmbeddings(), secRespostasRapidas());
+        limpar(R.esq).append(R.dl, secProvedor(), secCadeia(), secRascunho(), secPrioritario(), secVisao(), secEmbeddings(), secRespostasRapidas(), secDesambiguacao());
         atualizarDatalist(); atualizarStatus();
     }
 

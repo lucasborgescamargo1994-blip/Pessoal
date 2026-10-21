@@ -45,6 +45,15 @@
         const box = limpar(R.rastro);
         if (!S.traces.length) { box.appendChild(h('div', { class: 'mu', style: { padding: '4px 2px' } }, 'Faça uma pergunta no simulador: aqui aparece de onde veio cada resposta (resposta rápida ou IA, qual modelo, tempo).')); return; }
         S.traces.forEach(t => {
+            if (t.fonte === 'desambiguacao') {   // pergunta vaga: o chat perguntou "qual é o seu caso?" em vez de responder (js/app/desambiguacao.js)
+                box.appendChild(h('div', { class: 'rastro-item' },
+                    h('div', { class: 'q' }, t.pergunta ? ADM.fmt.trunc(t.pergunta, 140) : '(pergunta digitada direto no simulador)'),
+                    h('div', { class: 'linha', style: { gap: '5px', flexWrap: 'wrap' } },
+                        h('span', { class: 'sel wa', title: 'A pergunta pode ser sobre mais de um assunto: o chat mostrou botões para a pessoa escolher, sem gastar IA' }, '🤔 perguntou qual é o caso'),
+                        ...(Array.isArray(t.opcoes) ? t.opcoes : []).map(o => h('span', { class: 'pct', title: o.titulo }, ADM.fmt.trunc(o.titulo || '', 70) + ' ' + ADM.fmt.pct(o.sim))),
+                        h('span', { class: 'sel' }, '⏱ ' + (t.ms >= 1000 ? (t.ms / 1000).toFixed(1) + ' s' : t.ms + ' ms')))));
+                return;
+            }
             const ia = t.fonte === 'ia';
             box.appendChild(h('div', { class: 'rastro-item' },
                 h('div', { class: 'q' }, t.pergunta ? ADM.fmt.trunc(t.pergunta, 140) : '(pergunta digitada direto no simulador)'),

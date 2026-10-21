@@ -1,0 +1,25 @@
+@charset "UTF-8";
+/* Cartão "Para eu acertar a resposta: qual é o seu caso?" — botões para escolher o assunto de uma pergunta vaga (js/app/desambiguacao.js). */
+.desamb-card { border-color: color-mix(in srgb, var(--primary) 38%, var(--border)); }
+.desamb-head { padding: 13px 16px 2px; font-size: 14px; font-weight: 800; color: var(--text); }
+.desamb-sub { padding: 2px 16px 0; font-size: 12px; line-height: 1.45; color: var(--text-muted); }
+.desamb-lista { display: flex; flex-direction: column; gap: 8px; padding: 12px 16px 14px; }
+.desamb-op {
+    display: flex; align-items: flex-start; gap: 10px; width: 100%; text-align: left; padding: 10px 14px;
+    border-radius: 12px; border: 1.5px solid var(--border); background: var(--surface); color: var(--text);
+    font-family: inherit; font-size: 13.5px; font-weight: 650; line-height: 1.4; cursor: pointer;
+    transition: transform .22s cubic-bezier(.34, 1.56, .64, 1), border-color .18s, background .18s, box-shadow .22s;
+}
+.desamb-op:hover, .desamb-op:focus-visible {
+    border-color: var(--primary); background: color-mix(in srgb, var(--primary) 9%, var(--surface));
+    box-shadow: 0 8px 18px -12px var(--accent-glow, rgba(0, 0, 0, .25)); transform: translateY(-1px);
+}
+.desamb-op:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.desamb-op:active { transform: scale(.985); }
+.desamb-ic { flex: none; font-size: 15px; line-height: 1.3; }
+.desamb-tx { min-width: 0; overflow-wrap: anywhere; }
+.desamb-nenhuma { font-weight: 500; color: var(--text-muted); border-style: dashed; }
+.desamb-ok { padding: 10px 16px; font-size: 12.5px; color: var(--text-muted); }
+.desamb-ok b { color: var(--text); }
+.desamb-card.is-resolvido { opacity: .85; }
+@media (prefers-reduced-motion: reduce) { .desamb-op { transition: none; } .desamb-op:hover, .desamb-op:focus-visible { transform: none; } }
