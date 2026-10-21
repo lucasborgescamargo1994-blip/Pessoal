@@ -1,7 +1,8 @@
 /* js/app/conversas-ui.js — Renderização da lista de conversas e da barra lateral. */
-function limparChatStream() { const stream = document.getElementById('chatStream'); stream.innerHTML = ''; stream.appendChild(_criarWelcomeMsg()); }
+function limparChatStream() { if (typeof Desamb !== 'undefined') Desamb.limpar(); const stream = document.getElementById('chatStream'); stream.innerHTML = ''; stream.appendChild(_criarWelcomeMsg()); }
 function restaurarConversa(id) {
     const conversa = conversas.find(c => c.id === id); if (!conversa) return;
+    if (typeof Desamb !== 'undefined') Desamb.limpar();
     const stream = document.getElementById('chatStream'); stream.innerHTML = '';
     if (conversa.mensagens.length === 0) { stream.appendChild(_criarWelcomeMsg()); return; }
     conversa.mensagens.forEach(msg => { const d = document.createElement('div'); d.className = msg.sender === 'system' ? 'message system-msg' : msg.sender === 'ml' ? 'message ml-msg' : `message ${msg.sender==='user'?'user-msg':'ai-msg'}`; d.innerHTML = msg.text; stream.appendChild(d); });

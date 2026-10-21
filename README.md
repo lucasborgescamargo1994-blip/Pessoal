@@ -26,10 +26,11 @@ Assistente de suporte do Bsoft TMS: responde dúvidas com a base de conhecimento
 8. [Ferramentas em abas (Sefaz, Regras, Relatórios, Parâmetros)](#ferramentas-em-abas-sefaz-regras-relatórios-parâmetros)
 9. [Agenda (tarefas, cronograma e lembretes)](#agenda-tarefas-cronograma-e-lembretes)
 10. [Latitude e longitude no chat](#latitude-e-longitude-no-chat-v2813)
-11. [IA / MCP: trocar modelos e chaves](#ia--mcp-trocar-modelos-e-chaves)
-12. [Segurança — leia](#segurança--leia)
-13. [Problemas comuns](#problemas-comuns)
-14. [Para quem vai mexer no código](#para-quem-vai-mexer-no-código)
+11. [Pergunta vaga: botões “qual é o seu caso?”](#pergunta-vaga-botões-qual-é-o-seu-caso-v2818)
+12. [IA / MCP: trocar modelos e chaves](#ia--mcp-trocar-modelos-e-chaves)
+13. [Segurança — leia](#segurança--leia)
+14. [Problemas comuns](#problemas-comuns)
+15. [Para quem vai mexer no código](#para-quem-vai-mexer-no-código)
 
 ---
 
@@ -427,6 +428,25 @@ O endereço no formato do Bsoft (`RUA, NÚMERO, BAIRRO — CIDADE - UF`) também
 - **Log e privacidade:** a tabela `logs` recebe **uma linha por pedido, quando o cálculo roda (ao Executar)** — só **"Geolocalização - CIDADE/UF (rua|bairro|cidade|erro|não achou)"** ou, com dois endereços, **"Geolocalização rota - CIDADE/UF (nível) → CIDADE/UF (nível)"** (fonte "ferramenta"); quem vê a pergunta e não clica em nada não gera linha — a rua e o número **não** vão para o banco. A pergunta digitada fica no histórico local da conversa, como qualquer outra — e, como qualquer mensagem da conversa, **vai junto no histórico enviado à IA nas perguntas seguintes** (o endereço não é enviado à IA por este recurso, só pelo histórico). Não precisa de SQL.
 - **Perguntas de "como fazer"** (ex.: "como preencher a latitude do cliente") **continuam indo para a IA**: só é tratado como pedido de coordenadas quando há um endereço com **cidade e UF** (ou o formato do Bsoft completo). Frases de suporte que só citam latitude/longitude e terminam em UF ("latitude errada para Londrina - PR") também seguem para a IA: palavras que não são nome de cidade barram a leitura e, quando a frase passa mas o mapa **não conhece** a "cidade", o chat volta para a IA em vez de mostrar "não encontrei". Dois endereços no mesmo pedido também vão para a IA (ela orienta a mandar um de cada vez).
 - **Para mexer:** `js/app/geolocalizacao.js` (global `Geo`: `interpretar`, `buscar`, `responder`; `Geo.config.espacoMs`/`tempoMs`) e o gancho logo abaixo da Agenda no começo do `handleChat` (`js/app/chat.js`). Para trocar de provedor de mapas, só a função `consultar()` e a validação `avaliar()`.
+
+## Pergunta vaga: botões “qual é o seu caso?” (v28.18)
+
+Quando a pergunta pode ser sobre **mais de um assunto**, o chat não chuta: mostra botões e responde só sobre o que a pessoa escolher. Exemplo: **“preciso habilitar emissor de nf-e”** pode ser o *módulo de emissão* ou o erro *“emissor não habilitado para NF-e”*:
+
+```
+🤔 Para eu acertar a resposta: qual é o seu caso?
+  [🛠️ Como habilitar o módulo emissor de NF-e]
+  [⚠️ Erro emissor não habilitado para NF-e]
+  [🤷 Nenhum desses — é outra coisa]
+```
+
+- **Não usa IA para decidir** (é instantâneo e não gasta a cota do provedor): aproveita os resultados da busca por significado (Jina) que o chat já faz para montar a resposta — não acrescenta nenhuma chamada de rede. Os botões são os **títulos dos artigos** do banco de dados; o ícone mostra o tipo (⚠️ erro/problema, 🛠️ “como fazer”, 📄 outro).
+- **Quando pergunta** (tudo ao mesmo tempo): a busca foi por significado; a pergunta é curta (até 7 termos) e sem número/código (ex.: “rejeição 539” nunca pergunta); não parece continuação da conversa (começa com “e”, “mas”, “isso”…, ou tem até 2 termos numa conversa que já teve resposta); **nenhum** resultado — artigo, repositório, aprendizado ou resposta aprovada — chega à “certeza” (82%); há 2 a 3 artigos **de assuntos diferentes** empatados (diferença de até 4 pontos) com o primeiro; e a pergunta não é praticamente o título de um deles. Títulos quase iguais contam como um assunto só — exceto “Erro…” × “Como…”, que são assuntos diferentes. Pergunta de uma palavra só pergunta se os assuntos forem de natureza diferente (erro × como fazer).
+- **Nunca pergunta** durante a chamada de voz, em “Não era o que procurava? pesquisar com a IA”, quando a busca caiu para palavra-chave, nem repete a mesma pergunta na mesma conversa. Se a pessoa digitar outra coisa sem escolher, os botões antigos são apagados. Quem não gosta liga/desliga em **Personalizar › Perguntar quando a pergunta estiver vaga**.
+- **Depois do clique** a pergunta é refeita **sem repetir a bolha, o log nem o cálculo do embedding**: o artigo escolhido vai em primeiro, os outros candidatos (e as respostas aprovadas parecidas com eles) saem do prompt, e a IA recebe “o cliente confirmou que quer saber sobre: …”. **Nenhum desses** tira os candidatos e a IA pede mais detalhes (e a linha do log passa a “não encontrou” se o manual não tem mais nada).
+- **Log e Revisão:** continua **uma linha por pergunta**, criada quando os botões aparecem. Depois do clique a pergunta da linha ganha o sufixo **“ [assunto: …]”** (ou “ [nenhum dos assuntos sugeridos]”), para a Revisão não transformar uma pergunta vaga em resposta rápida de um assunto só. As fontes mostram a semelhança real da busca (não os 90% do prompt).
+- **Ajustar sem mexer em código:** **Admin → IA / MCP → Pergunta vaga** (liga/desliga, margem de empate 4%, certeza 82%, semelhança mínima 50%, máximo de botões 3, máximo de termos 7; vai no `config/mcp-config.js`, chave `desambiguacao`). O **Simulador** mostra, no rastro, “🤔 perguntou qual é o caso” com os assuntos e as porcentagens — use para calibrar com perguntas reais: se está perguntando demais, **diminua a margem** ou **a certeza**; se não pergunta quando deveria, aumente.
+- **Para mexer:** `js/app/desambiguacao.js` (global `Desamb`: `avaliar`, `mostrar`, `escolher`, `aplicarEscolha`, `filtrarAprovadas`, `textoEsclarecimento`), o gancho no `handleChat` (depois de `rrRelacionadas`: `Desamb.avaliar`; a 2ª passada usa `opts.desambiguado`/`foco`/`descartados`/`vetor`/`logTs`), `css/desambiguacao.css`.
 
 ## IA / MCP: trocar modelos e chaves
 

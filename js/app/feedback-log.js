@@ -41,7 +41,7 @@ function fontesDoBanco(p) {
         const tipo = r.isRepositorio ? 'repo' : r.isML ? 'ml' : 'banco';
         // artigos vetorizados guardam o id em idSupabase; os da busca por palavra-chave vêm da linha crua do banco, onde o id é "id"
         const id = r.idSupabase != null ? r.idSupabase : (tipo === 'banco' && r.id != null ? r.id : null);
-        out.push({ tipo, id, titulo: corta(r.erro || r.titulo || '(sem título)', 90), pct: pct(r.similaridade) });
+        out.push({ tipo, id, titulo: corta(r.erro || r.titulo || '(sem título)', 90), pct: pct(r._simReal != null ? r._simReal : r.similaridade) });   // _simReal: artigo escolhido nos botões "qual é o seu caso?" (no prompt a semelhança vira 90%)
     });
     (p.aprovadas || []).forEach(x => out.push({ tipo: 'rr', id: x.item.id, titulo: corta(x.item.pergunta, 90), pct: pct(x.score) }));
     (p.parametros || []).forEach(x => out.push({ tipo: 'param', id: x.item.id, titulo: corta(x.item['Descrição'] || x.item['Nome Interno'] || '(sem descrição)', 90), pct: pct(x.sim) }));

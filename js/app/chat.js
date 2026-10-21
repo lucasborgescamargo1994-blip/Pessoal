@@ -5,6 +5,12 @@
 // opts (uso interno, ex.: botão "pesquisar com a IA" da resposta rápida):
 //   { pergunta, forcarIA, reutilizarMensagem } — refaz a pergunta já exibida, sem repetir a bolha do usuário
 //   e sem procurar de novo nas respostas rápidas.
+// JavaScript do botão "Tentar novamente" de uma resposta que falhou. Na 2ª passada da pergunta vaga (botões "qual é o seu caso?") refaz COM a escolha da pessoa,
+// em vez de recomeçar a pergunta do zero (que duplicaria a bolha e o log e perderia o assunto escolhido).
+function _jsRefazer(opts, rq) {
+    if (opts && opts.desambiguado && typeof Desamb !== 'undefined') return "Desamb.refazer('" + Desamb.guardarOpts(opts) + "');";
+    return "fillAndSend('" + rq + "');";
+}
 async function handleChat(opts) {
     opts = (opts && typeof opts === 'object' && !(typeof Event !== 'undefined' && opts instanceof Event)) ? opts : {};
     const _reuso = !!opts.reutilizarMensagem;
@@ -14,6 +20,7 @@ async function handleChat(opts) {
     const input = document.getElementById('searchInput');
     const query = (opts.pergunta ? String(opts.pergunta) : input.value).trim();
     if (!query) return;
+    if (!_reuso && typeof Desamb !== 'undefined') Desamb.encerrarPendentes();   // botões de "qual é o seu caso?" que a pessoa deixou sem escolher: apagados
 
     // Perguntas sobre a agenda pessoal ("quais tarefas tenho hoje?", "tarefa: ligar para o cliente amanhã 14h") são respondidas aqui, na tela:
     // não vão para a IA, não entram no histórico da conversa e não geram log (os dados são pessoais e ficam só no computador do usuário).
@@ -106,24 +113,25 @@ async function handleChat(opts) {
 
     const ld = appendLoadingCard("🧠 Elaborando sua resposta...");
     const _t2 = performance.now();
-    const vp = await gerarEmbedding(queryNormalizada);
+    const vp = (opts.desambiguado && opts.vetor) ? opts.vetor : await gerarEmbedding(queryNormalizada);   // 2ª passada da pergunta vaga: reaproveita o embedding da 1ª
     _tp('gerarEmbedding', _t2);
 
     // ── Resposta rápida aprovada (pergunta parecida com uma já revisada pela equipe) ──
-    // Pulada quando o usuário acabou de dizer "não era o que procurava" (opts.forcarIA).
-    if (!opts.forcarIA) {
+    // Pulada quando o usuário acabou de dizer "não era o que procurava" (opts.forcarIA) e na 2ª passada da pergunta vaga (a 1ª já tentou e não achou).
+    if (!opts.forcarIA && !opts.desambiguado) {
         try {
             const _rr = await rrBuscar(query, vp);
             if (_rr) { ld.remove(); rrMostrarResposta(_rr, query, performance.now() - _t0); return; }
         } catch (e) { console.warn('[respostas rápidas] busca falhou, seguindo para a IA:', e); }
     }
     const _t3 = performance.now();
-    let rr = [];
+    let rr = [], _buscaVetorial = false;
     if (vp) {
         // Busca vetorial (caminho normal)
         const _todos = manualVetorizado.map(item => ({ ...item, similaridade: calcularSimilaridade(vp, item.vetor) })).sort((a, b) => b.similaridade - a.similaridade);
         // Se similaridade máxima < 0.1, houve incompatibilidade de dimensão (ex: vetor Llama fallback vs vetores Gemini armazenados)
         if (_todos.length > 0 && _todos[0].similaridade >= 0.1) {
+            _buscaVetorial = true;
             const _topN = _todos[0].similaridade > 0.85 ? 5 : _todos[0].similaridade > 0.65 ? 8 : 12;
             rr = _todos.slice(0, _topN);
         }
@@ -173,6 +181,8 @@ async function handleChat(opts) {
         }
     }
     _tp('buscaVetorial (map+sort)', _t3);
+    // 2ª passada da pergunta vaga (js/app/desambiguacao.js): o assunto escolhido vai em 1º lugar e os outros candidatos saem da lista
+    if (opts.desambiguado && typeof Desamb !== 'undefined') rr = Desamb.aplicarEscolha(rr, opts, manualVetorizado);
 
     // ── DEBUG: mostra o que foi encontrado no banco e qual método foi usado ──
     console.group(`🔍 [DB Debug] Pergunta: "${query.substring(0, 80)}"`);
@@ -201,9 +211,27 @@ async function handleChat(opts) {
     let rrCtx = '', rrUsadas = [];
     try {
         rrUsadas = await rrRelacionadas(query, vp, { excluir: opts.excluirRr });
+        if (opts.desambiguado && typeof Desamb !== 'undefined') rrUsadas = Desamb.filtrarAprovadas(rrUsadas, opts);   // 2ª passada da pergunta vaga: sem respostas aprovadas do assunto recusado
         rrCtx = rrMontarContexto(rrUsadas);
         if (rrUsadas.length) console.log(`%c⚡ [respostas aprovadas no contexto da IA] ${rrUsadas.map(x => '#' + x.item.id + ' (' + Math.round(x.score * 100) + '%: termos ' + Math.round(x.lex * 100) + '%' + (x.sem != null ? ', significado ' + Math.round(x.sem * 100) + '%' : '') + ', texto ' + Math.round(x.cob * 100) + '%)').join(' · ')}`, 'color:#d97706;font-weight:600;');
     } catch (e) { console.warn('[respostas rápidas] não deu para usar as aprovadas como contexto, seguindo só com os artigos:', e); rrUsadas = []; rrCtx = ''; }
+
+    // ── Pergunta vaga (pode ser sobre mais de um assunto): pergunta qual antes de responder — sem IA, com os mesmos resultados da busca acima ──
+    // Não pergunta em: nova tentativa/2ª passada, "pesquisar com a IA", chamada de voz (não dá para clicar) nem quando a busca foi só por palavra-chave.
+    if (!_reuso && !opts.forcarIA && !opts.desambiguado && !isCallActive && typeof Desamb !== 'undefined') {
+        let _dv = null;
+        try { _dv = Desamb.avaliar(query, rr, rrUsadas, { vetorial: _buscaVetorial, temHistorico: !!(conversa && conversa.contexto && conversa.contexto.some(m => m && m.role === 'assistant')) }); }
+        catch (e) { console.warn('[desambiguação] não consegui avaliar, seguindo normal:', e); }
+        if (_dv) console.log(`%c🤔 [desambiguação] ${_dv.perguntar ? 'PERGUNTA — ' : 'segue direto — '}${_dv.motivo}`, 'color:#7c3aed;font-weight:600;');
+        if (_dv && _dv.perguntar) {
+            ld.remove();
+            const _logDv = logSearch(query, true);   // a pergunta já conta no log; a resposta (depois do clique) é gravada nesta mesma linha
+            Desamb.mostrar(query, _dv, { vp, logTs: _logDv });
+            if (document.hidden) _enviarNotificacaoNavegador('🤖 Suporte Bsoft TMS', 'Preciso saber qual é o seu caso para responder — escolha uma opção no chat.', 'bsoft-ia-resposta');
+            simEnviarAoPainel({ tipo: 'bsoft:sim:trace', fonte: 'desambiguacao', pergunta: query, opcoes: _dv.opcoes.map(o => ({ titulo: o.titulo, sim: o.sim })), ms: Math.round(performance.now() - _t0), bloqueios: window.BSOFT_SIM_BLOQUEIOS.length, bloqueiosLista: window.BSOFT_SIM_BLOQUEIOS.slice(-20) });
+            return;
+        }
+    }
 
     const trb = rr.length > 0 && rr[0].similaridade > 0.65;
     let ar = "";
@@ -212,7 +240,9 @@ async function handleChat(opts) {
     let mi = "", vum = false;
     if (!trb && rr.every(r => r.similaridade < 0.5) && !rrUsadas.some(x => x.score >= 0.5)) { vum = true; mi = `\n⚠️ ATENÇÃO: Nenhum resultado encontrado no manual (max: ${rr.length > 0 ? (rr[0].similaridade * 100).toFixed(0) : 0}%).\n`; }
 
-    const _logTs = logSearch(query, !vum);   // timestamp da linha de log DESTA pergunta (toda pergunta gera a sua; null no simulador): a resposta e o 👍/👎 vão para ela
+    if (opts.desambiguado && typeof Desamb !== 'undefined') mi += Desamb.textoEsclarecimento(opts);   // o que a pessoa escolheu nos botões "qual é o seu caso?"
+    if (opts.desambiguado && vum && opts.logTs && !BSOFT_SIM) { try { sb.from('logs').update({ encontrou: false }).eq('timestamp', opts.logTs).then(() => {}, () => {}); } catch (e) { /* só informação */ } }   // a linha nasceu como "encontrou" quando os botões apareceram
+    const _logTs = ('logTs' in opts) ? opts.logTs : logSearch(query, !vum);   // (2ª passada da pergunta vaga: a linha de log já foi criada quando os botões apareceram) timestamp da linha de log DESTA pergunta (toda pergunta gera a sua; null no simulador): a resposta e o 👍/👎 vão para ela
 
     let conhecimentoRepositorio = '';
     if (!trb || vum) {
@@ -387,7 +417,7 @@ async function handleChat(opts) {
 
             if (!_fbOk) {
                 const _rq = query.replace(/'/g, "\\'");
-                contentEl.innerHTML = `<div style="color:var(--text-muted);font-style:italic;font-size:13px;margin-bottom:10px;">⚠️ Não foi possível obter resposta dos modelos disponíveis no momento.</div><button onclick="this.closest('.answer-card').remove();fillAndSend('${_rq}');" style="padding:8px 18px;border-radius:8px;background:var(--primary);color:#fff;border:none;cursor:pointer;font-weight:600;font-size:13px;">🔄 Tentar novamente</button>`;
+                contentEl.innerHTML = `<div style="color:var(--text-muted);font-style:italic;font-size:13px;margin-bottom:10px;">⚠️ Não foi possível obter resposta dos modelos disponíveis no momento.</div><button onclick="this.closest('.answer-card').remove();${_jsRefazer(opts, _rq)}" style="padding:8px 18px;border-radius:8px;background:var(--primary);color:#fff;border:none;cursor:pointer;font-weight:600;font-size:13px;">🔄 Tentar novamente</button>`;
                 feedbackEl.style.display = 'flex';
                 scrollToBottom(true);
                 return;
@@ -399,7 +429,7 @@ async function handleChat(opts) {
         const _hcTruncado = _hcFR === 'length' || _hcFR === 'max_tokens';
         if (_hcTruncado) {
             const _rq = query.replace(/'/g, "\\'");
-            contentEl.innerHTML = `<div style="color:var(--text-muted);font-style:italic;font-size:13px;margin-bottom:10px;">⚠️ A resposta não foi concluída. Tente novamente.</div><button onclick="this.closest('.answer-card').remove();fillAndSend('${_rq}');" style="padding:8px 18px;border-radius:8px;background:var(--primary);color:#fff;border:none;cursor:pointer;font-weight:600;font-size:13px;">🔄 Tentar novamente</button>`;
+            contentEl.innerHTML = `<div style="color:var(--text-muted);font-style:italic;font-size:13px;margin-bottom:10px;">⚠️ A resposta não foi concluída. Tente novamente.</div><button onclick="this.closest('.answer-card').remove();${_jsRefazer(opts, _rq)}" style="padding:8px 18px;border-radius:8px;background:var(--primary);color:#fff;border:none;cursor:pointer;font-weight:600;font-size:13px;">🔄 Tentar novamente</button>`;
             feedbackEl.style.display = 'flex';
             scrollToBottom(true);
             return;

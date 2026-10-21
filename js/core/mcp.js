@@ -90,6 +90,10 @@ function mcpPadrao() {
         embeddings: { modelo: 'jina-embeddings-v3', chave: [] },
         // usarNoContexto/contextoMax: além de responder direto, as respostas aprovadas entram no prompt da IA como conhecimento (até "contextoMax" delas)
         respostasRapidas: { ativo: true, limiarLexical: 0.8, limiarSemantico: 0.92, minTermos: 2, usarNoContexto: true, contextoMax: 3 },
+        // Pergunta vaga: quando a pergunta pode ser sobre mais de um assunto, o chat mostra botões para a pessoa escolher antes de responder (js/app/desambiguacao.js).
+        // margem = diferença máxima de semelhança entre o 1º e os outros assuntos para contarem como "empate"; certeza = acima disso o 1º é claro e não pergunta;
+        // minSimilaridade = abaixo disso o assunto nem vira opção; maxOpcoes = quantos assuntos mostrar; maxTermos = perguntas com mais termos que isso são específicas e não perguntam.
+        desambiguacao: { ativo: true, margem: 0.04, certeza: 0.82, minSimilaridade: 0.5, maxOpcoes: 3, maxTermos: 7 },
     };
 }
 // Aceita o objeto do arquivo (mesmo incompleto/com erro de digitação) e devolve sempre um objeto completo.
@@ -106,6 +110,7 @@ function mcpNormalizar(raw) {
         visao: (Array.isArray(r.visao) ? r.visao : []).map(String).filter(Boolean),
         embeddings: Object.assign({}, d.embeddings, r.embeddings || {}),
         respostasRapidas: Object.assign({}, d.respostasRapidas, r.respostasRapidas || {}),
+        desambiguacao: Object.assign({}, d.desambiguacao, r.desambiguacao || {}),
     };
     out.provedor.chave = mcpChaveArray(out.provedor.chave);
     out.prioritario.chave = mcpChaveArray(out.prioritario.chave);
@@ -117,11 +122,17 @@ function mcpNormalizar(raw) {
     out.respostasRapidas.minTermos = Math.max(1, parseInt(out.respostasRapidas.minTermos, 10) || d.respostasRapidas.minTermos);
     out.respostasRapidas.usarNoContexto = out.respostasRapidas.usarNoContexto !== false;
     out.respostasRapidas.contextoMax = Math.min(6, Math.max(1, parseInt(out.respostasRapidas.contextoMax, 10) || d.respostasRapidas.contextoMax));   // (sem clamp(): este arquivo carrega antes de util.js)
+    const dz = out.desambiguacao;
+    dz.ativo = dz.ativo !== false;
+    // (mesmas faixas dos controles do painel: margem 1–15%, certeza 60–100%, semelhança mínima 30–90%)
+    [['margem', 0.01, 0.15], ['certeza', 0.6, 1], ['minSimilaridade', 0.3, 0.9]].forEach(([k, min, max]) => { const v = Number(dz[k]); dz[k] = (v > 0 && v <= 1) ? Math.min(max, Math.max(min, v)) : d.desambiguacao[k]; });
+    dz.maxOpcoes = Math.min(4, Math.max(2, parseInt(dz.maxOpcoes, 10) || d.desambiguacao.maxOpcoes));
+    dz.maxTermos = Math.min(20, Math.max(1, parseInt(dz.maxTermos, 10) || d.desambiguacao.maxTermos));
     return out;
 }
 // Impressão digital do CONTEÚDO (ignora versão/data/autor): é ela que decide se a configuração mudou.
 function mcpHash(cfg) {
-    const base = JSON.stringify([cfg.provedor, cfg.cadeia, cfg.rascunho, cfg.prioritario, cfg.visao, cfg.embeddings, cfg.respostasRapidas]);
+    const base = JSON.stringify([cfg.provedor, cfg.cadeia, cfg.rascunho, cfg.prioritario, cfg.visao, cfg.embeddings, cfg.respostasRapidas, cfg.desambiguacao]);
     let h = 5381; for (let i = 0; i < base.length; i++) h = ((h * 33) ^ base.charCodeAt(i)) >>> 0;
     return h.toString(36);
 }

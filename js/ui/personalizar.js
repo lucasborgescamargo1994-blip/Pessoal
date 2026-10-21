@@ -30,6 +30,7 @@ const Personalizar = (() => {
             ${sw('railLabels', 'Mostrar o nome sob os ícones', '', p.railLabels !== false)}
             ${sw('rememberSide', 'Lembrar a tela lateral de cada conversa', 'Cada conversa guarda qual ferramenta estava aberta ao lado dela.', p.rememberSide !== false)}
             ${sw('smartDock', 'Sugestões inteligentes', 'Depois de uma resposta, sugere abrir o Manual, o CIOT, vídeos… quando fizer sentido.', p.smartDock !== false)}
+            ${sw('desambiguar', 'Perguntar quando a pergunta estiver vaga', 'Se a sua pergunta puder ser sobre mais de um assunto, o chat mostra botões para você escolher antes de responder.', p.desambiguar !== false)}
             <div class="dr-row" style="margin-top:12px"><span class="dr-lbl">Ferramentas visíveis (lateral e botão “+”)</span><div class="dr-tools">${TOOL_ORDER.filter(id => id !== 'chat').map(id => `<button type="button" class="dr-tool${hidden.includes(id) ? '' : ' is-on'}" data-tool="${id}" style="--tool-c:${TOOLS[id].color}" aria-pressed="${!hidden.includes(id)}">${icon(TOOLS[id].icon, 14)}${esc(TOOLS[id].short)}</button>`).join('')}</div><small>Ferramentas ocultas continuam disponíveis em <b>Ctrl K</b>.</small></div>
           </section>
           <section class="dr-sec"><h3>${icon('calendar', 13)}Agenda e lembretes</h3>
