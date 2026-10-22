@@ -23,3 +23,38 @@
 .desamb-ok b { color: var(--text); }
 .desamb-card.is-resolvido { opacity: .85; }
 @media (prefers-reduced-motion: reduce) { .desamb-op { transition: none; } .desamb-op:hover, .desamb-op:focus-visible { transform: none; } }
+
+/* ── "Como você prefere a resposta?" (js/app/formato-resposta.js): resposta curta × completa detalhada ── */
+.fmt-card { border-color: color-mix(in srgb, var(--primary) 38%, var(--border)); }
+.fmt-head { padding: 12px 16px 2px; font-size: 13.5px; font-weight: 800; color: var(--text); }
+.fmt-lista { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 16px 6px; }
+.fmt-op {
+    flex: 1 1 210px; display: flex; align-items: flex-start; gap: 10px; text-align: left; padding: 10px 14px;
+    border-radius: 12px; border: 1.5px solid var(--border); background: var(--surface); color: var(--text);
+    font-family: inherit; font-size: 13.5px; line-height: 1.35; cursor: pointer;
+    transition: transform .22s cubic-bezier(.34, 1.56, .64, 1), border-color .18s, background .18s, box-shadow .22s;
+}
+.fmt-op:hover, .fmt-op:focus-visible {
+    border-color: var(--primary); background: color-mix(in srgb, var(--primary) 9%, var(--surface));
+    box-shadow: 0 8px 18px -12px var(--accent-glow, rgba(0, 0, 0, .25)); transform: translateY(-1px);
+}
+.fmt-op:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.fmt-op:active { transform: scale(.985); }
+.fmt-ic { flex: none; font-size: 17px; line-height: 1.2; }
+.fmt-tx { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.fmt-tx b { font-weight: 750; }
+.fmt-tx small { font-size: 11.5px; color: var(--text-muted); font-weight: 500; }
+.fmt-dica { padding: 2px 16px 12px; font-size: 11.5px; color: var(--text-muted); }
+.fmt-ok { padding: 8px 16px; font-size: 12.5px; color: var(--text-muted); font-weight: 650; }
+.fmt-card.is-resolvido { opacity: .85; }
+/* botão no fim da resposta curta */
+.btn-fmt-completa {
+    display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 999px; cursor: pointer;
+    font-family: inherit; font-size: 12.5px; font-weight: 750; color: #fff; border: none;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark, var(--primary)));
+    box-shadow: 0 10px 22px -10px var(--accent-glow, rgba(0, 0, 0, .3)); transition: transform .26s cubic-bezier(.34, 1.56, .64, 1), box-shadow .26s;
+}
+.btn-fmt-completa:hover { transform: translateY(-2px); }
+.btn-fmt-completa:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.btn-fmt-completa:disabled { opacity: .7; cursor: default; transform: none; }
+@media (prefers-reduced-motion: reduce) { .fmt-op, .btn-fmt-completa { transition: none; } .fmt-op:hover, .fmt-op:focus-visible, .btn-fmt-completa:hover { transform: none; } }
