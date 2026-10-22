@@ -28,10 +28,11 @@ Assistente de suporte do Bsoft TMS: responde dúvidas com a base de conhecimento
 10. [Latitude e longitude no chat](#latitude-e-longitude-no-chat-v2813)
 11. [Pergunta vaga: botões “qual é o seu caso?”](#pergunta-vaga-botões-qual-é-o-seu-caso-v2818)
 12. [Menu real do sistema: caminhos de cada tela](#menu-real-do-sistema-caminhos-de-cada-tela-v2819)
-13. [IA / MCP: trocar modelos e chaves](#ia--mcp-trocar-modelos-e-chaves)
-14. [Segurança — leia](#segurança--leia)
-15. [Problemas comuns](#problemas-comuns)
-16. [Para quem vai mexer no código](#para-quem-vai-mexer-no-código)
+13. [Resposta curta ou completa detalhada](#resposta-curta-ou-completa-detalhada-v2820)
+14. [IA / MCP: trocar modelos e chaves](#ia--mcp-trocar-modelos-e-chaves)
+15. [Segurança — leia](#segurança--leia)
+16. [Problemas comuns](#problemas-comuns)
+17. [Para quem vai mexer no código](#para-quem-vai-mexer-no-código)
 
 ---
 
@@ -462,6 +463,18 @@ A IA agora consulta **o menu de verdade do Bsoft** (23 módulos, 83 pastas, 714 
 - **Pegadinha que o menu mostra:** não existem níveis como "Operacional & Gestão" — as telas ficam direto no módulo (`Transporte > Veículos`). Há telas com **o mesmo nome em lugares diferentes** (ex.: *Percursos* em `Transporte > Configurações` e direto em `Transporte`); nesses casos a IA recebe os dois caminhos e cita o mais direto. O menu varia por **permissão e módulos contratados** do cliente: se ele não achar o item, a IA sugere conferir a permissão do usuário às rotinas.
 - **Atualizar quando o menu mudar (1 minuto, sem Node):** abra o Bsoft no Chrome com um usuário que veja todos os módulos › `F12` › **Console** › (se pedir, digite `allow pasting`) cole o conteúdo de `tools/capturar-menu.js` e Enter — o menu inteiro vai para a área de transferência. Cole no lugar do texto de `config/menu-bsoft.js` (entre as duas crases), salve e suba no GitHub. O módulo pessoal **Minhas Rotinas** é ignorado de propósito.
 - **Conferir um caminho:** no console do chat, `MenuBsoft.validarCaminho('Transporte > Veículos')` devolve `{ ok: true, tela: true, correspondente: … }`; `MenuBsoft.buscar('tabela de preços')` mostra o que a IA veria. Os caminhos escritos em `js/app/sistema-bsoft.js` são conferidos contra o menu por teste automático — ao mudar um, rode a conferência de novo.
+
+## Resposta curta ou completa detalhada (v28.20)
+
+Logo depois da pergunta (quando a IA vai mesmo responder), o chat mostra dois botões: **⚡ Resposta curta** e **📖 Resposta completa detalhada**. Cada um manda uma instrução diferente para a IA:
+
+- **Curta:** a IA vai direto à solução, em no máximo 8 linhas, só com os passos essenciais (caminho de menu e nomes de campos exatos), sem saudação, introdução nem explicações. As demais regras continuam valendo (nada inventado, só o que está no manual). A instrução tem prioridade sobre a regra de "não omitir nada da solução".
+- **Completa detalhada:** igual ao que o sistema sempre fez (todos os passos, com todos os detalhes) — o prompt é **idêntico** ao de antes.
+- **No fim da resposta curta** há o botão **📖 Resposta completa detalhada**: um clique gera a completa logo abaixo, **sem perguntar de novo** (a pergunta não é repetida na tela nem no log, e o embedding não é recalculado). A curta continua na tela, mas sai do contexto da IA para ela não "se enxergar" respondendo curto. A resposta completa passa a ser a gravada na linha de log daquela pergunta (a Revisão vê a última).
+- **Fixar o formato:** **Personalizar › Formato da resposta**: *Perguntar sempre* (padrão) · *Sempre curta* · *Sempre completa* (sem botões).
+- **Quando NÃO pergunta:** chamada de voz (usa a completa), "Não era o que procurava? pesquisar com a IA", quando não achou nada no manual (a resposta é só "não encontrei"), resposta rápida aprovada pela equipe (já é instantânea) e quando a pessoa fixou o formato. Se a pergunta for vaga, primeiro vêm os botões "qual é o seu caso?" e **depois** os de formato (a escolha de assunto é mantida na completa).
+- **"Tentar novamente"** (quando a IA falha) agora refaz a mesma pergunta com a mesma escolha de assunto e de formato, sem criar outra bolha nem outra linha de log.
+- **Para mexer:** `js/app/formato-resposta.js` (global `Formato`: `decidir`, `textoModo` — o texto das instruções —, `mostrar`, `escolher`, `expandir`), o gancho no `handleChat` (logo antes de `_logTs`; a instrução entra no fim dos dois prompts, depois da pergunta) e `css/desambiguacao.css`. Os textos das instruções ficam em `Formato.textoModo`: dá para ajustar o tamanho da curta (hoje 8 linhas) ali.
 
 ## IA / MCP: trocar modelos e chaves
 
