@@ -27,10 +27,11 @@ Assistente de suporte do Bsoft TMS: responde dúvidas com a base de conhecimento
 9. [Agenda (tarefas, cronograma e lembretes)](#agenda-tarefas-cronograma-e-lembretes)
 10. [Latitude e longitude no chat](#latitude-e-longitude-no-chat-v2813)
 11. [Pergunta vaga: botões “qual é o seu caso?”](#pergunta-vaga-botões-qual-é-o-seu-caso-v2818)
-12. [IA / MCP: trocar modelos e chaves](#ia--mcp-trocar-modelos-e-chaves)
-13. [Segurança — leia](#segurança--leia)
-14. [Problemas comuns](#problemas-comuns)
-15. [Para quem vai mexer no código](#para-quem-vai-mexer-no-código)
+12. [Menu real do sistema: caminhos de cada tela](#menu-real-do-sistema-caminhos-de-cada-tela-v2819)
+13. [IA / MCP: trocar modelos e chaves](#ia--mcp-trocar-modelos-e-chaves)
+14. [Segurança — leia](#segurança--leia)
+15. [Problemas comuns](#problemas-comuns)
+16. [Para quem vai mexer no código](#para-quem-vai-mexer-no-código)
 
 ---
 
@@ -447,6 +448,20 @@ Quando a pergunta pode ser sobre **mais de um assunto**, o chat não chuta: most
 - **Log e Revisão:** continua **uma linha por pergunta**, criada quando os botões aparecem. Depois do clique a pergunta da linha ganha o sufixo **“ [assunto: …]”** (ou “ [nenhum dos assuntos sugeridos]”), para a Revisão não transformar uma pergunta vaga em resposta rápida de um assunto só. As fontes mostram a semelhança real da busca (não os 90% do prompt).
 - **Ajustar sem mexer em código:** **Admin → IA / MCP → Pergunta vaga** (liga/desliga, margem de empate 4%, certeza 82%, semelhança mínima 50%, máximo de botões 3, máximo de termos 7; vai no `config/mcp-config.js`, chave `desambiguacao`). O **Simulador** mostra, no rastro, “🤔 perguntou qual é o caso” com os assuntos e as porcentagens — use para calibrar com perguntas reais: se está perguntando demais, **diminua a margem** ou **a certeza**; se não pergunta quando deveria, aumente.
 - **Para mexer:** `js/app/desambiguacao.js` (global `Desamb`: `avaliar`, `mostrar`, `escolher`, `aplicarEscolha`, `filtrarAprovadas`, `textoEsclarecimento`), o gancho no `handleChat` (depois de `rrRelacionadas`: `Desamb.avaliar`; a 2ª passada usa `opts.desambiguado`/`foco`/`descartados`/`vetor`/`logTs`), `css/desambiguacao.css`.
+
+## Menu real do sistema: caminhos de cada tela (v28.19)
+
+A IA agora consulta **o menu de verdade do Bsoft** (23 módulos, 83 pastas, 714 telas), copiado do próprio sistema, em vez de depender de uma lista de caminhos escrita à mão. A cada pergunta, o chat acha as telas/pastas que combinam com o que a pessoa disse e entrega à IA o caminho **completo e exato** (ex.: `Transporte > Configurações > Tabelas de Preços > Tabela de Pagamento de Frete`).
+
+- **Onde está:** `config/menu-bsoft.js` (os dados: uma linha por pasta/tela, com o **id da rotina** de cada tela) e `js/app/menu-bsoft.js` (a busca). A busca **não usa IA**: é instantânea e não gasta cota. Se nada do menu combinar com a pergunta, a IA recebe "nenhuma tela do menu parece relacionada" e **não inventa caminho**.
+- **O que a IA recebe no prompt:** o bloco **CAMINHOS DO MENU** (até 12 telas/pastas; para pastas, o que ela contém), mais os **ATALHOS E PROCEDIMENTOS** que combinam com a pergunta (nomes do dia a dia, como "Motoristas" → Pessoas > Pessoas, e passos por dentro de uma tela, como CIOT e Vale-Pedágio). Em perguntas gerais ("como é o menu?") entra também a visão dos módulos e pastas.
+- **Liga com o link da tela:** o id que o menu usa em cada tela é o mesmo **Nome Interno** da tabela Rotinas. Então, quando a IA mostra o link da rotina (aquele com o campo "cole o endereço do seu sistema"), a rotina já vem com o **"Caminho no menu"** certo — sem precisar cadastrar nada no banco (o campo `BancoDados.caminho_menu` continua valendo para o que o menu não cobre).
+- **O que foi conferido nos caminhos rápidos antigos (54):** 46 estavam certos; **6 estavam errados e foram corrigidos** — "Financeiro > Fiscal > Tipos de Operações" (faltava *Configurações*), "Tabela de Preços > Tabela de Preços" (o certo é *Tabelas de Preços*), "Tabela de Preços Valores Outros" (idem), "Caixas e Bancos" (o certo é *Caixa e Bancos*) em *Consulta Lançamentos* (é *Consulta de Lançamentos*) e *Transferências*, e "Comissões dos motoristas" (é *Comissionamento*); os 2 restantes (CIOT e Vale-Pedágio) são passos **dentro** da tela do CT-e e foram para `procedimentos`. A estrutura de reserva (módulos › pastas) também foi refeita pelo menu real.
+- **Documentos principais:** o menu mostra mais de uma tela para alguns documentos, então a IA recebe as duas: **NFS-e** (`Transporte > Documentos > NFS-e` ou `Financeiro > Notas Fiscais > Notas Fiscais`), **MDF-e** (`Transporte > Manifesto de Carga` ou `Transporte > Documentos > MDF-e`) e **OC** (`Transporte > Ordem de Carregamento Simplificada` ou `Transporte > Ordem de Carregamento`). A **Minuta** não tem item próprio no menu (a pasta *Documentos* só tem CRT, CT-e, DC-e, MDF-e, MIC e NFS-e): a IA segue o artigo do manual. *Confirme com o time qual é qual e ajuste em `js/app/sistema-bsoft.js`.*
+- **Como a busca foi testada:** sem IA, com ~480 perguntas de suporte escritas por revisores (sinônimos como *caminhão*/*carreta*, plural, erro de digitação, perguntas com duas coisas, frases longas de chat e perguntas que **não** têm tela): a tela certa foi o 1º resultado em ~95% e ficou entre os 3 primeiros em ~97%; perguntas sem tela quase nunca devolvem lixo. As frases longas ("oi, bom dia, preciso saber onde…") são o ponto mais fraco (~72% no top 3). Parte das perguntas serviu para ajustar a busca, então vale conferir com perguntas reais no **Simulador**.
+- **Pegadinha que o menu mostra:** não existem níveis como "Operacional & Gestão" — as telas ficam direto no módulo (`Transporte > Veículos`). Há telas com **o mesmo nome em lugares diferentes** (ex.: *Percursos* em `Transporte > Configurações` e direto em `Transporte`); nesses casos a IA recebe os dois caminhos e cita o mais direto. O menu varia por **permissão e módulos contratados** do cliente: se ele não achar o item, a IA sugere conferir a permissão do usuário às rotinas.
+- **Atualizar quando o menu mudar (1 minuto, sem Node):** abra o Bsoft no Chrome com um usuário que veja todos os módulos › `F12` › **Console** › (se pedir, digite `allow pasting`) cole o conteúdo de `tools/capturar-menu.js` e Enter — o menu inteiro vai para a área de transferência. Cole no lugar do texto de `config/menu-bsoft.js` (entre as duas crases), salve e suba no GitHub. O módulo pessoal **Minhas Rotinas** é ignorado de propósito.
+- **Conferir um caminho:** no console do chat, `MenuBsoft.validarCaminho('Transporte > Veículos')` devolve `{ ok: true, tela: true, correspondente: … }`; `MenuBsoft.buscar('tabela de preços')` mostra o que a IA veria. Os caminhos escritos em `js/app/sistema-bsoft.js` são conferidos contra o menu por teste automático — ao mudar um, rode a conferência de novo.
 
 ## IA / MCP: trocar modelos e chaves
 

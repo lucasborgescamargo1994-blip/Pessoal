@@ -35,7 +35,7 @@ foreach ($pasta in 'js', 'css', 'admin', 'config') {
 }
 if ($soltos.Count) { Write-Host "`nArquivos que nenhuma página carrega (confira se são lixo):" -ForegroundColor Yellow; $soltos | ForEach-Object { Write-Host "  $_" } }
 
-foreach ($par in @(@('config\app-config.js', 'window.BSOFT_CONFIG'), @('config\mcp-config.js', 'window.BSOFT_MCP_CONFIG'), @('config\admin-config.js', 'window.BSOFT_ADMIN'))) {
+foreach ($par in @(@('config\app-config.js', 'window.BSOFT_CONFIG'), @('config\mcp-config.js', 'window.BSOFT_MCP_CONFIG'), @('config\admin-config.js', 'window.BSOFT_ADMIN'), @('config\menu-bsoft.js', 'window.BSOFT_MENU_TXT'))) {
     $f = Join-Path $raiz $par[0]
     if (-not (Test-Path -LiteralPath $f)) { Write-Host ("FALTA  {0}" -f $par[0]) -ForegroundColor Red; $faltando++; continue }
     if (-not ([IO.File]::ReadAllText($f, $utf8)).Contains($par[1])) { Write-Host ("PROBLEMA  {0} não define {1}" -f $par[0], $par[1]) -ForegroundColor Red; $faltando++ }

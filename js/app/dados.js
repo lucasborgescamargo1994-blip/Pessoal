@@ -243,27 +243,37 @@ function buildContextoSistema(query, dc) {
         }
     }
     ctx += '\n';
-    const todosC = Object.entries(s.caminhos_rapidos);
-    let caminhos;
-    if (termos.length > 0) {
-        const scored = todosC.map(([nome, path]) => {
-            const txt = (nome + ' ' + path).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-            return { nome, path, score: termos.reduce((acc, t) => acc + (txt.includes(t) ? 1 : 0), 0) };
-        });
-        caminhos = scored.filter(c => c.score > 0).sort((a, b) => b.score - a.score);
-        if (caminhos.length < 5) caminhos = todosC.map(([n, p]) => ({ nome: n, path: p }));
+    // \u2500\u2500 Caminhos de menu \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+    // 1) O MENU REAL do sistema (config/menu-bsoft.js, lido por js/app/menu-bsoft.js): as telas/pastas que combinam com a pergunta, com o caminho completo.
+    // 2) ATALHOS e PROCEDIMENTOS (sistema-bsoft.js): nomes do dia a dia que apontam para a tela ("Motoristas" \u2192 Pessoas > Pessoas) e passos por dentro de uma tela (CIOT, VPO).
+    //    Com o menu carregado s\u00f3 entram os atalhos que combinam com a pergunta; sem o menu, vale o comportamento antigo (todos, se poucos combinarem).
+    const perguntaMenu = /menu|onde fica|como acess|caminho|naveg(?:ar|acao)|onde (?:esta|encontr|acho|localiz)/.test(qt);
+    const menuOk = typeof MenuBsoft !== 'undefined' && MenuBsoft.pronto();
+    const atalhos = Object.entries(s.caminhos_rapidos).map(([nome, path]) => ({ nome, path })).concat(Object.entries(s.procedimentos || {}).map(([nome, path]) => ({ nome, path })));
+    // modo antigo (sem o menu): palavra da pergunta contida no texto do atalho
+    const pontua = c => { const txt = (c.nome + ' ' + c.path).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); return termos.reduce((acc, t) => acc + (txt.includes(t) ? 1 : 0), 0); };
+    // com o menu: mesmas palavras-chave da busca no menu (sem palavras vazias como "fica"/"acesso", "ct-e"/"mdf-e" normalizados, singular/radical, sem "cadastro"/"configura\u00e7\u00e3o")
+    const qChaves = menuOk ? MenuBsoft.chaves(query) : [];
+    const pontuaMenu = c => { const t = new Set(MenuBsoft.chaves(c.nome + ' ' + c.path)); return qChaves.reduce((acc, k) => acc + (t.has(k) ? 1 : 0), 0); };
+    let atalhosUsar;
+    if (menuOk) {
+        atalhosUsar = qChaves.length ? atalhos.map(c => ({ ...c, score: pontuaMenu(c) })).filter(c => c.score > 0).sort((a, b) => b.score - a.score).slice(0, 8) : [];
+        ctx += MenuBsoft.blocoPrompt(query, { max: 12 });
+        if (atalhosUsar.length) { ctx += `=== ATALHOS E PROCEDIMENTOS (caminhos j\u00e1 conferidos; nomes do dia a dia) ===\n`; atalhosUsar.forEach(c => { ctx += `${c.nome}: ${c.path}\n`; }); ctx += '\n'; }
     } else {
-        caminhos = todosC.map(([n, p]) => ({ nome: n, path: p }));
-    }
-    ctx += `=== CAMINHOS DO MENU ===\n`;
-    caminhos.forEach(c => { ctx += `${c.nome}: ${c.path}\n`; });
-    ctx += '\n';
-    if (/menu|onde fica|como acess|caminho|naveg/.test(qt)) {
-        ctx += `=== ESTRUTURA MENUS ===\n`;
-        Object.entries(s.estrutura_menus).forEach(([m, items]) => { ctx += `${m}: ${items.join(', ')}\n`; });
+        atalhosUsar = termos.length ? atalhos.map(c => ({ ...c, score: pontua(c) })).filter(c => c.score > 0).sort((a, b) => b.score - a.score) : [];
+        if (atalhosUsar.length < 5) atalhosUsar = atalhos;
+        ctx += `=== CAMINHOS DO MENU ===\n`;
+        atalhosUsar.forEach(c => { ctx += `${c.nome}: ${c.path}\n`; });
         ctx += '\n';
     }
-    if (s.taloes_configuracoes && /talao|taloes|tala|serie|seri|numeracao|numeração/.test(qt)) {
+    if (perguntaMenu) {
+        ctx += `=== ESTRUTURA MENUS ===\n`;
+        if (menuOk) ctx += MenuBsoft.estrutura();
+        else Object.entries(s.estrutura_menus).forEach(([m, items]) => { ctx += `${m}: ${items.join(', ')}\n`; });
+        ctx += '\n';
+    }
+    if (s.taloes_configuracoes && /\btal(?:ao|oes)\b|\bseries?\b|numeracao/.test(qt)) {
         ctx += `=== TALÕES ===\n${s.taloes_configuracoes.join('\n')}\n\n`;
     }
     return ctx;

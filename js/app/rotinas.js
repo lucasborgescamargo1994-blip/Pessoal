@@ -31,9 +31,13 @@ function _formatarRotinaParaPrompt(r){
     const caminho=nomeInterno?`https://NOMEDOCLIENTE.bsoft.app/versoes/versao5.0/rotinas/c.php?id=${nomeInterno}&menu=s`:'';
     // O link vai COM o endereço-modelo NOMEDOCLIENTE de propósito: o renderizador de respostas (renderMd, em js/core/markdown.js) troca esse link por um campo onde a pessoa cola o endereço do
     // sistema dela e por um botão "Acessar tela" que monta o link certo e abre numa nova guia. Por isso a IA deve copiá-lo EXATAMENTE como está.
-    // "Menu" da tabela Rotinas é só Sim/Não (a rotina aparece como item do menu do sistema ou não) — NÃO traz o caminho do menu; esse só vale se estiver nos artigos
+    // "Menu" da tabela Rotinas é só Sim/Não (a rotina aparece como item do menu do sistema ou não) — NÃO traz o caminho do menu. O caminho vem do MENU REAL do sistema
+    // (config/menu-bsoft.js): o id da rotina (Nome Interno) é o mesmo id que o menu usa no link de cada tela, então dá para ligar uma coisa à outra (até 2 caminhos).
     const noMenu=String(r['Menu']||'').trim();
+    let caminhosMenu=[]; try{ if(nomeInterno&&typeof MenuBsoft!=='undefined') caminhosMenu=MenuBsoft.caminhosDoId(nomeInterno).slice(0,2); }catch(e){ /* sem o menu: segue sem o caminho */ }
     return `Nome oficial: ${r['Descrição']||''}\nNome interno (id da rotina): ${nomeInterno||'(não informado)'}`+
-        (noMenu?`\nAparece como item no menu do sistema: ${noMenu}`:'')+
+        // o menu real manda: se a tela está nele, ela aparece no menu (mesmo que a coluna Menu do banco esteja defasada)
+        ((caminhosMenu.length||noMenu)?`\nAparece como item no menu do sistema: ${caminhosMenu.length?'Sim':noMenu}`:'')+
+        (caminhosMenu.length?`\nCaminho no menu: ${caminhosMenu.join('   OU   ')}`:'')+
         (caminho?`\nLink da tela (copie EXATAMENTE este link na resposta, sem trocar NOMEDOCLIENTE nem explicar como montar a URL: o sistema o transforma sozinho num campo onde a pessoa cola o endereço do sistema dela e num botão "Acessar tela"): ${caminho}`:'');
 }
