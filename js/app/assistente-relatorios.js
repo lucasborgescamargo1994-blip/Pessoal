@@ -75,6 +75,11 @@ prevInicioViagem (transp_conhecimentoTransporteEventos): prevInicioViagem.conhec
 // "grupo (tabela): ..." quanto "grupo: ..." (sem parênteses). Remove duplicatas
 // (o texto original tem alguns campos repetidos). O label leva o grupo entre
 // parênteses pra IA nunca confundir "id"/"nome"/"tipo" de tabelas diferentes.
+// Campos que aparecem na tabela do CT-e ("cte.saldo"), mas são valores do CONTRATO DE FRETE. Antes saíam como "saldo (cte)", o que confundia: parecia um campo do CT-e.
+// Agora saem como "saldo (CF)" (grupo "Contrato de Frete (CF)"); a expressão (cte.saldo) continua a mesma — só o nome mostrado muda. Lista informada pelo suporte (21/10/2026). (valorPedagioConhecimento NÃO entra: é campo do CT-e mesmo — confirmado em 22/10/2026.)
+const _CAMPOS_DO_CF_NA_TABELA_DO_CTE = new Set(('baseResultadoCF,pesoColeta,tarifaMotoristaCalculada,tarifaMotoristaDigitada,valorTotalOrigem,outrosDescontos,outrosAcrescimos,descontoINSS,totalDescontoINSS,descontoSEST,totalDescontoSEST,' +
+    'valorPedagio,freteLiquido,valorAdiantamento,pesoChegada,descontoQuebraPeso,saldo,resultado,baseCalculoIRRF,valorComplemento,tolerancia,descontoSeguro,descontoIRRF,nroParcelas,nroParcelasCombustivel,' +
+    'baseResultadoValorMotorista,valorCombustivel,diariaFrete,saldoCombustivel,totalPrestacaoSegundaAba,totalPrestacaoTerceiraAba,volumesColeta').split(','));
 function _parseDemaisCampos(raw) {
     const resultado = [];
     const vistos = new Set();
@@ -88,6 +93,7 @@ function _parseDemaisCampos(raw) {
             const dot = tok.indexOf('.');
             if (dot < 0) return;
             const campo = tok.substring(dot + 1);
+            if (grupo === 'cte' && _CAMPOS_DO_CF_NA_TABELA_DO_CTE.has(campo)) { resultado.push({ grupo: 'Demais campos: Contrato de Frete (CF)', exp: tok, label: `${campo} (CF)` }); return; }
             resultado.push({ grupo: `Demais campos: ${grupo}`, exp: tok, label: `${campo} (${grupo})` });
         });
     });
