@@ -129,6 +129,8 @@ Enquanto o `04` não for rodado, a resposta é gravada normalmente (e vai para a
 Abra `admin/index.html` (botão **🔑** no cabeçalho do sistema). Entre com a senha e use as abas — dá para alternar entre
 todas na mesma tela (`Alt+1` … `Alt+9` também trocam de aba). Tudo o que você está editando fica guardado ao trocar de aba.
 
+**Topo da tela (v28.22.2):** à direita fica só um botão com o **bonequinho e o nome de quem está dentro**. Clicando nele abre o menu com o **estado do banco** (o pontinho verde/vermelho no bonequinho já avisa se o banco caiu, mesmo com o menu fechado), o **tema claro/escuro**, **Abrir o sistema** e **Sair**. Isso libera espaço para as abas: quando os nomes delas **não cabem** (muitas abas, janela estreita ou zoom), elas mudam sozinhas para **só o ícone** (a aba aberta continua mostrando o nome) — nenhuma fica escondida, sem precisar diminuir o zoom.
+
 | Aba | O que faz |
 |---|---|
 | **Revisão** | Mostra as respostas que a IA deu aos usuários. Você edita, **aprova** (vira resposta rápida), rejeita ou ignora. Agrupa perguntas iguais e sugere "perguntas parecidas" como variantes. Cada resposta mostra os **dados do banco de dados que a IA usou** — clique num artigo para corrigir o texto dele e salvar direto na base de conhecimento (item 8 de [Respostas rápidas e revisão](#respostas-rápidas-e-revisão)). |
