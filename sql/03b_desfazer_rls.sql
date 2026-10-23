@@ -43,5 +43,12 @@ do $$ begin
     end if;
 end $$;
 
+-- Simulador de atendimento (SQL 06): volta ao modo aberto (a chave pública lê/edita, como as outras tabelas)
+do $$ begin
+    if to_regprocedure('public.sim_aplicar_politicas(boolean)') is not null then
+        perform public.sim_aplicar_politicas(false);
+    end if;
+end $$;
+
 -- (mantém a tabela admin_emails e a função eh_admin(): são inofensivas)
 commit;

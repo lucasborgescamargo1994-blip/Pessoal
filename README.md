@@ -29,10 +29,11 @@ Assistente de suporte do Bsoft TMS: responde dúvidas com a base de conhecimento
 11. [Pergunta vaga: botões “qual é o seu caso?”](#pergunta-vaga-botões-qual-é-o-seu-caso-v2818)
 12. [Menu real do sistema: caminhos de cada tela](#menu-real-do-sistema-caminhos-de-cada-tela-v2819)
 13. [Resposta curta ou completa detalhada](#resposta-curta-ou-completa-detalhada-v2820)
-14. [IA / MCP: trocar modelos e chaves](#ia--mcp-trocar-modelos-e-chaves)
-15. [Segurança — leia](#segurança--leia)
-16. [Problemas comuns](#problemas-comuns)
-17. [Para quem vai mexer no código](#para-quem-vai-mexer-no-código)
+14. [Simulador de atendimento: treino, provas e área administrativa](#simulador-de-atendimento-treino-provas-e-área-administrativa-v2822)
+15. [IA / MCP: trocar modelos e chaves](#ia--mcp-trocar-modelos-e-chaves)
+16. [Segurança — leia](#segurança--leia)
+17. [Problemas comuns](#problemas-comuns)
+18. [Para quem vai mexer no código](#para-quem-vai-mexer-no-código)
 
 ---
 
@@ -115,6 +116,7 @@ Todos são seguros para rodar de novo.
 | — | `sql/03b_desfazer_rls.sql` | Desfaz o 03 (volta ao banco "aberto") | só se precisar voltar atrás |
 | 4 | `sql/04_logs_fontes_banco.sql` | Cria a coluna `logs.fontes_banco`: guarda **quais dados do banco a IA usou** em cada resposta (aba Revisão) | para ver essa lista na Revisão (sem ele, tudo funciona igual) |
 | 5 | `sql/05_bancodados_caminho_menu.sql` | Cria a coluna `BancoDados.caminho_menu`: o **caminho da tela no menu** de cada artigo (ex.: `Transporte > Configurações > Tela`), preenchido na aba Revisão e em "Corrigir artigo" | para guardar o caminho junto do artigo e a IA mostrá-lo literalmente (sem ele, tudo funciona igual) |
+| 6 | `sql/06_simulador_provas.sql` | Cria as tabelas do **Simulador**: provas, tentativas (quem fez, nota, conversa), treinos livres e configuração (aba **Treinamento**) | só se for usar as **provas** e o registro de quem treinou (sem ele, o treino livre funciona igual) |
 
 **Conferir se deu certo:** painel → aba **Sistema** → **Rodar verificação** (lista o que existe e o que falta).
 Enquanto o `02` não for rodado, o sistema funciona normalmente — só não grava a resposta no log nem mostra respostas rápidas.
@@ -132,6 +134,7 @@ todas na mesma tela (`Alt+1` … `Alt+9` também trocam de aba). Tudo o que voc�
 | **Revisão** | Mostra as respostas que a IA deu aos usuários. Você edita, **aprova** (vira resposta rápida), rejeita ou ignora. Agrupa perguntas iguais e sugere "perguntas parecidas" como variantes. Cada resposta mostra os **dados do banco de dados que a IA usou** — clique num artigo para corrigir o texto dele e salvar direto na base de conhecimento (item 8 de [Respostas rápidas e revisão](#respostas-rápidas-e-revisão)). |
 | **Respostas rápidas** | Lista/edita/pausa/exclui as respostas aprovadas, mostra quantas vezes cada uma foi usada e tem um **testador**: "se alguém perguntar isto, qual resposta o sistema usaria?". |
 | **Simulador** | O chat de verdade dentro do painel, **sem gravar nada** (nem log, nem feedback). Mostra de onde veio cada resposta (rápida ou IA, qual modelo, tempo). Dá para testar a configuração de IA **antes de salvar**. |
+| **Treinamento** | Área administrativa do **Simulador de atendimento** (v28.22): **monta as provas** (casos do banco de dados e/ou escritos por você, nota mínima, limites, link do curso no YOUniversity), mostra **quem fez cada prova** (nome completo, nota, aprovado ou não, conversa de cada caso), permite aprovar/reprovar manualmente, exportar CSV e acompanhar os **treinos livres**. Precisa do `sql/06_simulador_provas.sql`. |
 | **IA / MCP** | Edita `config/mcp-config.js`: provedor, chaves, cadeia de modelos (arrastar para ordenar, testar cada um), visão, embeddings, regras das respostas rápidas. |
 | **Banco de dados** | Editor das tabelas de conteúdo (base de conhecimento, parâmetros, funcionalidades, rotinas, rejeições SEFAZ…): editar, criar, duplicar, excluir, exportar CSV. |
 | **Logs** | Perguntas dos usuários, 👍/👎, motivo e **retorno do suporte**; filtros, busca, exclusão em lote, exportar CSV. A resposta só é baixada quando você abre a linha (economiza transferência). |
@@ -368,6 +371,7 @@ Cuidados: o `regra-cte-passos.js` (catálogo, regras prontas, travas de ICMS/loo
   `fonte = 'ferramenta'`. No painel (**Logs**) aparece como **🧰 Ferramenta** e dá para filtrar. O 👍/👎 dentro da ferramenta vai para o registro dela.
 - Se você digitar no chat "criar regra…" ou "assistente de relatórios…", o chat registra a pergunta e **abre a ferramenta
 - **Assistente de Relatórios — o quadro inteiro da coluna recebe o campo (v28.15.1):** ao arrastar um campo, soltar **em cima do nome da coluna** (ou em qualquer parte do quadro da coluna) agora coloca o campo na área azul, igual a soltar nela; antes o texto do campo caía dentro do nome da coluna. A área azul ganha destaque enquanto o campo está por cima. Texto arrastado de fora (não do assistente) solto no nome da coluna continua sendo digitado nele. Código: `_relDropZoneDragOver/DragLeave/Drop` em `js/app/assistente-relatorios.js` (os eventos ficam no quadro da coluna, não mais só na área azul).
+- **Assistente de Relatórios (Ct-e) — campos do Contrato de Frete aparecem como "(CF)" (v28.20.1):** na busca de campos do CT-e, os "Demais campos" que na verdade são valores do **Contrato de Frete** (ex.: *saldo*, *freteLiquido*, *valorAdiantamento*, *descontoINSS*, *pesoChegada*, *tolerancia*, *diariaFrete*… 18 campos; *valorPedagioConhecimento* continua sendo do Ct-e) agora saem como **"saldo (CF)"** em vez de "saldo (cte)", que parecia um campo do CT-e. Só o nome mostrado muda: a expressão no relatório continua `cte.saldo`. A lista está em `_CAMPOS_DO_CF_NA_TABELA_DO_CTE` (`js/app/assistente-relatorios.js`): para marcar outro campo como do CF, é só acrescentar o nome lá.
   na aba reaproveitando esse mesmo registro** (sem duplicar).
 - No Copilot (janela flutuante) e no simulador não existem abas: lá as ferramentas continuam funcionando dentro do chat (e registram 1 vez por conversa, como antes).
 - Atenção ao ler os números: o total de linhas do log agora é o total de **perguntas**, não de conversas (antes era quase 1 por conversa). Perguntas de continuação
@@ -476,6 +480,64 @@ Logo depois da pergunta (quando a IA vai mesmo responder), o chat mostra dois bo
 - **"Tentar novamente"** (quando a IA falha) agora refaz a mesma pergunta com a mesma escolha de assunto e de formato, sem criar outra bolha nem outra linha de log.
 - **Para mexer:** `js/app/formato-resposta.js` (global `Formato`: `decidir`, `textoModo` — o texto das instruções —, `mostrar`, `escolher`, `expandir`), o gancho no `handleChat` (logo antes de `_logTs`; a instrução entra no fim dos dois prompts, depois da pergunta) e `css/desambiguacao.css`. Os textos das instruções ficam em `Formato.textoModo`: dá para ajustar o tamanho da curta (hoje 8 linhas) ali.
 
+## Simulador de atendimento: treino, provas e área administrativa (v28.22)
+
+`simulador.html` (abre em outra guia: **Ctrl K › Simulador de atendimento**, ou direto pelo endereço) é um chat de **treinamento**: a IA faz o papel de um **cliente** com uma dúvida real do seu banco de dados, e **quem treina faz o suporte**. Desde a v28.22 ele **pede o nome completo ao abrir** e tem **dois modos**: **Provas** (montadas por você na aba **Treinamento** do painel) e **Treino livre**.
+
+### O nome completo (identificação)
+
+- Ao abrir, a janela **“Antes de começar”** pede o **nome completo** (nome e sobrenome; só letras). O nome fica guardado no navegador e vem **preenchido** da próxima vez (a pessoa só confirma ou troca). Dá para trocar a qualquer momento clicando no nome no topo da tela.
+- É por ele que você identifica cada pessoa na área administrativa. “João da Silva”, “joao  da silva” e “JOÃO DA SILVA” contam como **a mesma pessoa** (a comparação ignora acento, maiúscula e espaço duplo).
+- Não é um login: ninguém prova que é quem diz ser. Serve para o acompanhamento do treinamento.
+
+### Provas (para o YOUniversity)
+
+A ideia: **cada vez que alguém termina um conteúdo no YOUniversity, faz uma prova** — um teste para continuar o aprendizado. Se **passar**, segue (a tela mostra um botão para o próximo passo, se você cadastrou o link). Se **não passar**, o simulador **orienta a revisar o conteúdo**: mostra o nome do curso, os assuntos dos casos que errou (só a dúvida do cliente — **nunca a solução**) e um botão **“Revisar o conteúdo”** com o seu link.
+
+- **Montar uma prova** (aba **Treinamento › Provas › Nova prova**): título, descrição, **nome do conteúdo** e **link para revisar** no YOUniversity, link para seguir quando aprova (opcional), mensagens de aprovado/reprovado (opcionais) e os **casos**: escolha do **banco de dados** (busca por título e assunto) e/ou **casos próprios** (a dúvida do cliente + a solução correta, escritos ali mesmo). Dá para reordenar. Regras: **nota mínima** (%), **mensagens por caso**, **tempo total**, **máximo de tentativas**, **jeito do cliente** (comum, leigo, apressado ou variado), permitir **dicas** e **embaralhar** os casos. A prova só aparece para as pessoas quando está **ativa**.
+- **Como a pessoa faz:** lê as regras, começa, e atende **um cliente por caso**. Não vê a solução durante a prova (e a categoria do caso fica escondida). Cada caso termina quando o cliente diz “Deu certinho…” (e o supervisor da IA confirma), quando a pessoa **pula o caso**, quando chega no **limite de mensagens** ou quando o **tempo** da prova acaba (os casos que faltam contam como não feitos).
+- **Nota** = % de casos resolvidos (todos valem igual). **Aprovado** = nota ≥ nota mínima. No fim a pessoa vê a nota, os casos e pode **copiar um comprovante**.
+- **Ligar ao YOUniversity:** em cada conteúdo, coloque um botão/link **“Fazer a prova”** apontando para o link da prova — na aba **Treinamento › Provas**, o ícone de **copiar** dá o link (`…/simulador.html?prova=NÚMERO`). Ele abre direto na prova (depois de pedir o nome). O ícone **▶** abre a prova em **modo teste** (`&teste=1`: nada é gravado).
+- **Tentativas:** se você limitou o número de tentativas, ela só é contada quando o cliente de fato **entra no chat** (um erro da IA logo no começo não gasta a tentativa). Quem fecha a página no meio perde aquela tentativa (aparece como **Abandonada** nos resultados, depois de 3 horas).
+
+### Área administrativa (aba Treinamento)
+
+- **Resultados:** tabela de tentativas (quando, nome, prova, nº da tentativa, nota, situação, tempo) com busca por nome e filtros (prova, aprovados, reprovados, em andamento/abandonadas, com decisão manual), visão **por pessoa** (quantas provas, aprovações, melhor nota), e **Exportar CSV** (abre no Excel). Cada linha abre a **conversa de cada caso**. Se a IA errou o julgamento, use **Decisão do administrador** (aprovar/reprovar manualmente + observação): a decisão manual vale mais que a automática e é o que a pessoa passa a ver como situação da prova. **Apagar tentativa** devolve a tentativa à pessoa.
+- **Provas:** criar, editar, duplicar, excluir, ativar/desativar, copiar link, testar.
+- **Treinos livres:** quem treinou, qual caso, se resolveu, mensagens, dicas, tempo e a conversa.
+- **Configurações:** liga/desliga o **treino livre** (desligado, o simulador mostra só as provas), mensagem de boas-vindas e nota mínima padrão das provas novas.
+
+### Instalar (uma vez)
+
+Rode `sql/06_simulador_provas.sql` no SQL Editor do Supabase (a aba Treinamento tem o botão **Copiar o SQL**). Ele só **cria** tabelas novas (`sim_provas`, `sim_tentativas`, `sim_sessoes`, `sim_config`) e 3 funções; nada existente é alterado. Sem ele o simulador continua funcionando como **treino livre**, só não oferece provas nem registra quem treinou. Se você ativar o modo seguro (`sql/03_seguranca_rls.sql`), as regras destas tabelas passam a exigir o administrador para **ler resultados e editar provas** (as pessoas só leem as provas **ativas** e só enxergam o **próprio** histórico, por funções do banco); rodou o 06 **depois** do 03? Ele já escolhe o modo certo sozinho.
+
+### Como funciona a conversa (igual no treino e na prova)
+
+- **O caso** vem da tabela `BancoDados` (**título = a dúvida do cliente; conteúdo = a solução**) ou é um caso próprio da prova. O cliente abre a conversa com o problema, **vago como um cliente de verdade**, e reage ao que o suporte diz: se a orientação for clara, segue o passo e conta o que viu; se faltar informação, pergunta ("em qual menu fica?"); se estiver errada, diz que não deu certo. Quando a pessoa orientar **o que resolve**, ele responde **"Deu certinho, muito obrigado pelo auxílio"** e o caso termina.
+- **Quem decide que resolveu:** o cliente diz que resolveu e um **segundo passo da IA** (um "supervisor") confere a conversa contra a solução; se achar que ainda falta algo, o cliente continua com uma dúvida. O botão **✅ Já orientei tudo** pede essa conferência na hora. No **treino livre**, **💡 Dica** dá um empurrão sem entregar a solução e **🏳️ Desistir** mostra a solução oficial; na **prova** não há solução à vista (e a dica só existe se a prova liberar).
+- **Modelos = os do MCP (unificado):** a página carrega `config/mcp-config.js` e usa a **mesma cadeia de modelos** do painel **IA / MCP** (selo no topo: modelo em uso e versão da configuração). Mudou o modelo lá e publicou? A página confere a configuração nova sozinha (ao abrir e a cada 2 horas). Cada modelo tem **limite de 40 s**; modelo que responde vazio ou demora vai para o próximo e fica **10 minutos de fora** (modelos gratuitos às vezes travam).
+- **Um problema por vez (v28.22.1):** o cliente simulado tem **um único problema** — o do caso. Ele **nunca inventa outro problema**, ignora as outras situações que o artigo possa ter e **fica satisfeito assim que o suporte orienta o essencial** que resolve aquele problema (o supervisor da IA também só exige o essencial: avisos, alternativas e passos opcionais do artigo não são cobrados). Se a orientação for só parcial, ele continua falando **do mesmo problema**.
+- **O cliente não vira o suporte (v28.22.1):** se o suporte faz uma pergunta ("XML ou manual?"), o cliente **responde**. Se a IA devolver a pergunta, falar como atendente ("como posso ajudar?") ou **repetir a própria mensagem inicial** em vez de responder, o sistema percebe e **pede a resposta de novo** (até 2 vezes) antes de mostrar a mensagem; se mesmo assim devolver a pergunta, ele diz que não sabe dizer e pede ajuda, como um cliente leigo. O detector prioriza **não atrapalhar o cliente legítimo**: quem responde e depois pergunta outra coisa ("Não tem. Como cadastro?") ou pede ajuda ("onde encontro isso?") nunca é barrado. Se um supervisor recusar duas vezes um "resolvido", o cliente segue a conversa em vez de ficar num laço.
+- **Custo:** cada turno usa 1 chamada da IA (2 quando o cliente diz que resolveu, para a conferência) — com modelos gratuitos, isso conta no limite diário do OpenRouter.
+
+### Limites e cuidados (leia)
+
+- **A nota é calculada no navegador de quem faz a prova** (é lá que a IA conversa). É um registro de **aprendizado**, não um exame com fiscal: quem sabe mexer nas ferramentas do navegador poderia forjar um resultado. Por isso você pode **abrir qualquer tentativa, ler as conversas e decidir manualmente**.
+- As soluções dos casos **não aparecem** na tela durante a prova, mas, como o resto do banco de dados (que o sistema lê com a chave pública), quem inspeciona a página consegue lê-las.
+- O cliente é uma IA pequena e pode errar (às vezes "não acha" um botão que você acabou de explicar, ou entrega um nome técnico no começo): use a decisão manual quando precisar. Casos sem solução cadastrada são pulados.
+- Para mudar o comportamento do cliente, edite os textos em `js/simulador/logica.js` (`montarSistema`).
+- **Arquivos:** `simulador.html`, `css/simulador.css`, `js/simulador/logica.js` (textos para a IA, nome, nota e regras da prova), `js/simulador/dados.js` (conversa com o Supabase), `js/simulador/tela.js` (tela, MCP), `admin/js/aba-treinamento.js` (área administrativa) e `sql/06_simulador_provas.sql`.
+
+### Geolocalizador (CIOT) usando os modelos do MCP
+
+O **Geolocalizador CIOT** é uma página separada (`geolocaliza.html`, publicada em `…github.io/Pessoal/geolocaliza`; o arquivo fica em `Documentos\Projeto pessoal\Geolocalização IA`). Agora o **Analisador de erros** dele usa a **mesma cadeia de modelos do MCP** em vez de modelos fixos no código:
+
+- O sistema de suporte abre o geolocalizador com `?mcp=<endereço do config/mcp-config.js>` (botão **CIOT**/aba CIOT); a página **guarda esse endereço** e lê a configuração (só como JSON, sem executar nada), conferindo a cada uso no máximo de 10 em 10 minutos. Percorre os modelos com 2 tentativas cada e, se todos falharem, tenta a configuração própria da página.
+- **Precisa publicar os dois:** o sistema de suporte (`js/app/ciot.js` mudou) **e** o `geolocaliza.html` novo (suba-o para o repositório `Pessoal`). Quem abrir o geolocalizador direto, sem nunca ter passado pelo sistema de suporte, continua com a configuração antiga dele até abrir uma vez pelo botão CIOT.
+- **Trava de segurança:** o endereço do MCP só é aceito se for da **mesma conta do GitHub Pages** da página (ou localhost, nos testes) e só com provedores conhecidos (OpenRouter/Google). Se o seu sistema de suporte estiver publicado em **outra conta**, a página recusa o endereço: nesse caso preencha a constante `MCP_URL_PADRAO` no topo do bloco "MODELOS DE IA = MCP" do `geolocaliza.html`.
+- Nas configurações do geolocalizador (engrenagem) aparece o status: **"🔗 IA ligada ao MCP (config vNN): modelos…"** ou o aviso de que está usando a configuração própria. Uma cópia do arquivo antigo ficou como `geolocaliza - antes do MCP.html`.
+- O **chat de latitude/longitude** do sistema de suporte (`js/app/geolocalizacao.js`) não usa IA (OpenStreetMap), então não muda.
+
 ## IA / MCP: trocar modelos e chaves
 
 Tudo da IA fica em **um arquivo**: `config/mcp-config.js`. O fluxo é:
@@ -551,6 +613,8 @@ inserir/atualizar `logs` e inserir/apagar `machine_learning` (como já fazia). S
 |---|---|
 | Aba **Revisão** diz que "faltam as colunas" / **Respostas rápidas** diz que a tabela não existe | Rode `sql/02_respostas_rapidas_e_revisao.sql` (botão **Copiar o SQL** na própria tela) e clique em Atualizar. |
 | Na **Revisão**, o cartão "Dados do banco usados nesta resposta" pede para rodar o SQL 04 / diz "Sem registro" | Rode `sql/04_logs_fontes_banco.sql` (botão **Copiar o SQL** no próprio cartão) e clique em **Atualizar**. As respostas novas passam a ter a lista; as antigas não têm como ganhar. |
+| A aba **Treinamento** diz que o módulo de provas "ainda não foi instalado" / o simulador não mostra provas | Rode `sql/06_simulador_provas.sql` (botão **Copiar o SQL** na própria aba) e clique em **Atualizar**. Depois de ativar uma prova, abra o simulador de novo. |
+| Uma pessoa diz que "não consegue refazer a prova" | A prova tem limite de tentativas: em **Treinamento › Resultados**, abra a tentativa e use **Apagar tentativa** (ou aumente o limite na prova). |
 | "O banco recusou a gravação (sem permissão)" | Você ativou o `03` mas o painel está no modo `local`. Troque para `"modo": "supabase"` (passo 4 acima) — ou rode o `03b`. |
 | Login do painel: "Este endereço não permite conferir a senha" | A criptografia do navegador só funciona em **HTTPS**, `localhost` ou arquivo aberto do disco. Evite abrir por IP de rede (`http://192.168...`). |
 | Esqueci a senha do painel | `admin/senha.html` (modo local; os usuários cadastrados são mantidos) ou redefinir no Supabase → Authentication (modo seguro). |

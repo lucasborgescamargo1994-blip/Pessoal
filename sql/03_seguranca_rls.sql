@@ -94,6 +94,13 @@ do $$ begin
     end if;
 end $$;
 
+-- Simulador de atendimento (SQL 06): se já foi instalado, passa para o modo seguro (só o administrador lê resultados e edita provas)
+do $$ begin
+    if to_regprocedure('public.sim_aplicar_politicas(boolean)') is not null then
+        perform public.sim_aplicar_politicas(true);
+    end if;
+end $$;
+
 commit;
 
 -- ─── TESTES (rode depois; "set local role" finge ser o app, sem login) ─────

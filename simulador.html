@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Atendimento · Bsoft TMS</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23f97316'/%3E%3Cpath d='M18 22h28a4 4 0 0 1 4 4v14a4 4 0 0 1-4 4H32l-8 7v-7h-6a4 4 0 0 1-4-4V26a4 4 0 0 1 4-4z' fill='%23fff'/%3E%3C/svg%3E">
+    <script src="js/core/fontes.js?v=28.22.1" charset="utf-8"></script>
+    <link rel="stylesheet" href="css/tokens.css?v=28.22.1">
+    <link rel="stylesheet" href="css/simulador.css?v=28.22.1">
+    <!-- Supabase: mesma versão fixa + verificação de integridade (SRI) do sistema principal -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js" integrity="sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok" crossorigin="anonymous"></script>
+</head>
+<body>
+<div class="sim-fundo" aria-hidden="true"></div>
+
+<header class="sim-topo">
+    <div class="sim-marca"><span class="sim-logo" aria-hidden="true">🎧</span><div><b>Simulador de Atendimento</b><small>Treino e provas com clientes simulados · Bsoft TMS</small></div></div>
+    <div class="sim-topo-dir">
+        <button type="button" class="sim-nome" id="btnNome" title="Trocar o nome" hidden>👤 <span id="nomeAtual"></span></button>
+        <span class="sim-ia" id="simIA" title="Modelos de IA vindos do MCP (config/mcp-config.js). Quando você muda lá, muda aqui.">🤖 carregando IA…</span>
+        <a class="sim-link" href="index.html">← Voltar ao sistema</a>
+    </div>
+</header>
+
+<main class="sim-main" id="conteudo">
+
+    <!-- ═════════ 1) INÍCIO: provas + treino livre ═════════ -->
+    <section id="telaInicio" class="sim-cartao" aria-labelledby="tituloInicio">
+        <h1 id="tituloInicio">Simulador de atendimento</h1>
+        <p class="sim-boasvindas" id="boasVindas"></p>
+
+        <div id="blocoProvas" hidden>
+            <h2 class="sim-sessao">📝 Provas</h2>
+            <p class="sim-intro">Ao terminar um conteúdo do YOUniversity, faça a prova: você atende clientes simulados e, se for bem, segue para o próximo passo do aprendizado. Se não passar, o sistema indica o que revisar.</p>
+            <div class="sim-provas" id="listaProvas"></div>
+        </div>
+
+        <div id="blocoTreino">
+            <h2 class="sim-sessao" id="tituloTreino">🎧 Treino livre</h2>
+            <p class="sim-intro">A IA faz o papel de um <b>cliente</b> com uma dúvida real tirada do banco de dados. Você é o <b>suporte</b>: converse, pergunte e oriente até resolver. Quando você acertar a solução, o cliente responde <i>“Deu certinho, muito obrigado pelo auxílio”</i>.</p>
+            <ol class="sim-passos">
+                <li>Escolha o assunto e o jeito do cliente.</li>
+                <li>O cliente abre a conversa com a dúvida — como um cliente real: vago, às vezes confuso.</li>
+                <li>Pergunte, oriente, tire as dúvidas dele. Travou? Peça uma <b>dica</b>.</li>
+            </ol>
+
+            <div class="sim-form">
+                <label class="sim-campo"><span>Assunto</span>
+                    <select id="fCategoria" aria-label="Filtrar por assunto"><option value="">Todos os assuntos</option></select>
+                </label>
+                <label class="sim-campo"><span>Jeito do cliente</span>
+                    <select id="fPerfil" aria-label="Jeito do cliente"></select>
+                </label>
+            </div>
+            <div class="sim-acoes">
+                <button type="button" class="sim-btn primario grande" id="btnSortear" disabled>🎲 Sortear um caso</button>
+                <span class="sim-status" id="statusBanco" role="status">Carregando os casos do banco de dados…</span>
+            </div>
+
+            <details class="sim-escolher" id="detEscolher">
+                <summary>Prefiro escolher um caso específico <small>(mostra o título da dúvida)</small></summary>
+                <input type="search" id="fBusca" placeholder="Buscar pela dúvida…" aria-label="Buscar caso pelo título" autocomplete="off">
+                <ul class="sim-lista-casos" id="listaCasos" aria-label="Casos disponíveis"></ul>
+                <div class="sim-mais" id="listaMais" hidden></div>
+            </details>
+        </div>
+
+        <p class="sim-status" id="semNada" hidden>Nenhuma prova disponível no momento. Fale com o responsável pelo treinamento.</p>
+    </section>
+
+    <!-- ═════════ 2) ANTES DA PROVA ═════════ -->
+    <section id="telaProva" class="sim-cartao" hidden aria-labelledby="provaTitulo">
+        <p class="sim-trilha"><button type="button" class="sim-link-btn" id="btnProvaVoltar">← Todas as provas</button></p>
+        <h1 id="provaTitulo"></h1>
+        <p class="sim-curso" id="provaCurso" hidden></p>
+        <div class="sim-descricao" id="provaDescricao" hidden></div>
+        <ul class="sim-regras" id="provaRegras"></ul>
+        <div class="sim-nota-aviso" id="provaAviso" hidden></div>
+        <div class="sim-acoes">
+            <button type="button" class="sim-btn primario grande" id="btnComecarProva">▶ Começar a prova</button>
+            <a class="sim-btn" id="provaLinkCurso" target="_blank" rel="noopener noreferrer" hidden>📚 Rever o conteúdo antes</a>
+        </div>
+    </section>
+
+    <!-- ═════════ 3) CONVERSA (treino e prova) ═════════ -->
+    <section id="telaChat" class="sim-chat" hidden aria-label="Conversa com o cliente simulado">
+        <div class="sim-chat-topo">
+            <div class="sim-caso-info">
+                <span class="sim-chip prova" id="chipProva" hidden></span>
+                <span class="sim-chip" id="chipCategoria"></span>
+                <span class="sim-chip suave" id="chipPerfil"></span>
+                <span class="sim-chip suave" id="chipMsgs" hidden></span>
+                <span class="sim-chip suave" id="chipTempo">00:00</span>
+            </div>
+            <div class="sim-chat-btns">
+                <button type="button" class="sim-btn" id="btnDica" title="Uma dica para você avançar, sem entregar a solução">💡 Dica</button>
+                <button type="button" class="sim-btn" id="btnJaOrientei" title="Pede para a IA conferir se você já orientou tudo" hidden>✅ Já orientei tudo</button>
+                <button type="button" class="sim-btn perigo" id="btnDesistir" title="Encerra e mostra a solução">🏳️ Desistir e ver a solução</button>
+            </div>
+        </div>
+        <div class="sim-mensagens" id="mensagens" role="log" aria-live="polite" aria-label="Mensagens da conversa"></div>
+        <div class="sim-proximo" id="barraProximo" hidden>
+            <span id="proximoTxt"></span>
+            <button type="button" class="sim-btn primario" id="btnProximo">Próximo caso →</button>
+        </div>
+        <form class="sim-entrada" id="formEnvio" autocomplete="off">
+            <textarea id="txtSuporte" rows="2" placeholder="Escreva a sua resposta ao cliente… (Enter envia · Shift+Enter quebra a linha)" aria-label="Sua resposta ao cliente" disabled></textarea>
+            <button type="submit" class="sim-btn primario" id="btnEnviar" disabled>Enviar</button>
+        </form>
+    </section>
+
+    <!-- ═════════ 4) RESULTADO DO TREINO ═════════ -->
+    <section id="telaFim" class="sim-cartao" hidden aria-labelledby="tituloFim">
+        <h1 id="tituloFim"></h1>
+        <div class="sim-stats" id="fimStats"></div>
+        <div class="sim-resumo-caso">
+            <h2>O caso</h2>
+            <p id="fimCaso"></p>
+            <h2>Solução oficial <small>(do banco de dados)</small></h2>
+            <div class="sim-solucao" id="fimSolucao"></div>
+        </div>
+        <div class="sim-acoes">
+            <button type="button" class="sim-btn primario" id="btnNovo">🎲 Novo caso</button>
+            <button type="button" class="sim-btn" id="btnMesmo">🔁 Tentar este caso de novo</button>
+            <button type="button" class="sim-btn" id="btnRever">💬 Rever a conversa</button>
+            <button type="button" class="sim-btn" id="btnCopiar">📋 Copiar conversa</button>
+            <button type="button" class="sim-btn" id="btnInicio">← Início</button>
+        </div>
+    </section>
+
+    <!-- ═════════ 5) RESULTADO DA PROVA ═════════ -->
+    <section id="telaResultado" class="sim-cartao" hidden aria-labelledby="resTitulo">
+        <div class="sim-selo" id="resSelo" aria-hidden="true"></div>
+        <h1 id="resTitulo"></h1>
+        <p class="sim-curso" id="resSub"></p>
+        <div class="sim-stats" id="resStats"></div>
+        <div class="sim-mensagem" id="resMensagem"></div>
+        <div class="sim-revisar" id="resRevisar" hidden>
+            <h2>📚 O que revisar no conteúdo</h2>
+            <p id="resRevisarTxt"></p>
+            <ul id="resTopicos"></ul>
+        </div>
+        <h2 class="sim-sessao peq">Seus casos</h2>
+        <ul class="sim-casos-res" id="resCasos"></ul>
+        <p class="sim-status" id="resGravacao" role="status"></p>
+        <div class="sim-acoes">
+            <a class="sim-btn primario grande" id="resLinkCurso" target="_blank" rel="noopener noreferrer" hidden>📚 Revisar o conteúdo</a>
+            <a class="sim-btn primario grande" id="resLinkProximo" target="_blank" rel="noopener noreferrer" hidden>➡ Continuar o aprendizado</a>
+            <button type="button" class="sim-btn" id="btnRefazer">🔁 Fazer a prova de novo</button>
+            <button type="button" class="sim-btn" id="btnComprovante">📋 Copiar comprovante</button>
+            <button type="button" class="sim-btn" id="btnResInicio">← Início</button>
+        </div>
+    </section>
+</main>
+
+<!-- Identificação: aparece ao abrir (o nome vem preenchido se a pessoa já usou este aparelho) -->
+<div class="sim-modal-fundo" id="modalNome" role="dialog" aria-modal="true" aria-labelledby="modalNomeTit" hidden>
+    <form class="sim-modal" id="formNome" autocomplete="on" novalidate>
+        <span class="sim-logo grande" aria-hidden="true">🎧</span>
+        <h2 id="modalNomeTit">Antes de começar</h2>
+        <p>Digite o seu <b>nome completo</b>. Ele identifica você nos resultados das provas e dos treinos.</p>
+        <label class="sim-campo"><span>Nome completo</span>
+            <input type="text" id="inpNome" name="name" autocomplete="name" maxlength="100" placeholder="Ex.: Maria da Silva Souza" required>
+        </label>
+        <div class="sim-erro" id="erroNome" role="alert" hidden></div>
+        <div class="sim-modal-btns">
+            <button type="submit" class="sim-btn primario grande">Continuar</button>
+            <button type="button" class="sim-btn" id="btnNomeCancelar" hidden>Cancelar</button>
+        </div>
+        <small class="sim-lgpd">O nome fica guardado só para o acompanhamento do treinamento.</small>
+    </form>
+</div>
+
+<div class="sim-toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<!-- mesmos arquivos do sistema: Supabase, markdown e o MCP (modelos de IA) -->
+<script src="config/app-config.js?v=28.22.1" charset="utf-8"></script>
+<script src="config/mcp-config.js" data-mcp-config charset="utf-8"></script>
+<script src="js/core/env.js?v=28.22.1" charset="utf-8"></script>
+<script src="js/core/supabase-client.js?v=28.22.1" charset="utf-8"></script>
+<script src="js/core/markdown.js?v=28.22.1" charset="utf-8"></script>
+<script src="js/core/mcp.js?v=28.22.1" charset="utf-8"></script>
+<script src="js/simulador/logica.js?v=28.22.1" charset="utf-8"></script>
+<script src="js/simulador/dados.js?v=28.22.1" charset="utf-8"></script>
+<script src="js/simulador/tela.js?v=28.22.1" charset="utf-8"></script>
+</body>
+</html>

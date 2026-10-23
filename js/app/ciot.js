@@ -3,7 +3,14 @@
 //  PAINEL CIOT
 // ═══════════════════════════════════════════════════════════
 let ciotPanelOpen = false;
-const CIOT_URL = "https://lucasborgescamargo1994-blip.github.io/Pessoal/geolocaliza";
+const CIOT_URL_BASE = "https://lucasborgescamargo1994-blip.github.io/Pessoal/geolocaliza";
+// O Geolocalizador usa os MESMOS modelos de IA do MCP deste sistema (config/mcp-config.js): ao abri-lo mandamos o endereço desse arquivo (?mcp=...); a página lê e guarda.
+// Só quando este sistema está publicado em https (em arquivo local ou localhost a página publicada não alcançaria o arquivo). O endereço é aceito pela página apenas se
+// for da mesma conta do GitHub Pages dela.
+const CIOT_URL = (function () {
+    try { if (location.protocol === 'https:') return CIOT_URL_BASE + '?mcp=' + encodeURIComponent(new URL('config/mcp-config.js', location.href).href); } catch (e) { /* sem o parâmetro */ }
+    return CIOT_URL_BASE;
+})();
 
 function toggleCiotPanel() {
     ciotPanelOpen = !ciotPanelOpen;

@@ -25,6 +25,7 @@ const Palette = (() => {
         { id: 'space-folder', title: 'Meu Espaço: escolher a pasta dos dados', sub: 'Onde as suas anotações ficam guardadas', icon: 'folder', kw: 'pasta backup dados local', run: () => V.Space && V.Space.chooseFolder() },
         { id: 'space-export', title: 'Meu Espaço: exportar backup', sub: 'Baixa um arquivo com todas as suas notas', icon: 'download', kw: 'backup exportar baixar', run: () => V.MeuEspaco && V.MeuEspaco.exportFile() },
         { id: 'close-tab', title: 'Fechar a aba atual', sub: 'Alt+W', icon: 'x', kw: 'fechar aba', run: () => Workspace.close(Workspace.state.active) },
+        { id: 'simulador', title: 'Simulador de atendimento (treino)', sub: 'A IA faz o cliente com uma dúvida do banco de dados · abre em outra guia', icon: 'chat', kw: 'simulador treino treinar cliente simulado atendimento praticar teste', run: () => window.open('simulador.html', '_blank') },
         { id: 'copilot', title: 'Abrir o Copilot (janela flutuante)', sub: 'O assistente sobre qualquer janela', icon: 'sparkles', kw: 'copilot flutuante pip', run: () => abrirCopilot() },
     ];
     function gather(q) {

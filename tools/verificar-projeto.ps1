@@ -5,7 +5,7 @@
 # Uso: powershell -File tools\verificar-projeto.ps1
 $raiz = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $utf8 = New-Object System.Text.UTF8Encoding($false)
-$paginas = 'index.html', 'admin\index.html', 'admin\senha.html'
+$paginas = 'index.html', 'simulador.html', 'admin\index.html', 'admin\senha.html'
 $citados = @{}
 $faltando = 0
 
