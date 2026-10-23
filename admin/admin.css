@@ -166,7 +166,38 @@ button.chip { cursor: pointer; font-family: inherit; } button.chip:hover { borde
 .aba .nota { min-width: 19px; height: 19px; padding: 0 6px; border-radius: 99px; background: var(--ad-pr); color: #fff; font-size: 11px; display: inline-grid; place-items: center; }
 .aba .nota.er { background: var(--ad-er); }
 .aba .sujo { width: 7px; height: 7px; border-radius: 50%; background: var(--ad-pr); }
+/* os nomes das abas não cabem? (boot.js › ajustarAbas põe esta classe) só o ícone, e a aba aberta mostra o nome */
+.abas.compactas .aba .rotulo { display: none; } .abas.compactas .aba[aria-selected=true] .rotulo { display: inline; }
 .topo-acoes { display: flex; align-items: center; gap: 8px; }
+
+/* ───────────── menu do usuário (topo): bonequinho + nome; abre banco, tema, abrir o sistema e sair ───────────── */
+.usuario-menu { position: relative; }
+.usuario-btn { appearance: none; font: inherit; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; height: 40px; max-width: 260px; padding: 0 10px 0 5px; border-radius: 99px;
+    border: 1px solid var(--ad-ln); background: var(--ad-sf); color: var(--ad-tx); cursor: pointer; transition: background .15s, border-color .15s; }
+.usuario-btn:hover, .usuario-btn[aria-expanded=true] { background: var(--ad-sf-3); border-color: var(--ad-mu); }
+.usuario-btn:focus-visible { outline: 2px solid var(--ad-pr); outline-offset: 2px; }
+.usuario-avatar { position: relative; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; flex: none; color: #fff; background: linear-gradient(135deg, #fb923c, #ea580c); }
+.usuario-avatar.grande { width: 42px; height: 42px; }
+.ponto-banco { position: absolute; right: -2px; bottom: -2px; width: 11px; height: 11px; border-radius: 50%; border: 2px solid var(--ad-sf); background: var(--ad-mu); }
+.usuario-btn[data-banco=ok] .ponto-banco { background: var(--ad-ok); }
+.usuario-btn[data-banco=er] .ponto-banco { background: var(--ad-er); }
+.usuario-nome { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.usuario-seta { display: inline-flex; flex: none; color: var(--ad-mu); transition: transform .15s; }
+.usuario-btn[aria-expanded=true] .usuario-seta { transform: rotate(180deg); }
+.usuario-pop { position: absolute; right: 0; top: calc(100% + 8px); z-index: 60; width: 300px; max-width: calc(100vw - 24px); display: flex; flex-direction: column; gap: 4px; padding: 10px;
+    border-radius: 16px; background: var(--ad-sf); border: 1px solid var(--ad-ln); box-shadow: var(--ad-sh-lg); animation: aparecer .14s; }
+.usuario-pop[hidden] { display: none; }
+.usuario-cab { display: flex; align-items: center; gap: 11px; padding: 2px 4px 10px; }
+.usuario-cab b { display: block; overflow-wrap: anywhere; }
+.usuario-cab small { display: block; margin-top: 1px; color: var(--ad-mu); font-size: 12px; line-height: 1.4; overflow-wrap: anywhere; }
+.usuario-pop > .chip { align-self: flex-start; margin: 0 4px 4px; }
+.usuario-sep { height: 1px; background: var(--ad-ln); margin: 4px 0; }
+.usuario-item { appearance: none; font: inherit; font-weight: 600; text-align: left; text-decoration: none; display: flex; align-items: center; gap: 11px; width: 100%; padding: 10px; border-radius: 10px; border: 0; background: transparent; color: var(--ad-tx); cursor: pointer; }
+.usuario-item:hover { background: var(--ad-sf-3); }
+.usuario-item:focus-visible { outline: 2px solid var(--ad-pr); outline-offset: -2px; }
+.usuario-item .ic-slot, .usuario-item .ico-emoji { width: 18px; display: inline-grid; place-items: center; flex: none; color: var(--ad-mu); }
+.usuario-item.perigo, .usuario-item.perigo .ic-slot { color: var(--ad-er); }
+@media (max-width: 520px) { .usuario-nome { display: none; } .usuario-btn { padding: 0 8px 0 5px; } }
 .painel { padding: 18px clamp(12px, 2vw, 28px) 40px; max-width: 1720px; margin: 0 auto; }
 .aba-painel > .cabeca { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: flex-end; justify-content: space-between; margin-bottom: 14px; }
 .cabeca h2 { font-size: 21px; display: flex; align-items: center; gap: 9px; }
@@ -381,20 +412,12 @@ td.pergunta { min-width: 240px; max-width: 520px; word-break: break-word; }
 .aba-opcao input { margin-top: 3px; }
 .aba-opcao .nome { font-weight: 700; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .aba-opcao .desc { font-size: 12px; color: var(--ad-mu); line-height: 1.4; margin-top: 2px; }
-#chipUsuario { max-width: 240px; } #chipUsuario > span { overflow: hidden; text-overflow: ellipsis; }
 
 /* ───────────── responsivo ───────────── */
 @media (max-width: 760px) { .senha-nova { grid-template-columns: 1fr; } }
 @media (max-width: 1180px) {
     .detalhe-corpo, .mcp-grade, .sim-grade, .grade-21 { grid-template-columns: 1fr; }
     .filtros-analise { grid-template-columns: 1fr 1fr; }
-}
-@media (max-width: 1400px) {   /* barra do topo enxuta: botões só com ícone */
-    .topo-acoes .btn .rot-btn { display: none; }
-    .topo-acoes .btn { padding: 0; width: 38px; }
-}
-@media (max-width: 1260px) {   /* e só o ícone das abas (a aberta mostra o nome) */
-    .aba .rotulo { display: none; } .aba[aria-selected=true] .rotulo { display: inline; }
 }
 @media (max-width: 900px) {
     .filtros-analise { grid-template-columns: 1fr; }
@@ -410,9 +433,7 @@ td.pergunta { min-width: 240px; max-width: 520px; word-break: break-word; }
     .topo { flex-wrap: wrap; row-gap: 0; padding: 8px 12px 0; }
     .marca small { display: none; }
     .abas { order: 3; flex: 1 1 100%; margin: 0; padding: 4px 0 8px; }
-    .aba .rotulo { display: none; } .aba[aria-selected=true] .rotulo { display: inline; }
     .topo-acoes { margin-left: auto; }
-    .topo-acoes .btn .rot-btn { display: none; }
     .modelo-linha { grid-template-columns: 22px minmax(0, 1fr) auto; }
     .modelo-linha .pos { display: none; }
 }

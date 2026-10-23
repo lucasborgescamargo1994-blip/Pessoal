@@ -76,20 +76,56 @@
         el('painel').prepend(faixa);
     }
 
-    // com usuários cadastrados, mostra no topo quem está dentro (e, ao passar o mouse, as abas liberadas)
+    // Topo: bonequinho + nome de quem está dentro; clicando abre o menu (banco, tema, abrir o sistema, sair)
     function mostrarQuemEntrou() {
-        if (!ADM.auth.multiusuario()) return;
-        const u = ADM.auth.usuarioAtual();
-        el('chipUsuarioTxt').textContent = '👤 ' + (u.principal ? (u.nome || 'Administrador') + ' · principal' : u.nome);
-        el('chipUsuario').title = u.principal ? 'Administrador principal: todas as abas' : 'Abas liberadas para você: ' + (ADM.abas.map(a => a.titulo).join(', ') || 'nenhuma');
-        el('chipUsuario').hidden = false;
+        let nome, papel;
+        if (ADM.auth.multiusuario()) {
+            const u = ADM.auth.usuarioAtual();
+            nome = u.nome || 'Administrador';
+            papel = u.principal ? 'Administrador principal · todas as abas' : 'Abas liberadas: ' + (ADM.abas.map(a => a.titulo).join(', ') || 'nenhuma');
+        } else {
+            const u = ADM.auth.usuario();
+            nome = !u || u === 'admin' ? 'Administrador' : u;
+            papel = ADM.auth.ehPrincipal() ? 'Administrador principal · todas as abas' : 'Abas liberadas: ' + (ADM.abas.map(a => a.titulo).join(', ') || 'nenhuma');
+        }
+        el('btnUsuarioNome').textContent = nome; el('usuarioPopNome').textContent = nome; el('usuarioPopPapel').textContent = papel;
+        el('btnUsuario').setAttribute('aria-label', 'Menu do usuário ' + nome);
+    }
+
+    // As abas ficam com nome + ícone enquanto couberem; se não couberem (muitas abas, janela estreita, zoom), viram só ícone (a aberta mostra o nome) — nada fica escondido.
+    function ajustarAbas() {
+        const nav = el('abas');
+        if (!nav || el('app').hidden) return;
+        nav.classList.remove('compactas');
+        if (nav.scrollWidth > nav.clientWidth + 1) nav.classList.add('compactas');
+    }
+    function vigiarAbas() {
+        const nav = el('abas'); let agendado = false;
+        const agendar = () => { if (agendado) return; agendado = true; setTimeout(() => { agendado = false; ajustarAbas(); }, 60); };      // (setTimeout e não requestAnimationFrame: este não roda com a guia em segundo plano)
+        window.addEventListener('resize', agendar);
+        if (window.ResizeObserver) { const ro = new ResizeObserver(agendar); ro.observe(nav); nav.querySelectorAll('.aba').forEach(a => ro.observe(a)); }      // também quando muda o tamanho de uma aba (selo de pendentes, nome da aberta)
+        setInterval(() => { if (!document.hidden) ajustarAbas(); }, 2000);      // rede de segurança: se algum aviso de tamanho não chegar (zoom, fonte que carrega tarde), em até 2 s a barra se acerta
+        ajustarAbas();
+    }
+
+    function montarMenuUsuario() {
+        const caixa = el('usuarioMenu'), botao = el('btnUsuario'), pop = el('menuUsuario');
+        const aberto = () => !pop.hidden;
+        const abrir = () => { pop.hidden = false; botao.setAttribute('aria-expanded', 'true'); };
+        const fechar = (devolverFoco) => { if (!aberto()) return; pop.hidden = true; botao.setAttribute('aria-expanded', 'false'); if (devolverFoco) botao.focus(); };
+        botao.addEventListener('click', () => (aberto() ? fechar() : abrir()));
+        document.addEventListener('mousedown', e => { if (aberto() && !caixa.contains(e.target)) fechar(); });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape' && aberto() && !document.querySelector('#modalRoot .modal')) { fechar(true); e.stopPropagation(); } });
+        caixa.addEventListener('focusout', e => { if (aberto() && e.relatedTarget && !caixa.contains(e.relatedTarget)) fechar(); });
+        el('btnAbrirApp').addEventListener('click', () => fechar());      // o tema deixa o menu aberto (dá para ver o efeito); abrir o sistema e sair fecham
+        el('btnSair').addEventListener('click', () => fechar());
     }
 
     function abrirPainel(info) {
         el('login').hidden = true; el('app').hidden = false;
         document.querySelectorAll('.ic-slot').forEach(s => s.appendChild(I(s.dataset.ic, 16)));
         ADM.montarAbas();   // só entram as abas que esta pessoa pode usar
-        mostrarQuemEntrou();
+        mostrarQuemEntrou(); montarMenuUsuario(); vigiarAbas();
         if (!ADM.abas.length) {
             el('painel').appendChild(ADM.ui.vazio('🔒', 'Seu usuário ainda não tem acesso a nenhuma aba', 'Peça ao administrador do painel para liberar as abas que você precisa.'));
         } else {

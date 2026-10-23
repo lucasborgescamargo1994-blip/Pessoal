@@ -345,6 +345,7 @@ ADM.chipBanco = function (estado, texto) {
     const c = document.getElementById('chipBanco'); if (!c) return;
     c.className = 'chip ' + (estado || '');
     document.getElementById('chipBancoTxt').textContent = texto;
+    const b = document.getElementById('btnUsuario'); if (b) b.dataset.banco = estado || '';      // o pontinho no bonequinho avisa se o banco caiu, mesmo com o menu fechado
 };
 ADM.testarBanco = async function () {
     const t0 = performance.now();
