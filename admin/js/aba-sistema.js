@@ -21,6 +21,10 @@
         { t: 'StatusServicos', rot: 'Status SEFAZ/ANTT', sql: '01_status_servicos.sql' },
         { t: 'respostas_rapidas', rot: 'Respostas rápidas', sql: '02_respostas_rapidas_e_revisao.sql' },
         { t: 'respostas_rapidas_uso', rot: 'Uso das respostas rápidas (visão)', sql: '02_respostas_rapidas_e_revisao.sql' },
+        { t: 'sim_provas', rot: 'Simulador — provas', sql: '06_simulador_provas.sql' },
+        { t: 'sim_tentativas', rot: 'Simulador — tentativas de prova', sql: '06_simulador_provas.sql' },
+        { t: 'sim_sessoes', rot: 'Simulador — treinos livres', sql: '06_simulador_provas.sql' },
+        { t: 'sim_config', rot: 'Simulador — configuração', sql: '06_simulador_provas.sql' },
     ];
 
     /* ───────────── verificação do banco ───────────── */

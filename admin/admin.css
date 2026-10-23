@@ -418,3 +418,15 @@ td.pergunta { min-width: 240px; max-width: 520px; word-break: break-word; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
 @media print { .topo, .toasts, .barra-fixa, .rodape-acoes { display: none !important; } }
+
+/* ───────────── treinamento (provas do simulador) ───────────── */
+.trein-itens { display: flex; flex-direction: column; gap: 6px; }
+.trein-item { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border: 1px solid var(--ad-ln); border-radius: 10px; background: var(--ad-sf); }
+.trein-item.marcar { cursor: pointer; }
+.trein-n { color: var(--ad-mu); width: 22px; text-align: right; flex: none; }
+.trein-t { min-width: 0; overflow-wrap: anywhere; }
+.trein-conv { display: flex; flex-direction: column; gap: 6px; max-height: 340px; overflow: auto; padding: 4px 2px; }
+.trein-msg { padding: 7px 11px; border-radius: 12px; border: 1px solid var(--ad-ln); background: var(--ad-sf-2); font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; max-width: 88%; align-self: flex-start; }
+.trein-msg b { display: block; font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ad-mu); }
+.trein-msg.suporte { align-self: flex-end; background: rgb(var(--ad-pr-rgb) / .1); }
+.trein-caso { margin-top: 8px; }
