@@ -47,6 +47,23 @@ window.BSOFT_ADMIN = {
         "sal": "FmOZvkxmoLT5DUKgYPyPjQ==",
         "hash": "FZczDEJmI7QmIYy6kwt7UIZdIXNiMXU//aLs/2JGawA="
       }
+    },
+    {
+      "nome": "Daniane",
+      "ativo": true,
+      "abas": [
+        "treinamento",
+        "faq",
+        "analise",
+        "novidades"
+      ],
+      "criadoEm": "2026-10-26T21:26:13.964Z",
+      "senha": {
+        "algoritmo": "PBKDF2-SHA256",
+        "iteracoes": 210000,
+        "sal": "voHY6CGjyh1pkFgf3VLHgw==",
+        "hash": "jyK7Erh7kll5hgPiSXoQdmAsPRJigpBkuDKouEtSBMs="
+      }
     }
   ]
 };
