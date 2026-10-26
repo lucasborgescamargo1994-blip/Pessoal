@@ -120,6 +120,7 @@
             h('td', { class: 'acoes sticky-esq' },
                 h('button', { class: 'btn peq', type: 'button', onclick: () => abrirEdicao(r) }, I('edit', 13), 'Editar'),
                 h('button', { class: 'btn peq fantasma', type: 'button', title: 'Duplicar', 'aria-label': 'Duplicar', onclick: () => abrirEdicao(r, true) }, I('copy', 13)),
+                E.tab.t === 'BancoDados' && r.id != null && ADM.podeAba('faq') ? h('button', { class: 'btn peq fantasma', type: 'button', title: 'Levar este artigo para o FAQ (e anexar um vídeo)', 'aria-label': 'Levar para o FAQ', onclick: () => ADM.irParaAba('faq', { banco: r.id }) }, I('life', 13)) : null,
                 h('button', { class: 'btn peq fantasma perigo', type: 'button', title: 'Excluir', 'aria-label': 'Excluir', onclick: () => excluir(r) }, I('trash', 13))),
             cols.map(c => { const v = r[c], s = v == null ? '' : (typeof v === 'object' ? JSON.stringify(v) : String(v)); return h('td', { class: 'cel' + (E.tipos[c] === 'numero' ? ' tr' : ''), title: ADM.fmt.trunc(s, 600) }, s.length > 90 ? s.slice(0, 88) + '…' : s); })));
         box.appendChild(h('div', { class: 'tabela-wrap' }, h('table', { class: 'tabela' }, h('thead', null, h('tr', null, h('th', { class: 'sticky-esq' }, ''), cols.map(th))), h('tbody', null, corpo))));

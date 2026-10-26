@@ -25,6 +25,7 @@
         { t: 'sim_tentativas', rot: 'Simulador — tentativas de prova', sql: '06_simulador_provas.sql' },
         { t: 'sim_sessoes', rot: 'Simulador — treinos livres', sql: '06_simulador_provas.sql' },
         { t: 'sim_config', rot: 'Simulador — configuração', sql: '06_simulador_provas.sql' },
+        { t: 'faq_itens', rot: 'FAQ — perguntas e vídeos', sql: '07_faq.sql' },
     ];
 
     /* ───────────── verificação do banco ───────────── */

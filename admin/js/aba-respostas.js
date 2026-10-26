@@ -63,7 +63,8 @@
                 h('td', null, ch.el),
                 h('td', { class: 'acoes' },
                     h('button', { class: 'btn peq', type: 'button', onclick: () => editar(it) }, I('edit', 14), 'Editar'),
-                    ADM.podeAba('simulador') ? h('button', { class: 'btn peq fantasma', type: 'button', title: 'Testar no simulador', 'aria-label': 'Testar no simulador', onclick: () => { ADM.irParaAba('simulador'); ADM.sim.perguntar(it.pergunta); } }, I('flask', 14)) : null));
+                    ADM.podeAba('simulador') ? h('button', { class: 'btn peq fantasma', type: 'button', title: 'Testar no simulador', 'aria-label': 'Testar no simulador', onclick: () => { ADM.irParaAba('simulador'); ADM.sim.perguntar(it.pergunta); } }, I('flask', 14)) : null,
+                    ADM.podeAba('faq') ? h('button', { class: 'btn peq fantasma', type: 'button', title: 'Levar esta resposta para o FAQ (e anexar um vídeo)', 'aria-label': 'Levar para o FAQ', onclick: () => ADM.irParaAba('faq', { resposta: it.id }) }, I('life', 14)) : null));
         });
         box.appendChild(h('div', { class: 'tabela-wrap' }, h('table', { class: 'tabela' },
             h('thead', null, h('tr', null, cabecalhoOrdenavel('ID', 'id'), cabecalhoOrdenavel('Pergunta e resposta', 'pergunta'), cabecalhoOrdenavel('Categoria', 'categoria'),
