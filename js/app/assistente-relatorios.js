@@ -80,7 +80,14 @@ prevInicioViagem (transp_conhecimentoTransporteEventos): prevInicioViagem.conhec
 const _CAMPOS_DO_CF_NA_TABELA_DO_CTE = new Set(('baseResultadoCF,pesoColeta,tarifaMotoristaCalculada,tarifaMotoristaDigitada,valorTotalOrigem,outrosDescontos,outrosAcrescimos,descontoINSS,totalDescontoINSS,descontoSEST,totalDescontoSEST,' +
     'valorPedagio,freteLiquido,valorAdiantamento,pesoChegada,descontoQuebraPeso,saldo,resultado,baseCalculoIRRF,valorComplemento,tolerancia,descontoSeguro,descontoIRRF,nroParcelas,nroParcelasCombustivel,' +
     'baseResultadoValorMotorista,valorCombustivel,diariaFrete,saldoCombustivel,totalPrestacaoSegundaAba,totalPrestacaoTerceiraAba,volumesColeta').split(','));
-function _parseDemaisCampos(raw) {
+// Campos que pertencem às NOTAS FISCAIS dentro do CT-e (a seção "Documentos": NF-e, Outros, Relação de Chaves, DC-e — Tipo do Doc., N.º Doc., Natureza da Carga, Peso, Quantidade, Espécie, Cubagem, Marca, Valor do Produto, NCM…).
+// Ganham " (NF)" no fim do rótulo, para quem pesquisar NF, nota fiscal, notas fiscais, NF-e ou nfe achar todos juntos (ver _REL_SINONIMOS_NF). A expressão (docs.somaPesos, totais.pesoMercadorias…) NÃO muda — só o nome mostrado. Só vale para a origem CT-e.
+const _SUFIXO_NF = ' (NF)';
+const _GRUPOS_CURADOS_DE_NF = new Set(['Notas fiscais', 'Documentos']);     // grupos do catálogo curado do CT-e (docs.* e notasFiscais.*)
+// "Demais campos": tabela das mercadorias/documentos do CT-e (cada linha da seção Documentos) + o que é total dessas notas na tabela "totais" + 2 campos do próprio CT-e que aparecem na seção Documentos
+const _CAMPOS_DE_NF_NA_TABELA_DE_TOTAIS = new Set('quantMercadorias,valorMercadorias,pesoMercadorias,cubagemMercadorias,nroMercadorias,valorProdutos,pesoCubadoMercadorias,pesoTaxadoMercadorias,predominanteTipoNatureza_id'.split(','));
+const _CAMPOS_DE_NF_NA_TABELA_DO_CTE = new Set(['tipoDocumentos', 'definirQuantCargasManualmente']);
+function _parseDemaisCampos(raw, origemKey) {
     const resultado = [];
     const vistos = new Set();
     raw.split('\n').map(l => l.trim()).filter(Boolean).forEach(linha => {
@@ -94,6 +101,7 @@ function _parseDemaisCampos(raw) {
             if (dot < 0) return;
             const campo = tok.substring(dot + 1);
             if (grupo === 'cte' && _CAMPOS_DO_CF_NA_TABELA_DO_CTE.has(campo)) { resultado.push({ grupo: 'Demais campos: Contrato de Frete (CF)', exp: tok, label: `${campo} (CF)` }); return; }
+            if (origemKey === 'CTe' && (grupo === 'transp_mercadoriasConhecimento' || (grupo === 'totais' && _CAMPOS_DE_NF_NA_TABELA_DE_TOTAIS.has(campo)) || (grupo === 'cte' && _CAMPOS_DE_NF_NA_TABELA_DO_CTE.has(campo)))) { resultado.push({ grupo: 'Demais campos: Notas fiscais (NF)', exp: tok, label: `${campo}${_SUFIXO_NF}` }); return; }
             resultado.push({ grupo: `Demais campos: ${grupo}`, exp: tok, label: `${campo} (${grupo})` });
         });
     });
@@ -231,12 +239,14 @@ const CATALOGO_RELATORIOS = {
 // sozinho. Só entra o que é realmente novo. Reaproveitado por CTe, ContratoFrete etc.
 function _mesclarDemaisCampos(origemKey, rawText) {
     const jaExiste = new Set(CATALOGO_RELATORIOS[origemKey].map(c => c.exp));
-    _parseDemaisCampos(rawText).forEach(c => {
+    _parseDemaisCampos(rawText, origemKey).forEach(c => {
         if (jaExiste.has(c.exp)) return;
         jaExiste.add(c.exp);
         CATALOGO_RELATORIOS[origemKey].push(c);
     });
 }
+// campos curados que são das notas fiscais (grupos "Notas fiscais" e "Documentos"): " (NF)" no fim do rótulo
+CATALOGO_RELATORIOS.CTe.forEach(c => { if (_GRUPOS_CURADOS_DE_NF.has(c.grupo) && !c.label.endsWith(_SUFIXO_NF)) c.label += _SUFIXO_NF; });
 _mesclarDemaisCampos('CTe', _DEMAIS_CAMPOS_RAW_CTE);
 
 // ─── Origem: Contrato de Frete ───────────────────────────────────────────────
@@ -399,6 +409,7 @@ function _relSelecionarOrigem(origem) {
     // colunas já montadas (senão ficaria coluna com campo de uma origem diferente da escolhida agora).
     window._relColunas = [{ nomeColuna: '', termos: [] }];
     window._relAcaoSel = null;
+    window._relCamposCriados = []; window._relPerguntaModelo = null;
     const busca = document.getElementById('wRelBusca'); if (busca) busca.value = '';
     _relRenderResultadosBusca();
     _relRenderColunas();
@@ -412,7 +423,10 @@ function _relSelecionarOrigem(origem) {
 // grupo, nos dois sentidos (ex.: buscar "conhecimento" acha campos do grupo "Ct-e", e buscar
 // "ct-e" também acha os que só têm "conhecimento" no rótulo — e vice-versa). Todos os termos já
 // em minúsculo/sem acento, no mesmo formato que _relCamposFiltrados normaliza a busca digitada.
+// NF = nota fiscal = notas fiscais = NF-e = nfe: qualquer um acha todos os campos marcados com "(NF)" (e quem escreve "nota fiscal"/"notas fiscais" vira "nf" antes da busca)
+const _REL_SINONIMOS_NF = ['nf', 'nfe', 'nf-e', 'nota fiscal', 'notas fiscais'];
 const _REL_SINONIMOS_BUSCA = [
+    _REL_SINONIMOS_NF,
     ['ct-e', 'cte', 'conhecimento'],
     ['mdf-e', 'mdfe', 'manifesto'],
     ['numero', 'nro', 'nº'],
@@ -424,7 +438,7 @@ const _REL_SINONIMOS_BUSCA = [
     ['codigo', 'cod'],
     ['observacao', 'observacoes', 'obs'],
     ['documento', 'doc'],
-    ['quantidade', 'qtd', 'quant'],
+    ['quantidade', 'quantidades', 'qtd', 'qtde', 'qtdes', 'quant'],      // "quantidade" mostra os campos que têm "quant" no nome (quantMercadorias, definirQuantCargasManualmente…)
     ['transporte', 'transportador', 'transp'],
 ];
 function _relTermosEquivalentes(termo) {
@@ -447,16 +461,29 @@ function _relIndexOfComBorda(texto, termo) {
     return -1;
 }
 function _relCamposFiltrados(origemSel, query) {
-    const catalogo = CATALOGO_RELATORIOS[origemSel] || CATALOGO_RELATORIOS.CTe;
+    const catalogo = _relCatalogoDaBusca(origemSel);
     const norm = t => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-    const q = norm(query).trim();
+    let q = norm(query).trim();
     if (!q) return [];
+    q = q.replace(/\bnotas?\s+fiscais?\b/g, 'nf');       // "nota fiscal" / "notas fiscais" = "NF" (vale também no meio da frase: "valor nota fiscal")
     const palavras = q.split(/\s+/).filter(Boolean);
     // cada palavra digitada já expande em si mesma + os sinônimos dela — a pontuação testa
     // qualquer um desses termos equivalentes, não só o que foi literalmente digitado.
     const palavrasEquiv = palavras.map(_relTermosEquivalentes);
     const qEquiv = _relTermosEquivalentes(q);
+    const buscaPorNF = qEquiv === _REL_SINONIMOS_NF;       // a busca inteira é NF / nota fiscal / NF-e / nfe
+    // Campos-modelo (Tipos Valores Outros, Tags personalizadas): cada um decide pela própria frase (_REL_MODELOS[x].casa) se aparece. Aparecendo, vem em 1º e os campos já criados dele
+    // logo depois (senão o corte de 14 os esconderia numa busca ampla como "outros"); nas outras buscas o campo criado só é achado pelo NOME dele.
+    const casas = {}; Object.values(_REL_MODELOS).forEach(m => { casas[m.id] = !!m.casa(q); });
     const pontuados = catalogo.map(c => {
+        if (c.modelo) return { c, pontos: casas[c.modelo] ? 200 : 0, porRotulo: casas[c.modelo] };
+        if (c.criado) {
+            if (casas[c.modeloId]) return { c, pontos: 190, porRotulo: true };
+            const nomeN = norm(c.exp.slice(_REL_MODELOS[c.modeloId].prefixo.length));
+            const bateu = qEquiv.find(t => _relIndexOfComBorda(nomeN, t) !== -1);
+            const todas = palavrasEquiv.every(eq => eq.some(t => _relIndexOfComBorda(nomeN, t) !== -1));
+            return { c, pontos: bateu ? 100 - _relIndexOfComBorda(nomeN, bateu) : (todas ? 60 : 0), porRotulo: !!bateu };
+        }
         const labelN = norm(c.label), grupoN = norm(c.grupo), expN = norm(c.exp);
         let pontos = 0;
         const termoCompletoBatido = qEquiv.find(t => _relIndexOfComBorda(labelN, t) !== -1);
@@ -466,9 +493,86 @@ function _relCamposFiltrados(origemSel, query) {
             pontos = (acertos / palavrasEquiv.length) * 60;
         }
         if (qEquiv.some(t => _relIndexOfComBorda(grupoN, t) !== -1)) pontos += 15;
-        return { c, pontos };
-    }).filter(x => x.pontos > 0).sort((a, b) => b.pontos - a.pontos);
-    return pontuados.slice(0, 14).map(x => x.c);
+        return { c, pontos, porRotulo: !!termoCompletoBatido };
+    }).filter(x => x.pontos > 0 && (!buscaPorNF || x.porRotulo));
+    // busca por NF: os campos de nome amigável (catálogo curado) primeiro, depois os "Demais campos"; os outros casos seguem só pela pontuação
+    const crua = x => (buscaPorNF && /^Demais campos/.test(x.c.grupo) ? 1 : 0);
+    pontuados.sort((a, b) => (crua(a) - crua(b)) || (b.pontos - a.pontos));
+    return pontuados.slice(0, buscaPorNF ? 80 : 14).map(x => x.c);      // (busca por NF não é cortada em 14: a pessoa quer ver todos os campos das notas)
+}
+// ─── Campos CRIADOS pelo cliente: "Tipos Valores Outros" (CT-e e Contrato de Frete) e "Tags personalizadas" (só CT-e) ───────────────────────────────
+// Cada um é uma expressão = PREFIXO + NOME INTERNO, e o nome interno só o cliente sabe: um tipo de valor "advalorem" vira outrosValores.tpOutroadvalorem; uma tag "pedagio" vira tagsCTe.tagCTepedagio.
+// Por isso a busca mostra um campo-MODELO ("… (campo criado)"): clicar nele abre ao lado a pergunta do nome interno; com o OK nasce o campo (arrastável para a coluna), que passa
+// a aparecer também nas próximas buscas. Os modelos NÃO estão em CATALOGO_RELATORIOS (a IA do texto livre nunca os vê).
+// "casa(q)": quando a busca (já sem acento/maiúscula) chama o modelo — frases dele, nunca palavras soltas e comuns como "valor", "tipo" ou "campos".
+const _REL_FRASES_TP_OUTRO = ['tipo valores outros', 'tipos valores outros', 'tipo de valores outros', 'tipos de valores outros', 'valores outros', 'valor outro', 'campos personalizados', 'campo personalizado', 'campos criados', 'campo criado', 'outros campos', 'outro campo', 'tpoutro'];
+const _REL_MODELOS = {
+    tpOutro: {
+        id: 'tpOutro', prefixo: 'outrosValores.tpOutro', origens: ['CTe', 'ContratoFrete'], grupo: 'Tipos Valores Outros', sufixo: 'Tipos Valores Outros',
+        label: 'Tipos Valores Outros (campo criado)', pergunta: 'Qual o nome interno do campo Tipos Valores Outros?', exemplo: 'advalorem',
+        // as frases acima (ou o começo delas, a partir de 8 letras) e também só "outros" / "outro"; "outros descontos" etc. não chamam
+        casa: q => q === 'outros' || q === 'outro' || _REL_FRASES_TP_OUTRO.some(t => q.includes(t) || (q.length >= 8 && t.startsWith(q)))
+    },
+    tagCTe: {
+        id: 'tagCTe', prefixo: 'tagsCTe.tagCTe', origens: ['CTe'], grupo: 'Tags personalizadas', sufixo: 'Tag personalizada',
+        label: 'Tags personalizadas (campo criado)', pergunta: 'Qual o nome interno da tag?', exemplo: 'pedagio',
+        // a palavra tag / tags (inteira) em qualquer ponto da busca, ou tagCTe / tagsCTe
+        casa: q => /\btags?\b/.test(q) || q.includes('tagscte') || q.includes('tagcte')
+    }
+};
+window._relCamposCriados = window._relCamposCriados || [];       // [{ exp, label, modeloId }] já criados nesta tela
+window._relPerguntaModelo = null;                                 // id do modelo cuja caixa de pergunta está aberta
+const _relModelosDaOrigem = origemSel => Object.values(_REL_MODELOS).filter(m => m.origens.includes(origemSel));
+// expressão de um campo criado → { nome, modelo } (ou null se não for de nenhum modelo)
+function _relCampoCriadoDeExp(exp) {
+    for (const m of Object.values(_REL_MODELOS)) {
+        if (String(exp).startsWith(m.prefixo)) { const nome = String(exp).slice(m.prefixo.length); if (/^[A-Za-z0-9_]+$/.test(nome)) return { nome, modelo: m }; }
+    }
+    return null;
+}
+function _relCatalogoDaBusca(origemSel) {
+    const base = CATALOGO_RELATORIOS[origemSel] || CATALOGO_RELATORIOS.CTe;
+    const extras = [];
+    _relModelosDaOrigem(origemSel).forEach(m => {
+        extras.push({ grupo: m.grupo, exp: m.prefixo, label: m.label, modelo: m.id });
+        (window._relCamposCriados || []).filter(c => c.modeloId === m.id).forEach(c => extras.push({ grupo: m.grupo, exp: c.exp, label: c.label, criado: true, modeloId: m.id }));
+    });
+    return extras.length ? base.concat(extras) : base;
+}
+function _relAbrirPerguntaModelo(id) {
+    window._relPerguntaModelo = id;
+    _relRenderResultadosBusca();
+    setTimeout(() => { const i = document.getElementById('wRelNomeModelo'); if (i) i.focus(); }, 30);
+}
+function _relFecharPerguntaModelo() { window._relPerguntaModelo = null; _relRenderResultadosBusca(); }
+function _relConfirmarModelo() {
+    const m = _REL_MODELOS[window._relPerguntaModelo]; if (!m) return;
+    const inp = document.getElementById('wRelNomeModelo'); if (!inp) return;
+    const erro = document.getElementById('wRelErroModelo');
+    let nome = inp.value.trim();
+    if (nome.toLowerCase().startsWith(m.prefixo.toLowerCase())) nome = nome.slice(m.prefixo.length);      // se colou a expressão inteira
+    const falha = msg => { if (erro) erro.textContent = msg; inp.focus(); };
+    if (!nome) { falha('Digite o nome interno.'); return; }
+    if (!/^[A-Za-z0-9_]+$/.test(nome)) { falha('O nome interno só tem letras, números e _ (sem espaço, acento ou ponto). Ex.: ' + m.exemplo); return; }
+    if (nome.length > 60) { falha('Nome interno longo demais.'); return; }
+    const exp = m.prefixo + nome;
+    if (!window._relCamposCriados.some(c => c.exp === exp)) window._relCamposCriados.push({ exp, label: `${nome} (${m.sufixo})`, modeloId: m.id });
+    window._relPerguntaModelo = null;
+    _relRenderResultadosBusca();
+}
+function _relRemoverCampoCriado(exp) {
+    window._relCamposCriados = (window._relCamposCriados || []).filter(c => c.exp !== exp);
+    _relRenderResultadosBusca();
+}
+function _relPerguntaModeloHtml(m) {
+    return `<span id="wRelPerguntaModelo" style="display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px;padding:6px 10px;background:#fffbeb;border:1.5px solid #fcd34d;border-radius:12px;max-width:100%;">
+        <label for="wRelNomeModelo" style="font-size:12px;font-weight:700;color:#92400e;">${escapeHtml(m.pergunta)}</label>
+        <input id="wRelNomeModelo" type="text" maxlength="60" autocomplete="off" placeholder="ex.: ${escapeHtml(m.exemplo)}" onkeydown="if(event.key==='Enter'){event.preventDefault();_relConfirmarModelo();}else if(event.key==='Escape'){_relFecharPerguntaModelo();}" style="width:170px;padding:5px 8px;border:1.5px solid #fcd34d;border-radius:8px;font-size:12px;font-family:monospace;outline:none;background:#fff;">
+        <button type="button" onclick="_relConfirmarModelo()" style="padding:5px 14px;border:none;border-radius:8px;background:#d97706;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">OK</button>
+        <button type="button" onclick="_relFecharPerguntaModelo()" title="Cancelar" aria-label="Cancelar" style="padding:5px 8px;border:none;border-radius:8px;background:none;color:#92400e;font-size:12px;cursor:pointer;">✕</button>
+        <span id="wRelErroModelo" style="flex-basis:100%;font-size:11px;color:#b91c1c;"></span>
+        <span style="flex-basis:100%;font-size:11px;color:#78350f;">Depois do OK o campo (<code style="font-family:monospace;">${escapeHtml(m.prefixo)}</code> + o nome) aparece aqui para você arrastar para a coluna.</span>
+    </span>`;
 }
 function _relRenderResultadosBusca() {
     const cont = document.getElementById('wRelResultadosBusca');
@@ -476,8 +580,17 @@ function _relRenderResultadosBusca() {
     const query = document.getElementById('wRelBusca')?.value || '';
     const resultados = _relCamposFiltrados(window._relOrigemSel, query);
     if (!query.trim()) { cont.innerHTML = ''; return; }
+    const chip = c => {
+        if (c.modelo) {     // campo-modelo: não dá para arrastar antes de saber o nome interno — clicar abre a pergunta ao lado dele
+            const m = _REL_MODELOS[c.modelo];
+            return `<button type="button" class="_rel-chip _rel-chip-modelo" onclick="_relAbrirPerguntaModelo('${escapeHtml(c.modelo)}')" title="${escapeHtml(c.grupo)} · clique e informe o nome interno (vira ${escapeHtml(c.exp)}+nome)" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#fffbeb;border:1.5px dashed #f59e0b;border-radius:16px;font-size:12px;font-family:inherit;font-weight:600;color:#92400e;cursor:pointer;">✏️ ${escapeHtml(c.label)}</button>${window._relPerguntaModelo === c.modelo ? _relPerguntaModeloHtml(m) : ''}`;
+        }
+        const criado = !!c.criado;
+        const remover = criado ? `<button type="button" onclick="event.stopPropagation();_relRemoverCampoCriado('${escapeHtml(c.exp)}')" title="Tirar este campo da lista" aria-label="Tirar este campo da lista" draggable="false" style="border:none;background:none;color:#1e40af;cursor:pointer;font-size:11px;padding:0 0 0 6px;line-height:1;">✕</button>` : '';
+        return `<span class="_rel-chip" draggable="true" data-exp="${escapeHtml(c.exp)}" data-label="${escapeHtml(c.label)}" ondragstart="_relCampoDragStart(event)" title="${escapeHtml(c.grupo)} · ${escapeHtml(c.exp)}" style="display:inline-flex;align-items:center;padding:6px 12px;background:white;border:1.5px solid ${criado ? '#34d399' : '#93c5fd'};border-radius:16px;font-size:12px;color:#1e40af;cursor:grab;user-select:none;">${escapeHtml(c.label)}${remover}</span>`;
+    };
     cont.innerHTML = resultados.length
-        ? resultados.map(c => `<span class="_rel-chip" draggable="true" data-exp="${escapeHtml(c.exp)}" data-label="${escapeHtml(c.label)}" ondragstart="_relCampoDragStart(event)" title="${escapeHtml(c.grupo)} · ${escapeHtml(c.exp)}" style="display:inline-flex;align-items:center;padding:6px 12px;background:white;border:1.5px solid #93c5fd;border-radius:16px;font-size:12px;color:#1e40af;cursor:grab;user-select:none;">${escapeHtml(c.label)}</span>`).join('')
+        ? resultados.map(chip).join('')
         : `<span style="font-size:11.5px;color:#9ca3af;">Nenhum campo encontrado pra "${escapeHtml(query)}".</span>`;
 }
 window._relAcaoSel = null;
@@ -551,7 +664,9 @@ function _relTermoParaLabel(termo, origemSel){
     if(/^-?\d+(\.\d+)?$/.test(termo))return termo;
     const catalogo=CATALOGO_RELATORIOS[origemSel]||CATALOGO_RELATORIOS.CTe;
     const achou=catalogo.find(c=>c.exp===termo);
-    return achou?achou.label:termo;
+    if(achou)return achou.label;
+    const criado=_relCampoCriadoDeExp(termo);       // campo criado pelo cliente (Tipos Valores Outros, Tags personalizadas)
+    return criado?`${criado.nome} (${criado.modelo.sufixo})`:termo;
 }
 // Monta a fórmula final a partir dos termos: 1 termo só -> expressão pura (coluna simples, igual
 // sempre foi); 2+ termos -> cada CAMPO entre parênteses, número puro, unidos pelos símbolos das
@@ -663,6 +778,7 @@ function mostrarWizardRelatorio(nomePrefill, camposPrefill, origemPrefill) {
     const old = document.getElementById('wizardRelatorioCard'); if (old) old.remove();
     window._relOrigemSel = null;
     window._relAcaoSel = null;
+    window._relCamposCriados = []; window._relPerguntaModelo = null;
     const card = document.createElement('div');
     card.id = 'wizardRelatorioCard';
     card.className = 'answer-card';
@@ -735,6 +851,8 @@ function _voltarParaWizardRelatorio(ts) {
     mostrarWizardRelatorio(dados.nome, dados.camposTxt, dados.origemSel);
     if (dados.colunasRascunho && dados.colunasRascunho.length) {
         window._relColunas = dados.colunasRascunho.map(c => ({ nomeColuna: c.nomeColuna, termos: (c.termos || []).map(t => ({ ...t })) }));
+        // campos criados (Tipos Valores Outros, Tags personalizadas) que já estavam nas colunas voltam para a lista de campos criados (arrastáveis de novo na busca)
+        window._relColunas.forEach(c => (c.termos || []).forEach(t => { const k = _relCampoCriadoDeExp(t.termo); if (k && !window._relCamposCriados.some(x => x.exp === t.termo)) window._relCamposCriados.push({ exp: t.termo, label: `${k.nome} (${k.modelo.sufixo})`, modeloId: k.modelo.id }); }));
         _relRenderColunas();
     }
 }
