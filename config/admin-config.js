@@ -49,7 +49,7 @@ window.BSOFT_ADMIN = {
       }
     },
     {
-      "nome": "Daniane",
+      "nome": "Daiane",
       "ativo": true,
       "abas": [
         "treinamento",
