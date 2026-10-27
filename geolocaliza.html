@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>By Lucas Camargo - Validador de Rotas e CIOT</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+        // Aberta dentro do sistema de suporte (iframe)? Aí a página fica ainda mais enxuta (sem rodapé, sem textos de apoio longos).
+        try { if (window.self !== window.top) document.documentElement.classList.add('embed'); } catch (e) { document.documentElement.classList.add('embed'); }
+    </script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
@@ -14,8 +18,8 @@
             --text: #1c1917;
             --text-muted: #78716c;
             --border: #e7e5e4;
-            --radius: 16px;
-            --shadow: 0 10px 30px rgba(0,0,0,0.15);
+            --radius: 12px;
+            --shadow: 0 6px 20px rgba(0,0,0,0.18);
             --expedidor-bg: #e0f2fe;
             --expedidor-border: #0284c7;
             --recebedor-bg: #dcfce7;
@@ -28,669 +32,473 @@
             --error-border: #dc2626;
             --success-bg: #dcfce7;
             --success-border: #16a34a;
+            /* espaçamentos que encolhem em telas/janelas baixas */
+            --pad: clamp(6px, 1.2vh, 12px);
+            --gap: clamp(5px, 1vh, 10px);
         }
+        html, body { height: 100%; }
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
             background: linear-gradient(135deg, #0a2a1a 0%, #0f3b24 100%);
-            min-height: 100vh;
-            padding: 12px;
+            color: var(--text);
+            overflow: hidden;           /* a PÁGINA nunca rola: só as áreas de resultado, por dentro */
+            -webkit-text-size-adjust: 100%;
         }
-        .container { max-width: 1600px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
-        .header { text-align: center; }
+
+        /* ───────── estrutura geral: tudo cabe na janela, qualquer que seja o tamanho ───────── */
+        .app {
+            height: 100vh; height: 100dvh;
+            display: flex; flex-direction: column; gap: var(--gap);
+            padding: var(--pad);
+            container-type: inline-size; container-name: app;
+        }
+        .topbar { flex: none; display: flex; align-items: center; gap: 8px; min-height: 34px; }
         .logo {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-            padding: 8px 20px;
-            border-radius: 50px;
-            border: 1px solid rgba(255,255,255,0.2);
+            flex: none; display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(255,255,255,0.1); backdrop-filter: blur(8px);
+            padding: 4px 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.2);
         }
-        .logo-icon { font-size: 24px; }
-        .logo h1 { color: white; font-size: 1.2rem; font-weight: 700; }
-        .logo span { color: var(--primary); }
-        .sub { color: rgba(255,255,255,0.7); margin-top: 6px; font-size: 0.7rem; }
-        .main-grid { display: grid; grid-template-columns: 1fr 220px; gap: 16px; }
-        @media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } }
-        @keyframes pulse-red {
-            0% { box-shadow: 0 0 0 0 rgba(220,38,38,0.5); }
-            70% { box-shadow: 0 0 0 12px rgba(220,38,38,0); }
-            100% { box-shadow: 0 0 0 0 rgba(220,38,38,0); }
-        }
-        .card {
-            background: var(--surface);
-            border-radius: var(--radius);
-            overflow: hidden;
-            box-shadow: var(--shadow);
-            display: flex;
-            flex-direction: column;
-        }
-        .card-header {
-            padding: 14px 18px;
-            background: #f8fafc;
-            border-bottom: 2px solid #e2e8f0;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-            justify-content: space-between;
-        }
-        .card-header h2 { font-size: 1rem; font-weight: 600; color: #1e293b; }
-        .card-body { padding: 16px; max-height: calc(100vh - 160px); overflow-y: auto; }
-        @media (max-width: 900px) { .card-body { max-height: none; } }
-        .tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 16px;
-            border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 8px;
-            flex-wrap: wrap;
-        }
+        .logo-icon { font-size: 1.1rem; line-height: 1; }
+        .logo h1 { color: #fff; font-size: 0.88rem; font-weight: 700; white-space: nowrap; }
+        .logo h1 span { color: var(--primary); }
+        .logo .by { color: rgba(255,255,255,0.65); font-size: 0.6rem; font-weight: 500; white-space: nowrap; }
+        .tabs { flex: 1 1 auto; min-width: 0; display: flex; gap: 6px; flex-wrap: nowrap; overflow: hidden; }
         .tab-btn {
-            background: #f1f5f9;
-            color: #475569;
-            padding: 8px 20px;
-            border-radius: 40px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            cursor: pointer;
+            flex: 0 1 auto; min-width: 0; white-space: nowrap;
+            background: rgba(255,255,255,0.12); color: #e7f5ec;
+            border: 1px solid rgba(255,255,255,0.16);
+            padding: 6px 13px; border-radius: 999px; font-size: 0.74rem; font-weight: 600; cursor: pointer;
+            transition: background .15s;
         }
-        .tab-btn.active {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
+        .tab-btn:hover { background: rgba(255,255,255,0.2); }
+        .tab-btn.active { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); border-color: transparent; color: #fff; box-shadow: 0 2px 10px rgba(249,115,22,.35); }
+        .tl-curto { display: none; }
+        .btn-gear {
+            flex: none; width: 34px; height: 34px; padding: 0; justify-content: center;
+            background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: #fff;
+            border-radius: 50%; font-size: 1rem; cursor: pointer; backdrop-filter: blur(8px); transition: background .2s;
         }
+        .btn-gear:hover { background: rgba(255,255,255,0.28); }
+
+        .main-grid { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) clamp(140px, 14%, 200px); gap: var(--gap); }
+        .card {
+            background: var(--surface); border-radius: var(--radius); overflow: hidden;
+            box-shadow: var(--shadow); display: flex; flex-direction: column; min-width: 0; min-height: 0;
+        }
+        .card-main { container-type: size; container-name: painel; }   /* largura E altura do painel decidem o layout (a altura vem da janela, não do conteúdo) */
+        .card-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; padding: clamp(6px, 1.1vh, 10px); overflow: auto; }
         .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            background: #e2e8f0;
-            padding: 4px 12px;
-            border-radius: 30px;
-            font-size: 0.65rem;
+        .tab-content.active { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+
+        /* ───────── painel de uma aba: entrada (esquerda) + resultado (direita ou embaixo) ───────── */
+        .pane { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: var(--gap); }
+        .pane-in {
+            flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 6px; overflow: auto;
+            padding: clamp(6px, 1vh, 10px); border-radius: 10px; border: 1px solid #e2e8f0; background: #f8fafc;
         }
-        .btn-validar-rota {
-            background: linear-gradient(135deg, #10b981, #059669);
-            padding: 12px 20px;
-            font-size: 0.9rem;
-            font-weight: 700;
-            width: 100%;
-            justify-content: center;
-            margin-bottom: 16px;
-            animation: pulse-green 2s infinite;
+        .pane-erro .pane-in { background: #fef2f2; border-color: #fca5a5; }
+        .pane-ciot .pane-in { background: var(--ciot-bg); border-color: var(--ciot-border); }
+        .pane-out {
+            display: none; flex: 1 1 42%; min-height: 0; overflow: auto; padding: 8px;
+            border-radius: 10px; border: 1px solid #e2e8f0; background: #f8fafc;
         }
-        .btn-validar-rota:hover {
-            transform: scale(1.02);
-            box-shadow: 0 8px 25px rgba(16,185,129,0.4);
+        .has-out .pane-out { display: block; }
+        .out-vazio {
+            display: none; height: 100%; min-height: 60px; align-items: center; justify-content: center; text-align: center;
+            color: #94a3b8; font-size: 0.74rem; line-height: 1.45; padding: 8px;
         }
-        @keyframes pulse-green {
-            0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(16,185,129,0); }
-            100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+        .btn-voltar { display: none; }
+        /* janela LARGA: entrada à esquerda e resultado à direita, os dois sempre à vista */
+        @container painel (min-width: 600px) {
+            .pane { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); grid-template-rows: minmax(0, 1fr); }
+            .pane-in { flex: none; }
+            .pane-out, .has-out .pane-out { display: block; flex: none; border-style: dashed; }
+            .out-vazio { display: flex; }
+            .has-out .out-vazio { display: none; }
+            .has-out .pane-out { border-style: solid; }
         }
-        .alert-info {
-            background: #dbeafe;
-            border-left: 4px solid #2563eb;
-            padding: 12px;
-            border-radius: 12px;
-            margin-bottom: 16px;
-            font-size: 0.7rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
+        /* janela ESTREITA: ou a entrada ou o resultado ocupa tudo (com "← Voltar") — nada espremido nem sobreposto */
+        @container painel (max-width: 599.98px) {
+            .has-out:not(.ver-entrada) .pane-in { display: none; }
+            .has-out:not(.ver-entrada) .pane-out { display: block; flex: 1 1 auto; }
+            .has-out.ver-entrada .pane-out { display: none; }
+            .has-out:not(.ver-entrada) .btn-voltar { display: inline-flex; position: sticky; top: 0; z-index: 3; margin-bottom: 8px; }
         }
-        .alert-warning {
-            background: #fef3c7;
-            border-left: 4px solid #f59e0b;
-            padding: 12px;
-            border-radius: 12px;
-            margin-bottom: 12px;
-            font-size: 0.7rem;
+
+        .pane-head { flex: none; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+        .pane-head .ph-ic { font-size: 1.05rem; line-height: 1; }
+        .pane-head strong { font-size: 0.78rem; color: #1e293b; flex: 1 1 auto; min-width: 0; }
+        .pane-dica { flex: none; font-size: 0.68rem; line-height: 1.4; color: #475569; }
+        .info-btn { background: transparent; color: #475569; padding: 0 4px; font-size: 0.8rem; border-radius: 50%; line-height: 1; cursor: help; }
+        .info-btn:hover { background: rgba(0,0,0,0.06); }
+        .ai-analysis-badge {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; padding: 3px 9px; border-radius: 20px;
+            font-size: 0.6rem; display: inline-flex; align-items: center; gap: 4px;
         }
-        .alert-error {
-            background: var(--error-bg);
-            border-left: 4px solid var(--error-border);
-            padding: 16px;
-            border-radius: 12px;
-            margin-bottom: 16px;
-            font-size: 0.75rem;
-            color: #991b1b;
+
+        /* área de soltar arquivo: uma faixa baixa, ícone + texto lado a lado */
+        .drop {
+            flex: none; display: flex; align-items: center; gap: 10px; text-align: left;
+            border: 2px dashed #cbd5e1; border-radius: 10px; padding: clamp(6px, 1vh, 10px) 12px; background: #fafcff;
+            cursor: pointer; transition: all 0.2s;
         }
-        .alert-success {
-            background: var(--success-bg);
-            border-left: 4px solid var(--success-border);
-            padding: 16px;
-            border-radius: 12px;
-            margin-bottom: 16px;
-            font-size: 0.75rem;
-            color: #166534;
-        }
-        .alert-danger {
-            background: var(--alert-danger-bg);
-            border-left: 4px solid var(--alert-danger);
-            padding: 16px;
-            border-radius: 12px;
-            margin-bottom: 16px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: var(--alert-danger);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            flex-wrap: wrap;
-            animation: pulse 0.5s ease-in-out;
-        }
-        .alert-danger-icon { font-size: 28px; }
-        .alert-danger-text { flex: 1; }
-        .alert-danger-text strong { font-size: 0.9rem; }
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.01); background: #fee2e2; }
-            100% { transform: scale(1); }
-        }
-        .config-section {
-            background: #f1f5f9;
-            padding: 14px;
-            border-radius: 14px;
-            margin-bottom: 16px;
-            border: 1px solid #e2e8f0;
-        }
-        .config-row {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin-bottom: 12px;
-        }
-        .config-field {
-            flex: 1;
-            min-width: 120px;
-        }
-        .config-field label {
-            font-size: 0.65rem;
-            font-weight: 600;
-            color: #475569;
-            display: block;
-            margin-bottom: 4px;
-        }
-        .config-field select, .config-field input {
-            width: 100%;
-            padding: 8px 10px;
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
-            font-size: 0.75rem;
-            font-family: 'Inter', monospace;
-            background: white;
-        }
-        .upload-area {
-            border: 2px dashed #cbd5e1;
-            border-radius: 14px;
-            padding: 16px;
-            text-align: center;
-            background: #fafcff;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-bottom: 14px;
-        }
-        .upload-area:hover { border-color: var(--primary); background: #fff7ed; }
-        .ciot-upload-area {
-            border: 2px dashed #38bdf8;
-            border-radius: 12px;
-            padding: 12px;
-            text-align: center;
-            background: #f0f9ff;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-bottom: 12px;
-        }
+        .drop:hover { border-color: var(--primary); background: #fff7ed; }
+        .drop-ic { font-size: 1.5rem; line-height: 1; flex: none; }
+        .drop-tx { min-width: 0; font-size: 0.76rem; line-height: 1.3; }
+        .drop-tx small { display: block; font-size: 0.62rem; color: #718096; margin-top: 1px; }
+        .ciot-upload-area { border-color: #38bdf8; background: #f0f9ff; }
         .ciot-upload-area:hover { border-color: var(--primary); background: #e0f2fe; }
-        .error-upload-area {
-            border: 2px dashed #dc2626;
-            border-radius: 12px;
-            padding: 12px;
-            text-align: center;
-            background: #fef2f2;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-bottom: 12px;
-        }
+        .error-upload-area { border-color: #dc2626; background: #fef2f2; }
+        .error-upload-area .drop-tx b { color: #dc2626; }
         .error-upload-area:hover { border-color: #991b1b; background: #fee2e2; }
-        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
-        button {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
-            border: none;
-            padding: 10px 18px;
-            border-radius: 40px;
-            font-weight: 600;
-            font-size: 0.8rem;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
+
+        /* campos de texto: o que sobrar de altura vai para a caixa grande */
+        .pane-in textarea {
+            flex: 1 1 auto; min-height: 3.2rem; width: 100%; resize: none;
+            padding: 8px 10px; border: 2px solid #e2e8f0; border-radius: 10px; background: #fff;
+            font-size: 0.76rem; line-height: 1.4; font-family: 'JetBrains Mono', ui-monospace, monospace;
         }
-        @media (max-width: 600px) { button { padding: 9px 14px; font-size: 0.75rem; flex: 1; justify-content: center; } }
-        button.secondary { background: #f1f5f9; color: #1e293b; }
+        .pane-erro .pane-in textarea { border-color: #fca5a5; background: #fff5f5; }
+        .pane-ciot .pane-in textarea { border-color: #bae6fd; }
+        .pane-in textarea:focus, .pane-in input[type=text]:focus { outline: none; border-color: var(--primary); }
+        .campo-bloco { flex: none; display: flex; flex-direction: column; gap: 3px; }
+        .campo-bloco label { font-size: 0.62rem; font-weight: 700; color: #475569; letter-spacing: .02em; }
+        .campo-rel { position: relative; }
+        .linha-input { display: flex; gap: 6px; align-items: stretch; }
+        .linha-input textarea, .linha-input input { flex: 1 1 auto; min-width: 0; }
+        .linha-input textarea { flex: 1 1 auto; min-height: 0; height: clamp(40px, 7vh, 56px); font-family: 'Inter', system-ui, sans-serif; font-size: 0.74rem; }
+        .linha-input input {
+            padding: 8px 10px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 0.74rem; font-family: 'Inter', system-ui, sans-serif; background: #fff;
+        }
+        .linha-input button { flex: none; white-space: nowrap; padding: 6px 14px; }
+        .acoes { flex: none; display: flex; gap: 8px; align-items: stretch; }
+        .acoes button { padding: 9px 16px; border-radius: 999px; }
+        .acoes .primario { flex: 1 1 auto; justify-content: center; }
+        .acoes .secondary { flex: none; }
+
+        /* estado "aguarde": o botão some e este aviso ocupa o lugar dele */
+        .aguarde {
+            flex: 1 1 auto; display: flex; align-items: center; justify-content: center; gap: 10px;
+            padding: 11px 18px; border-radius: 14px; background: #fee2e2; border: 2px solid #fca5a5; color: #991b1b;
+            font-size: 0.92rem; font-weight: 700; text-align: center;
+        }
+        .aguarde[hidden], .acoes button[hidden] { display: none; }
+        .aguarde .loading-spinner { width: 18px; height: 18px; border-width: 3px; border-color: rgba(153,27,27,0.25); border-top-color: #991b1b; flex: none; }
+        .is-analisando .acoes .secondary { opacity: .5; pointer-events: none; }
+        #btnAnalisarErro { padding: clamp(9px, 1.6vh, 15px) 18px; font-size: clamp(.86rem, 1.5vh + .3rem, 1.02rem); font-weight: 700; letter-spacing: .3px; border-radius: 14px; animation: pulse-red 2s infinite; }
+
+        /* ───────── botões ───────── */
+        button {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; border: none;
+            padding: 8px 16px; border-radius: 40px; font-weight: 600; font-size: 0.78rem; font-family: inherit; cursor: pointer;
+            display: inline-flex; align-items: center; gap: 6px;
+        }
+        button:disabled { opacity: .6; cursor: not-allowed; }
+        button.secondary { background: #e2e8f0; color: #1e293b; }
         button.success { background: linear-gradient(135deg, #10b981, #059669); }
         button.error-btn { background: linear-gradient(135deg, #dc2626, #991b1b); }
-        .input-group {
-            margin-bottom: 16px;
-            width: 100%;
+        .btn-validar-rota {
+            background: linear-gradient(135deg, #10b981, #059669); padding: 9px 16px; font-size: 0.82rem; font-weight: 700;
+            width: 100%; justify-content: center; margin-bottom: 8px; animation: pulse-green 2s infinite;
         }
-        .input-group label {
-            font-size: 0.7rem;
-            font-weight: 600;
-            color: #475569;
-            margin-bottom: 6px;
-            display: block;
-        }
-        .input-group input, .input-group textarea {
-            width: 100%;
-            padding: 12px 14px;
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            font-size: 0.85rem;
-            font-family: 'Inter', monospace;
-            background: white;
-            transition: all 0.2s;
-        }
-        .input-group textarea { resize: vertical; min-height: 80px; }
-        .participantes-lista { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
-        .participante-card {
-            background: #f8fafc;
-            border-radius: 14px;
-            border: 1px solid #e2e8f0;
-            overflow: hidden;
-        }
-        .participante-card.expedidor { background: var(--expedidor-bg); border-color: var(--expedidor-border); }
-        .participante-card.recebedor { background: var(--recebedor-bg); border-color: var(--recebedor-border); }
-        .participante-header {
-            padding: 12px 14px;
-            background: linear-gradient(135deg, #f1f5f9, #ffffff);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        .participante-header.expedidor { background: linear-gradient(135deg, #e0f2fe, #bae6fd); }
-        .participante-header.recebedor { background: linear-gradient(135deg, #dcfce7, #bbf7d0); }
-        .participante-titulo { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-        .participante-nome { font-weight: 600; font-size: 0.8rem; max-width: 200px; word-break: break-word; }
-        .participante-documento { font-size: 0.6rem; font-family: monospace; background: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 10px; }
-        .participante-tipo {
-            font-size: 0.6rem;
-            padding: 3px 8px;
-            border-radius: 20px;
-            background: #e2e8f0;
-        }
-        .participante-tipo.origem { background: #0284c7; color: white; }
-        .participante-tipo.destino { background: #16a34a; color: white; }
-        .participante-status { font-size: 0.65rem; white-space: nowrap; }
-        .participante-body { padding: 12px; border-top: 1px solid #e2e8f0; }
-        .info-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin: 6px 0;
-            font-size: 0.7rem;
-            flex-wrap: wrap;
-        }
-        .info-label { font-weight: 600; color: #475569; min-width: 45px; }
-        .info-value { color: #1e293b; word-break: break-word; flex: 1; }
-        .endereco-texto {
-            background: #fef9c3;
-            padding: 10px;
-            border-radius: 12px;
-            font-size: 0.7rem;
-            margin: 10px 0;
-            word-break: break-all;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        .resultado-item {
-            background: #f0fdf4;
-            border-radius: 12px;
-            padding: 12px;
-            margin-top: 10px;
-            border-left: 3px solid #10b981;
-        }
-        .coordenada-destaque {
-            font-family: monospace;
-            background: #1e293b;
-            color: var(--primary);
-            padding: 6px 10px;
-            border-radius: 8px;
-            font-size: 0.7rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 6px;
-        }
-        .frete-card {
-            background: linear-gradient(135deg, #1e3a5f, #1e293b);
-            color: white;
-            padding: 14px;
-            border-radius: 14px;
-            margin: 12px 0;
-            text-align: center;
-        }
-        .frete-valor { font-size: 1.6rem; font-weight: 800; color: var(--primary); }
-        .detalhe-row { display: flex; justify-content: space-between; font-size: 0.7rem; margin: 6px 0; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .btn-validar-rota:hover { box-shadow: 0 6px 18px rgba(16,185,129,0.4); }
         .btn-copiar { background: #3b82f6; padding: 4px 10px; font-size: 0.6rem; border-radius: 20px; }
         .btn-copiar-endereco { background: #8b5cf6; padding: 4px 10px; font-size: 0.6rem; border-radius: 20px; }
-        .distancia-card {
-            background: linear-gradient(135deg, #1e3a5f, #1e293b);
-            color: white;
-            padding: 14px;
-            border-radius: 14px;
-            margin: 12px 0;
-            text-align: center;
-        }
-        .distancia-valor { font-size: 1.6rem; font-weight: 800; color: var(--primary); }
-        .rota-planejada {
-            background: linear-gradient(135deg, #065f46, #047857);
-            padding: 14px;
-            border-radius: 14px;
-            margin: 12px 0;
-            text-align: center;
-            border: 1px solid #34d399;
-        }
-        .viagem-item {
-            background: white;
-            border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 8px;
-            border-left: 4px solid var(--primary);
-        }
-        .history-list { max-height: 250px; overflow-y: auto; margin-top: 16px; }
-        .history-item {
-            background: #f8fafc;
-            border-radius: 10px;
-            padding: 8px 12px;
-            margin-bottom: 6px;
-            cursor: pointer;
-            border: 1px solid #e2e8f0;
-        }
-        .loading-spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: white; animation: spin 0.8s linear infinite; }
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(220,38,38,0.5); } 70% { box-shadow: 0 0 0 10px rgba(220,38,38,0); } 100% { box-shadow: 0 0 0 0 rgba(220,38,38,0); } }
+        @keyframes pulse-green { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.4); } 70% { box-shadow: 0 0 0 8px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.01); background: #fee2e2; } 100% { transform: scale(1); } }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .toast-stack {
-            position: fixed;
-            top: 16px;
-            right: 16px;
-            z-index: 2000;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            max-width: 340px;
-            pointer-events: none;
-        }
-        .toast {
-            background: white;
-            border-radius: 16px;
-            padding: 14px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            border-left: 4px solid var(--primary);
-            pointer-events: auto;
-            animation: slideIn 0.3s ease;
-        }
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        .toast-message { font-size: 0.7rem; color: #475569; margin-bottom: 12px; }
-        .toast-btn {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            padding: 5px 12px;
-            font-size: 0.65rem;
-            border-radius: 20px;
-        }
-        .correction-card {
-            background: #f0fdf4;
-            border: 1px solid #86efac;
-            border-radius: 12px;
-            padding: 16px;
-            margin-top: 16px;
-        }
-        footer { text-align: center; margin-top: 10px; color: rgba(255,255,255,0.5); font-size: 0.6rem; }
-        .file-preview { background: #f1f5f9; padding: 6px 10px; border-radius: 10px; margin-bottom: 10px; font-size: 0.65rem; display: none; }
-        .sugestoes { background: white; border: 1px solid #e2e8f0; border-radius: 12px; max-height: 140px; overflow-y: auto; margin-top: 6px; display: none; }
+        .loading-spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: white; animation: spin 0.8s linear infinite; }
+
+        /* ───────── avisos e blocos de resultado (compactos) ───────── */
+        .status-badge { display: inline-flex; align-items: center; gap: 5px; background: #e2e8f0; padding: 3px 10px; border-radius: 30px; font-size: 0.65rem; }
+        .alert-info { background: #dbeafe; border-left: 4px solid #2563eb; padding: 8px 10px; border-radius: 10px; margin-bottom: 8px; font-size: 0.68rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .alert-warning { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 8px 10px; border-radius: 10px; margin-bottom: 8px; font-size: 0.68rem; }
+        .alert-error { background: var(--error-bg); border-left: 4px solid var(--error-border); padding: 10px 12px; border-radius: 10px; margin-bottom: 8px; font-size: 0.72rem; color: #991b1b; }
+        .alert-success { background: var(--success-bg); border-left: 4px solid var(--success-border); padding: 10px 12px; border-radius: 10px; margin-bottom: 8px; font-size: 0.72rem; color: #166534; }
+        .alert-danger { background: var(--alert-danger-bg); border-left: 4px solid var(--alert-danger); padding: 10px 12px; border-radius: 10px; margin-bottom: 8px; font-size: 0.78rem; font-weight: 600; color: var(--alert-danger); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; animation: pulse 0.5s ease-in-out; }
+        .alert-danger-icon { font-size: 22px; }
+        .alert-danger-text { flex: 1; }
+        .alert-danger-text strong { font-size: 0.85rem; }
+        .config-section { background: #f1f5f9; padding: 12px; border-radius: 12px; margin-bottom: 12px; border: 1px solid #e2e8f0; }
+        .config-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+        .config-field { flex: 1; min-width: 120px; }
+        .config-field label { font-size: 0.65rem; font-weight: 600; color: #475569; display: block; margin-bottom: 4px; }
+        .config-field select, .config-field input { width: 100%; padding: 8px 10px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 0.75rem; font-family: 'Inter', monospace; background: white; }
+
+        .participantes-lista { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+        .participante-card { background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; }
+        .participante-header { padding: 7px 10px; background: linear-gradient(135deg, #f1f5f9, #ffffff); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; }
+        .participante-titulo { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-width: 0; }
+        .participante-nome { font-weight: 600; font-size: 0.76rem; max-width: 220px; word-break: break-word; }
+        .participante-tipo { font-size: 0.6rem; padding: 3px 8px; border-radius: 20px; background: #e2e8f0; }
+        .participante-status { font-size: 0.65rem; white-space: nowrap; }
+        .participante-body { padding: 8px 10px; border-top: 1px solid #e2e8f0; }
+        .info-row { display: flex; align-items: center; gap: 8px; margin: 4px 0 8px; font-size: 0.68rem; flex-wrap: wrap; }
+        .info-label { font-weight: 600; color: #475569; min-width: 45px; }
+        .info-value { color: #1e293b; word-break: break-word; flex: 1; }
+        .resultado-item { background: #f0fdf4; border-radius: 10px; padding: 8px 10px; margin-top: 6px; border-left: 3px solid #10b981; font-size: 0.72rem; }
+        .coordenada-destaque { font-family: monospace; background: #1e293b; color: var(--primary); padding: 5px 9px; border-radius: 8px; font-size: 0.7rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin: 5px 0; }
+        .frete-card, .distancia-card { background: linear-gradient(135deg, #1e3a5f, #1e293b); color: white; padding: 10px 12px; border-radius: 12px; margin: 6px 0; text-align: center; font-size: 0.68rem; }
+        .frete-valor, .distancia-valor { font-size: 1.35rem; font-weight: 800; color: var(--primary); }
+        .rota-planejada { background: linear-gradient(135deg, #065f46, #047857); color: #fff; padding: 10px 12px; border-radius: 12px; margin: 0 0 8px; text-align: center; border: 1px solid #34d399; }
+        .viagem-item { background: white; border-radius: 10px; padding: 8px 10px; margin-bottom: 8px; border-left: 4px solid var(--primary); font-size: 0.72rem; }
+        .v-topo { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .v-aviso { background: #fef3c7; padding: 6px 8px; border-radius: 8px; margin: 6px 0; font-size: 0.68rem; }
+        .v-pontos { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 6px 0; }
+        .v-ponto { padding: 7px 9px; border-radius: 8px; font-size: 0.68rem; }
+        .v-ponto.origem { background: #f0f9ff; }
+        .v-ponto.destino { background: #dcfce7; }
+        .v-ponto button { margin-top: 5px; padding: 3px 10px; font-size: 0.62rem; }
+        .v-rodape { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+        .v-rodape button { padding: 5px 12px; font-size: 0.68rem; background: #10b981; }
+        @container painel (max-width: 520px) { .v-pontos { grid-template-columns: 1fr; } }
+        .coord-item-small { font-size: 0.65rem; font-family: monospace; background: #f1f5f9; padding: 3px 8px; border-radius: 6px; margin-top: 4px; }
+        .history-list { max-height: 160px; overflow-y: auto; margin-top: 10px; }
+        .history-item { background: #f8fafc; border-radius: 10px; padding: 7px 10px; margin-bottom: 6px; cursor: pointer; border: 1px solid #e2e8f0; font-size: 0.7rem; }
+        .file-preview { background: #f1f5f9; padding: 5px 10px; border-radius: 10px; font-size: 0.65rem; display: none; flex: none; }
+        .sugestoes { position: absolute; left: 0; right: 0; bottom: 100%; z-index: 30; background: white; border: 1px solid #e2e8f0; border-radius: 12px; max-height: 140px; overflow-y: auto; margin-bottom: 4px; display: none; box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
         .sugestao-item { padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #f1f5f9; font-size: 0.7rem; }
-        .separator-text {
-            text-align: center;
-            margin: 16px 0;
-            position: relative;
-        }
-        .separator-text span {
-            background: white;
-            padding: 0 12px;
-            color: #94a3b8;
-            font-size: 0.7rem;
-            font-weight: 600;
-        }
-        .separator-text::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: #e2e8f0;
-            z-index: 0;
-        }
-        .separator-text span {
-            position: relative;
-            z-index: 1;
-        }
-        .progress-bar-container {
-            background: #e2e8f0;
-            border-radius: 20px;
-            overflow: hidden;
-            margin: 10px 0;
-            display: none;
-        }
-        .progress-bar {
-            background: linear-gradient(135deg, #10b981, #059669);
-            width: 0%;
-            height: 4px;
-            transition: width 0.3s ease;
-        }
-        .coord-item-small {
-            font-size: 0.65rem;
-            font-family: monospace;
-            background: #f1f5f9;
-            padding: 4px 8px;
-            border-radius: 6px;
-            margin-top: 4px;
-        }
-        .ai-analysis-badge {
-            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-            color: white;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.6rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
+        .sugestao-item:hover { background: #fff7ed; }
+        .progress-bar-container { flex: none; background: #e2e8f0; border-radius: 20px; overflow: hidden; display: none; }
+        .progress-bar { background: linear-gradient(135deg, #10b981, #059669); width: 0%; height: 4px; transition: width 0.3s ease; }
+        #uploadedFilesList { flex: none; max-height: 24%; overflow-y: auto; }
+        #uploadedFilesList:empty { display: none; }
+        .arq-item { display: flex; justify-content: space-between; align-items: center; gap: 8px; background: #fee2e2; padding: 4px 10px; border-radius: 8px; margin-bottom: 4px; font-size: 0.72rem; }
+        .arq-item span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .arq-item button { padding: 1px 8px; font-size: 0.62rem; }
+        .correction-card { background: #f0fdf4; border: 1px solid #86efac; border-radius: 10px; padding: 8px; margin-top: 6px; }
+        .correction-card:empty { display: none; }
+        #analiseCorrecaoContainer { position: sticky; bottom: 0; z-index: 2; }   /* o "Copiar análise" fica sempre à vista, mesmo com a resposta longa rolando */
         .ia-response {
-            background: #1e1e2e;
-            color: #e2e8f0;
-            padding: 16px;
-            border-radius: 12px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.75rem;
-            line-height: 1.5;
-            white-space: pre-wrap;
-            word-break: break-word;
-            max-height: 400px;
-            overflow-y: auto;
+            background: #1e1e2e; color: #e2e8f0; padding: 12px; border-radius: 10px; font-family: 'JetBrains Mono', monospace;
+            font-size: 0.74rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word;
         }
+        .ia-caixa { background: #1e1e2e; border-left: 4px solid #8b5cf6; padding: 10px; border-radius: 10px; margin-bottom: 8px; }
+        .ia-caixa-titulo { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: #fff; font-size: 0.8rem; }
+
+        /* ───────── coluna lateral (distância / frete) ───────── */
+        .card-side .card-body { padding: 8px; gap: 6px; }
+        .side-titulo { font-size: 0.62rem; font-weight: 700; color: #64748b; letter-spacing: .04em; text-transform: uppercase; }
+        .card-side .frete-card { margin: 0; }
+        .card-side .btn-limpar-hist { width: 100%; justify-content: center; padding: 6px 12px; font-size: 0.7rem; }
+
+        /* ───────── janelas pequenas ───────── */
+        @container app (max-width: 900px) {
+            .logo .by { display: none; }
+            .tl-longo { display: none; }
+            .tl-curto { display: inline; }
+        }
+        @container app (max-width: 700px) {
+            .logo h1 { display: none; }
+            .logo { padding: 4px 9px; }
+            .main-grid { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
+            .card-side .card-body { flex-direction: row; align-items: center; padding: 6px 8px; overflow: hidden; gap: 8px; }
+            .side-titulo, .card-side .config-section { display: none; }
+            #distanciaInfo { flex: 1 1 auto; min-width: 0; }
+            .card-side .frete-card { display: flex; align-items: baseline; justify-content: flex-start; gap: 8px; text-align: left; padding: 4px 10px; flex-wrap: wrap; }
+            .card-side .frete-valor { font-size: 1rem; }
+            .card-side .btn-limpar-hist { width: auto; flex: none; white-space: nowrap; }
+        }
+        @container app (max-width: 420px) { .tabs { flex-wrap: wrap; overflow: visible; } }
+        @media (max-height: 640px) { .pane-dica { display: none; } footer { display: none; } }
+        @media (max-height: 520px) { .logo .by { display: none; } .pane-in { gap: 4px; } .acoes button { padding: 7px 14px; } .drop-tx small { display: none; } }
+        .embed footer { display: none; }
+        footer { flex: none; text-align: center; color: rgba(255,255,255,0.5); font-size: 0.6rem; }
+
+        /* janela BAIXA (altura do painel): some o que é só explicação, para os campos e botões continuarem todos à vista.
+           Fica no FIM da folha de estilos de propósito: precisa vencer as regras base de mesma força que vêm antes. */
+        @container painel (max-height: 360px) {
+            .pane-head, .pane-dica, .drop-tx small { display: none; }
+            .pane-in { gap: 4px; padding: 5px 8px; }
+            .drop { padding: 5px 10px; }
+            .drop-ic { font-size: 1.15rem; }
+            #uploadedFilesList { max-height: 3.4rem; }
+            .pane-in textarea { min-height: 2.4rem; }
+            .linha-input textarea { height: 2.6rem; }
+            .acoes button { padding: 6px 14px; }
+            #btnAnalisarErro { padding: 8px 16px; }
+            .aguarde { padding: 7px 14px; }
+        }
+        @container painel (max-height: 250px) {
+            .campo-bloco label { display: none; }
+            .pane-in textarea { min-height: 1.8rem; }
+        }
+
+        /* ───────── avisos rápidos (toast) ───────── */
+        .toast-stack { position: fixed; top: 12px; right: 12px; z-index: 2000; display: flex; flex-direction: column; gap: 8px; max-width: 320px; pointer-events: none; }
+        .toast { background: white; border-radius: 14px; padding: 10px 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); border-left: 4px solid var(--primary); pointer-events: auto; animation: slideIn 0.3s ease; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .toast-message { font-size: 0.7rem; color: #475569; margin-bottom: 8px; }
+        .toast-btn { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); padding: 4px 12px; font-size: 0.65rem; border-radius: 20px; }
+        @media (prefers-reduced-motion: reduce) { * { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
     </style>
 </head>
 <body>
-<div class="container">
-    <div class="header" style="position:relative;">
-        <div class="logo">
+<div class="app">
+    <header class="topbar">
+        <div class="logo" title="Geolocalizador de NF-e/CT-e + Validador CIOT + Analisador de Erros com IA">
             <span class="logo-icon">🚛</span>
-            <h1>Geo<span>Localiza Frete - By Lucas Camargo</span></h1>
+            <h1>Geo<span>Localiza Frete</span></h1>
+            <span class="by">By Lucas Camargo</span>
         </div>
-        <div class="sub">Geolocalizador de NF-e/CT-e + Validador CIOT + Analisador de Erros com IA 100% Livre</div>
-        <button id="btnSettingsTop" onclick="abrirSettings()" title="Configurações da IA"
-            style="position:absolute;top:0;right:0;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;border-radius:50%;width:38px;height:38px;font-size:1.1rem;cursor:pointer;backdrop-filter:blur(10px);transition:background .2s;"
-            onmouseover="this.style.background='rgba(255,255,255,0.28)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">⚙️</button>
-    </div>
+        <nav class="tabs" role="tablist" aria-label="Ferramentas">
+            <button class="tab-btn" data-tab="tab-xml" role="tab"><span class="tl-curto">📄 XML</span><span class="tl-longo">📄 XML (NF-e/CT-e)</span></button>
+            <button class="tab-btn" data-tab="tab-ciot" role="tab"><span class="tl-curto">🚛 CIOT</span><span class="tl-longo">🚛 Validador Distância CIOT</span></button>
+            <button class="tab-btn active" data-tab="tab-error" role="tab"><span class="tl-curto">🤖 Erros IA</span><span class="tl-longo">🤖 Analisador de Erros (IA Livre)</span></button>
+        </nav>
+        <button id="btnSettingsTop" class="btn-gear" onclick="abrirSettings()" title="Configurações da IA" aria-label="Configurações da IA">⚙️</button>
+    </header>
 
-    <div class="main-grid">
-        <div class="card">
-            <div class="card-header">
-                <h2>📂 1. Documento XML / Log</h2>
-            </div>
+    <main class="main-grid">
+        <section class="card card-main">
             <div class="card-body">
-                <div class="tabs">
-                    <button class="tab-btn" data-tab="tab-xml">📄 XML (NF-e/CT-e)</button>
-                    <button class="tab-btn" data-tab="tab-ciot">🚛 Validador Distância CIOT</button>
-                    <button class="tab-btn active" data-tab="tab-error">🤖 Analisador de Erros (IA Livre)</button>
-                </div>
 
                 <!-- ABA XML -->
                 <div id="tab-xml" class="tab-content">
-                    <div class="upload-area" id="uploadArea">
-                        <div class="upload-icon">📄</div>
-                        <div>Clique ou arraste o XML (NF-e | CT-e)</div>
-                        <input type="file" id="fileInput" accept=".xml" style="display: none;">
-                    </div>
-                    <div id="filePreview" class="file-preview"></div>
-                    <div id="alertContainer"></div>
-                    <div id="duplicateAlertContainer"></div>
-                    <button id="btnValidarRota" class="btn-validar-rota" style="display: none;">🗺️ Validar rota no Google Maps</button>
-                    <div id="participantesContainer" style="display: none;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
-                            <span class="status-badge" id="qtdeParticipantes"></span>
-                            <button id="geolocalizarTodosBtn" class="success" style="padding:6px 14px;">🚛 Geolocalizar Todos</button>
+                    <div class="pane pane-xml">
+                        <div class="pane-in">
+                            <div class="drop" id="uploadArea">
+                                <span class="drop-ic">📄</span>
+                                <div class="drop-tx"><b>Clique ou arraste o XML (NF-e | CT-e)</b><small>Lê expedidor/recebedor (ou remetente/destinatário) e geolocaliza</small></div>
+                                <input type="file" id="fileInput" accept=".xml" style="display: none;">
+                            </div>
+                            <div id="filePreview" class="file-preview"></div>
+                            <div class="campo-bloco">
+                                <label for="manualEndereco">✏️ DIGITAR ENDEREÇO MANUALMENTE</label>
+                                <div class="linha-input">
+                                    <textarea id="manualEndereco" rows="2" placeholder="Ex: Av. Paulista, 1000 - Bela Vista, São Paulo - SP, 01310-100"></textarea>
+                                    <button id="btnGeolocalizarManual" class="success">📍 Geolocalizar</button>
+                                </div>
+                            </div>
+                            <div class="campo-bloco campo-rel">
+                                <label for="buscaEmpresa">🏢 BUSCAR POR NOME DA EMPRESA</label>
+                                <div class="linha-input">
+                                    <input type="text" id="buscaEmpresa" placeholder="Ex: Magazine Luiza São Paulo, Petrobras Rio de Janeiro">
+                                    <button id="btnBuscarEmpresa">🔍 Buscar</button>
+                                </div>
+                                <div id="sugestoesEmpresa" class="sugestoes"></div>
+                            </div>
                         </div>
-                        <div id="participantesLista" class="participantes-lista"></div>
+                        <div class="pane-out">
+                            <button type="button" class="btn-voltar secondary" data-voltar title="Voltar para a entrada (arquivos, texto e botões)">&larr; Voltar</button>
+                            <div class="out-vazio">📍 Os participantes do XML, as coordenadas e a rota aparecem aqui.</div>
+                            <div id="alertContainer"></div>
+                            <div id="duplicateAlertContainer"></div>
+                            <button id="btnValidarRota" class="btn-validar-rota" style="display: none;">🗺️ Validar rota no Google Maps</button>
+                            <div id="participantesContainer" style="display: none;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                                    <span class="status-badge" id="qtdeParticipantes"></span>
+                                    <button id="geolocalizarTodosBtn" class="success" style="padding:5px 14px;">🚛 Geolocalizar Todos</button>
+                                </div>
+                                <div id="participantesLista" class="participantes-lista"></div>
+                            </div>
+                            <div id="resultAreaManual"></div>
+                        </div>
                     </div>
-                    <div class="separator-text"><span>ou</span></div>
-                    <div class="input-group">
-                        <label>✏️ DIGITAR ENDEREÇO MANUALMENTE</label>
-                        <textarea id="manualEndereco" rows="2" placeholder="Ex: Av. Paulista, 1000 - Bela Vista, São Paulo - SP, 01310-100"></textarea>
-                        <button id="btnGeolocalizarManual" class="success" style="margin-top:8px; width:100%;">📍 Geolocalizar Endereço</button>
-                    </div>
-                    <div class="input-group">
-                        <label>🏢 BUSCAR POR NOME DA EMPRESA</label>
-                        <input type="text" id="buscaEmpresa" placeholder="Ex: Magazine Luiza São Paulo, Petrobras Rio de Janeiro">
-                        <button id="btnBuscarEmpresa" style="margin-top:8px; width:100%;">🔍 Buscar no Mapa</button>
-                        <div id="sugestoesEmpresa" class="sugestoes"></div>
-                    </div>
-                    <div id="resultAreaManual"></div>
                 </div>
 
                 <!-- ABA CIOT (COMPLETO) -->
                 <div id="tab-ciot" class="tab-content">
-                    <div class="ciot-card" style="background: var(--ciot-bg); border: 1px solid var(--ciot-border); border-radius: 14px; padding: 16px; margin-bottom: 16px;">
-                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-                            <span style="font-size: 20px;">🚛</span>
-                            <strong>Validador Distância - Request Contrato de Frete</strong>
+                    <div class="pane pane-ciot">
+                        <div class="pane-in">
+                            <div class="pane-head">
+                                <span class="ph-ic">🚛</span>
+                                <strong>Validador Distância — Request Contrato de Frete</strong>
+                                <button type="button" class="info-btn" title="Tags que o validador procura em cada viagem:&#10;• LatitudeOrigem / LongitudeOrigem / LatitudeDestino / LongitudeDestino (Terceiros)&#10;• CepOrigem / CepDestino (Frota Própria)&#10;• CodigoMunicipioOrigem / CodigoMunicipioDestino (Frota Própria)&#10;Funciona com os prefixos OPT: ou adic:." aria-label="Quais tags o validador procura">ℹ️</button>
+                            </div>
+                            <p class="pane-dica">
+                                Suporta <strong>Terceiros</strong> (Latitude/Longitude) e <strong>Frota Própria</strong> (CEPs e Municípios). Anexe ou cole o request (XML/LOG): calculo a <strong>rota rodoviária via API Rota Brasil</strong> de cada CT-e e destaco a rota planejada e o ponto mais distante.
+                            </p>
+                            <div class="progress-bar-container" id="ciotProgressContainer">
+                                <div class="progress-bar" id="ciotProgressBar"></div>
+                            </div>
+                            <div class="drop ciot-upload-area" id="ciotUploadArea">
+                                <span class="drop-ic">📁</span>
+                                <div class="drop-tx"><b>Clique ou arraste o arquivo (XML/LOG/TXT)</b><small>Aceita .xml, .log, .txt com o request</small></div>
+                                <input type="file" id="ciotFileInput" accept=".xml,.log,.txt" style="display: none;">
+                            </div>
+                            <div id="ciotFilePreview" class="file-preview" style="display: none;"></div>
+                            <textarea id="ciotXmlInput" placeholder="Ou cole aqui o conteúdo do request (XML/LOG) com as tags de latitude/longitude, de CEP ou de código do município (passe o mouse no ℹ️ para ver quais)."></textarea>
+                            <div class="acoes">
+                                <button id="btnProcessarCiot" class="success primario">🔍 Processar e Validar Rotas</button>
+                                <button id="btnLimparCiot" class="secondary">🗑️ Limpar</button>
+                            </div>
                         </div>
-                        <p style="font-size: 0.7rem; color: #475569; margin-bottom: 12px;">
-                            Suporta <strong>Terceiros</strong> (com campos Latitude/Longitude) e <strong>Frota Própria</strong> (apenas CEPs e Municípios).
-                            Cole o conteúdo do Request (XML/LOG) ou anexe o arquivo. O sistema irá extrair todas as coordenadas de cada CT-e, calcular a <strong>rota rodoviária via API Rota Brasil</strong>, identificar a rota otimizada e os pontos mais distantes.
-                        </p>
-                        
-                        <div class="progress-bar-container" id="ciotProgressContainer">
-                            <div class="progress-bar" id="ciotProgressBar"></div>
-                        </div>
-                        
-                        <div class="ciot-upload-area" id="ciotUploadArea">
-                            <div class="upload-icon">📁</div>
-                            <div>Clique ou arraste o arquivo (XML/LOG/TXT)</div>
-                            <div style="font-size: 0.6rem;">Aceita arquivos .xml, .log, .txt com o request</div>
-                            <input type="file" id="ciotFileInput" accept=".xml,.log,.txt" style="display: none;">
-                        </div>
-                        <div id="ciotFilePreview" class="file-preview" style="display: none;"></div>
-                        
-                        <textarea id="ciotXmlInput" rows="6" placeholder="Ou cole aqui o conteúdo do request (XML/LOG) que contém as tags:&#10;&lt;OPT:LatitudeOrigem&gt;...&lt;/OPT:LatitudeOrigem&gt;&#10;&lt;OPT:LongitudeOrigem&gt;...&lt;/OPT:LongitudeOrigem&gt;&#10;&lt;OPT:LatitudeDestino&gt;...&lt;/OPT:LatitudeDestino&gt;&#10;&lt;OPT:LongitudeDestino&gt;...&lt;/OPT:LongitudeDestino&gt;&#10;OU &lt;OPT:CepOrigem&gt; e &lt;OPT:CepDestino&gt;&#10;OU &lt;OPT:CodigoMunicipioOrigem&gt; e &lt;OPT:CodigoMunicipioDestino&gt;"></textarea>
-                        
-                        <div class="btn-group" style="margin-top: 12px;">
-                            <button id="btnProcessarCiot" class="success" style="flex:1;">🔍 Processar e Validar Rotas</button>
-                            <button id="btnLimparCiot" class="secondary" style="flex:1;">🗑️ Limpar</button>
-                        </div>
-                    </div>
+                        <div class="pane-out">
+                            <button type="button" class="btn-voltar secondary" data-voltar title="Voltar para a entrada (arquivos, texto e botões)">&larr; Voltar</button>
+                            <div class="out-vazio">🚛 A rota planejada, a maior distância e a lista de CT-e aparecem aqui.</div>
+                            <div id="ciotResultadoContainer" style="display: none;">
+                                <div id="ciotAlertContainer"></div>
+                                <div id="ciotRotaPlanejada" class="rota-planejada">
+                                    <div style="font-size:0.7rem; opacity:0.9;">🚛 ROTA PLANEJADA DO TRANSPORTADOR</div>
+                                    <div style="font-size:0.62rem; margin-top: 2px;">(Origem mais próxima + Destino mais longo - KM Rodoviário)</div>
+                                    <div class="distancia-valor" id="ciotDistanciaTotal" style="font-size:1.25rem;">--- KM</div>
+                                    <div id="ciotDetalheRota" style="font-size:0.6rem; margin-top: 4px;"></div>
+                                    <div id="ciotFonteRota" style="font-size:0.55rem; opacity:0.8; margin-top: 2px;"></div>
+                                </div>
 
-                    <div id="ciotResultadoContainer" style="display: none;">
-                        <div id="ciotAlertContainer"></div>
-                        <div id="ciotRotaPlanejada" class="rota-planejada">
-                            <div style="font-size:0.7rem; opacity:0.9;">🚛 ROTA PLANEJADA DO TRANSPORTADOR</div>
-                            <div style="font-size:0.65rem; margin-top: 4px;">(Origem mais próxima + Destino mais longo - KM Rodoviário)</div>
-                            <div class="distancia-valor" id="ciotDistanciaTotal" style="font-size:1.3rem;">--- KM</div>
-                            <div id="ciotDetalheRota" style="font-size:0.6rem; margin-top: 6px;"></div>
-                            <div id="ciotFonteRota" style="font-size:0.55rem; opacity:0.8; margin-top: 4px;"></div>
+                                <div id="ciotDistanciaCard" class="distancia-card" style="margin-top: 0;">
+                                    <div style="font-size:0.7rem;">📏 MAIOR DISTÂNCIA INDIVIDUAL (CT-e)</div>
+                                    <div class="distancia-valor" id="ciotMaiorDistanciaValor">--- KM</div>
+                                    <div id="ciotMaiorDistanciaInfo" style="font-size:0.6rem;"></div>
+                                </div>
+
+                                <button id="btnValidarRotaCiot" class="btn-validar-rota" style="display: none; margin-top: 8px;">
+                                    🗺️ Ver rota MAIS DISTANTE no Google Maps
+                                </button>
+
+                                <div id="ciotListaViagens" style="margin-top: 8px;"></div>
+                            </div>
                         </div>
-                        
-                        <div id="ciotDistanciaCard" class="distancia-card" style="margin-top: 8px;">
-                            <div style="font-size:0.7rem;">📏 MAIOR DISTÂNCIA INDIVIDUAL (CT-e)</div>
-                            <div class="distancia-valor" id="ciotMaiorDistanciaValor">--- KM</div>
-                            <div id="ciotMaiorDistanciaInfo" style="font-size:0.6rem;"></div>
-                        </div>
-                        
-                        <button id="btnValidarRotaCiot" class="btn-validar-rota" style="display: none; margin-bottom: 16px;">
-                            🗺️ Ver rota MAIS DISTANTE no Google Maps
-                        </button>
-                        
-                        <div id="ciotListaViagens"></div>
                     </div>
                 </div>
 
                 <!-- ABA ANALISADOR DE ERROS 100% LIVRE -->
                 <div id="tab-error" class="tab-content active">
-                    <div style="background: #fef2f2; border: 1px solid #dc2626; border-radius: 14px; padding: 16px; margin-bottom: 16px;">
-                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;">
-                            <span style="font-size: 20px;">🤖</span>
-                            <strong>Analisador de Erros — Integração IPEF × Bsoft TMS</strong>
-                            <span class="ai-analysis-badge">🧠 IA Livre</span>
+                    <div class="pane pane-erro">
+                        <div class="pane-in" id="analiseEntrada">
+                            <div class="pane-head">
+                                <span class="ph-ic">🤖</span>
+                                <strong>Analisador de Erros — Integração IPEF × Bsoft TMS</strong>
+                                <span class="ai-analysis-badge">🧠 IA Livre</span>
+                            </div>
+                            <p class="pane-dica">
+                                Arraste ou selecione os arquivos <strong>REQUEST</strong> e/ou <strong>RESPONSE</strong> da integração IPEF (vários de uma vez). A IA analisa livremente como um especialista.
+                            </p>
+
+                            <div id="multiFileDropZone" class="drop error-upload-area">
+                                <span class="drop-ic">📂</span>
+                                <div class="drop-tx"><b>Arraste os arquivos aqui ou clique para selecionar</b><small>REQUEST, RESPONSE ou ambos — aceita vários (.log, .xml, .txt)</small></div>
+                                <input type="file" id="multiFileInput" accept=".log,.txt,.xml" multiple style="display: none;">
+                            </div>
+
+                            <div id="uploadedFilesList"></div>
+
+                            <textarea id="combinedContentInput" placeholder="Ou cole o conteúdo aqui (REQUEST, RESPONSE ou ambos juntos)..."></textarea>
+
+                            <div class="acoes">
+                                <button id="btnAnalisarErro" class="error-btn primario">🤖 Analisar com IA</button>
+                                <div id="analisandoAviso" class="aguarde" role="status" aria-live="polite" hidden><span class="loading-spinner" aria-hidden="true"></span><span>Aguarde, verificando arquivos…</span></div>
+                                <button id="btnLimparErro" class="secondary">🗑️ Limpar</button>
+                            </div>
                         </div>
-                        <p style="font-size: 0.7rem; color: #475569; margin-bottom: 16px;">
-                            Arraste ou selecione os arquivos <strong>REQUEST</strong> e/ou <strong>RESPONSE</strong> da integração IPEF. Pode enviar múltiplos arquivos de uma vez. A IA analisa livremente como um especialista.
-                        </p>
-
-                        <div id="multiFileDropZone" class="error-upload-area" style="padding: 24px; margin-bottom: 8px;">
-                            <div style="font-size: 32px; margin-bottom: 8px;">📂</div>
-                            <div style="font-weight: 600; color: #dc2626;">Arraste os arquivos aqui ou clique para selecionar</div>
-                            <div style="font-size: 0.65rem; color: #718096; margin-top: 4px;">REQUEST, RESPONSE ou ambos — aceita múltiplos arquivos (.log, .xml, .txt)</div>
-                            <input type="file" id="multiFileInput" accept=".log,.txt,.xml" multiple style="display: none;">
+                        <div class="pane-out">
+                            <button type="button" class="btn-voltar secondary" data-voltar title="Voltar para a entrada (arquivos, texto e botões)">&larr; Voltar</button>
+                            <div class="out-vazio">🤖 A análise da IA aparece aqui.</div>
+                            <div id="analiseResultadoContainer" style="display: none;">
+                                <div id="analiseAlertContainer"></div>
+                                <div id="analiseCorrecaoContainer" class="correction-card"></div>
+                            </div>
                         </div>
-
-                        <div id="uploadedFilesList" style="margin-bottom: 10px;"></div>
-
-                        <textarea id="combinedContentInput" rows="5" placeholder="Ou cole o conteúdo aqui (REQUEST, RESPONSE ou ambos juntos)..." style="width:100%; padding:12px; border:2px solid #fca5a5; border-radius:12px; font-size:0.78rem; margin-bottom:12px; font-family:'JetBrains Mono',monospace; background:#fff5f5; resize:vertical;"></textarea>
-
-                        <div style="margin-top: 16px; display:flex; flex-direction:column; gap:8px;">
-                            <button id="btnAnalisarErro" class="error-btn" style="width:100%; padding:18px 24px; font-size:1.05rem; font-weight:700; letter-spacing:0.5px; border-radius:14px; animation:pulse-red 2s infinite;">🤖 Analisar com IA</button>
-                            <button id="btnLimparErro" class="secondary" style="width:100%; padding:10px; border-radius:12px;">🗑️ Limpar</button>
-                        </div>
-                    </div>
-
-                    <div id="analiseResultadoContainer" style="display: none;">
-                        <div id="analiseAlertContainer"></div>
-                        <div id="analiseCorrecaoContainer" class="correction-card"></div>
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <div class="card" style="min-width:200px;">
-            <div class="card-header" style="display:none;">
-                <h2>💰 2. Cálculo de Frete</h2>
-            </div>
-            <div class="card-body" style="padding:12px;">
+        <aside class="card card-side">
+            <div class="card-body">
+                <div class="side-titulo">📏 Distância / Frete</div>
                 <div class="config-section" style="display:none;">
                     <div style="font-weight:600; font-size:0.75rem; margin-bottom:10px;">📋 PARÂMETROS DE FRETE (ANTT)</div>
                     <div class="config-row">
@@ -746,8 +554,8 @@
                     <div style="text-align: center; color: #94a3b8; padding: 20px;">Nenhuma geolocalização</div>
                 </div>
             </div>
-        </div>
-    </div>
+        </aside>
+    </main>
     <footer>🔐 Geolocalizador de NF-e/CT-e + Validador CIOT + Analisador de Erros com IA 100% Livre</footer>
 </div>
 
@@ -756,10 +564,10 @@
 <!-- Modal Configurações da IA (protegido por senha) -->
 <div id="settingsModal" onclick="if(event.target===this)fecharSettings()"
     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(5px);">
-    <div style="background:white;border-radius:18px;padding:28px 24px;width:92%;max-width:420px;box-shadow:0 24px 60px rgba(0,0,0,0.35);position:relative;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+    <div style="background:white;border-radius:18px;padding:22px 20px;width:92%;max-width:420px;max-height:94vh;overflow:auto;box-shadow:0 24px 60px rgba(0,0,0,0.35);position:relative;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
             <h3 style="font-size:1rem;font-weight:700;color:#1e293b;">⚙️ Configurações da IA</h3>
-            <button onclick="fecharSettings()" style="background:#f1f5f9;border:none;border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:1rem;color:#475569;">✕</button>
+            <button onclick="fecharSettings()" style="background:#f1f5f9;border:none;border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:1rem;color:#475569;padding:0;justify-content:center;">✕</button>
         </div>
 
         <!-- Área de senha -->
@@ -770,7 +578,7 @@
                 onfocus="this.style.borderColor='#1e3a5f'" onblur="this.style.borderColor='#e2e8f0'"
                 onkeydown="if(event.key==='Enter')verificarSenhaSettings()">
             <button onclick="verificarSenhaSettings()"
-                style="width:100%;padding:11px;background:linear-gradient(135deg,#1e3a5f,#1e293b);color:white;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-size:0.9rem;transition:opacity .2s;"
+                style="width:100%;padding:11px;background:linear-gradient(135deg,#1e3a5f,#1e293b);color:white;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-size:0.9rem;transition:opacity .2s;justify-content:center;"
                 onmouseover="this.style.opacity='.88'" onmouseout="this.style.opacity='1'">🔓 Entrar</button>
             <div id="settingsPasswordError" style="color:#dc2626;font-size:0.72rem;margin-top:8px;display:none;">Senha incorreta. Tente novamente.</div>
         </div>
@@ -779,6 +587,7 @@
         <div id="settingsContent" style="display:none;">
             <div class="config-section" style="background:#f8fafc;border-radius:12px;padding:14px;">
                 <div style="font-size:0.72rem;font-weight:700;margin-bottom:10px;color:#1e293b;">⚙️ Configuração da IA</div>
+                <div id="mcpStatus" style="font-size:0.68rem;line-height:1.4;margin-bottom:10px;color:#92400e;">Conferindo a ligação com o MCP do sistema de suporte…</div>
                 <div class="config-row">
                     <div class="config-field">
                         <label>PROVEDOR</label>
@@ -803,11 +612,11 @@
                     </div>
                     <div class="config-field">
                         <label>&nbsp;</label>
-                        <button id="btnSalvarConfigAI" class="secondary" style="padding:8px 12px;width:100%;">💾 Salvar Config</button>
+                        <button id="btnSalvarConfigAI" class="secondary" style="padding:8px 12px;width:100%;justify-content:center;">💾 Salvar Config</button>
                     </div>
                 </div>
             </div>
-            <button onclick="fecharSettings()" style="margin-top:12px;width:100%;padding:10px;background:#f1f5f9;border:none;border-radius:10px;color:#475569;font-weight:600;cursor:pointer;font-size:0.85rem;">Fechar</button>
+            <button onclick="fecharSettings()" style="margin-top:12px;width:100%;padding:10px;background:#f1f5f9;border:none;border-radius:10px;color:#475569;font-weight:600;cursor:pointer;font-size:0.85rem;justify-content:center;">Fechar</button>
         </div>
     </div>
 </div>
@@ -1316,23 +1125,25 @@
         listaContainer.innerHTML = resultado.viagens.map(v => {
             const isLineReta = v.isFallback === true;
             const showLineRetaAlert = isLineReta || !hasToken;
-            const lineRetaAlert = showLineRetaAlert ? `<div style="background:#fef3c7; padding:8px; border-radius:8px; margin:8px 0;"><strong>⚠️ ATENÇÃO:</strong> Distância calculada em LINHA RETA! Clique no botão "Ver rota completa" para ver a KM real.</div>` : '';
-            return `<div class="viagem-item" style="margin-bottom:16px;">
-                <div style="display:flex; justify-content:space-between;"><strong>📄 CT-e Nº ${v.documento}</strong><span class="status-badge" style="background:${isLineReta ? '#f59e0b' : '#10b981'}; color:white;">📏 ${v.distanciaCalculada ? v.distanciaCalculada.toFixed(2) : '---'} KM</span></div>
+            const lineRetaAlert = showLineRetaAlert ? `<div class="v-aviso"><strong>⚠️ ATENÇÃO:</strong> Distância calculada em LINHA RETA! Clique no botão "Ver rota completa" para ver a KM real.</div>` : '';
+            return `<div class="viagem-item">
+                <div class="v-topo"><strong>📄 CT-e Nº ${v.documento}</strong><span class="status-badge" style="background:${isLineReta ? '#f59e0b' : '#10b981'}; color:white;">📏 ${v.distanciaCalculada ? v.distanciaCalculada.toFixed(2) : '---'} KM</span></div>
                 ${lineRetaAlert}
-                <div style="background:#f0f9ff; padding:12px; border-radius:10px; margin:8px 0;">
-                    <strong>📍 ORIGEM</strong>
-                    <div class="coord-item-small">${v.origem.lat ? `${v.origem.lat.toFixed(6)}, ${v.origem.lng.toFixed(6)}` : (v.origem.cep || v.origem.codigoMunicipio || 'N/D')}</div>
-                    ${v.origem.lat ? `<button onclick="window.open('https://www.google.com/maps?q=${v.origem.lat},${v.origem.lng}', '_blank')" style="margin-top:8px; padding:4px 12px; font-size:0.65rem;">🗺️ Ver no Maps</button>` : ''}
+                <div class="v-pontos">
+                    <div class="v-ponto origem">
+                        <strong>📍 ORIGEM</strong>
+                        <div class="coord-item-small">${v.origem.lat ? `${v.origem.lat.toFixed(6)}, ${v.origem.lng.toFixed(6)}` : (v.origem.cep || v.origem.codigoMunicipio || 'N/D')}</div>
+                        ${v.origem.lat ? `<button onclick="window.open('https://www.google.com/maps?q=${v.origem.lat},${v.origem.lng}', '_blank')">🗺️ Ver no Maps</button>` : ''}
+                    </div>
+                    <div class="v-ponto destino">
+                        <strong>🎯 DESTINO</strong>
+                        <div class="coord-item-small">${v.destino.lat ? `${v.destino.lat.toFixed(6)}, ${v.destino.lng.toFixed(6)}` : (v.destino.cep || v.destino.codigoMunicipio || 'N/D')}</div>
+                        ${v.destino.lat ? `<button onclick="window.open('https://www.google.com/maps?q=${v.destino.lat},${v.destino.lng}', '_blank')">🗺️ Ver no Maps</button>` : ''}
+                    </div>
                 </div>
-                <div style="background:#dcfce7; padding:12px; border-radius:10px; margin:8px 0;">
-                    <strong>🎯 DESTINO</strong>
-                    <div class="coord-item-small">${v.destino.lat ? `${v.destino.lat.toFixed(6)}, ${v.destino.lng.toFixed(6)}` : (v.destino.cep || v.destino.codigoMunicipio || 'N/D')}</div>
-                    ${v.destino.lat ? `<button onclick="window.open('https://www.google.com/maps?q=${v.destino.lat},${v.destino.lng}', '_blank')" style="margin-top:8px; padding:4px 12px; font-size:0.65rem;">🗺️ Ver no Maps</button>` : ''}
-                </div>
-                <div style="display:flex; justify-content:space-between; margin-top:8px;">
+                <div class="v-rodape">
                     <div><strong>📏 Distância:</strong> ${v.distanciaCalculada ? `${v.distanciaCalculada.toFixed(2)} km` : 'Não disponível'}</div>
-                    ${v.origem.lat && v.destino.lat ? `<button onclick="window.open('https://www.google.com/maps/dir/${v.origem.lat},${v.origem.lng}/${v.destino.lat},${v.destino.lng}', '_blank')" style="background:#10b981;">🗺️ Ver rota completa</button>` : ''}
+                    ${v.origem.lat && v.destino.lat ? `<button onclick="window.open('https://www.google.com/maps/dir/${v.origem.lat},${v.origem.lng}/${v.destino.lat},${v.destino.lng}', '_blank')">🗺️ Ver rota completa</button>` : ''}
                 </div>
             </div>`;
         }).join('');
@@ -1377,6 +1188,106 @@
         openrouter: { baseUrl:'https://openrouter.ai/api/v1', models:['cohere/north-mini-code:free','meta-llama/llama-3.3-70b-instruct','google/gemma-4-26b-a4b-it'], defaultModel:'inclusionai/ling-3.0-flash-sante:free', chatEndpoint:'/chat/completions', headers:(k)=>({Authorization:`Bearer ${k}`,'Content-Type':'application/json','HTTP-Referer':window.location.origin,'X-Title':'Bsoft TMS'}), formatRequestBody:(m,msgs,c={})=>({model:m,messages:msgs,temperature:c.temperature||0.3,max_tokens:c.maxTokens||8192}), parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro OpenRouter');return{text:d.choices?.[0]?.message?.content||'',full:d};} },
         google: { baseUrl:'https://generativelanguage.googleapis.com/v1beta', models:['gemini-2.0-flash','gemini-2.0-flash-lite'], defaultModel:'gemini-2.0-flash', chatEndpoint:'/models/{model}:generateContent', headers:()=>({'Content-Type':'application/json'}), formatRequestBody:(m,msgs,c={})=>{const cnt=msgs.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:typeof m.content==='string'?m.content:JSON.stringify(m.content)}]}));return{contents:cnt,generationConfig:{temperature:c.temperature||0.3,maxOutputTokens:c.maxTokens||8192}};}, parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro Google');const p=d.candidates?.[0]?.content?.parts||[];return{text:p.filter(p=>p.text).map(p=>p.text).join(''),full:d};}, buildUrl:(b,m,e)=>`${b}${e.replace('{model}',m)}?key=${mcpConfig.apiKey}` }
     };
+
+    PROVIDER_PRESETS.custom = PROVIDER_PRESETS.openrouter;   // provedor "custom" do MCP = API compatível com OpenAI (mesmo formato)
+    // ============================================================
+    // MODELOS DE IA = MCP DO SISTEMA DE SUPORTE BSOFT (config/mcp-config.js)
+    // ============================================================
+    // A IA desta página usa os MESMOS modelos do painel "IA / MCP" do sistema de suporte: mudou o modelo lá (e publicou o arquivo)? Muda aqui também,
+    // sem mexer neste arquivo. Como funciona:
+    //  • o sistema de suporte abre esta página com ?mcp=<endereço do config/mcp-config.js dele>; a página guarda o endereço neste navegador;
+    //  • a cada uso confere se há versão nova (no máximo de 10 em 10 minutos); o arquivo é só LIDO como JSON (nada dele é executado);
+    //  • se o MCP não estiver disponível (offline, página nunca aberta pelo sistema, endereço bloqueado), cai na configuração própria desta página
+    //    (os campos de "Configuração da IA" nas configurações).
+    // Segurança: o endereço precisa ser da MESMA conta do GitHub Pages desta página (ou localhost, nos testes) e só provedores conhecidos são aceitos
+    // (quem controla a chave vê o que é enviado à IA).
+    const MCP_URL_CHAVE = 'bsoft_mcp_url_v1', MCP_CACHE_CHAVE = 'bsoft_mcp_cache_v1';
+    const MCP_URL_PADRAO = '';   // opcional: endereço fixo do mcp-config.js do sistema de suporte, ex.: 'https://usuario.github.io/bsoft-suporte-ia/config/mcp-config.js'
+    const MCP_BASES_OK = { openrouter: 'https://openrouter.ai/', google: 'https://generativelanguage.googleapis.com/' };
+    let mcpRemoto = null, mcpUltimaConferencia = 0;
+
+    function mcpUrlConfiavel(u) {
+        try {
+            const x = new URL(u);
+            const h = x.hostname.toLowerCase(), aqui = (location.hostname || '').toLowerCase();
+            if (!/\/mcp-config\.js$/.test(x.pathname)) return false;
+            if (x.protocol !== 'https:' && !(x.protocol === 'http:' && (h === 'localhost' || h === '127.0.0.1'))) return false;
+            if (/\.github\.io$/.test(aqui)) return h === aqui;                                   // publicada no GitHub Pages: só a mesma conta
+            return /\.github\.io$/.test(h) || h === 'localhost' || h === '127.0.0.1';              // arquivo local / localhost (testes)
+        } catch (e) { return false; }
+    }
+    function mcpDescobrirUrl() {
+        try {
+            const q = new URLSearchParams(location.search).get('mcp');
+            if (q && mcpUrlConfiavel(q)) { localStorage.setItem(MCP_URL_CHAVE, q); return q; }
+            const salvo = localStorage.getItem(MCP_URL_CHAVE);
+            if (salvo && mcpUrlConfiavel(salvo)) return salvo;
+        } catch (e) { /* sem armazenamento */ }
+        return MCP_URL_PADRAO && mcpUrlConfiavel(MCP_URL_PADRAO) ? MCP_URL_PADRAO : '';
+    }
+    // JSON do arquivo → { versao, passos:[{ model, provider, apiKey, baseUrl, timeoutMs }] } (mesma ordem do sistema de suporte: prioritário, depois a cadeia)
+    function mcpNormalizarRemoto(o) {
+        if (!o || typeof o !== 'object' || !o.provedor) return null;
+        const junta = c => Array.isArray(c) ? c.join('') : String(c == null ? '' : c);
+        const baseOk = (tipo, base) => { const b = String(base || ''); if (!/^https:\/\//i.test(b)) return false; return tipo === 'custom' ? true : b.startsWith(MCP_BASES_OK[tipo] || '#'); };
+        const tipo = o.provedor.tipo || 'openrouter', chave = junta(o.provedor.chave);
+        const base = o.provedor.baseUrl || (PROVIDER_PRESETS[tipo] && PROVIDER_PRESETS[tipo].baseUrl) || '';
+        if (!PROVIDER_PRESETS[tipo] || !chave || !baseOk(tipo, base)) return null;
+        const passos = [], vistos = new Set();
+        const p = o.prioritario;
+        if (p && p.ativo === true && p.modelo) {
+            const tp = p.tipo || tipo, bp = p.baseUrl || (PROVIDER_PRESETS[tp] && PROVIDER_PRESETS[tp].baseUrl) || '';
+            if (PROVIDER_PRESETS[tp] && baseOk(tp, bp)) { passos.push({ model: String(p.modelo), provider: tp, apiKey: junta(p.chave) || chave, baseUrl: bp, timeoutMs: 45000 }); vistos.add(String(p.modelo)); }
+        }
+        (Array.isArray(o.cadeia) ? o.cadeia : []).forEach(x => {
+            if (!x || x.ativo === false || !x.modelo || vistos.has(String(x.modelo))) return;
+            vistos.add(String(x.modelo)); passos.push({ model: String(x.modelo), provider: tipo, apiKey: chave, baseUrl: base, timeoutMs: 45000 });
+        });
+        return passos.length ? { versao: parseInt(o.versao, 10) || 1, passos } : null;
+    }
+    function mcpAtualizarStatus() {
+        const el = document.getElementById('mcpStatus');
+        if (!el) return;
+        if (mcpRemoto) { el.style.color = '#166534'; el.textContent = '🔗 IA ligada ao MCP do sistema de suporte (config v' + mcpRemoto.versao + '): ' + mcpRemoto.passos.map(p => p.model.split('/').pop().replace(/:free$/, '')).join(' → ') + '. Mudou o modelo lá? Muda aqui sozinho. Os campos abaixo só valem se o MCP ficar indisponível.'; }
+        else { el.style.color = '#92400e'; el.textContent = '⚠️ Sem ligação com o MCP do sistema de suporte: usando a configuração própria desta página (abaixo). Abra esta página pelo botão CIOT do sistema de suporte para ligar.'; }
+    }
+    async function mcpConferir(forcar) {
+        const url = mcpDescobrirUrl();
+        if (!url) { mcpAtualizarStatus(); return false; }
+        if (!forcar && mcpRemoto && Date.now() - mcpUltimaConferencia < 10 * 60 * 1000) return true;
+        try {
+            const r = await fetch(url + (url.includes('?') ? '&' : '?') + 't=' + Date.now(), { cache: 'no-store' });
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            const txt = await r.text();
+            const i = txt.indexOf('{', Math.max(0, txt.indexOf('BSOFT_MCP_CONFIG'))), j = txt.lastIndexOf('}');
+            const novo = mcpNormalizarRemoto(JSON.parse(txt.slice(i, j + 1)));
+            if (!novo) throw new Error('configuração do MCP inválida ou de provedor não aceito');
+            mcpRemoto = novo; mcpUltimaConferencia = Date.now();
+            try { localStorage.setItem(MCP_CACHE_CHAVE, JSON.stringify({ url, em: Date.now(), cfg: novo })); } catch (e) { /* sem cache */ }
+        } catch (e) {
+            console.warn('[MCP] não consegui ler a configuração:', e.message);
+            if (!mcpRemoto) { try { const c = JSON.parse(localStorage.getItem(MCP_CACHE_CHAVE) || 'null'); if (c && c.url === url && c.cfg && Array.isArray(c.cfg.passos) && c.cfg.passos.length) mcpRemoto = c.cfg; } catch (e2) { /* sem cache */ } }
+        }
+        mcpAtualizarStatus();
+        return !!mcpRemoto;
+    }
+    // IA da página: percorre os modelos do MCP (2 tentativas por modelo, como no sistema de suporte); sem MCP, usa a configuração própria
+    async function callAI(prompt, systemPrompt) {
+        await mcpConferir(false);
+        const passos = mcpRemoto ? mcpRemoto.passos : [];
+        if (!passos.length) return callAILegado(prompt, systemPrompt);
+        let ultimo = null;
+        for (const p of passos) {
+            for (let t = 1; t <= 2; t++) {
+                try {
+                    const txt = await callAILegado(prompt, systemPrompt, p);
+                    if (!String(txt || '').trim()) throw new Error('resposta vazia');
+                    return txt;
+                } catch (e) { ultimo = e; console.warn('[MCP] ' + p.model + ' tentativa ' + t + ':', e.message); if (t === 1) await new Promise(r => setTimeout(r, 1200)); }
+            }
+        }
+        try { return await callAILegado(prompt, systemPrompt); } catch (e2) { throw ultimo || e2; }   // última chance: a configuração própria da página
+    }
 
     let mcpConfig = { ...DEFAULT_MCP_CONFIG };
 
@@ -1571,7 +1482,7 @@ ONDE CORRIGIR CADA PROBLEMA (cadastros no Bsoft TMS):
   - Tabela de preços e valores do contrato: Transporte/Configurações/Tabela de Preços
 `.trim();
 
-    async function callAI(prompt, systemPrompt = `IDIOMA: Você DEVE responder EXCLUSIVAMENTE em português brasileiro. Nunca responda em inglês ou qualquer outro idioma, independente do idioma dos arquivos analisados.
+    async function callAILegado(prompt, systemPrompt = `IDIOMA: Você DEVE responder EXCLUSIVAMENTE em português brasileiro. Nunca responda em inglês ou qualquer outro idioma, independente do idioma dos arquivos analisados.
 
 Você é o Especialista de Suporte do Bsoft TMS, um sistema ERP para empresas de transporte de cargas. Tome muito cuidado para não confundir os documentos, cada um é uma coisa diferente:
 CT-e (Conhecimento de Transporte Eletrônico), NFS-e (Nota Fiscal de Serviço Eletrônica), NF-e (Nota Fiscal Eletrônica), MDF-e (Manifesto de Documento Fiscal Eletrônico), Minuta (Conhecimento não fiscal).
@@ -1620,8 +1531,8 @@ Responda sempre em português brasileiro.
 
 ${KB_CIOT_FROTA_PROPRIA}
 
-${KB_CIOT_TERCEIROS}`) {
-        const config = mcpConfig;
+${KB_CIOT_TERCEIROS}`, override = null) {
+        const config = override || mcpConfig;   // override = um passo da cadeia de modelos do MCP
         const provider = PROVIDER_PRESETS[config.provider] || PROVIDER_PRESETS.openrouter;
         
         let apiKey = config.apiKey;
@@ -1644,7 +1555,7 @@ ${KB_CIOT_TERCEIROS}`) {
             
             const headers = provider.headers(apiKey);
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 90000);
+            const timeoutId = setTimeout(() => controller.abort(), (override && override.timeoutMs) || 90000);
             const response = await fetch(url, { method: 'POST', headers, body: JSON.stringify(requestBody), signal: controller.signal });
             clearTimeout(timeoutId);
             if (!response.ok) {
@@ -1665,7 +1576,25 @@ ${KB_CIOT_TERCEIROS}`) {
     // ============================================================
     let uploadedFiles = {};
 
+    let analisando = false;
+
+    // Enquanto a IA verifica os arquivos, o botão "Analisar com IA" SOME e no lugar dele aparece "Aguarde, verificando arquivos…"
+    // (assim ninguém clica duas vezes achando que não está verificando). Sempre volta ao normal no fim, mesmo se der erro.
+    function setAnalisando(sim) {
+        analisando = sim;
+        const btn = document.getElementById('btnAnalisarErro');
+        const aviso = document.getElementById('analisandoAviso');
+        const entrada = document.getElementById('analiseEntrada');
+        const resultado = document.getElementById('analiseResultadoContainer');
+        if (btn) btn.hidden = sim;
+        if (aviso) aviso.hidden = !sim;
+        if (entrada) entrada.classList.toggle('is-analisando', sim);
+        if (resultado) resultado.setAttribute('aria-busy', sim ? 'true' : 'false');
+    }
+
     async function analisarErroLivre() {
+        if (analisando) return;   // já está verificando: ignora cliques/teclas repetidos
+
         const resultContainer = document.getElementById('analiseResultadoContainer');
         const alertContainer = document.getElementById('analiseAlertContainer');
         const correcaoContainer = document.getElementById('analiseCorrecaoContainer');
@@ -1678,8 +1607,10 @@ ${KB_CIOT_TERCEIROS}`) {
             return;
         }
 
-        resultContainer.style.display = 'block';
-        alertContainer.innerHTML = `<div class="alert-info"><span class="loading-spinner"></span> 🤖 IA analisando os arquivos... Aguarde.</div>`;
+        setAnalisando(true);
+        // a análise anterior sai de cena; o "Aguarde, verificando arquivos…" fica no lugar do botão
+        resultContainer.style.display = 'none';
+        alertContainer.innerHTML = '';
         correcaoContainer.innerHTML = '';
 
         try {
@@ -1695,30 +1626,47 @@ ${KB_CIOT_TERCEIROS}`) {
 
             const respostaIA = await callAI(prompt);
 
+            // escapeHtml: a resposta da IA costuma citar tags XML (<OPT:Valor>…) — sem escapar elas sumiam da tela (o navegador as lia como HTML)
             alertContainer.innerHTML = `
-                <div style="background: #1e1e2e; border-left: 4px solid #8b5cf6; padding: 16px; border-radius: 12px; margin-bottom: 12px;">
-                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
-                        <span style="font-size: 24px;">🤖</span>
-                        <strong style="color: white; font-size: 0.9rem;">ANÁLISE DA IA</strong>
+                <div class="ia-caixa">
+                    <div class="ia-caixa-titulo">
+                        <span style="font-size: 20px;">🤖</span>
+                        <strong>ANÁLISE DA IA</strong>
                     </div>
                     <div class="ia-response">
-                        ${respostaIA.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}
+                        ${escapeHtml(String(respostaIA)).replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}
                     </div>
                 </div>
             `;
 
             correcaoContainer.innerHTML = `
-                <div style="display: flex; gap: 8px; margin-top: 4px; flex-wrap: wrap;">
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                     <button onclick="copiarAnaliseIA()" style="background: #3b82f6; padding:6px 16px; font-size:0.7rem; border-radius:20px;">📋 Copiar análise</button>
                 </div>
             `;
 
         } catch (error) {
-            alertContainer.innerHTML = `<div class="alert-error">❌ Erro na análise: ${error.message}</div>`;
+            alertContainer.innerHTML = `<div class="alert-error">❌ Erro na análise: ${escapeHtml(String(error && error.message || error))}</div>`;
+        } finally {
+            resultContainer.style.display = 'block';   // a análise (ou o erro) só aparece pronta; depois o botão volta
+            setAnalisando(false);
         }
     }
-    
-    window.copiarAnaliseIA = function() {
+
+    // copia o texto; dentro do sistema de suporte (iframe) o navegador pode negar o clipboard moderno — aí usa o método antigo
+    async function copiarTexto(texto) {
+        try { await navigator.clipboard.writeText(texto); return true; } catch (e) { /* tenta o método antigo */ }
+        try {
+            const ta = document.createElement('textarea');
+            ta.value = texto; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0;';
+            document.body.appendChild(ta); ta.select();
+            const ok = document.execCommand('copy');
+            ta.remove();
+            return ok;
+        } catch (e2) { return false; }
+    }
+
+    window.copiarAnaliseIA = async function() {
         const alertDiv = document.getElementById('analiseAlertContainer');
         let texto = "";
         if (alertDiv) {
@@ -1726,8 +1674,7 @@ ${KB_CIOT_TERCEIROS}`) {
             if (iaResponse) texto = iaResponse.innerText;
             else texto = alertDiv.innerText;
         }
-        navigator.clipboard.writeText(texto);
-        mostrarToast('✅ Análise copiada!');
+        mostrarToast((await copiarTexto(texto)) ? '✅ Análise copiada!' : '⚠️ Não consegui copiar — selecione o texto e use Ctrl+C.');
     };
 
     function processarMultiplosArquivos(files) {
@@ -1746,13 +1693,17 @@ ${KB_CIOT_TERCEIROS}`) {
         const container = document.getElementById('uploadedFilesList');
         if (!container) return;
         const fileNames = Object.keys(uploadedFiles);
-        if (!fileNames.length) { container.innerHTML = ''; return; }
-        container.innerHTML = fileNames.map(name => `
-            <div style="display:flex; justify-content:space-between; align-items:center; background:#fee2e2; padding:8px 12px; border-radius:8px; margin-bottom:6px; font-size:0.75rem;">
-                <span>📄 <strong>${escapeHtml(name)}</strong> <span style="color:#9ca3af; font-size:0.65rem;">(${(uploadedFiles[name].length / 1024).toFixed(1)} KB)</span></span>
-                <button onclick="removerArquivo('${escapeHtml(name)}')" class="secondary" style="padding:2px 8px; font-size:0.6rem;">✕</button>
-            </div>
-        `).join('');
+        container.textContent = '';
+        fileNames.forEach(name => {
+            const item = document.createElement('div'); item.className = 'arq-item';
+            const info = document.createElement('span');
+            const nome = document.createElement('strong'); nome.textContent = name;
+            const kb = document.createElement('span'); kb.style.cssText = 'color:#9ca3af; font-size:0.65rem;'; kb.textContent = ` (${(uploadedFiles[name].length / 1024).toFixed(1)} KB)`;
+            info.append('📄 ', nome, kb); info.title = name;
+            const rm = document.createElement('button'); rm.type = 'button'; rm.className = 'secondary'; rm.textContent = '✕'; rm.title = 'Remover este arquivo'; rm.setAttribute('aria-label', 'Remover ' + name);
+            rm.addEventListener('click', () => window.removerArquivo(name));
+            item.append(info, rm); container.appendChild(item);
+        });
     }
 
     window.removerArquivo = function(name) {
@@ -1884,6 +1835,7 @@ ${KB_CIOT_TERCEIROS}`) {
     document.getElementById('btnSalvarConfigAI')?.addEventListener('click', saveMCPConfig);
     document.getElementById('btnAnalisarErro')?.addEventListener('click', analisarErroLivre);
     document.getElementById('btnLimparErro')?.addEventListener('click', () => {
+        if (analisando) return;   // não limpa no meio da verificação
         uploadedFiles = {};
         renderizarFilesLista();
         const combined = document.getElementById('combinedContentInput');
@@ -1942,12 +1894,28 @@ ${KB_CIOT_TERCEIROS}`) {
     });
     
     document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.setAttribute('aria-selected', btn.classList.contains('active') ? 'true' : 'false');
         btn.addEventListener('click', () => {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            btn.classList.add('active');
+            btn.classList.add('active'); btn.setAttribute('aria-selected', 'true');
             document.getElementById(btn.dataset.tab).classList.add('active');
         });
+    });
+
+    // Marca (classe .has-out) cada aba que tem resultado para mostrar: em janelas estreitas a área de resultado só ocupa espaço quando há o que mostrar,
+    // e nas largas o aviso "o resultado aparece aqui" some quando o resultado chega. Observa a própria área, então não depende de onde o resultado é escrito.
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        const out = tab.querySelector('.pane-out');
+        if (!out) return;
+        const atualizar = () => {
+            const tem = Array.from(out.children).some(el => !el.classList.contains('out-vazio') && !el.hasAttribute('data-voltar') && getComputedStyle(el).display !== 'none' && (el.querySelector('*') || el.textContent.trim()));
+            tab.classList.toggle('has-out', !!tem);
+        };
+        // resultado novo chegou → em janela estreita volta a mostrar o resultado (e não a entrada)
+        new MutationObserver(() => { atualizar(); tab.classList.remove('ver-entrada'); }).observe(out, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['style', 'class', 'hidden'] });
+        out.querySelector('[data-voltar]')?.addEventListener('click', () => tab.classList.add('ver-entrada'));
+        atualizar();
     });
     
     // ============================================================
@@ -1989,12 +1957,11 @@ ${KB_CIOT_TERCEIROS}`) {
     loadToken();
     loadHistory();
     loadMCPConfig();
+    mcpConferir(true);   // MCP do sistema de suporte (modelos de IA)
     
     const clearHistoryBtn = document.createElement('button');
     clearHistoryBtn.innerHTML = '🗑️ Limpar Histórico';
-    clearHistoryBtn.className = 'secondary';
-    clearHistoryBtn.style.marginTop = '8px';
-    clearHistoryBtn.style.width = '100%';
+    clearHistoryBtn.className = 'secondary btn-limpar-hist';
     clearHistoryBtn.onclick = () => { history = []; saveHistory(); mostrarToast('Histórico limpo!'); };
     document.getElementById('historyList')?.after(clearHistoryBtn);
 </script>
