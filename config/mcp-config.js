@@ -12,7 +12,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 window.BSOFT_MCP_CONFIG = {
   "versao": 19,
-  "atualizadoEm": "2026-10-27T14:37:02.625Z",
+  "atualizadoEm": "2026-10-27T14:41:48.522Z",
   "atualizadoPor": "admin",
   "provedor": {
     "tipo": "openrouter",
@@ -71,10 +71,10 @@ window.BSOFT_MCP_CONFIG = {
   "desambiguacao": {
     "ativo": true,
     "margem": 0.04,
-    "certeza": 0.82,
+    "certeza": 0.8,
     "minSimilaridade": 0.5,
     "maxOpcoes": 3,
-    "maxTermos": 7
+    "maxTermos": 5
   },
   "esclarecimento": {
     "ativo": true,
