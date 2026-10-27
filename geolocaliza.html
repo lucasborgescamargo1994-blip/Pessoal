@@ -110,7 +110,7 @@
         .btn-voltar { display: none; }
         /* janela LARGA: entrada à esquerda e resultado à direita, os dois sempre à vista */
         @container painel (min-width: 600px) {
-            .pane { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); grid-template-rows: minmax(0, 1fr); }
+            .pane { display: grid; grid-template-columns: minmax(280px, 5fr) minmax(0, 6fr); grid-template-rows: minmax(0, 1fr); }
             .pane-in { flex: none; }
             .pane-out, .has-out .pane-out { display: block; flex: none; border-style: dashed; }
             .out-vazio { display: flex; }
@@ -151,6 +151,12 @@
         .error-upload-area { border-color: #dc2626; background: #fef2f2; }
         .error-upload-area .drop-tx b { color: #dc2626; }
         .error-upload-area:hover { border-color: #991b1b; background: #fee2e2; }
+        /* Aba do Analisador: arrastar os arquivos é o uso principal → a área de soltar ocupa TODO o espaço livre (grande, ícone e texto centralizados);
+           colar o texto é o uso secundário → caixa baixa, só 2-3 linhas */
+        .pane-erro .drop.error-upload-area { flex: 1 1 auto; min-height: 5.5rem; flex-direction: column; justify-content: center; align-items: center; text-align: center; gap: 6px; padding: 12px; border-width: 3px; }
+        .pane-erro .drop-ic { font-size: clamp(2.2rem, 9vh, 4rem); }
+        .pane-erro .drop-tx { font-size: clamp(0.86rem, 1.6vh + 0.35rem, 1.1rem); }
+        .pane-erro .drop-tx small { font-size: clamp(0.64rem, 1.1vh + 0.25rem, 0.78rem); margin-top: 4px; }
 
         /* campos de texto: o que sobrar de altura vai para a caixa grande */
         .pane-in textarea {
@@ -158,7 +164,7 @@
             padding: 8px 10px; border: 2px solid #e2e8f0; border-radius: 10px; background: #fff;
             font-size: 0.76rem; line-height: 1.4; font-family: 'JetBrains Mono', ui-monospace, monospace;
         }
-        .pane-erro .pane-in textarea { border-color: #fca5a5; background: #fff5f5; }
+        .pane-erro .pane-in textarea { border-color: #fca5a5; background: #fff5f5; flex: none; height: clamp(2.8rem, 9vh, 4.6rem); min-height: 0; }
         .pane-ciot .pane-in textarea { border-color: #bae6fd; }
         .pane-in textarea:focus, .pane-in input[type=text]:focus { outline: none; border-color: var(--primary); }
         .campo-bloco { flex: none; display: flex; flex-direction: column; gap: 3px; }
@@ -173,6 +179,9 @@
         .linha-input button { flex: none; white-space: nowrap; padding: 6px 14px; }
         .acoes { flex: none; display: flex; gap: 8px; align-items: stretch; }
         .acoes button { padding: 9px 16px; border-radius: 999px; }
+        .pane-erro .acoes button { white-space: nowrap; }
+        .acoes .secondary { white-space: nowrap; }
+        .acoes .primario { min-width: 0; text-align: center; }
         .acoes .primario { flex: 1 1 auto; justify-content: center; }
         .acoes .secondary { flex: none; }
 
@@ -319,10 +328,16 @@
             .acoes button { padding: 6px 14px; }
             #btnAnalisarErro { padding: 8px 16px; }
             .aguarde { padding: 7px 14px; }
+            .pane-erro .drop.error-upload-area { padding: 6px; min-height: 3.2rem; gap: 2px; }
+            .pane-erro .drop-ic { font-size: 1.8rem; }
+            .pane-erro .pane-in textarea { height: 2.4rem; }
         }
         @container painel (max-height: 250px) {
             .campo-bloco label { display: none; }
             .pane-in textarea { min-height: 1.8rem; }
+            .pane-erro .drop.error-upload-area { min-height: 2.4rem; }
+            .pane-erro .drop-ic { font-size: 1.3rem; }
+            .pane-erro .pane-in textarea { height: 1.9rem; }
         }
 
         /* ───────── avisos rápidos (toast) ───────── */
@@ -475,7 +490,7 @@
 
                             <div id="uploadedFilesList"></div>
 
-                            <textarea id="combinedContentInput" placeholder="Ou cole o conteúdo aqui (REQUEST, RESPONSE ou ambos juntos)..."></textarea>
+                            <textarea id="combinedContentInput" placeholder="Ou cole o texto aqui (REQUEST e/ou RESPONSE)…"></textarea>
 
                             <div class="acoes">
                                 <button id="btnAnalisarErro" class="error-btn primario">🤖 Analisar com IA</button>
