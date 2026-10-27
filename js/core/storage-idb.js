@@ -42,6 +42,29 @@ function criarKV(nomeBanco) {
             return await new Promise((res, rej) => { const tx = db.transaction(STORE, 'readwrite'); tx.objectStore(STORE).clear(); tx.oncomplete = () => res(true); tx.onerror = () => rej(tx.error); });
         } catch (e) { return false; }
     }
-    return { get, set, del, limpar };
+    // Em lote (usado pelo cache de vetores): várias gravações numa transação só, e leitura/remoção por prefixo da chave.
+    async function setVarios(pares) {   // pares = [[chave, valor], ...] → true/false
+        try {
+            const db = await abrir();
+            return await new Promise((res, rej) => { const tx = db.transaction(STORE, 'readwrite'), os = tx.objectStore(STORE); pares.forEach(([k, v]) => os.put(v, k)); tx.oncomplete = () => res(true); tx.onerror = () => rej(tx.error); tx.onabort = () => rej(tx.error); });
+        } catch (e) { return false; }
+    }
+    async function todos(prefixo) {     // [[chave, valor], ...] das chaves que começam com o prefixo; null se o IndexedDB não abre (diferente de "vazio" = [])
+        try {
+            const db = await abrir();
+            return await new Promise((res, rej) => {
+                const saida = [], q = db.transaction(STORE).objectStore(STORE).openCursor(prefixo ? IDBKeyRange.bound(prefixo, prefixo + '￿') : null);
+                q.onsuccess = () => { const c = q.result; if (c) { saida.push([c.key, c.value]); c.continue(); } else res(saida); };
+                q.onerror = () => rej(q.error);
+            });
+        } catch (e) { return null; }
+    }
+    async function delPrefixo(prefixo) { // apaga todas as chaves que começam com o prefixo
+        try {
+            const db = await abrir();
+            return await new Promise((res, rej) => { const tx = db.transaction(STORE, 'readwrite'); tx.objectStore(STORE).delete(IDBKeyRange.bound(prefixo, prefixo + '￿')); tx.oncomplete = () => res(true); tx.onerror = () => rej(tx.error); });
+        } catch (e) { return false; }
+    }
+    return { get, set, del, limpar, setVarios, todos, delPrefixo };
 }
 const KV = criarKV('bsoft_app_cache');

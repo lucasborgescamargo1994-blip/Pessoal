@@ -37,7 +37,7 @@ function _makeThinkingFilter() {
 // toa. finalizar() avisa que não vem mais nada novo, só terminar de revelar o que ainda falta.
 function _criarRevelacaoFluida(contentEl, opts = {}) {
     const CPS = opts.cps || 220; // caracteres por segundo — rápido de ler, mas dá pra acompanhar
-    let textoCompleto = '', revelados = 0, streamAcabou = false, ultimoTs = null, animando = false;
+    let textoCompleto = '', revelados = 0, streamAcabou = false, ultimoTs = null, animando = false, aoTerminar = null;
     function passo(ts) {
         if (ultimoTs === null) ultimoTs = ts;
         revelados = Math.min(textoCompleto.length, revelados + ((ts - ultimoTs) / 1000) * CPS);
@@ -50,12 +50,22 @@ function _criarRevelacaoFluida(contentEl, opts = {}) {
         // atualiza o indicador "↓" flutuante -- ele avisa que ainda tem conteúdo vindo, sem forçar
         // a rolagem de ninguém.
         _atualizarBotaoScrollDown(falta || !streamAcabou);
-        if (falta || !streamAcabou) { requestAnimationFrame(passo); } else { animando = false; }
+        if (falta || !streamAcabou) { requestAnimationFrame(passo); }
+        else { animando = false; if (aoTerminar) { const f = aoTerminar; aoTerminar = null; try { f(); } catch (e) { console.warn('[revelação] aoTerminar:', e); } } }
     }
     function garantirAnimando() { if (!animando) { animando = true; ultimoTs = null; requestAnimationFrame(passo); } }
     return {
         atualizar(novoTextoCompleto) { textoCompleto = novoTextoCompleto; garantirAnimando(); },
-        finalizar() { streamAcabou = true; garantirAnimando(); }
+        // cb (opcional): chamado quando o último caractere acabou de aparecer (ex.: os botões de esclarecimento só entram depois do texto)
+        // (rede de segurança: com a aba em segundo plano o navegador pausa o requestAnimationFrame — o cb sai por tempo, depois da duração normal da revelação)
+        finalizar(cb) {
+            streamAcabou = true;
+            if (cb) {
+                aoTerminar = cb;
+                setTimeout(() => { if (aoTerminar) { const f = aoTerminar; aoTerminar = null; try { f(); } catch (e) { console.warn('[revelação] aoTerminar:', e); } } }, Math.min(6000, 700 + textoCompleto.length * 5));
+            }
+            garantirAnimando();
+        }
     };
 }
 

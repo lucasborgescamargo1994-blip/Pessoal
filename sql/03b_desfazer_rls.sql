@@ -50,5 +50,15 @@ do $$ begin
     end if;
 end $$;
 
+-- FAQ (SQL 07 e 07b): volta ao modo aberto
+do $$ begin
+    if to_regprocedure('public.faq_aplicar_politicas(boolean)') is not null then
+        perform public.faq_aplicar_politicas(false);
+    end if;
+    if to_regprocedure('public.faq_videos_aplicar_politicas(boolean)') is not null then
+        perform public.faq_videos_aplicar_politicas(false);
+    end if;
+end $$;
+
 -- (mantém a tabela admin_emails e a função eh_admin(): são inofensivas)
 commit;

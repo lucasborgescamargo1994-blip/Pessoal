@@ -94,6 +94,9 @@ function mcpPadrao() {
         // margem = diferença máxima de semelhança entre o 1º e os outros assuntos para contarem como "empate"; certeza = acima disso o 1º é claro e não pergunta;
         // minSimilaridade = abaixo disso o assunto nem vira opção; maxOpcoes = quantos assuntos mostrar; maxTermos = perguntas com mais termos que isso são específicas e não perguntam.
         desambiguacao: { ativo: true, margem: 0.04, certeza: 0.82, minSimilaridade: 0.5, maxOpcoes: 3, maxTermos: 7 },
+        // Esclarecimento com botões (js/app/esclarecimento.js): a IA faz uma pergunta curta com opções clicáveis em vez de dizer só "não encontrei" (ou quando a pergunta é vaga).
+        // maxRodadas = quantas vezes seguidas pode perguntar sobre a mesma dúvida; maxOpcoes = quantos botões de resposta (fora "Outra resposta" e "Não sei").
+        esclarecimento: { ativo: true, maxRodadas: 2, maxOpcoes: 5 },
     };
 }
 // Aceita o objeto do arquivo (mesmo incompleto/com erro de digitação) e devolve sempre um objeto completo.
@@ -111,6 +114,7 @@ function mcpNormalizar(raw) {
         embeddings: Object.assign({}, d.embeddings, r.embeddings || {}),
         respostasRapidas: Object.assign({}, d.respostasRapidas, r.respostasRapidas || {}),
         desambiguacao: Object.assign({}, d.desambiguacao, r.desambiguacao || {}),
+        esclarecimento: Object.assign({}, d.esclarecimento, r.esclarecimento || {}),
     };
     out.provedor.chave = mcpChaveArray(out.provedor.chave);
     out.prioritario.chave = mcpChaveArray(out.prioritario.chave);
@@ -128,11 +132,15 @@ function mcpNormalizar(raw) {
     [['margem', 0.01, 0.15], ['certeza', 0.6, 1], ['minSimilaridade', 0.3, 0.9]].forEach(([k, min, max]) => { const v = Number(dz[k]); dz[k] = (v > 0 && v <= 1) ? Math.min(max, Math.max(min, v)) : d.desambiguacao[k]; });
     dz.maxOpcoes = Math.min(4, Math.max(2, parseInt(dz.maxOpcoes, 10) || d.desambiguacao.maxOpcoes));
     dz.maxTermos = Math.min(20, Math.max(1, parseInt(dz.maxTermos, 10) || d.desambiguacao.maxTermos));
+    const ec = out.esclarecimento;
+    ec.ativo = ec.ativo !== false;
+    ec.maxRodadas = Math.min(4, Math.max(1, parseInt(ec.maxRodadas, 10) || d.esclarecimento.maxRodadas));
+    ec.maxOpcoes = Math.min(6, Math.max(2, parseInt(ec.maxOpcoes, 10) || d.esclarecimento.maxOpcoes));
     return out;
 }
 // Impressão digital do CONTEÚDO (ignora versão/data/autor): é ela que decide se a configuração mudou.
 function mcpHash(cfg) {
-    const base = JSON.stringify([cfg.provedor, cfg.cadeia, cfg.rascunho, cfg.prioritario, cfg.visao, cfg.embeddings, cfg.respostasRapidas, cfg.desambiguacao]);
+    const base = JSON.stringify([cfg.provedor, cfg.cadeia, cfg.rascunho, cfg.prioritario, cfg.visao, cfg.embeddings, cfg.respostasRapidas, cfg.desambiguacao, cfg.esclarecimento]);
     let h = 5381; for (let i = 0; i < base.length; i++) h = ((h * 33) ^ base.charCodeAt(i)) >>> 0;
     return h.toString(36);
 }

@@ -101,6 +101,16 @@ do $$ begin
     end if;
 end $$;
 
+-- FAQ (SQL 07 e 07b): se já foi instalado, passa para o modo seguro (o público só lê as perguntas publicadas; só o administrador edita e envia vídeos)
+do $$ begin
+    if to_regprocedure('public.faq_aplicar_politicas(boolean)') is not null then
+        perform public.faq_aplicar_politicas(true);
+    end if;
+    if to_regprocedure('public.faq_videos_aplicar_politicas(boolean)') is not null then
+        perform public.faq_videos_aplicar_politicas(true);
+    end if;
+end $$;
+
 commit;
 
 -- ─── TESTES (rode depois; "set local role" finge ser o app, sem login) ─────

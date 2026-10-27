@@ -9,7 +9,7 @@ $raiz = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $utf8 = New-Object System.Text.UTF8Encoding($false)
 $total = 0
 
-foreach ($rel in 'index.html', 'simulador.html', 'admin\index.html', 'admin\senha.html') {
+foreach ($rel in 'index.html', 'simulador.html', 'faq.html', 'admin\index.html', 'admin\senha.html') {
     $f = Join-Path $raiz $rel
     if (-not (Test-Path -LiteralPath $f)) { continue }
     $t = [IO.File]::ReadAllText($f, $utf8)

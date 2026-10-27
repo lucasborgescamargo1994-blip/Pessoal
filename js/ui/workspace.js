@@ -54,9 +54,9 @@ const Workspace = (() => {
         stage.appendChild(emptyEl);
         const yp = $('#ytPlayer'); ytOriginal = yp ? yp.innerHTML : null;
 
-        // "IA Pronta (1234) [+56 repo]" é longo: o texto completo vira dica ao passar o mouse
+        // "IA Pronta (1234) [+56 repo]" é longo: o texto completo vira dica ao passar o mouse (mais, se houver, o resumo dos vetores — js/app/embeddings.js)
         const sbadge = document.getElementById('statusBadge');
-        if (sbadge) new MutationObserver(() => { sbadge.title = sbadge.textContent; }).observe(sbadge, { childList: true, characterData: true, subtree: true });
+        if (sbadge) new MutationObserver(() => { sbadge.title = sbadge.textContent + (sbadge.dataset.vetores ? '\n' + sbadge.dataset.vetores : ''); }).observe(sbadge, { childList: true, characterData: true, subtree: true });
     }
 
     /* estado --------------------------------------------------------------- */

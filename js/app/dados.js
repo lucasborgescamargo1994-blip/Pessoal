@@ -91,22 +91,17 @@ async function loadData() {
         let dados = rB.value.data;
         if (!Array.isArray(dados)) throw new Error("Formato inválido");
 
-        // Se cache local vazio, baixa embeddings do Supabase uma única vez por dispositivo.
-        // Pgvector retorna o vetor como string "[0.1,0.2,...]" — por isso parseamos antes de usar.
-        if (Object.keys(_embCacheMem).length === 0 && dados.length > 0) {
+        // Artigos que não têm vetor no cache local (computador novo, cache apagado, ou que não coube no armazenamento do
+        // navegador): busca o vetor deles no servidor, em lotes, ANTES de gastar a Jina. Antes só baixava com o cache 100% vazio:
+        // com 1 vetor guardado, todo o resto era revetorizado um a um (~10 min) a cada recarga.
+        await _embCachePronto;
+        const idsSemVetor = dados.filter(r => r.id != null && !_getEmbFromCache(r.id)).map(r => r.id);
+        if (idsSemVetor.length > 0) {
             b.innerText = 'Baixando vetores do servidor...';
             try {
-                const { data: embRows } = await sb.from('BancoDados').select('id, embedding');
-                let seeded = 0;
-                (embRows || []).forEach(r => {
-                    if (!r.embedding) return;
-                    let vec = r.embedding;
-                    if (typeof vec === 'string') { try { vec = JSON.parse(vec); } catch(e) { return; } }
-                    // Só aceita vetores Jina (1024 dims) — ignora vetores Gemini antigos (3072 dims)
-                    if (Array.isArray(vec) && vec.length === 1024) { _saveEmbToCache(r.id, vec); seeded++; }
-                });
-                console.log(`[cache] ${seeded} vetores Jina carregados do Supabase`);
-            } catch(e) { console.warn('[cache] Falha ao baixar vetores:', e); }
+                const { baixados, falhas } = await _embBaixarDoServidor(idsSemVetor, (i, n) => { b.innerText = `Baixando vetores do servidor... ${i}/${n}`; });
+                console.log(`[vetores] ${baixados} de ${idsSemVetor.length} baixados do servidor${falhas ? ` (${falhas} lote(s) falharam)` : ''}`);
+            } catch(e) { console.warn('[vetores] Falha ao baixar vetores:', e); }
         }
 
         dados = dados.map(row => ({
@@ -119,6 +114,10 @@ async function loadData() {
         bancoCompletoRaw = dados;
         b.innerText = "Vetorizando base...";
         const { linhasComVetor, linhasSemVetor, chaves } = carregarVetoresExistentes(dados);
+        BSOFT_VETORES.cacheLocal = Math.max(0, linhasComVetor - BSOFT_VETORES.servidor);
+        b.dataset.vetores = _embResumo();
+        console.log('[vetores] ' + _embResumo() + (linhasSemVetor.length ? ` ${linhasSemVetor.length} artigo(s) vão para a Jina.` : ''));
+        _embGravarAgora();   // sem esperar: grava o que mudou (vetores baixados, hashes novos)
         if (manualVetorizado.length > 0) {
             liberarChat(linhasSemVetor.length > 0 ? "parcial" : "completo");
         }
@@ -175,6 +174,7 @@ async function vetorizarEmBackground(lsv,chaves){
         const nv=await gerarEmbeddingComRetry(item.textoCompleto);
         if(nv){
             manualVetorizado.push({texto:item.textoCompleto,erro:item.textoErro,solucao:item.textoSolucao,emitir:item.textoEmitir||"",categoria:item.textoCategoria,caminhoMenu:item.textoCaminhoMenu||"",vetor:nv,idSupabase:item.idSupabase});
+            BSOFT_VETORES.jina++;
             salvarVetorNoSupabase(item.idSupabase,nv,_hashConteudo(item.textoCompleto));
             es=0;
         } else{es++;await new Promise(r=>setTimeout(r,10000));}
@@ -184,6 +184,8 @@ async function vetorizarEmBackground(lsv,chaves){
     _hideOverlay();
     document.getElementById('statusBadge').innerText=`IA Pronta (${manualVetorizado.length})`;
     document.getElementById('statusBadge').className="badge";
+    _embGravarAgora();
+    document.getElementById('statusBadge').dataset.vetores=_embResumo();
 }
 function liberarChat(modo="completo"){
     const b = document.getElementById('statusBadge');

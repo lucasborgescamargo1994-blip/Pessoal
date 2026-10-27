@@ -19,10 +19,20 @@ async function handleChat(opts) {
     const ch = obterContextoHorario();
     if (isVectorizing) return;
     const input = document.getElementById('searchInput');
-    const query = (opts.pergunta ? String(opts.pergunta) : input.value).trim();
+    let query = (opts.pergunta ? String(opts.pergunta) : input.value).trim();
     if (!query) return;
+    // Esclarecimento com botões (js/app/esclarecimento.js): a IA perguntou "em qual tela você está?" e a pessoa DIGITOU a resposta em vez de clicar —
+    // vale como o clique: a busca e a IA recebem a pergunta REFINADA (pergunta original + esclarecimento + resposta); a bolha mostra só o que ela digitou.
+    // (_bolha também vem pronta quando o clique no botão chama o handleChat.)
+    let _bolha = opts.bolha ? String(opts.bolha) : null;
+    if (!_reuso && typeof Esc !== 'undefined') {
+        let _ed = null;
+        try { _ed = Esc.consumirDigitada(query, opts); } catch (e) { console.warn('[esclarecimento] resposta digitada:', e); }
+        if (_ed) { _bolha = query; query = _ed.refinada; opts = Object.assign({}, opts, _ed.opts); }
+    }
     if (!_reuso && typeof Desamb !== 'undefined') Desamb.encerrarPendentes();   // botões de "qual é o seu caso?" que a pessoa deixou sem escolher: apagados
     if (!_reuso && typeof Formato !== 'undefined') Formato.encerrarPendentes();  // idem para os botões "resposta curta / completa detalhada"
+    if (!_reuso && typeof Esc !== 'undefined') Esc.encerrarPendentes();          // idem para os botões de esclarecimento da IA
 
     // Perguntas sobre a agenda pessoal ("quais tarefas tenho hoje?", "tarefa: ligar para o cliente amanhã 14h") são respondidas aqui, na tela:
     // não vão para a IA, não entram no histórico da conversa e não geram log (os dados são pessoais e ficam só no computador do usuário).
@@ -51,7 +61,7 @@ async function handleChat(opts) {
     }
 
     filaSolucoes = []; lastQuery = query;
-    if (!_reuso) { appendMessage('user', query); adicionarMensagemNaConversa('user', query); input.value = ""; }
+    if (!_reuso) { appendMessage('user', _bolha || query); adicionarMensagemNaConversa('user', _bolha || query, query); input.value = ""; }   // (a IA lê a pergunta refinada; a tela mostra só o que a pessoa escolheu/digitou)
 
     const conversa = getConversaAtiva();
     if (conversa) { const dd = detectarDocumento(query.toLowerCase()); if (dd) { conversa.documentoContexto = dd; conversa.topicoAtual = query; salvarConversas(); } }
@@ -220,7 +230,7 @@ async function handleChat(opts) {
 
     // ── Pergunta vaga (pode ser sobre mais de um assunto): pergunta qual antes de responder — sem IA, com os mesmos resultados da busca acima ──
     // Não pergunta em: nova tentativa/2ª passada, "pesquisar com a IA", chamada de voz (não dá para clicar) nem quando a busca foi só por palavra-chave.
-    if (!_reuso && !opts.forcarIA && !opts.desambiguado && !isCallActive && typeof Desamb !== 'undefined') {
+    if (!_reuso && !opts.forcarIA && !opts.desambiguado && !opts.esclarecimentos && !isCallActive && typeof Desamb !== 'undefined') {   // (depois de um esclarecimento da IA a pergunta já veio refinada: não pergunta "qual é o seu caso?" por cima)
         let _dv = null;
         try { _dv = Desamb.avaliar(query, rr, rrUsadas, { vetorial: _buscaVetorial, temHistorico: !!(conversa && conversa.contexto && conversa.contexto.some(m => m && m.role === 'assistant')) }); }
         catch (e) { console.warn('[desambiguação] não consegui avaliar, seguindo normal:', e); }
@@ -243,6 +253,17 @@ async function handleChat(opts) {
     if (!trb && rr.every(r => r.similaridade < 0.5) && !rrUsadas.some(x => x.score >= 0.5)) { vum = true; mi = `\n⚠️ ATENÇÃO: Nenhum resultado encontrado no manual (max: ${rr.length > 0 ? (rr[0].similaridade * 100).toFixed(0) : 0}%).\n`; }
 
     if (opts.desambiguado && typeof Desamb !== 'undefined') mi += Desamb.textoEsclarecimento(opts);   // o que a pessoa escolheu nos botões "qual é o seu caso?"
+    // ── Esclarecimento com botões (js/app/esclarecimento.js): em vez de "não encontrei, informe X, Y, Z", a IA pergunta UMA coisa e oferece botões ──
+    // 'preferido' = nada achado no manual; 'permitido' = só achou algo fraco; 'proibido' = resposta forte, voz, "pesquisar com a IA", 2ª passada da pergunta vaga ou rodadas esgotadas.
+    let _modoEsc = 'proibido';
+    const _rodadasEsc = opts.esclarecimentos || 0;
+    if (typeof Esc !== 'undefined') {
+        try { _modoEsc = Esc.modo({ vum, trb, voz: isCallActive, forcarIA: opts.forcarIA, expansao: opts.expandida, desambiguado: opts.desambiguado, rodadas: _rodadasEsc }); }
+        catch (e) { console.warn('[esclarecimento] não consegui decidir o modo, seguindo sem perguntar:', e); }
+        if (_modoEsc !== 'proibido' || _rodadasEsc > 0) { try { mi += Esc.textoRegra(_modoEsc, _rodadasEsc); } catch (e) { _modoEsc = 'proibido'; } }
+        console.log(`%c💬 [esclarecimento] modo: ${_modoEsc}${_rodadasEsc ? ' (rodada ' + _rodadasEsc + ')' : ''}`, 'color:#7c3aed;font-weight:600;');
+    }
+    const _fraseNaoAchou = _modoEsc === 'preferido' ? 'Não encontrou no manual: faça a PERGUNTA DE ESCLARECIMENTO COM BOTÕES (instrução acima) em vez de dizer só "não encontrei"; só peça reformulação se nenhuma pergunta ajudar.' : 'Não encontrou: pedir reformulação.';
     if (opts.desambiguado && vum && opts.logTs && !BSOFT_SIM) { try { sb.from('logs').update({ encontrou: false }).eq('timestamp', opts.logTs).then(() => {}, () => {}); } catch (e) { /* só informação */ } }   // a linha nasceu como "encontrou" quando os botões apareceram
     // ── Resposta curta ou completa? (js/app/formato-resposta.js) ──
     // Só aqui, quando a IA vai mesmo responder (depois da resposta rápida e da pergunta vaga). Pergunta: a linha de log nasce agora (1 por pergunta) e a escolha refaz a pergunta
@@ -318,7 +339,7 @@ async function handleChat(opts) {
     try { _fontesUsadas = fontesDoBanco({ artigos: rr, aprovadas: rrUsadas, parametros: _pmUsados, funcionalidades: _fmUsados, rotinas: _rotinasUsadas }); }
     catch (e) { console.warn('[log] não consegui listar os dados do banco usados nesta resposta:', e); }
 
-    const ps = `🏢 VOCÊ É UM AGENTE DE SUPORTE DA BSOFT TMS\n\n${ch}\n\n🎯 Atenda o cliente de forma PROFISSIONAL e DIDÁTICA.\n\nREGRAS OBRIGATÓRIAS:\n1. Use APENAS as informações contidas no CONHECIMENTO abaixo. Nada além.\n2. NUNCA invente. Se não encontrar a resposta no conhecimento fornecido, diga claramente que não encontrou e peça para reformular.\n3. ⚠️ CAMINHOS DE MENU — PROIBIDO INVENTAR: Só cite um caminho de menu (ex: "Transporte > Documentos > CT-e") se ele aparecer LITERALMENTE nos CAMINHOS DO MENU (é o menu REAL do sistema, copiado dele), nos ATALHOS E PROCEDIMENTOS, em "Primeiros passos", em DOCUMENTOS (Emissão) ou em TALÕES do conhecimento, no campo "Caminho no menu" de uma ROTINA ou de um artigo fornecido, ou na solução do artigo fornecido. Copie o caminho EXATAMENTE como está (mesmos nomes e níveis, separados por " > "): não pule nem junte níveis, não traduza nem abrevie nomes, e NÃO copie as marcas internas "(id da rotina: …)" e "[pasta]" (servem só para você). Se houver mais de um caminho para a mesma tela, cite o que melhor combina com a pergunta — na dúvida, o de MENOS níveis (o mais direto) — e, se fizer sentido, o outro. Se uma fonte divergir do CAMINHOS DO MENU ou do "Caminho no menu" da rotina (que vêm do menu real), vale o do menu real. Itens marcados [pasta] são pastas do menu (abrem uma lista de telas), não telas. O menu pode variar conforme a permissão do usuário e os módulos contratados: se o cliente disser que não encontra o item, sugira conferir com o administrador do sistema a permissão do usuário às rotinas. Se o caminho não estiver explícito no conhecimento abaixo, NÃO mencione nenhum caminho — escreva apenas "acesse pelo menu do sistema" sem inventar a navegação.\n4. Procedimentos e passos: só descreva o que estiver documentado na solução. Não crie etapas extras por lógica própria.\n5. ⚠️ NÃO OMITA NADA DA SOLUÇÃO — REGRA ABSOLUTA: Reproduza TODOS os passos da solução do artigo, na íntegra. É PROIBIDO: resumir, condensar, escrever "etc.", "e assim por diante", pular etapas, ou dizer "siga os passos normais". Se a solução tem 10 passos, escreva os 10 completos com todos os detalhes. O público é suporte iniciante que não conhece o sistema — cada detalhe é essencial para resolver o problema. Prefira respostas longas e completas a respostas curtas e incompletas.\n6. Mantenha o contexto da conversa.\n7. Seja conversacional e humano.\n8. Diferencie: CT-e, MDF-e, NF-e, NFS-e, Minuta, OC, CIOT, VPO.\n9. PARÂMETROS E FUNCIONALIDADES: Se a seção "PARÂMETROS E FUNCIONALIDADES RELACIONADOS" contiver itens relevantes para a pergunta, mencione-os ao final da resposta como opção adicional — ex: "💡 Verifique também se o parâmetro/funcionalidade X está habilitado, pois pode estar relacionado a esta situação."\n10. ROTINAS: Se a seção "ROTINAS RELACIONADAS" tiver algo relevante pra pergunta (ex.: "onde fica X", "como acesso X"), use o Nome oficial pra confirmar como a tela/função se chama. Só inclua o nome interno/caminho técnico da rotina se isso realmente ajudar (ex.: pedido claramente técnico) -- e nesse caso, escreva o link da tela EXATAMENTE como veio na seção ROTINAS RELACIONADAS, com NOMEDOCLIENTE (o sistema transforma esse link num campo onde a pessoa cola o endereço do sistema dela e num botão "Acessar tela" — não explique como montar a URL). SEMPRE que apresentar o link da tela, apresente também, logo em seguida, como chegar a ela pelo menu do sistema, para quem preferir não usar o link: se a própria rotina trouxer "Caminho no menu: …" (vem do menu real; se houver dois separados por OU, cite o mais direto), ou se os CAMINHOS DO MENU trouxerem esse mesmo id de rotina, ou se algum artigo trouxer "Caminho no menu: …" ou o caminho de menu constar LITERALMENTE na solução do artigo (use-o EXATAMENTE como está), escreva "Ou pelo menu: " seguido do caminho COMPLETO copiado como está (os caminhos reais têm de 1 a 5 níveis; não acrescente "Menu >"); se NÃO constar, NÃO invente a navegação (a regra 3 continua valendo) — escreva apenas "Ou procure pelo menu do sistema: <Nome oficial da tela>"; e, se a rotina disser "Aparece como item no menu do sistema: Não", diga que essa tela não aparece como item do menu e que o link é o caminho para abri-la. Nunca invente nome oficial nem id de rotina que não estejam listados aqui.\n11. RESPOSTAS APROVADAS PELA EQUIPE: Se existir a seção "RESPOSTAS JÁ APROVADAS PELA EQUIPE DE SUPORTE", ela traz respostas que a própria equipe já revisou e aprovou para perguntas parecidas — é conhecimento VALIDADO, do mesmo nível dos artigos. Se alguma delas resolve a pergunta atual, use o conteúdo dela por inteiro (sem omitir passos) e complemente com os artigos quando fizer sentido. Se um artigo e uma resposta aprovada divergirem sobre o MESMO assunto, siga a resposta aprovada. NÃO aplique uma resposta aprovada que seja sobre outro assunto, outro código de erro/rejeição ou outro tipo de documento (CT-e, MDF-e, NF-e, NFS-e…): nesse caso, ignore-a. Nunca diga ao cliente que existe uma "resposta aprovada" ou uma "seção" — apenas responda.\n12. ⚠️ NF-e E NFS-e SÃO DOCUMENTOS DIFERENTES — NUNCA OS CONFUNDA: NF-e = Nota Fiscal Eletrônica de PRODUTOS/mercadorias (a nota que acompanha a carga e que o CT-e transporta). NFS-e = Nota Fiscal de SERVIÇO Eletrônica (serviços, emitida na prefeitura/município, com ISS). Nunca trate uma pela outra: não responda uma pergunta de NF-e com conteúdo de NFS-e (nem o contrário), não troque nem misture as siglas e não as escreva como se fossem sinônimos (ex.: "NF-e/NFS-e"). Se o conhecimento fornecido for de um desses documentos e a pergunta for do outro, não aplique esse conteúdo — diga que ele se refere a outro documento. Ao citar o documento, use sempre a sigla exata (NF-e ou NFS-e) que o conhecimento e a pergunta tratam; se a pergunta disser só "nota fiscal" e não der para saber qual das duas é, peça ao cliente para informar qual.\n13. ⚠️ COORDENADAS — NUNCA INVENTE: você NÃO consulta mapas. Nunca informe latitude, longitude ou coordenadas por conta própria nem "aproximadas"; só repita coordenadas que estejam escritas literalmente no CONHECIMENTO. Se pedirem as coordenadas de um endereço, oriente a enviar o endereço no formato "RUA, NÚMERO, BAIRRO — CIDADE - UF" junto de "latitude e longitude" (o sistema consulta o mapa e responde sozinho).\n14. ⚠️ FÓRMULAS E CÁLCULOS EM TEXTO SIMPLES: o chat NÃO exibe LaTeX. NUNCA use \\[ \\], \\( \\), \\frac, \\text, \\approx, $...$ nem qualquer código LaTeX. Escreva a fórmula em texto comum, em uma linha, com os nomes dos campos e os símbolos + − × ÷ = ≈ e parênteses, ex.: **Base = Valor Líquido ÷ ((100 − Alíquota) ÷ 100)**; depois mostre o exemplo com números, ex.: Base = 1.200,00 ÷ ((100 − 18) ÷ 100) = 1.200,00 ÷ 0,82 ≈ R$ 1.463,41.\n   📐 CÁLCULO INVERSO (ICMS "por dentro"): escreva SEMPRE a fórmula exatamente assim, nesta ordem: **Base = Valor Líquido ÷ ((100 − Alíquota) ÷ 100)**. Explique os passos assim: 1º) subtraia a alíquota de 100; 2º) divida esse resultado por 100; 3º) divida o Valor Líquido pelo resultado do 2º passo. NUNCA escreva essa fórmula como "1 − Alíquota ÷ 100", "1 − 0,18" nem de qualquer outra forma — use sempre (100 − Alíquota) ÷ 100, e nos exemplos com números mostre ((100 − 18) ÷ 100).\n\n${mi}\n📚 CONHECIMENTO:\n${es}${rrCtx}${ar}${pfCtx}${rotinasCtx}${conhecimentoRepositorio}${hc}\n\n🗣️ PERGUNTA: "${query}"\n${_modo}\n📝 FORMATO:\n- Markdown limpo. NUNCA JSON.\n- **negrito** para termos importantes.\n- Listas com - para passos sequenciais.\n- Linguagem conversacional e humana.${vum ? '\n- Não encontrou: pedir reformulação.' : ''}\n- OBRIGATÓRIO: ao encerrar toda resposta completa, escreva \`#finalizado\` sozinho na última linha.`;
+    const ps = `🏢 VOCÊ É UM AGENTE DE SUPORTE DA BSOFT TMS\n\n${ch}\n\n🎯 Atenda o cliente de forma PROFISSIONAL e DIDÁTICA.\n\nREGRAS OBRIGATÓRIAS:\n1. Use APENAS as informações contidas no CONHECIMENTO abaixo. Nada além.\n2. NUNCA invente. Se não encontrar a resposta no conhecimento fornecido, diga claramente que não encontrou e peça para reformular.\n3. ⚠️ CAMINHOS DE MENU — PROIBIDO INVENTAR: Só cite um caminho de menu (ex: "Transporte > Documentos > CT-e") se ele aparecer LITERALMENTE nos CAMINHOS DO MENU (é o menu REAL do sistema, copiado dele), nos ATALHOS E PROCEDIMENTOS, em "Primeiros passos", em DOCUMENTOS (Emissão) ou em TALÕES do conhecimento, no campo "Caminho no menu" de uma ROTINA ou de um artigo fornecido, ou na solução do artigo fornecido. Copie o caminho EXATAMENTE como está (mesmos nomes e níveis, separados por " > "): não pule nem junte níveis, não traduza nem abrevie nomes, e NÃO copie as marcas internas "(id da rotina: …)" e "[pasta]" (servem só para você). Se houver mais de um caminho para a mesma tela, cite o que melhor combina com a pergunta — na dúvida, o de MENOS níveis (o mais direto) — e, se fizer sentido, o outro. Se uma fonte divergir do CAMINHOS DO MENU ou do "Caminho no menu" da rotina (que vêm do menu real), vale o do menu real. Itens marcados [pasta] são pastas do menu (abrem uma lista de telas), não telas. O menu pode variar conforme a permissão do usuário e os módulos contratados: se o cliente disser que não encontra o item, sugira conferir com o administrador do sistema a permissão do usuário às rotinas. Se o caminho não estiver explícito no conhecimento abaixo, NÃO mencione nenhum caminho — escreva apenas "acesse pelo menu do sistema" sem inventar a navegação.\n4. Procedimentos e passos: só descreva o que estiver documentado na solução. Não crie etapas extras por lógica própria.\n5. ⚠️ NÃO OMITA NADA DA SOLUÇÃO — REGRA ABSOLUTA: Reproduza TODOS os passos da solução do artigo, na íntegra. É PROIBIDO: resumir, condensar, escrever "etc.", "e assim por diante", pular etapas, ou dizer "siga os passos normais". Se a solução tem 10 passos, escreva os 10 completos com todos os detalhes. O público é suporte iniciante que não conhece o sistema — cada detalhe é essencial para resolver o problema. Prefira respostas longas e completas a respostas curtas e incompletas.\n6. Mantenha o contexto da conversa.\n7. Seja conversacional e humano.\n8. Diferencie: CT-e, MDF-e, NF-e, NFS-e, Minuta, OC, CIOT, VPO.\n9. PARÂMETROS E FUNCIONALIDADES: Se a seção "PARÂMETROS E FUNCIONALIDADES RELACIONADOS" contiver itens relevantes para a pergunta, mencione-os ao final da resposta como opção adicional — ex: "💡 Verifique também se o parâmetro/funcionalidade X está habilitado, pois pode estar relacionado a esta situação."\n10. ROTINAS: Se a seção "ROTINAS RELACIONADAS" tiver algo relevante pra pergunta (ex.: "onde fica X", "como acesso X"), use o Nome oficial pra confirmar como a tela/função se chama. Só inclua o nome interno/caminho técnico da rotina se isso realmente ajudar (ex.: pedido claramente técnico) -- e nesse caso, escreva o link da tela EXATAMENTE como veio na seção ROTINAS RELACIONADAS, com NOMEDOCLIENTE (o sistema transforma esse link num campo onde a pessoa cola o endereço do sistema dela e num botão "Acessar tela" — não explique como montar a URL). SEMPRE que apresentar o link da tela, apresente também, logo em seguida, como chegar a ela pelo menu do sistema, para quem preferir não usar o link: se a própria rotina trouxer "Caminho no menu: …" (vem do menu real; se houver dois separados por OU, cite o mais direto), ou se os CAMINHOS DO MENU trouxerem esse mesmo id de rotina, ou se algum artigo trouxer "Caminho no menu: …" ou o caminho de menu constar LITERALMENTE na solução do artigo (use-o EXATAMENTE como está), escreva "Ou pelo menu: " seguido do caminho COMPLETO copiado como está (os caminhos reais têm de 1 a 5 níveis; não acrescente "Menu >"); se NÃO constar, NÃO invente a navegação (a regra 3 continua valendo) — escreva apenas "Ou procure pelo menu do sistema: <Nome oficial da tela>"; e, se a rotina disser "Aparece como item no menu do sistema: Não", diga que essa tela não aparece como item do menu e que o link é o caminho para abri-la. Nunca invente nome oficial nem id de rotina que não estejam listados aqui.\n11. RESPOSTAS APROVADAS PELA EQUIPE: Se existir a seção "RESPOSTAS JÁ APROVADAS PELA EQUIPE DE SUPORTE", ela traz respostas que a própria equipe já revisou e aprovou para perguntas parecidas — é conhecimento VALIDADO, do mesmo nível dos artigos. Se alguma delas resolve a pergunta atual, use o conteúdo dela por inteiro (sem omitir passos) e complemente com os artigos quando fizer sentido. Se um artigo e uma resposta aprovada divergirem sobre o MESMO assunto, siga a resposta aprovada. NÃO aplique uma resposta aprovada que seja sobre outro assunto, outro código de erro/rejeição ou outro tipo de documento (CT-e, MDF-e, NF-e, NFS-e…): nesse caso, ignore-a. Nunca diga ao cliente que existe uma "resposta aprovada" ou uma "seção" — apenas responda.\n12. ⚠️ NF-e E NFS-e SÃO DOCUMENTOS DIFERENTES — NUNCA OS CONFUNDA: NF-e = Nota Fiscal Eletrônica de PRODUTOS/mercadorias (a nota que acompanha a carga e que o CT-e transporta). NFS-e = Nota Fiscal de SERVIÇO Eletrônica (serviços, emitida na prefeitura/município, com ISS). Nunca trate uma pela outra: não responda uma pergunta de NF-e com conteúdo de NFS-e (nem o contrário), não troque nem misture as siglas e não as escreva como se fossem sinônimos (ex.: "NF-e/NFS-e"). Se o conhecimento fornecido for de um desses documentos e a pergunta for do outro, não aplique esse conteúdo — diga que ele se refere a outro documento. Ao citar o documento, use sempre a sigla exata (NF-e ou NFS-e) que o conhecimento e a pergunta tratam; se a pergunta disser só "nota fiscal" e não der para saber qual das duas é, peça ao cliente para informar qual.\n13. ⚠️ COORDENADAS — NUNCA INVENTE: você NÃO consulta mapas. Nunca informe latitude, longitude ou coordenadas por conta própria nem "aproximadas"; só repita coordenadas que estejam escritas literalmente no CONHECIMENTO. Se pedirem as coordenadas de um endereço, oriente a enviar o endereço no formato "RUA, NÚMERO, BAIRRO — CIDADE - UF" junto de "latitude e longitude" (o sistema consulta o mapa e responde sozinho).\n14. ⚠️ FÓRMULAS E CÁLCULOS EM TEXTO SIMPLES: o chat NÃO exibe LaTeX. NUNCA use \\[ \\], \\( \\), \\frac, \\text, \\approx, $...$ nem qualquer código LaTeX. Escreva a fórmula em texto comum, em uma linha, com os nomes dos campos e os símbolos + − × ÷ = ≈ e parênteses, ex.: **Base = Valor Líquido ÷ ((100 − Alíquota) ÷ 100)**; depois mostre o exemplo com números, ex.: Base = 1.200,00 ÷ ((100 − 18) ÷ 100) = 1.200,00 ÷ 0,82 ≈ R$ 1.463,41.\n   📐 CÁLCULO INVERSO (ICMS "por dentro"): escreva SEMPRE a fórmula exatamente assim, nesta ordem: **Base = Valor Líquido ÷ ((100 − Alíquota) ÷ 100)**. Explique os passos assim: 1º) subtraia a alíquota de 100; 2º) divida esse resultado por 100; 3º) divida o Valor Líquido pelo resultado do 2º passo. NUNCA escreva essa fórmula como "1 − Alíquota ÷ 100", "1 − 0,18" nem de qualquer outra forma — use sempre (100 − Alíquota) ÷ 100, e nos exemplos com números mostre ((100 − 18) ÷ 100).\n\n${mi}\n📚 CONHECIMENTO:\n${es}${rrCtx}${ar}${pfCtx}${rotinasCtx}${conhecimentoRepositorio}${hc}\n\n🗣️ PERGUNTA: "${query}"\n${_modo}\n📝 FORMATO:\n- Markdown limpo. NUNCA JSON.\n- **negrito** para termos importantes.\n- Listas com - para passos sequenciais.\n- Linguagem conversacional e humana.${vum ? '\n- ' + _fraseNaoAchou : ''}\n- OBRIGATÓRIO: ao encerrar toda resposta completa, escreva \`#finalizado\` sozinho na última linha.`;
 
     // Build multi-turn messages when conversation history exists
     const _historyTurns = cc.slice(0, -1); // previous turns, current query already added to cc as last item
@@ -326,7 +347,7 @@ async function handleChat(opts) {
     if (_historyTurns.length >= 2) {
         // Remove embedded history text from context to avoid duplication with proper message turns
         const _psContexto = ps.split('\n\n🗣️')[0].replace(hc, '');
-        const _fmtSuffix = `\n${_modo}\n📝 FORMATO:\n- Markdown limpo.\n- **negrito** para termos importantes.\n- Listas com - para passos sequenciais.\n- Linguagem conversacional e humana.${vum ? '\n- Se não encontrou no manual: pedir reformulação.' : ''}`;
+        const _fmtSuffix = `\n${_modo}\n📝 FORMATO:\n- Markdown limpo.\n- **negrito** para termos importantes.\n- Listas com - para passos sequenciais.\n- Linguagem conversacional e humana.${vum ? '\n- Se ' + _fraseNaoAchou.charAt(0).toLowerCase() + _fraseNaoAchou.slice(1) : ''}`;
         _apiMessages = [
             { role: 'user', content: _psContexto },
             ..._historyTurns.map(m => ({ role: m.role, content: m.content.substring(0, 800) })),
@@ -336,6 +357,7 @@ async function handleChat(opts) {
         _apiMessages = [{ role: 'user', content: ps }];
     }
 
+    const _semMarcadorEsc = t => { try { return (typeof Esc !== 'undefined') ? Esc.ocultarParcial(t) : t; } catch (e) { return t; } };   // o marcador [[BOTOES: …]] nunca aparece na tela, nem pela metade
     let _streamCard = null;
     let _mainStreamConectado = false; // só vira true depois que o modelo grande conecta de fato — usado no catch pra decidir a mensagem de erro certa
     const _filter = _makeThinkingFilter();
@@ -414,7 +436,7 @@ async function handleChat(opts) {
 
         const { finishReason: _hcFR } = await _readSSEStream(_resp, _pr, chunk => {
             lastVis = _filter.push(chunk);
-            _guarda.atualizar(lastVis);
+            _guarda.atualizar(_semMarcadorEsc(lastVis));
         });
 
         streamDone = true;
@@ -433,7 +455,7 @@ async function handleChat(opts) {
                     _apiMessages, { temperature: 0.4, maxTokens: 3000, skipModels: [_im] }
                 );
                 await _readSSEStream(_resp2, _pr2, chunk => {
-                    _guarda.atualizar(_filter2.push(chunk));
+                    _guarda.atualizar(_semMarcadorEsc(_filter2.push(chunk)));
                 });
                 finalText = _filter2.finish();
                 _fbOk = !!finalText.trim();
@@ -459,6 +481,19 @@ async function handleChat(opts) {
             return;
         }
 
+        // Esclarecimento com botões (js/app/esclarecimento.js): a IA terminou com [[BOTOES: a | b | c]]? O marcador SAI do texto sempre; as opções só viram botões se o modo permitia.
+        let _opcoesEsc = null;
+        if (typeof Esc !== 'undefined') {
+            try {
+                const _x = Esc.extrair(finalText);
+                finalText = _x.texto;
+                if (_modoEsc !== 'proibido' && _x.opcoes) {
+                    if (_rodadasEsc > 0 && Esc.repetida(finalText, opts.perguntasEsc)) console.log('%c💬 [esclarecimento] a IA repetiu uma pergunta já respondida — botões descartados', 'color:#7c3aed;font-weight:600;');
+                    else { _opcoesEsc = _x.opcoes; if (!finalText.trim()) finalText = 'Para eu te ajudar melhor, escolha a opção que mais se parece com o seu caso:'; }
+                }
+            } catch (e) { console.warn('[esclarecimento] não consegui ler o marcador de botões:', e); }
+        }
+
         // Idioma: sempre português do Brasil. Se um modelo (ex.: o fallback North Mini) respondeu em inglês, traduz ANTES de mostrar e de guardar no log.
         finalText = (await _guarda.concluir(finalText)).texto;
 
@@ -468,13 +503,24 @@ async function handleChat(opts) {
         // a revelação ainda pode estar no meio do caminho nesse ponto, e forçar desceria a tela
         // antes mesmo dela terminar de aparecer — deixa o usuário livre pra ler do jeito que quiser.
         _revelacao.atualizar(finalText);
-        _revelacao.finalizar();
-        feedbackEl.style.display = 'flex';
+        if (_opcoesEsc) {
+            // pergunta de esclarecimento: não é uma resposta final (sem "foi útil?", sem atalhos); os botões entram quando o texto termina de aparecer.
+            // Quem já escolheu (ou fixou) o formato curta/completa não escolhe de novo na passada seguinte.
+            const _fmtSeguinte = (!vum && (opts.formato || opts.formatoDecidido || (typeof Formato !== 'undefined' && Formato.preferencia() !== 'perguntar'))) ? _formato : null;
+            feedbackEl.style.display = 'none';
+            const _perg = Esc.perguntaDe(finalText), _opc = _opcoesEsc.slice();
+            _revelacao.finalizar(() => { try { Esc.mostrar(card, { base: query, pergunta: _perg, perguntas: (opts.perguntasEsc || []).concat(_perg), opcoes: _opc, rodadas: _rodadasEsc, formato: _fmtSeguinte }); } catch (e) { console.warn('[esclarecimento] não consegui mostrar os botões:', e); } });
+            if (document.hidden) _enviarNotificacaoNavegador('🤖 Suporte Bsoft TMS', 'Preciso de uma informação para te ajudar — escolha uma opção no chat.', 'bsoft-ia-resposta');
+        } else {
+            _revelacao.finalizar();
+            feedbackEl.style.display = 'flex';
+        }
         adicionarMensagemNaConversa('ai', finalText.replace(/\*\*(.*?)\*\*/g, '$1'));
         if (_formato === 'curta' && typeof Formato !== 'undefined') Formato.marcarNoContexto(ts);
-        // Guarda a resposta apresentada no log (vai para a fila de revisão da Área Administrativa)
-        registrarRespostaNoLog(_logTs, { resposta: finalText, fonte: 'ia', modelo: _im, fontes: _fontesUsadas });
-        simEnviarAoPainel({ tipo: 'bsoft:sim:trace', fonte: 'ia', pergunta: query, modelo: _im, ms: Math.round(performance.now() - _t0), bloqueios: window.BSOFT_SIM_BLOQUEIOS.length, bloqueiosLista: window.BSOFT_SIM_BLOQUEIOS.slice(-20), forcouIA: !!opts.forcarIA, formato: _formato, rrContexto: rrUsadas.map(x => ({ id: x.item.id, pct: Math.round(x.score * 100) })) });
+        // Guarda a resposta apresentada no log (vai para a fila de revisão da Área Administrativa).
+        // Pergunta de esclarecimento: guarda também as opções e entra como "ignorada" na Revisão (não é uma resposta que possa virar resposta rápida).
+        registrarRespostaNoLog(_logTs, { resposta: finalText + (_opcoesEsc ? '\n\n[Botões oferecidos: ' + _opcoesEsc.join(' | ') + ']' : ''), fonte: 'ia', modelo: _im, fontes: _fontesUsadas, revisao: _opcoesEsc ? 'ignorada' : undefined });
+        simEnviarAoPainel({ tipo: 'bsoft:sim:trace', fonte: 'ia', pergunta: query, modelo: _im, ms: Math.round(performance.now() - _t0), bloqueios: window.BSOFT_SIM_BLOQUEIOS.length, bloqueiosLista: window.BSOFT_SIM_BLOQUEIOS.slice(-20), forcouIA: !!opts.forcarIA, formato: _formato, esclarecimento: _opcoesEsc, modoEsclarecimento: _modoEsc, rrContexto: rrUsadas.map(x => ({ id: x.item.id, pct: Math.round(x.score * 100) })) });
         // Resposta pode demorar — se a pessoa saiu da aba/janela nesse meio tempo, avisa que já
         // terminou (só quando não está olhando; quem está vendo o streaming não precisa de aviso).
         if (document.hidden) {
@@ -489,7 +535,7 @@ async function handleChat(opts) {
             const partial = _filter.finish();
             const ce = _streamCard.querySelector('.section-content');
             const fe = _streamCard.querySelector('.feedback-area');
-            if (ce) ce.innerHTML = (partial ? renderMd(partial) : ce.innerHTML) + '<p style="color:#dc2626;font-size:12px;margin-top:8px">⚠️ Resposta interrompida. Tente novamente.</p>';
+            if (ce) ce.innerHTML = (partial ? renderMd(_semMarcadorEsc(partial)) : ce.innerHTML) + '<p style="color:#dc2626;font-size:12px;margin-top:8px">⚠️ Resposta interrompida. Tente novamente.</p>';
             if (fe) fe.style.display = 'flex';
         } else {
             // o modelo grande nunca chegou a conectar — o card só tinha o "Pensando..." (ou, no

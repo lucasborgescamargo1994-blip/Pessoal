@@ -36,11 +36,12 @@ function excluirConversa(id, event) {
     salvarConversas(); renderizarListaConversas();
 }
 function getConversaAtiva() { return conversas.find(c => c.id === conversaAtivaId) || null; }
-function adicionarMensagemNaConversa(sender, text) {
+// textoContexto (opcional, só para sender 'user'): o que a IA lê no histórico quando difere do que a tela mostra (ex.: clique num botão de esclarecimento → a IA lê a pergunta refinada)
+function adicionarMensagemNaConversa(sender, text, textoContexto) {
     const conversa = getConversaAtiva(); if (!conversa) return;
     conversa.mensagens.push({ sender, text, timestamp: Date.now() });
     if (sender === 'user' && conversa.titulo === 'Nova Conversa' && conversa.mensagens.filter(m => m.sender === 'user').length === 1) { conversa.titulo = text.length > 40 ? text.substring(0, 37) + '...' : text; conversa.primeiraPergunta = text; }
-    if (sender === 'user') conversa.contexto.push({ role:'user', content:text });
+    if (sender === 'user') conversa.contexto.push({ role:'user', content: textoContexto || text });
     else if (sender === 'ai' || sender === 'system' || sender === 'ml') conversa.contexto.push({ role:'assistant', content:text.replace(/<[^>]*>/g,'') });
     if (conversa.contexto.length > 40) conversa.contexto = conversa.contexto.slice(-40);
     if (conversa.mensagens.length > 500) conversa.mensagens = conversa.mensagens.slice(-500);

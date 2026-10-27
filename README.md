@@ -29,11 +29,13 @@ Assistente de suporte do Bsoft TMS: responde dúvidas com a base de conhecimento
 11. [Pergunta vaga: botões “qual é o seu caso?”](#pergunta-vaga-botões-qual-é-o-seu-caso-v2818)
 12. [Menu real do sistema: caminhos de cada tela](#menu-real-do-sistema-caminhos-de-cada-tela-v2819)
 13. [Resposta curta ou completa detalhada](#resposta-curta-ou-completa-detalhada-v2820)
-14. [Simulador de atendimento: treino, provas e área administrativa](#simulador-de-atendimento-treino-provas-e-área-administrativa-v2822)
-15. [IA / MCP: trocar modelos e chaves](#ia--mcp-trocar-modelos-e-chaves)
-16. [Segurança — leia](#segurança--leia)
-17. [Problemas comuns](#problemas-comuns)
-18. [Para quem vai mexer no código](#para-quem-vai-mexer-no-código)
+14. [IA que pergunta com botões antes de dizer “não encontrei”](#ia-que-pergunta-com-botões-antes-de-dizer-não-encontrei-v2824)
+15. [FAQ: perguntas, respostas e vídeos](#faq-perguntas-respostas-e-vídeos-v2823)
+16. [Simulador de atendimento: treino, provas e área administrativa](#simulador-de-atendimento-treino-provas-e-área-administrativa-v2822)
+17. [IA / MCP: trocar modelos e chaves](#ia--mcp-trocar-modelos-e-chaves)
+18. [Segurança — leia](#segurança--leia)
+19. [Problemas comuns](#problemas-comuns)
+20. [Para quem vai mexer no código](#para-quem-vai-mexer-no-código)
 
 ---
 
@@ -42,6 +44,8 @@ Assistente de suporte do Bsoft TMS: responde dúvidas com a base de conhecimento
 ```
 bsoft-suporte-ia/
 ├─ index.html              ← o sistema (chat) que os usuários abrem
+├─ simulador.html          ← simulador de atendimento (treino e provas)
+├─ faq.html                ← FAQ: perguntas e respostas com vídeos (alimentado pela aba FAQ do painel)
 ├─ admin/
 │  ├─ index.html           ← Área Administrativa (login + abas)
 │  ├─ senha.html           ← gera/recupera a senha do painel (sem precisar da antiga)
@@ -55,8 +59,9 @@ bsoft-suporte-ia/
 ├─ js/
 │  ├─ core/                ← base compartilhada (IA/MCP, Supabase, markdown, busca de respostas rápidas...)
 │  ├─ app/                 ← lógica do chat e dos assistentes (ferramentas.js = abas das ferramentas; regras, relatórios, Sefaz...)
+│  ├─ faq/                 ← página do FAQ: logica.js (links de vídeo, busca, importação do banco) e tela.js
 │  └─ ui/                  ← interface (abas, Meu Espaço, agenda-*.js, Personalizar, paleta de comandos...)
-├─ sql/                    ← scripts para rodar no Supabase (01, 02, 03 e o 03b que desfaz o 03)
+├─ sql/                    ← scripts para rodar no Supabase (01 a 07 e o 03b que desfaz o 03)
 ├─ supabase/functions/     ← Edge Function do status SEFAZ/ANTT
 ├─ tools/                  ← utilitários: servidor-local.bat, atualizar-versao.ps1, verificar-projeto.ps1, gerar-nova-do-beta.js
 ├─ .nojekyll  .gitignore  README.md
@@ -117,6 +122,8 @@ Todos são seguros para rodar de novo.
 | 4 | `sql/04_logs_fontes_banco.sql` | Cria a coluna `logs.fontes_banco`: guarda **quais dados do banco a IA usou** em cada resposta (aba Revisão) | para ver essa lista na Revisão (sem ele, tudo funciona igual) |
 | 5 | `sql/05_bancodados_caminho_menu.sql` | Cria a coluna `BancoDados.caminho_menu`: o **caminho da tela no menu** de cada artigo (ex.: `Transporte > Configurações > Tela`), preenchido na aba Revisão e em "Corrigir artigo" | para guardar o caminho junto do artigo e a IA mostrá-lo literalmente (sem ele, tudo funciona igual) |
 | 6 | `sql/06_simulador_provas.sql` | Cria as tabelas do **Simulador**: provas, tentativas (quem fez, nota, conversa), treinos livres e configuração (aba **Treinamento**) | só se for usar as **provas** e o registro de quem treinou (sem ele, o treino livre funciona igual) |
+| 7 | `sql/07_faq.sql` | Cria a tabela do **FAQ** (`faq_itens`: pergunta, resposta, categoria, caminho no menu, **vídeos**, de onde veio, publicada ou rascunho) para a página `faq.html` e a aba **FAQ** | só se for usar o **FAQ** |
+| 7b | `sql/07b_faq_videos_storage.sql` | Cria a pasta pública `faq-videos` no Supabase e as regras de envio — liga o botão **“Enviar vídeo do computador”** da aba FAQ (limite de **50 MB** por arquivo no plano gratuito) | **opcional** — sem ele, o FAQ funciona igual com links do YouTube/Google Drive |
 
 **Conferir se deu certo:** painel → aba **Sistema** → **Rodar verificação** (lista o que existe e o que falta).
 Enquanto o `02` não for rodado, o sistema funciona normalmente — só não grava a resposta no log nem mostra respostas rápidas.
@@ -137,6 +144,7 @@ todas na mesma tela (`Alt+1` … `Alt+9` também trocam de aba). Tudo o que voc�
 | **Respostas rápidas** | Lista/edita/pausa/exclui as respostas aprovadas, mostra quantas vezes cada uma foi usada e tem um **testador**: "se alguém perguntar isto, qual resposta o sistema usaria?". |
 | **Simulador** | O chat de verdade dentro do painel, **sem gravar nada** (nem log, nem feedback). Mostra de onde veio cada resposta (rápida ou IA, qual modelo, tempo). Dá para testar a configuração de IA **antes de salvar**. |
 | **Treinamento** | Área administrativa do **Simulador de atendimento** (v28.22): **monta as provas** (casos do banco de dados e/ou escritos por você, nota mínima, limites, link do curso no YOUniversity), mostra **quem fez cada prova** (nome completo, nota, aprovado ou não, conversa de cada caso), permite aprovar/reprovar manualmente, exportar CSV e acompanhar os **treinos livres**. Precisa do `sql/06_simulador_provas.sql`. |
+| **FAQ** | **Alimenta a página `faq.html`** (v28.23): **importa do banco de dados** (artigos do BancoDados e respostas rápidas viram perguntas em rascunho), edita pergunta/resposta (Markdown com prévia), **anexa os vídeos** (link do YouTube, Google Drive, Vimeo, Loom ou .mp4 — com prévia — ou envia o arquivo do computador), publica/despublica, edita em lote e copia o link de cada pergunta. Também há o botão **“Levar para o FAQ”** nas abas **Banco de dados** e **Respostas rápidas**. Precisa do `sql/07_faq.sql`. Veja [FAQ](#faq-perguntas-respostas-e-vídeos-v2823). |
 | **IA / MCP** | Edita `config/mcp-config.js`: provedor, chaves, cadeia de modelos (arrastar para ordenar, testar cada um), visão, embeddings, regras das respostas rápidas. |
 | **Banco de dados** | Editor das tabelas de conteúdo (base de conhecimento, parâmetros, funcionalidades, rotinas, rejeições SEFAZ…): editar, criar, duplicar, excluir, exportar CSV. |
 | **Logs** | Perguntas dos usuários, 👍/👎, motivo e **retorno do suporte**; filtros, busca, exclusão em lote, exportar CSV. A resposta só é baixada quando você abre a linha (economiza transferência). |
@@ -230,6 +238,7 @@ Como funciona, do começo ao fim:
    - grava direto na coluna `caminho_menu` quando você clica em **Salvar no banco de dados** (na aprovação como resposta rápida o campo não é usado);
    - o mesmo campo existe em **Corrigir artigo** (editar um artigo já salvo); mudar só o caminho não zera o vetor de busca do artigo;
    - separe os níveis com `>` (aceita também `›`, `»`, `→`, `->`, `|`; tudo vira `Menu > Submenu > Tela`);
+   - **Autocompletar (v28.24):** ao digitar **3 letras ou mais**, o campo sugere os caminhos que **já estão gravados** no banco de dados (os de `BancoDados.caminho_menu`), com quantos artigos usam cada um. Basta lembrar uma parte (“conf”, “talões”, “notas fisc”): todas as palavras digitadas precisam aparecer, sem acento e em qualquer ordem; quem **começa igual** vem primeiro, depois os mais usados. Use **↑ ↓ + Enter**, clique, ou **Esc** para fechar; pode ignorar as sugestões e digitar um caminho novo. Funciona na Revisão, em “Corrigir artigo”, na aba **Banco de dados** (coluna `caminho_menu`) e no “Onde fica no menu” do FAQ. A lista é lida do banco uma vez e guardada por 5 minutos (um caminho gravado agora já entra nas sugestões);
    - **Efeito na IA:** o artigo entra no prompt com a linha "Caminho no menu: …" e a IA a usa **literalmente** (chat e Analisar tela); sem caminho ela nunca inventa. A mudança chega aos usuários quando abrem o sistema de novo;
    - Sem o SQL 05 nada quebra: o sistema abre normalmente (a carga refaz sem a coluna), o campo fica desabilitado em "Corrigir artigo", e em "Salvar no banco de dados" avisa que **nada foi salvo** e qual SQL rodar. A aba **Sistema** ganhou a linha de verificação da coluna.
 
@@ -485,6 +494,64 @@ Logo depois da pergunta (quando a IA vai mesmo responder), o chat mostra dois bo
 - **"Tentar novamente"** (quando a IA falha) agora refaz a mesma pergunta com a mesma escolha de assunto e de formato, sem criar outra bolha nem outra linha de log.
 - **Para mexer:** `js/app/formato-resposta.js` (global `Formato`: `decidir`, `textoModo` — o texto das instruções —, `mostrar`, `escolher`, `expandir`), o gancho no `handleChat` (logo antes de `_logTs`; a instrução entra no fim dos dois prompts, depois da pergunta) e `css/desambiguacao.css`. Os textos das instruções ficam em `Formato.textoModo`: dá para ajustar o tamanho da curta (hoje 8 linhas) ali.
 
+## IA que pergunta com botões antes de dizer “não encontrei” (v28.24)
+
+Antes, quando o manual não tinha a resposta, a IA escrevia “não encontrei… informe qual tela, se aparece erro…” e a pessoa tinha de digitar tudo de novo. Agora, nesses casos (e quando a pergunta é vaga demais), a IA faz **UMA pergunta curta** e mostra **botões** para clicar — com opções tiradas do próprio conhecimento (caminhos de menu, tipos de documento, nomes de telas), nunca inventadas. Exemplo: *“minha impressora térmica de etiquetas imprime torto, como ajusto o layout?”* → **“Qual etiqueta de volume você deseja ajustar?”** `[Etiqueta de Volumes de Saída]` `[Etiqueta de Volumes de Saída c/ Produto]` `[✍️ Outra resposta]` `[🤷 Não sei]`.
+
+- **Como segue:** o clique (ou a resposta **digitada**, se for curta e não for uma pergunta nova) refaz a busca com a **pergunta refinada** — a pergunta original + a pergunta de esclarecimento + a resposta (a tela mostra só o que você escolheu). “✍️ Outra resposta” leva o cursor para a caixa de mensagem; “🤷 Não sei” faz a IA responder com o que já tem.
+- **Quando pergunta (e quando NÃO):** o chat decide o *modo*. **Preferido** = o manual não achou nada (em vez de “não encontrei”); **permitido** = achou só algo fraco (a IA só pergunta se a pergunta for vaga e houver mais de um caminho); **proibido** = há resposta forte (responde direto), chamada de voz, “pesquisar com a IA”, 2ª passada dos botões “qual é o seu caso?” e rodadas esgotadas. **No máximo 2 rodadas** seguidas; a IA não pode repetir uma pergunta já respondida (se repetir, o sistema descarta os botões). Depois do esclarecimento, se ainda não houver resposta, ela diz que não encontrou.
+- **Convive com os outros cartões:** os botões “qual é o seu caso?” (sem IA, por empate de assuntos) continuam valendo e vêm antes; depois de um esclarecimento da IA eles não aparecem por cima. Quem já escolheu “curta/completa” não escolhe de novo.
+- **Liga/desliga:** cada pessoa em **Personalizar › “A IA pergunta para entender melhor”**; a equipe, na aba **IA / MCP › “IA que pergunta com botões”** (liga/desliga, nº de rodadas 1–4 e de botões 2–6; vai para o `config/mcp-config.js` → `esclarecimento`).
+- **Log e Revisão:** a pergunta de esclarecimento é gravada no log com as opções (`[Botões oferecidos: …]`) e entra na Revisão como **“ignorada”** (não é uma resposta que possa virar resposta rápida). O **Simulador** do painel mostra a etiqueta “💬 perguntou com N botões”.
+- **Como a IA sabe fazer isso:** o prompt ganha um bloco (modo PREFERIDO/PERMITIDO) que manda terminar a resposta com o marcador `[[BOTOES: opção 1 | opção 2 | opção 3]]`. O marcador **nunca aparece na tela** (é tirado do texto, inclusive enquanto a resposta é escrita) e só vira botão se o modo permitir. Para ajustar o jeito de perguntar, edite `Esc.textoRegra` em `js/app/esclarecimento.js`.
+- **Arquivos:** `js/app/esclarecimento.js` (global `Esc`, com testes), o gancho em `js/app/chat.js`, `css/desambiguacao.css`, `js/core/mcp.js` (config) e `admin/js/aba-mcp.js` (card).
+
+## FAQ: perguntas, respostas e vídeos (v28.23)
+
+`faq.html` (abre em outra guia: **Ctrl K › FAQ: perguntas e vídeos**, ou direto pelo endereço `…/faq.html`) é um **repositório de perguntas e respostas** em que cada pergunta pode ter **vídeos que mostram na prática como fazer**. Quem consulta busca pelo que quer saber, abre a pergunta e assiste ao vídeo ali mesmo, sem sair da página. Quem **alimenta** é você, pela aba **FAQ** da Área Administrativa.
+
+### Instalar (uma vez)
+
+Rode `sql/07_faq.sql` no SQL Editor do Supabase (a aba FAQ tem o botão **Copiar o SQL**). Ele só **cria** a tabela nova `faq_itens`; nada existente é alterado. Enquanto não rodar, a página mostra “O FAQ ainda não foi configurado” e a aba explica o que fazer. Opcional: `sql/07b_faq_videos_storage.sql` (veja [onde guardar os vídeos](#onde-guardar-os-vídeos)).
+
+### Como alimentar o FAQ (aba FAQ do painel)
+
+1. **Levar do banco de dados:** botão **Importar do banco de dados** → escolha **Artigos do banco de dados** (tabela `BancoDados`) ou **Respostas rápidas** → busque, marque quantos quiser e clique em **Levar para o FAQ**. Cada item vira uma pergunta **em rascunho**, já com o texto, a categoria e o caminho no menu (e, nas respostas rápidas, as variantes viram palavras-chave da busca). O que já foi levado aparece como “já no FAQ” e **não duplica**. Atalho: nas abas **Banco de dados** e **Respostas rápidas** existe o botão de **boia** (“Levar para o FAQ”) em cada linha — ele já abre a pergunta pronta para você anexar o vídeo.
+2. **Escrever à mão:** **Nova pergunta**. A resposta aceita Markdown (negrito, listas, links) e mostra a **prévia** na hora. “Palavras-chave” são sinônimos para a busca (ex.: `cancelar anular estornar`).
+3. **Anexar o vídeo:** no editor, **Adicionar vídeo** → cole o link (dá um título opcional). O painel mostra de que tipo é (YouTube, Google Drive…) e o botão **Prévia** toca ali mesmo, para você conferir antes de salvar. Cada pergunta aceita até 12 vídeos, que você reordena (setas) ou tira.
+4. **Publicar:** a chave **Publicada** põe a pergunta na página `faq.html`; desligada, ela fica de **rascunho** (só você vê). Dá para marcar várias linhas e **publicar, voltar a rascunho, mudar categoria ou excluir** de uma vez.
+5. **Divulgar:** o ícone de **copiar** dá o **link da pergunta** (`…/faq.html?id=NÚMERO`) — abre a página já nela, com o vídeo. Serve para mandar para o cliente ou colocar no YOUniversity.
+6. Mudou o artigo no banco de dados? Abra a pergunta que veio dele e clique em **Atualizar o texto a partir do banco** (os vídeos e as palavras-chave que você anexou não mudam).
+
+### Onde guardar os vídeos
+
+O FAQ guarda **só o endereço** do vídeo; o arquivo fica onde você preferir:
+
+| Onde | Como | Observação |
+|---|---|---|
+| **YouTube** (recomendado) | Envie no seu canal como **“Não listado”** e cole o link (`youtu.be/…` ou `youtube.com/watch?v=…`; `?t=1m30s` abre no minuto certo) | Sem limite de tamanho, toca em qualquer aparelho, e só quem tem o link acha o vídeo. |
+| **Google Drive** | Envie para o Drive → botão direito › **Compartilhar** › **“Qualquer pessoa com o link”** → copie o link **do arquivo** (não o da pasta) | Se não estiver compartilhado assim, a pessoa vê “sem permissão”. O Drive às vezes demora a processar vídeos recém-enviados. Link de **pasta** é recusado com uma explicação. |
+| **Vimeo / Loom** | Cole o link de compartilhamento | O Loom é bom para gravar a tela na hora. |
+| **Arquivo direto** | Qualquer link que termine em `.mp4`, `.webm`, `.ogg`, `.mov` | Toca no player do navegador. |
+| **Enviar do computador** | Botão **Enviar vídeo do computador** no editor | **Opcional** (precisa do `sql/07b_faq_videos_storage.sql`). Guarda o arquivo no Supabase Storage (pasta pública `faq-videos`). **Limite de 50 MB por arquivo e 1 GB no total no plano gratuito** — gravação de tela costuma passar disso; nesse caso use o YouTube ou o Drive. |
+| **Outros** (OneDrive, Dropbox…) | Cole o link | Não toca dentro da página: aparece o botão **“Abrir vídeo”**, que abre em outra guia. |
+
+Na página, só o **primeiro vídeo** da pergunta carrega sozinho; os demais abrem com **“Carregar e assistir”** (a página fica leve). Todo vídeo tem também **“Abrir em outra guia”**. Links que não sejam `http/https` (por exemplo `javascript:`) são **recusados** ao salvar e nunca viram player.
+
+### A página `faq.html`
+
+- **Busca** por palavras (sem acento, plural/singular tanto faz, e **“cte” = “CT-e”**, “mdfe” = “MDF-e”, “nfe” = “NF-e”): todas as palavras precisam aparecer; a pergunta pesa mais que as palavras-chave, a categoria, o caminho e a resposta. Filtro por **categoria** e por **só com vídeo**. A tecla **/** vai para a busca.
+- Cada pergunta é um bloco que **abre e fecha**; ao abrir, o endereço da página passa a ser o **link daquela pergunta**. Abrir `faq.html?id=12` já abre a pergunta 12 (e limpa os filtros se ela estiver escondida por eles).
+- Mostra 30 por vez (“Mostrar mais”). Funciona no celular. Tem o link **“Pergunte ao Suporte IA”** para quem não achou.
+
+### Segurança e limites (leia)
+
+- **Quem pode editar:** no modo `local` (sem o `03_seguranca_rls.sql`) a tabela fica **aberta** como as demais — a página só mostra as **publicadas**, mas quem souber consultar o banco consegue ler (e editar) também os **rascunhos**; não coloque nada sigiloso no FAQ. Com o `03_seguranca_rls.sql` (modo `supabase`), o público só **lê as publicadas** e só o **administrador** cria, edita e vê rascunhos (o 03 já reaplica as regras do FAQ; rodou o 07 **depois** do 03? Ele escolhe o modo certo sozinho).
+- Todo texto vindo do banco entra na tela como **texto** (a resposta passa pelo formatador, que escapa HTML antes). Vídeos só viram player para **YouTube, Google Drive, Vimeo, Loom e arquivos de vídeo**, dentro de um quadro com `sandbox`; qualquer outro endereço vira só um link.
+- **Os vídeos do YouTube “não listados” e do Drive “com o link” não são privados:** quem receber o link consegue assistir. Para conteúdo realmente restrito, não use o FAQ público.
+- Excluir uma pergunta **não apaga o vídeo** do YouTube/Drive (só o vínculo). Já os arquivos enviados pelo botão “do computador” ficam no Supabase Storage (apague-os pelo painel do Supabase se quiser liberar espaço).
+- **Arquivos:** `faq.html`, `css/faq.css`, `js/faq/logica.js` (tipos de link de vídeo, busca, conversão do banco de dados), `js/faq/tela.js` (página), `admin/js/aba-faq.js` (aba do painel), `sql/07_faq.sql` e `sql/07b_faq_videos_storage.sql`.
+
 ## Simulador de atendimento: treino, provas e área administrativa (v28.22)
 
 `simulador.html` (abre em outra guia: **Ctrl K › Simulador de atendimento**, ou direto pelo endereço) é um chat de **treinamento**: a IA faz o papel de um **cliente** com uma dúvida real do seu banco de dados, e **quem treina faz o suporte**. Desde a v28.22 ele **pede o nome completo ao abrir** e tem **dois modos**: **Provas** (montadas por você na aba **Treinamento** do painel) e **Treino livre**.
@@ -542,6 +609,15 @@ O **Geolocalizador CIOT** é uma página separada (`geolocaliza.html`, publicada
 - **Trava de segurança:** o endereço do MCP só é aceito se for da **mesma conta do GitHub Pages** da página (ou localhost, nos testes) e só com provedores conhecidos (OpenRouter/Google). Se o seu sistema de suporte estiver publicado em **outra conta**, a página recusa o endereço: nesse caso preencha a constante `MCP_URL_PADRAO` no topo do bloco "MODELOS DE IA = MCP" do `geolocaliza.html`.
 - Nas configurações do geolocalizador (engrenagem) aparece o status: **"🔗 IA ligada ao MCP (config vNN): modelos…"** ou o aviso de que está usando a configuração própria. Uma cópia do arquivo antigo ficou como `geolocaliza - antes do MCP.html`.
 - O **chat de latitude/longitude** do sistema de suporte (`js/app/geolocalizacao.js`) não usa IA (OpenStreetMap), então não muda.
+
+#### Layout compacto, “Aguarde” e consulta ANTT (v28.24)
+
+Mudanças só no `geolocaliza.html` (**suba-o para o repositório `Pessoal`**; cópia do anterior: `geolocaliza - antes do layout compacto.html`) e uma no sistema (`css/app-panels.css`: o quadro do CIOT perdeu o `min-height: 500px`, que cortava a página em janelas baixas).
+
+- **Tudo à vista, sem rolar a página, em qualquer tamanho de janela.** A página se ajusta ao espaço que recebe (testada de 360×640 a 1700×800, nas 4 abas). Janela larga: **entrada à esquerda e resultado à direita**. Janela estreita (painel lateral, tela dividida): aparece **a entrada ou o resultado**, com o botão **← Voltar**. Janela baixa: somem os textos de apoio. As abas viram só o nome curto (XML, CIOT, ANTT, Erros IA) quando faltar largura. Só o resultado rola, por dentro dele.
+- **Analisador de Erros:** a área **“Arraste os arquivos”** ocupa todo o espaço livre (é o uso principal) e a caixa de **colar texto** ficou pequena (2–3 linhas).
+- **“Analisar com IA”:** ao clicar, o botão **some** e no lugar aparece **“Aguarde, verificando arquivos…”**; o “Limpar” fica desativado e cliques repetidos são ignorados. Volta ao normal quando a análise termina — com resposta ou com erro. A resposta da IA agora mostra as tags XML que ela cita (antes o navegador as escondia) e o “Copiar análise” tem plano B dentro do sistema.
+- **Aba “Consulta ANTT (RNTRC)” — Placa + RNTRC ou Placa + CPF/CNPJ do transportador.** A consulta pública da ANTT (`consultapublica.antt.gov.br`) exige **“Eu não sou um robô” (reCAPTCHA)**: nenhum programa consegue consultar sozinho, e a página **não tenta burlar isso**. O que a aba faz: **confere antes** (formato da placa antiga/Mercosul, dígitos verificadores do CPF/CNPJ, tamanho do RNTRC), **pega os dados do request** colado/anexado (botão “Do request”: placa, RNTRC e CPF/CNPJ do contratado; se houver várias placas, você escolhe), abre a **consulta oficial em outra aba** já com a placa **copiada** (botões “Copiar” para RNTRC e CPF/CNPJ), mostra os passos (**Por Veículo** → colar → marcar “Não sou um robô” → Consultar) e deixa você **registrar o resultado** que leu lá — ✅ Ativo, ⚠️ Vencido/suspenso/irregular ou ❌ Não encontrado — num **histórico** (últimas 30, só neste navegador) com “Copiar resumo” para colar no chamado. A situação “ativo” é a que a **ANTT** mostrou; o aplicativo não a lê sozinho.
 
 ## IA / MCP: trocar modelos e chaves
 
@@ -620,6 +696,14 @@ inserir/atualizar `logs` e inserir/apagar `machine_learning` (como já fazia). S
 | Na **Revisão**, o cartão "Dados do banco usados nesta resposta" pede para rodar o SQL 04 / diz "Sem registro" | Rode `sql/04_logs_fontes_banco.sql` (botão **Copiar o SQL** no próprio cartão) e clique em **Atualizar**. As respostas novas passam a ter a lista; as antigas não têm como ganhar. |
 | A aba **Treinamento** diz que o módulo de provas "ainda não foi instalado" / o simulador não mostra provas | Rode `sql/06_simulador_provas.sql` (botão **Copiar o SQL** na própria aba) e clique em **Atualizar**. Depois de ativar uma prova, abra o simulador de novo. |
 | Uma pessoa diz que "não consegue refazer a prova" | A prova tem limite de tentativas: em **Treinamento › Resultados**, abra a tentativa e use **Apagar tentativa** (ou aumente o limite na prova). |
+| A página `faq.html` diz "O FAQ ainda não foi configurado" / a aba **FAQ** diz que não foi instalado | Rode `sql/07_faq.sql` no SQL Editor do Supabase (botão **Copiar o SQL** na aba FAQ) e clique em **Atualizar**. |
+| Cadastrei a pergunta mas ela não aparece no `faq.html` | Está em **rascunho**: ligue a chave **Publicada** na linha (a página só mostra as publicadas). Se acabou de publicar, recarregue a página. |
+| O vídeo do Google Drive aparece “sem permissão” / em branco | O arquivo não está compartilhado: no Drive, **Compartilhar › “Qualquer pessoa com o link”**. Vídeo recém-enviado pode demorar para processar. Confira se colou o link do **arquivo** e não o da pasta. |
+| O botão **Enviar vídeo do computador** dá erro | “Ainda não foi ativado” → rode `sql/07b_faq_videos_storage.sql`. “Sem permissão” → no modo seguro entre como administrador e rode o 07b **depois** do 03. “Passa do limite” → o plano gratuito aceita 50 MB: use YouTube (não listado) ou Drive e cole o link. |
+| A IA fez uma pergunta com botões e eu não queria / os botões não aparecem | Desligue em **Personalizar › “A IA pergunta para entender melhor”** (só para você) ou na aba **IA / MCP › “IA que pergunta com botões”** (para todos). Os botões não aparecem quando o manual já tem uma resposta forte, na chamada de voz, em “pesquisar com a IA” e depois de 2 rodadas. |
+| Na aba **ANTT** do geolocalizador não aparece o resultado da consulta | A ANTT exige “Eu não sou um robô”: a consulta é feita na página oficial (botão **Consultar na ANTT**) e o resultado é **registrado por você** na própria aba. Não é falha do sistema. Se a nova aba não abrir, o navegador bloqueou: use o link “abrir de novo”. |
+| Em alguns computadores aparece “Instalando registro X de N” (vetorização do zero) **a cada recarga** | Era o cache dos vetores no `localStorage` (limite de ~5 milhões de caracteres do navegador, e ele já era ~70% disso com ~600 artigos): onde o `localStorage` tinha mais coisa, a gravação falhava em silêncio, o cache ficava pela metade e o que faltava ia para a Jina um a um a cada abertura. **Desde a v28.24.1** os vetores ficam no **IndexedDB** (sem esse teto, ~4 KB por artigo; o cache antigo é migrado sozinho e apagado do `localStorage`) e o que faltar é **baixado do servidor em lotes** antes de qualquer chamada à Jina (a Jina só gera o de artigo novo/editado). Para ver de onde vieram os vetores, passe o mouse no selo “IA Pronta” (ou digite `BSOFT_VETORES` no console, F12). Para **forçar** um computador a refazer o cache pelo servidor, abra o sistema com `?vetores=servidor` no fim do endereço (ou **Sistema › Limpar caches** no painel). Se o selo disser “Cache local: memoria”, aquele navegador bloqueia todo armazenamento (janela anônima, política da empresa que apaga os dados ao fechar): funciona, mas baixa os vetores do servidor (~3 s) a cada abertura. |
+| No FAQ a pergunta mostra “Abrir vídeo” em vez do player | O link é de um site que não deixa ser colocado dentro de outra página (OneDrive, Dropbox…). Suba o vídeo no YouTube/Drive/Vimeo/Loom, ou use um link direto `.mp4`. |
 | "O banco recusou a gravação (sem permissão)" | Você ativou o `03` mas o painel está no modo `local`. Troque para `"modo": "supabase"` (passo 4 acima) — ou rode o `03b`. |
 | Login do painel: "Este endereço não permite conferir a senha" | A criptografia do navegador só funciona em **HTTPS**, `localhost` ou arquivo aberto do disco. Evite abrir por IP de rede (`http://192.168...`). |
 | Esqueci a senha do painel | `admin/senha.html` (modo local; os usuários cadastrados são mantidos) ou redefinir no Supabase → Authentication (modo seguro). |
