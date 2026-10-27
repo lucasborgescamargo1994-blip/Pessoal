@@ -161,11 +161,13 @@
         }
 
         .ciot-iframe-container {
-            flex: 1; overflow-y: auto;
+            flex: 1; min-height: 0; overflow: hidden;
             background: #1a0a00;
         }
+        /* O Geolocalizador se ajusta sozinho ao espaço que recebe (layout compacto, sem rolar a página): o quadro NÃO pode ter altura mínima,
+           senão em janelas baixas o fim da página era cortado/rolava. display:block tira a folguinha de linha embaixo do iframe. */
         .ciot-iframe {
-            width: 100%; height: 100%; border: none; min-height: 500px;
+            display: block; width: 100%; height: 100%; border: none; min-height: 0;
         }
 
         .central-iframe { flex: 1; border: none; width: 100%; }

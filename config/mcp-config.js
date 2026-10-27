@@ -12,7 +12,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 window.BSOFT_MCP_CONFIG = {
   "versao": 19,
-  "atualizadoEm": "2026-10-27T14:41:48.522Z",
+  "atualizadoEm": "2026-10-27T18:41:47.916Z",
   "atualizadoPor": "admin",
   "provedor": {
     "tipo": "openrouter",
@@ -25,11 +25,11 @@ window.BSOFT_MCP_CONFIG = {
   },
   "cadeia": [
     {
-      "modelo": "nemotron-3.5-super-vl:free",
+      "modelo": "cohere/north-mini-code:free",
       "ativo": true
     },
     {
-      "modelo": "cohere/north-mini-code:free",
+      "modelo": "nemotron-3.5-super-vl:free",
       "ativo": true
     },
     {
@@ -38,7 +38,7 @@ window.BSOFT_MCP_CONFIG = {
     }
   ],
   "rascunho": {
-    "ativo": true,
+    "ativo": false,
     "modelo": "cohere/north-mini-code:free"
   },
   "prioritario": {
@@ -71,10 +71,10 @@ window.BSOFT_MCP_CONFIG = {
   "desambiguacao": {
     "ativo": true,
     "margem": 0.04,
-    "certeza": 0.8,
+    "certeza": 0.82,
     "minSimilaridade": 0.5,
     "maxOpcoes": 3,
-    "maxTermos": 5
+    "maxTermos": 7
   },
   "esclarecimento": {
     "ativo": true,

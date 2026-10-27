@@ -174,6 +174,7 @@
             chaves: campo('Palavras-chave (para a busca)', base.palavras_chave, { max: 300, dica: 'Ex.: cancelar anular estornar', ajuda: 'Sinônimos que a pessoa pode digitar e que não estão no texto.' }),
             ordem: campo('Ordem', base.ordem || 0, { tipo: 'number', ajuda: 'Menor aparece primeiro (0 = padrão).' }),
         };
+        ADM.autocompletarCaminho(f.caminho.i);   // sugere os caminhos que já estão gravados no banco de dados
         const ta = h('textarea', { rows: 9, placeholder: 'Escreva a resposta. Dá para usar **negrito**, listas com "- " e links. Se for só um vídeo, pode deixar em branco.', maxlength: 20000 }); ta.value = txt(base.resposta);
         const prev = h('div', { class: 'md-prev', 'aria-live': 'polite' });
         const atualizarPrev = () => { prev.innerHTML = ta.value.trim() ? L.arrumarListas(renderMd(ta.value)) : '<span class="mu">A prévia da resposta aparece aqui.</span>'; };      // renderMd escapa <, > e & antes de formatar

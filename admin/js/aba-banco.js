@@ -141,6 +141,7 @@
             else if (tipo === 'numero') { el = h('input', { type: 'number', step: 'any' }); el.value = v == null ? '' : v; get = () => el.value === '' ? null : Number(el.value); }
             else if (tipo === 'json') { el = h('textarea', { class: 'mono', rows: 4 }); el.value = v == null ? '' : JSON.stringify(v, null, 2); get = () => { const t = el.value.trim(); if (!t) return null; try { return JSON.parse(t); } catch (e) { throw new Error(`A coluna “${c}” não é um JSON válido: ${e.message}`); } }; }
             else { const s = v == null ? '' : String(v); const longo = LONGOS.has(c) || s.length > 90 || s.includes('\n'); el = longo ? h('textarea', { rows: Math.min(14, Math.max(4, Math.ceil(s.length / 90) + 1)) }) : h('input', { type: 'text' }); el.value = s; get = () => el.value === '' ? null : el.value; }
+            if (c === 'caminho_menu' && E.tab.t === 'BancoDados' && el.tagName === 'INPUT' && !auto) ADM.autocompletarCaminho(el);   // sugere os caminhos já gravados
             if (auto) el.readOnly = true, el.disabled = el.tagName === 'SELECT';
             ctl[c] = { get, auto };
             return h('label', { class: 'campo' + (el.tagName === 'TEXTAREA' ? ' longo' : '') }, h('span', { class: 'rot' }, c + (c === E.pk ? '  (chave)' : '') + (auto ? '  (automático)' : '')), el);
@@ -167,6 +168,7 @@
                     if (novo) r = await ADM.sb.from(E.tab.t).insert(payload).select();
                     else r = await ADM.sb.from(E.tab.t).update(payload).eq(E.pk, original[E.pk]).select();
                     ADM.db.exigirAfetadas(r);
+                    if (E.tab.t === 'BancoDados' && 'caminho_menu' in payload) ADM.caminhos.invalidar();
                     const gravada = limpaLinha(r.data[0]);
                     if (novo) { E.linhas.unshift(gravada); if (E.total != null) E.total++; }
                     else { const i = E.linhas.findIndex(x => x[E.pk] === original[E.pk]); if (i >= 0) E.linhas[i] = gravada; }

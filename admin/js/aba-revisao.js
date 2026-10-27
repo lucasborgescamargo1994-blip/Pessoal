@@ -275,6 +275,7 @@
         const iCat = h('input', { type: 'text', list: 'dlCatRev', maxlength: 60, placeholder: 'Ex.: CT-e' }); iCat.value = f.categoria; iCat.addEventListener('input', () => { f.categoria = iCat.value; });
         // Caminho no menu: vai para a coluna caminho_menu da tabela BancoDados (sql/05_bancodados_caminho_menu.sql). Só vale para "Salvar no banco de dados" (a resposta rápida não tem essa coluna).
         const iCm = h('input', { type: 'text', maxlength: 300, placeholder: 'Ex.: Transporte > Configurações > Informações de cobrança padrão' }); iCm.value = f.caminhoMenu || ''; iCm.addEventListener('input', () => { f.caminhoMenu = iCm.value; });
+        ADM.autocompletarCaminho(iCm);   // a partir de 3 letras sugere os caminhos que já estão gravados no banco de dados
         const ed = ADM.editorResposta({ valor: f.resposta !== undefined ? f.resposta : L.resposta });
         if (f.resposta === undefined) f.resposta = L.resposta;
         ed.textarea.addEventListener('input', () => { f.resposta = ed.obter(); });
@@ -448,6 +449,7 @@
                     if (caminhoMenu) artigo.caminho_menu = caminhoMenu;
                     const r = await ADM.sb.from('BancoDados').insert(artigo).select('id');
                     ADM.db.exigirAfetadas(r); id = r.data[0].id; f.bancoIdCriado = id;
+                    if (caminhoMenu) ADM.caminhos.invalidar();   // o caminho novo já entra nas sugestões
                     if (BD.itens) { BD.itens.push({ id, titulo, categoria: categoria || null }); sugerirCategorias(); }
                 }
                 await resolver(logsAfetados(g, L, f), { revisao: 'banco', resposta_rapida_id: null, revisao_nota: 'Salvo no banco de dados (#' + id + ')' });

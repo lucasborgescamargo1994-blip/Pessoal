@@ -58,3 +58,25 @@
 .btn-fmt-completa:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .btn-fmt-completa:disabled { opacity: .7; cursor: default; transform: none; }
 @media (prefers-reduced-motion: reduce) { .fmt-op, .btn-fmt-completa { transition: none; } .fmt-op:hover, .fmt-op:focus-visible, .btn-fmt-completa:hover { transform: none; } }
+
+/* ── Esclarecimento com botões (js/app/esclarecimento.js): a IA pergunta "em qual tela?" e oferece opções para clicar ── */
+.esc-bloco { padding: 2px 18px 14px; }
+.esc-sub { margin: 2px 0 9px; font-size: 12px; font-weight: 650; color: var(--text-muted); }
+.esc-lista { display: flex; flex-wrap: wrap; gap: 8px; }
+.esc-op {
+    display: inline-flex; align-items: center; max-width: 100%; text-align: left; padding: 9px 15px; border-radius: 999px;
+    border: 1.5px solid color-mix(in srgb, var(--primary) 45%, var(--border)); background: color-mix(in srgb, var(--primary) 7%, var(--surface)); color: var(--text);
+    font-family: inherit; font-size: 13.5px; font-weight: 650; line-height: 1.3; cursor: pointer; overflow-wrap: anywhere;
+    transition: transform .22s cubic-bezier(.34, 1.56, .64, 1), border-color .18s, background .18s, box-shadow .22s;
+}
+.esc-op:hover, .esc-op:focus-visible {
+    border-color: var(--primary); background: color-mix(in srgb, var(--primary) 15%, var(--surface));
+    box-shadow: 0 8px 18px -12px var(--accent-glow, rgba(0, 0, 0, .25)); transform: translateY(-1px);
+}
+.esc-op:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.esc-op:active { transform: scale(.985); }
+.esc-extra { border-style: dashed; border-color: var(--border); background: var(--surface); color: var(--text-muted); font-weight: 550; }
+.esc-ok { padding: 8px 18px; font-size: 12.5px; color: var(--text-muted); }
+.esc-ok b { color: var(--text); }
+.esc-bloco.is-resolvido { opacity: .85; }
+@media (prefers-reduced-motion: reduce) { .esc-op { transition: none; } .esc-op:hover, .esc-op:focus-visible { transform: none; } }

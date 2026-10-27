@@ -37,6 +37,8 @@ window.BSOFT_ADMIN = {
       "nome": "Sorriso",
       "ativo": true,
       "abas": [
+        "treinamento",
+        "faq",
         "analise",
         "novidades"
       ],

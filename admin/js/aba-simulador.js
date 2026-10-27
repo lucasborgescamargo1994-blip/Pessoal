@@ -63,6 +63,8 @@
                     !ia && t.lex != null ? h('span', { class: 'pct' }, 'termos ' + ADM.fmt.pct(t.lex)) : null,
                     !ia && t.sem != null ? h('span', { class: 'pct' }, 'significado ' + ADM.fmt.pct(t.sem)) : null,
                     t.forcouIA ? h('span', { class: 'sel wa' }, 'após “pesquisar com a IA”') : null,
+                    ia && Array.isArray(t.esclarecimento) && t.esclarecimento.length ? h('span', { class: 'sel wa', title: 'A IA fez uma pergunta de esclarecimento com botões: ' + t.esclarecimento.join(' | ') }, '💬 perguntou com ' + t.esclarecimento.length + ' botões') : null,
+                    ia && t.modoEsclarecimento && t.modoEsclarecimento !== 'proibido' && !(Array.isArray(t.esclarecimento) && t.esclarecimento.length) ? h('span', { class: 'sel', title: 'A IA podia perguntar com botões (modo ' + t.modoEsclarecimento + ') mas respondeu direto' }, '💬 podia perguntar') : null,
                     ia && Array.isArray(t.rrContexto) && t.rrContexto.length ? h('span', { class: 'sel pr', title: 'Respostas aprovadas pela equipe que entraram no contexto da IA (porcentagem = quão relacionadas à pergunta)' }, '📚 ' + t.rrContexto.length + ' aprovada(s) no contexto: ' + t.rrContexto.map(x => '#' + x.id + ' ' + x.pct + '%').join(', ')) : null,
                     h('span', { class: 'sel' }, '⏱ ' + (t.ms >= 1000 ? (t.ms / 1000).toFixed(1) + ' s' : t.ms + ' ms')))));
         });

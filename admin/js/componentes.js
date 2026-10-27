@@ -213,6 +213,7 @@ ADM.editarArtigoBanco = async function (id, opcoes) {
     if (!semColunaCaminho) linha.caminho_menu = ADM.normalizarCaminhoMenu(linha.caminho_menu);
     const iCm = h('input', { type: 'text', maxlength: 300, placeholder: semColunaCaminho ? 'Rode o sql/05_bancodados_caminho_menu.sql no Supabase para habilitar' : 'Ex.: Transporte > Configurações > Informações de cobrança padrão' });
     iCm.value = linha.caminho_menu || ''; iCm.disabled = semColunaCaminho;
+    if (!semColunaCaminho) ADM.autocompletarCaminho(iCm);   // sugere os caminhos que já estão gravados (a partir de 3 letras)
     const ed = ADM.editorResposta({ valor: linha.conteudo || '', rotulo: 'Conteúdo do artigo', rotuloPrevia: 'Visualização', placeholder: 'O texto que a IA recebe como conhecimento. Corrija o que estiver errado ou desatualizado.' });
     const iEmit = h('textarea', { rows: 4, placeholder: 'Opcional. Passo a passo de como emitir (a IA também recebe este texto).' }); iEmit.value = linha.como_emitir || '';
     const emitir = h('details', { open: !!canon(linha.como_emitir) }, h('summary', { style: { cursor: 'pointer', fontWeight: 700, fontSize: '12.5px' } }, 'Como emitir (opcional)'), h('div', { style: { marginTop: '8px' } }, iEmit));
@@ -249,6 +250,7 @@ ADM.editarArtigoBanco = async function (id, opcoes) {
                 if (Object.keys(payload).some(c => c !== 'caminho_menu')) payload.embedding = null;   // o texto mudou: o vetor de busca antigo não vale mais (igual à aba Banco de dados). Só o caminho no menu mudou? O vetor não depende dele: fica
                 const r = await ADM.sb.from('BancoDados').update(payload).eq('id', linha.id).select('id, titulo, categoria');
                 ADM.db.exigirAfetadas(r);
+                if ('caminho_menu' in payload) ADM.caminhos.invalidar();
                 ADM.ui.toast(`Artigo #${linha.id} atualizado no banco de dados. A IA passa a usar o texto novo quando o sistema for aberto de novo (o vetor de busca é recalculado sozinho).`, 'ok', 8000);
                 api.fechar();
                 if (opcoes.aoSalvar) opcoes.aoSalvar(r.data[0]);
@@ -262,4 +264,113 @@ ADM.editarArtigoBanco = async function (id, opcoes) {
 ADM.normalizarCaminhoMenu = function (txt) {
     // separa nos níveis (qualquer separador aceito), descarta pedaços vazios (">>", ">" nas pontas) e junta de novo com " > "
     return String(txt == null ? '' : txt).replace(/\s+/g, ' ').split(/\s*(?:›|»|→|->|\||>)\s*/).map(p => p.trim()).filter(Boolean).join(' > ');
+};
+
+/* ───────────── autocompletar o caminho no menu com o que JÁ está gravado ───────────── */
+// Histórico = os caminhos que já existem em BancoDados.caminho_menu (com quantos artigos usam cada um). Ao digitar 3 letras ou mais, o campo sugere os que combinam
+// (todas as palavras digitadas precisam aparecer, sem acento e em qualquer ordem; quem COMEÇA igual vem primeiro, depois os mais usados). Setas ↑ ↓ + Enter, clique
+// ou Esc. Se a coluna ainda não existe (SQL 05) ou o banco falha, o campo segue normal, sem sugestões.
+ADM.caminhos = (() => {
+    const TTL = 5 * 60 * 1000;
+    let cache = null, carregando = null;
+    const semAcento = s => String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    const chave = s => semAcento(s).replace(/›|»|→|->|\||>/g, ' ').replace(/\s+/g, ' ').trim();
+    async function carregar(forcar) {
+        if (!forcar && cache && Date.now() - cache.em < TTL) return cache.lista;
+        if (carregando) return carregando;
+        carregando = (async () => {
+            let lista = [];
+            try {
+                const linhas = await ADM.db.todas((a, b) => ADM.sb.from('BancoDados').select('caminho_menu').order('id', { ascending: true }).range(a, b));
+                const cont = new Map();
+                linhas.forEach(l => { const c = ADM.normalizarCaminhoMenu(l && l.caminho_menu); if (c) cont.set(c, (cont.get(c) || 0) + 1); });
+                lista = Array.from(cont, ([caminho, n]) => ({ caminho, n, k: chave(caminho) }));
+            } catch (e) { if (!ADM.db.ehColunaAusente(e)) console.warn('[admin] não consegui carregar os caminhos já gravados:', e); }
+            cache = { em: Date.now(), lista };
+            return lista;
+        })();
+        try { return await carregando; } finally { carregando = null; }
+    }
+    function sugerir(lista, texto, max) {
+        const q = chave(texto);
+        if (q.replace(/ /g, '').length < 3) return [];
+        const termos = q.split(' ');
+        const igual = chave(ADM.normalizarCaminhoMenu(texto));
+        return lista.filter(x => x.k !== igual && termos.every(t => x.k.includes(t)))
+            .sort((a, b) => ((b.k.startsWith(q) ? 1 : 0) - (a.k.startsWith(q) ? 1 : 0)) || (b.n - a.n) || (a.caminho.length - b.caminho.length) || a.caminho.localeCompare(b.caminho, 'pt-BR'))
+            .slice(0, max || 8);
+    }
+    return { carregar, sugerir, invalidar() { cache = null; } };
+})();
+
+// Liga o autocompletar a um <input>. Não mexe na estrutura da tela: a lista é um painel solto (position: fixed), então não é cortada por janelas com rolagem.
+ADM.autocompletarCaminho = function (input) {
+    if (!input || input._acCaminho) return;
+    input._acCaminho = true;
+    const idLista = 'acc' + Math.random().toString(36).slice(2, 7);
+    let lista = null, itens = [], ativo = -1, seq = 0;
+    input.setAttribute('role', 'combobox'); input.setAttribute('aria-autocomplete', 'list'); input.setAttribute('aria-expanded', 'false'); input.setAttribute('autocomplete', 'off');
+
+    function fechar() {
+        if (lista) { lista.remove(); lista = null; window.removeEventListener('resize', posicionar); document.removeEventListener('scroll', posicionar, true); }   // (os ouvintes só existem enquanto a lista está aberta)
+        itens = []; ativo = -1;
+        input.setAttribute('aria-expanded', 'false'); input.removeAttribute('aria-controls'); input.removeAttribute('aria-activedescendant');
+    }
+    function posicionar() {
+        if (!lista) return;
+        if (!document.contains(input)) { fechar(); return; }
+        const r = input.getBoundingClientRect(), abaixo = window.innerHeight - r.bottom, alt = Math.min(lista.scrollHeight, 280);
+        lista.style.left = Math.round(r.left) + 'px'; lista.style.width = Math.round(r.width) + 'px';
+        if (abaixo >= Math.min(alt, 170) + 8 || abaixo >= r.top) { lista.style.top = Math.round(r.bottom + 4) + 'px'; lista.style.bottom = ''; lista.style.maxHeight = Math.max(110, Math.min(280, abaixo - 12)) + 'px'; }
+        else { lista.style.top = ''; lista.style.bottom = Math.round(window.innerHeight - r.top + 4) + 'px'; lista.style.maxHeight = Math.max(110, Math.min(280, r.top - 12)) + 'px'; }
+    }
+    function destacar(i) {
+        ativo = i;
+        Array.from(lista ? lista.children : []).forEach((li, k) => { li.setAttribute('aria-selected', k === i ? 'true' : 'false'); li.classList.toggle('ativo', k === i); });
+        if (lista && i >= 0 && lista.children[i]) { input.setAttribute('aria-activedescendant', lista.children[i].id); lista.children[i].scrollIntoView({ block: 'nearest' }); }
+        else input.removeAttribute('aria-activedescendant');
+    }
+    function aceitar(i) {
+        const it = itens[i]; if (!it) return;
+        input.value = it.caminho;
+        input.dispatchEvent(new Event('input', { bubbles: true }));   // (os formulários guardam o valor pelo evento "input")
+        fechar(); input.focus();
+    }
+    function abrir(sugestoes) {
+        if (!sugestoes.length) { fechar(); return; }
+        itens = sugestoes; ativo = -1;
+        if (!lista) {
+            lista = h('ul', { class: 'ac-lista', id: idLista, role: 'listbox', 'aria-label': 'Caminhos já gravados' });
+            lista.addEventListener('mousedown', e => { e.preventDefault(); });   // clicar na lista não tira o foco do campo (senão ela fecharia antes do clique)
+            document.body.appendChild(lista);
+            window.addEventListener('resize', posicionar); document.addEventListener('scroll', posicionar, true);
+        }
+        limpar(lista);
+        sugestoes.forEach((s, i) => {
+            const li = h('li', { class: 'ac-item', role: 'option', id: idLista + '-' + i, 'aria-selected': 'false', title: s.caminho },
+                h('span', { class: 'ac-txt' }, s.caminho), h('span', { class: 'ac-n' }, s.n + (s.n === 1 ? ' artigo' : ' artigos')));
+            li.addEventListener('click', () => aceitar(i));
+            li.addEventListener('mousemove', () => { if (ativo !== i) destacar(i); });
+            lista.appendChild(li);
+        });
+        input.setAttribute('aria-expanded', 'true'); input.setAttribute('aria-controls', idLista);
+        posicionar();
+    }
+    const atualizar = debounce(async () => {
+        const meu = ++seq;
+        const dados = await ADM.caminhos.carregar();
+        if (meu !== seq || document.activeElement !== input) return;
+        abrir(ADM.caminhos.sugerir(dados, input.value, 8));
+    }, 90);
+    input.addEventListener('focus', () => { ADM.caminhos.carregar(); });                // já deixa o histórico pronto
+    input.addEventListener('input', atualizar);
+    input.addEventListener('keydown', e => {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            if (!lista) { atualizar(); return; }
+            e.preventDefault();
+            destacar(e.key === 'ArrowDown' ? (ativo + 1) % itens.length : (ativo <= 0 ? itens.length - 1 : ativo - 1));
+        } else if (e.key === 'Enter' && lista && ativo >= 0) { e.preventDefault(); aceitar(ativo); }
+        else if (e.key === 'Escape' && lista) { e.preventDefault(); e.stopPropagation(); fechar(); }   // (fecha só a lista; a janela por trás continua aberta)
+    });
+    input.addEventListener('blur', () => { seq++; setTimeout(fechar, 120); });
 };

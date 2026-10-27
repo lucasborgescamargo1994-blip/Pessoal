@@ -96,6 +96,10 @@
         if (da.minSimilaridade !== db.minSimilaridade) d.push(`Pergunta vaga — semelhança mínima do assunto: ${ADM.fmt.pct(da.minSimilaridade)} → ${ADM.fmt.pct(db.minSimilaridade)}`);
         if (da.maxOpcoes !== db.maxOpcoes) d.push(`Pergunta vaga — botões: ${da.maxOpcoes} → ${db.maxOpcoes}`);
         if (da.maxTermos !== db.maxTermos) d.push(`Pergunta vaga — máximo de termos: ${da.maxTermos} → ${db.maxTermos}`);
+        const ea = a.esclarecimento, eb = b.esclarecimento;
+        if (ea.ativo !== eb.ativo) d.push('IA pergunta com botões antes de dizer “não encontrei”: ' + (eb.ativo ? 'ligada' : 'desligada'));
+        if (ea.maxRodadas !== eb.maxRodadas) d.push(`IA pergunta com botões — rodadas: ${ea.maxRodadas} → ${eb.maxRodadas}`);
+        if (ea.maxOpcoes !== eb.maxOpcoes) d.push(`IA pergunta com botões — opções: ${ea.maxOpcoes} → ${eb.maxOpcoes}`);
         return d;
     }
 
@@ -290,6 +294,16 @@
             h('div', { class: 'g2' }, campo('Máximo de botões', numero('maxOpcoes', 2, 4, 3), 'De 2 a 4 assuntos (mais o botão “nenhum desses”). Recomendado: 3.'), campo('Máximo de termos da pergunta', numero('maxTermos', 1, 20, 7), 'Perguntas mais detalhadas que isso são tratadas como específicas e nunca perguntam. Recomendado: 7.'))]);
     }
 
+    // A IA pergunta com botões antes de dizer "não encontrei" (js/app/esclarecimento.js). Usa 1 chamada de IA como qualquer resposta (a pergunta já é a resposta daquela vez).
+    function secEsclarecimento() {
+        const r = M.rascunho.esclarecimento;
+        const ch = ADM.ui.chave(r.ativo !== false, v => { r.ativo = v; mudou(); }, 'A IA pergunta com botões antes de dizer não encontrei');
+        const numero = (chave, min, max, padrao) => { const i = h('input', { type: 'number', min, max, step: 1, value: r[chave] || padrao }); i.addEventListener('input', () => { r[chave] = Math.min(max, Math.max(min, parseInt(i.value, 10) || padrao)); mudou(); }); return i; };
+        return cartao('IA que pergunta com botões', 'sparkles', [
+            h('label', { class: 'linha' }, ch.el, h('span', null, h('b', null, 'Perguntar antes de dizer “não encontrei”'), h('span', { class: 'mu' }, ' — quando o manual não tem a resposta (ou a pergunta é vaga demais), a IA faz UMA pergunta curta (ex.: “Em qual tela você está?”) com botões clicáveis tirados do conhecimento; o clique refaz a busca com a pergunta refinada. Não pergunta quando já tem uma resposta forte, na chamada de voz nem em “pesquisar com a IA”. Cada pessoa também pode desligar em Personalizar.'))),
+            h('div', { class: 'g2' }, campo('Rodadas de perguntas', numero('maxRodadas', 1, 4, 2), 'Quantas vezes seguidas a IA pode perguntar sobre a mesma dúvida (de 1 a 4). Depois disso ela tem que responder. Recomendado: 2.'), campo('Máximo de botões', numero('maxOpcoes', 2, 6, 5), 'De 2 a 6 opções (mais “Outra resposta” e “Não sei”). Recomendado: 5.'))]);
+    }
+
     /* ───────────── status / publicação (direita) ───────────── */
     function textoArquivo(cfg, mascarar) {
         const c = clone(cfg);
@@ -399,7 +413,7 @@
     /* ───────────── montagem ───────────── */
     function construir() {
         R.dl = R.dl || h('datalist', { id: 'dlModelos' });
-        limpar(R.esq).append(R.dl, secProvedor(), secCadeia(), secRascunho(), secPrioritario(), secVisao(), secEmbeddings(), secRespostasRapidas(), secDesambiguacao());
+        limpar(R.esq).append(R.dl, secProvedor(), secCadeia(), secRascunho(), secPrioritario(), secVisao(), secEmbeddings(), secRespostasRapidas(), secDesambiguacao(), secEsclarecimento());
         atualizarDatalist(); atualizarStatus();
     }
 
