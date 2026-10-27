@@ -11,8 +11,8 @@
    DevTools; use só chaves gratuitas/limitadas (ver README).
    ═══════════════════════════════════════════════════════════════════════════ */
 window.BSOFT_MCP_CONFIG = {
-  "versao": 18,
-  "atualizadoEm": "2026-10-20T18:12:55.314Z",
+  "versao": 19,
+  "atualizadoEm": "2026-10-27T14:37:02.625Z",
   "atualizadoPor": "admin",
   "provedor": {
     "tipo": "openrouter",
@@ -25,19 +25,15 @@ window.BSOFT_MCP_CONFIG = {
   },
   "cadeia": [
     {
+      "modelo": "nemotron-3.5-super-vl:free",
+      "ativo": true
+    },
+    {
       "modelo": "cohere/north-mini-code:free",
       "ativo": true
     },
     {
-      "modelo": "lfm-2.5-2.6b:free",
-      "ativo": true
-    },
-    {
       "modelo": "laguna-s-2.1:free",
-      "ativo": true
-    },
-    {
-      "modelo": "nemotron-3-super-120b-a12b:free",
       "ativo": true
     }
   ],
@@ -71,5 +67,18 @@ window.BSOFT_MCP_CONFIG = {
     "minTermos": 2,
     "usarNoContexto": true,
     "contextoMax": 3
+  },
+  "desambiguacao": {
+    "ativo": true,
+    "margem": 0.04,
+    "certeza": 0.82,
+    "minSimilaridade": 0.5,
+    "maxOpcoes": 3,
+    "maxTermos": 7
+  },
+  "esclarecimento": {
+    "ativo": true,
+    "maxRodadas": 2,
+    "maxOpcoes": 5
   }
 };
