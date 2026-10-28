@@ -11,8 +11,8 @@
    DevTools; use só chaves gratuitas/limitadas (ver README).
    ═══════════════════════════════════════════════════════════════════════════ */
 window.BSOFT_MCP_CONFIG = {
-  "versao": 19,
-  "atualizadoEm": "2026-10-27T18:41:47.916Z",
+  "versao": 20,
+  "atualizadoEm": "2026-10-28T13:45:37.006Z",
   "atualizadoPor": "admin",
   "provedor": {
     "tipo": "openrouter",
@@ -69,7 +69,7 @@ window.BSOFT_MCP_CONFIG = {
     "contextoMax": 3
   },
   "desambiguacao": {
-    "ativo": true,
+    "ativo": false,
     "margem": 0.04,
     "certeza": 0.82,
     "minSimilaridade": 0.5,
