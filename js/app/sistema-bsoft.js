@@ -98,6 +98,7 @@ const SISTEMA_BSOFT_TMS = {
     regras_gerais: [
         "Para problemas de SEFAZ, verifique a conexão com a internet e o status da SEFAZ",
         "Para erros de validação, revise todos os campos obrigatórios do documento",
-        "O sistema possui busca rápida no menu lateral (campo de pesquisa no topo)"
+        "O sistema possui busca rápida no menu lateral (campo de pesquisa no topo)",
+        "Muitas opções e ações do sistema só funcionam, ou só aparecem na tela, depois que um PARÂMETRO (Ambiente > Administração > Parâmetros) ou uma FUNCIONALIDADE (Ambiente > Controle de Acesso > Funcionalidades) é habilitado; depois de alterar, vale atualizar as permissões (Opções do Sistema > Atualizar Permissões). Quando a seção PARÂMETROS E FUNCIONALIDADES RELACIONADOS trouxer um item que condiciona o assunto da pergunta, ele vem no INÍCIO da resposta, antes do passo a passo (regra 9)"
     ]
 };

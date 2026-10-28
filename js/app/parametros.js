@@ -43,9 +43,10 @@ async function handleParametrosFuncionalidades(queryParam, dest) {
              .slice(0, 8)
              .map(x => x.item);
 
-    // Formata registro limitado a 500 chars para não estourar o contexto da IA
+    // Formata registro limitado a 500 chars para não estourar o contexto da IA. O CÓDIGO não vai para a IA de propósito (mudou entre versões do sistema):
+    // cada item é identificado pela Descrição e pelo Nome Interno.
     const _formatarRegistro = item => Object.entries(item)
-        .filter(([k, v]) => k !== 'id' && k !== 'created_at' && v != null && String(v).trim() !== '')
+        .filter(([k, v]) => k !== 'id' && k !== 'Código' && k !== 'created_at' && k !== 'vetor' && v != null && String(v).trim() !== '')
         .map(([k, v]) => `  ${k}: ${String(v).trim()}`)
         .join('\n')
         .substring(0, 500);
@@ -101,6 +102,7 @@ INSTRUÇÕES:
   **⚙️ Funcionalidades relacionadas** — liste TODAS as funcionalidades acima que se aplicam, com nome e o que cada uma faz.
 - Se não houver nenhum em uma seção, escreva "Nenhum encontrado nesta seção."
 - Inclua TODOS os itens relevantes das duas seções — não escolha apenas um.
+- Identifique cada item pela **Descrição** (em negrito) e pelo **Nome Interno** entre parênteses (funcionalidade não tem nome interno: só a Descrição). NUNCA escreva o código (número) de parâmetro ou funcionalidade: os códigos mudaram entre versões do sistema.
 - Ao final, lembre: após habilitar, acesse **Opções do Sistema > Atualizar Permissões**.
 - Use **negrito** para nomes e caminhos de menu. Responda em Markdown limpo.\n- OBRIGATÓRIO: ao encerrar toda resposta completa, escreva \`#finalizado\` sozinho na última linha.`;
 

@@ -61,7 +61,7 @@ COMO PERGUNTAR:
    • de 2 a ${c.maxOpcoes} opções, separadas por " | ", cada uma curta (até 60 caracteres) e que o cliente possa escolher com um clique;
    • as opções precisam separar caminhos de verdade e vir do CONHECIMENTO fornecido (caminhos de menu reais, tipos de documento, situações ou mensagens que existem no sistema) — NUNCA invente tela, menu, campo ou mensagem;
    • não coloque "Outro", "Não sei" nem "Nenhuma": o sistema já acrescenta esses botões.
-3. Nessa resposta NÃO dê parte da solução, NÃO escreva "não encontrei" e NÃO escreva #finalizado: só a pergunta e o marcador.
+3. Nessa resposta NÃO dê parte da solução, NÃO escreva "não encontrei" e NÃO escreva #finalizado: só a pergunta e o marcador. ÚNICA EXCEÇÃO (regra 9): se um parâmetro/funcionalidade da seção PARÂMETROS E FUNCIONALIDADES RELACIONADOS CONDICIONA claramente o que foi perguntado, escreva ANTES da pergunta o bloco "⚙️ Antes de tudo, verifique:" (Descrição + Nome Interno, nunca o código) e só então a pergunta e o marcador.
 4. Se o HISTÓRICO já tiver uma pergunta de esclarecimento sobre o mesmo ponto, não repita: use o que o cliente respondeu.${rodadas > 0 ? `
 5. O cliente JÁ respondeu ${rodadas} esclarecimento(s): a PERGUNTA abaixo traz as perguntas e as respostas dele. Só faça outra pergunta se for sobre um ponto NOVO e DIFERENTE; nunca repita nem reformule uma pergunta já respondida, nem as mesmas opções. Se não houver mais o que perguntar, responda com o que o conhecimento tem (ou diga com gentileza que não encontrou e peça para reformular).` : ''}
 Exemplo do formato (as opções vêm do SEU conhecimento; não copie estas):
