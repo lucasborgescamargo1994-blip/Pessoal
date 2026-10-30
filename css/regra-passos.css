@@ -381,6 +381,15 @@ html[data-efeitos="zero"] .cb-zero.chama { animation: none; border-color: #f59e0
 .cb-anti .cn-ia-titulo { margin: 0 0 8px; font-size: 14px; }
 .cb-anti .cn-ia-texto { flex: 1 1 auto; height: auto; min-height: 90px; font-size: 14px; }
 .cb-anti .cn-dica { margin-top: 6px; font-size: 12px; line-height: 1.4; }
+/* os passos de cálculo não têm mais a caixa da IA ao lado (ela é o passo "Gerar regra com IA"): as opções usam a largura toda */
+.cn-colunas-opcoes.cb-uma-coluna, .cb-anti .cn-colunas-opcoes.cb-uma-coluna { grid-template-columns: minmax(0, 1fr); }
+/* passo "Gerar regra com IA": a caixa ocupa a altura que sobra, com o botão logo abaixo do texto e o recado de quem prefere montar à mão no fim */
+.cb-anti #cbSlide4 .cn-ia { flex: 1 1 auto; min-height: 0; padding: 16px 18px; }
+.cb-anti #cbSlide4 .cn-ia-titulo { margin: 0 0 10px; font-size: 16px; }
+.cb-anti #cbSlide4 .cn-ia-texto { min-height: 150px; font-size: 15px; }
+.cb-ia-acoes { display: flex; justify-content: flex-end; margin: 10px 0 2px; }
+.cb-ia-manual { margin: 10px 0 0; font-size: 14px; line-height: 1.45; color: var(--cn-mudo); }
+.cb-anti .cb-ia-manual { margin: 8px 0 0; font-size: 13.5px; }
 
 /* passo 6: a montagem em duas colunas (ferramentas | área de montagem), os campos soltos em colunas */
 .cb-anti #cbSlide3 .cn-wrap { padding: 8px 14px 6px; }
@@ -543,6 +552,15 @@ html[data-efeitos="zero"] .nv-zero.chama { animation: none; border-color: #f59e0
 .nv-anti .cn-ia-titulo { margin: 0 0 8px; font-size: 14px; }
 .nv-anti .cn-ia-texto { flex: 1 1 auto; height: auto; min-height: 90px; font-size: 14px; }
 .nv-anti .cn-dica { margin-top: 6px; font-size: 12px; line-height: 1.4; }
+/* os passos de cálculo não têm mais a caixa da IA ao lado (ela é o passo "Gerar regra com IA"): as opções usam a largura toda */
+.cn-colunas-opcoes.nv-uma-coluna, .nv-anti .cn-colunas-opcoes.nv-uma-coluna { grid-template-columns: minmax(0, 1fr); }
+/* passo "Gerar regra com IA": a caixa ocupa a altura que sobra, com o botão logo abaixo do texto e o recado de quem prefere montar à mão no fim */
+.nv-anti #nvSlide4 .cn-ia { flex: 1 1 auto; min-height: 0; padding: 16px 18px; }
+.nv-anti #nvSlide4 .cn-ia-titulo { margin: 0 0 10px; font-size: 16px; }
+.nv-anti #nvSlide4 .cn-ia-texto { min-height: 150px; font-size: 15px; }
+.nv-ia-acoes { display: flex; justify-content: flex-end; margin: 10px 0 2px; }
+.nv-ia-manual { margin: 10px 0 0; font-size: 14px; line-height: 1.45; color: var(--cn-mudo); }
+.nv-anti .nv-ia-manual { margin: 8px 0 0; font-size: 13.5px; }
 
 /* passo 6: a montagem em duas colunas (ferramentas | área de montagem), os campos soltos em colunas */
 .nv-anti #nvSlide3 .cn-wrap { padding: 8px 14px 6px; }
