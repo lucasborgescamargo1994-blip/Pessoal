@@ -12,6 +12,78 @@ const REGRAS_SO_O_DOCUMENTADO = 'REGRA ABSOLUTA - USE SOMENTE O QUE ESTA DOCUMEN
     + '3. PROIBIDO inventar nomes de campos: em obt() e def() use apenas os nomes que aparecem na documentacao/exemplos (e os campos personalizados que o usuario informar). Campos indexados por nota so os documentados (merc_quantKg[i], merc_valor[i], merc_quant[i], merc_especie[i]). Se o campo pedido nao esta na lista, NAO chute um nome: avise.\n'
     + '4. Se o pedido exigir algo que NAO existe nos recursos documentados (por exemplo: IMPEDIR O SALVAMENTO do documento, enviar e-mail, gravar em banco, abrir outra tela), NAO invente nenhuma funcao. Faca a parte possivel com recursos documentados (ex.: alert("...")), deixe no codigo um comentario "// ATENCAO: nao ha funcao documentada para <o que faltou>" no ponto onde ela iria e, DEPOIS do bloco de codigo, explique em 1 ou 2 frases, em portugues, o que nao foi possivel e por que.\n'
     + '5. Antes de responder, releia o codigo gerado: cada funcao e cada nome de campo precisa existir na documentacao; se algum nao existir, remova ou troque.\n\n';
+// ─── COMO EDITAR UMA REGRA + FORMATO DA RESPOSTA (vale para TODA IA que gera/ajusta regra) ───
+// Pedido do usuário (29/10/2026): a IA tem que entender EXATAMENTE quais blocos editar (mapear todos os campos que o pedido afeta, direta e indiretamente, e arrumar a ordem), entregar a regra INTEIRA já corrigida e
+// pronta para uso, e SEMPRE dizer em texto o que foi alterado e os pontos de atenção. Entra no prompt do Ct-e (clássico e assistentes em telas), do Contrato de Frete (montador) e do Faturamento (montador).
+// Substitui o antigo "Gere APENAS o código": o código vem primeiro, num único bloco, e o texto logo depois (os renderizadores e as travas — ICMS, loop, ordem — leem só o que está dentro dos ```).
+const REGRAS_COMO_EDITAR = 'COMO EDITAR UMA REGRA (OBRIGATORIO - vale para QUALQUER pedido de criar, ajustar ou corrigir):\n'
+    + '1. LEIA a regra inteira antes de mexer. Para cada def() anote: qual campo ele define, quais campos le com obt() (na conta e no if que o controla) e as variaveis temporarias (valor = ...). Monte o MAPA DE DEPENDENCIAS: quem alimenta quem.\n'
+    + '2. Descubra TODOS os campos que o pedido afeta, direta e indiretamente: o campo pedido, os campos que ele le e os campos que LEEM o campo pedido (ex.: mudar a base de calculo muda o valorICMS e o totalPrestacao, e tudo que depois le o valorICMS, como um GNRE). Ajuste TODOS os blocos afetados, nao so a linha mais obvia.\n'
+    + '3. ORDEM: as linhas rodam de cima para baixo, e um obt() de um campo que a propria regra so define MAIS ABAIXO le o valor antigo da tela, nao o calculado. Por isso todo campo tem que ser definido ANTES de ser lido: origens (tarifas, frete, seguro, advalorem, outros valores...) -> base -> aliquota/imposto -> totais -> derivados. Se preciso, REORDENE as linhas (so mova; nao mude a conta) e avise nos pontos de atencao.\n'
+    + '4. PRESERVE o que nao foi pedido: mantenha as demais linhas, comentarios //, if, condicoes, outros valores, variaveis e o estilo da propria regra (nomes, aspas, if com ou sem chaves). Altere so os blocos afetados. Nao apague def() que ja existia, nao renomeie campos e nao reescreva do zero. NUNCA retire termos de uma conta (ex.: seguro, diaria ou outros valores na soma da base ou do total) se o pedido nao mandou retirar: "somar X" significa ACRESCENTAR X ao que a conta ja soma, e tudo que ja estava na soma continua nela.\n'
+    + '5. NAO DUPLIQUE: se o campo ja tem def() na regra, ALTERE a linha existente em vez de criar outra. So deixe dois def() do mesmo campo no padrao "def normal + if que sobrescreve" (ex.: base zerada quando a aliquota e 0) que ja estava na regra.\n'
+    + '6. ENTENDA O PEDIDO POR COMPLETO: se o usuario pediu A e B, entregue A e B. Se o que foi pedido ja esta atendido pela regra, mantenha-a e diga isso nos pontos de atencao. Se algo for ambiguo, escolha a interpretacao mais usual do Bsoft, aplique e registre a escolha nos pontos de atencao (nao pare para perguntar).\n'
+    + '7. A REGRA ENTREGUE TEM QUE ESTAR 100% PRONTA: sintaxe valida (parenteses, aspas, ponto e virgula), nenhum campo ou funcao inventado, nenhum loop, nenhuma divisao por algo que possa ser 0 sem proteger com if, nenhuma linha que desfaz a anterior. Antes de responder releia linha a linha e SIMULE com numeros (ex.: frete 1000, aliquota 12%): o resultado tem que bater com o pedido; se nao bater, corrija antes de entregar.\n\n'
+    + 'FORMATO DA RESPOSTA (substitui qualquer instrucao de "so o codigo"):\n'
+    + '1o) A regra COMPLETA e corrigida, pronta para copiar, em UM unico bloco de codigo entre triple backticks (a regra INTEIRA, nao so os trechos alterados). Dentro do bloco so codigo e comentarios // curtos.\n'
+    + '2o) Logo depois do bloco, em portugues e direto, SEM novo bloco de codigo e sem crases:\n'
+    + '**O que foi alterado:** lista curta, uma linha por mudanca, dizendo o campo, o que era e o que ficou (ex.: "- baseCalculo: agora soma Pedagio e Outros e e dividida por (1 - aliquota/100)").\n'
+    + '**Pontos de atencao:** lista curta com o que a pessoa precisa saber ou conferir: campos que mudaram por consequencia (ex.: valorICMS e totalPrestacao), linhas reordenadas e por que, escolhas feitas num pedido ambiguo, algo que ja estava na regra e pode dar problema (ex.: campo lido antes de ser calculado), e o que nao foi possivel. Se nao houver nada, escreva "Nenhum.".\n'
+    + 'UNICA EXCECAO a este formato: se existir uma instrucao de VERIFICACAO DE LOOP neste prompt e o loop nao puder ser desfeito, siga-a (responda so com a linha "LOOP DETECTADO: ...").\n\n';
+// Resposta cortada pelo limite de tokens e "continuada" (js/core/mcp.js): às vezes a IA recomeça a regra do zero na continuação, com um novo ```: o texto fica com um número ÍMPAR de ``` e um primeiro bloco
+// cortado no meio de uma linha, e os renderizadores/conferências pareiam as cercas erradas (o bloco "Copiar" sai pela metade e a regra de verdade fica solta). Aqui o pedaço cortado é descartado quando a
+// cerca seguinte reabre a regra com as mesmas primeiras palavras. Sem ``` ímpares, devolve o texto como veio.
+function _regraLimparContinuacao(texto) {
+    const t = String(texto || '');
+    const cercas = [...t.matchAll(/```/g)].map(m => m.index);
+    if (cercas.length < 3 || cercas.length % 2 === 0) return t;
+    const [i1, i2] = cercas, miolo = t.slice(i1 + 3, i2).replace(/^[\w-]*\n?/, ''), depois = t.slice(i2 + 3).replace(/^[\w-]*\n?/, '');
+    const ini = miolo.trim().slice(0, 25);
+    if (ini.length < 10 || !depois.trim().startsWith(ini)) return t;
+    return t.slice(0, i1) + t.slice(i2);
+}
+// ─── PADRÃO DE ESCRITA DA REGRA (mesmo pedido = mesma regra) ───
+// Pedido do usuário (30/10/2026): pedindo a mesma coisa, a IA devolvia regras diferentes a cada vez — uma simples e certa, outra com try/catch sem necessidade, outra cheia de "var" onde bastava o campo direto.
+// Aqui ficam o ESTILO fixo (simples, direto, sem recursos de caso específico) e, no Ct-e, as RECEITAS dos pedidos mais comuns, que a IA copia em vez de reinventar. A temperatura dos geradores de regra é
+// REGRAS_TEMPERATURA (0: o mesmo pedido gera a mesma regra). Entra no prompt do Ct-e, do Contrato de Frete e do Faturamento.
+const REGRAS_TEMPERATURA = 0;
+const REGRAS_ESTILO = 'PADRAO DE ESCRITA (OBRIGATORIO - o mesmo pedido tem que gerar sempre a mesma regra, no mesmo estilo):\n'
+    + '1. SIMPLICIDADE: entregue a regra MAIS SIMPLES que cumpre o pedido, no estilo dos exemplos da documentacao. Nao use nenhum recurso que o pedido nao exija.\n'
+    + '2. try/catch e for: PROIBIDOS, a nao ser que o pedido exija olhar nota por nota (ex.: "descontar o peso das notas da especie 23"). Para totais use direto os campos totais: merc_valor[] (valor das notas), merc_quantKg[] (peso em kg), merc_quant[] (quantidade).\n'
+    + '3. VARIAVEIS (var/let/const/valor =): NAO crie variavel para um valor usado uma unica vez: escreva obt("campo") direto na conta. So use variavel quando o mesmo valor e usado 2 ou mais vezes ou quando ela deixa a regra mais facil de entender (ex.: var inverso = ((100 - obt("aliquota")) /100); var valorcalculado no frete minimo), com nome curto e claro. Numa regra que ja existe, mantenha as variaveis que ela tinha.\n'
+    + '4. FORMATO FIXO: uma instrucao por linha; def("campo", conta); com aspas duplas e obt("campo") com aspas duplas; quando o if tem um unico def no corpo, sem chaves e com o def na linha de baixo, recuado em 3 espacos (como nos exemplos); comentario // so em blocos com nome (ex.: //CALCULO FRETE MINIMO) e curto; sem linhas em branco duplas.\n'
+    + '5. SEM PROTECOES A MAIS: so escreva if de guarda quando for o padrao dos exemplos/receitas (aliquota no ICMS, tarifaDigitada > 0 no frete, percentual > 0 no Seguro e no Gris por percentual) ou quando o pedido exigir uma condicao. Nao invente validacoes, alertas, limites nem tratamento de erro.\n'
+    + '6. Se o pedido e um dos das RECEITAS PADRAO, copie a receita trocando so o que o pedido mudar.\n'
+    + '7. ORDEM DOS BLOCOS numa regra nova: frete -> componentes (seguro, gris, pedagio...) -> base de calculo -> ICMS -> total -> derivados. Numa regra que ja existe, mantenha a ordem dela (so mexa nela para corrigir campo lido antes de ser calculado).\n\n';
+// Só do Ct-e: receitas dos pedidos mais comuns (a IA copia o formato; os nomes vêm da documentação)
+const REGRAS_CTE_RECEITAS = 'RECEITAS PADRAO DO CT-E (pedido igual a um destes = escreva EXATAMENTE neste formato, sem variaveis e sem try/catch; troque so o que o pedido mudar):\n'
+    + '- Gris por percentual da tabela sobre o valor total das notas:\nif (tabelaPrecos.percentualGris > 0)\n   def("Gris", tabelaPrecos.percentualGris / 100 * obt("merc_valor[]"));\n'
+    + '- Seguro por percentual da tabela sobre o peso total das notas em TONELADA (o peso vem em kg: divida por 1000):\nif (tabelaPrecos.percentualSeguro > 0)\n   def("valorSeguro", tabelaPrecos.percentualSeguro / 100 * (obt("merc_quantKg[]") / 1000));\n'
+    + '  Outras bases para Seguro/Gris: o frete = obt("valorFrete"); o total = obt("totalPrestacao"); o peso em kg = obt("merc_quantKg[]"); a quantidade = obt("merc_quant[]"). O "if (percentual > 0)" existe para NAO zerar o Seguro/Gris que a propria tabela de precos ja preencheu com valor fixo: mantenha-o.\n'
+    + '- Frete Valor por tarifa x peso em kg:\nif (obt("tarifaDigitada") > 0)\n   def("valorFrete", obt("merc_quantKg[]") * obt("tarifaDigitada"));\n'
+    + '- Frete Valor por tarifa x peso em tonelada:\nif (obt("tarifaDigitada") > 0)\n   def("valorFrete", obt("merc_quantKg[]") * obt("tarifaDigitada") / 1000);\n'
+    + '- Frete Valor por tarifa (valor) x valor total das notas:\nif (obt("tarifaDigitada") > 0)\n   def("valorFrete", obt("tarifaDigitada") * obt("merc_valor[]"));\n'
+    + '- Frete Valor por tarifa (percentual) x valor total das notas:\nif (obt("tarifaDigitada") > 0)\n   def("valorFrete", obt("tarifaDigitada") / 100 * obt("merc_valor[]"));\n'
+    + '- Frete minimo (o unico caso comum em que a variavel vale a pena, porque o valor calculado e usado duas vezes):\nvar valorcalculado = obt("merc_quantKg[]") * obt("tarifaDigitada");\nif (obt("tarifaDigitada") > 0)\n   def("valorFrete", valorcalculado);\nif (valorcalculado < tabelaPrecos.valorFreteMinimo)\n   def("valorFrete", tabelaPrecos.valorFreteMinimo);\n\n';
+// Só do Ct-e: como os campos do cálculo se ligam entre si (o que a IA precisa saber para "arrumar" ICMS, base, frete e total sem deixar nenhum campo para trás).
+const REGRAS_CTE_CALCULO = 'CALCULO DO CT-E - COMO OS CAMPOS SE LIGAM (use ao mexer em ICMS, base de calculo, frete ou total):\n'
+    // Conceitos do curso de criação de regras da equipe (30/10/2026) + respostas do dono do sistema: o que a IA precisa entender do negócio antes de mexer em qualquer conta
+    + '- ENTENDER O PEDIDO: o que importa e como cada campo da composicao do frete deve FICAR no fim (frete, base de calculo, aliquota, valor do ICMS, total prestacao). Interprete o pedido por esse resultado final e ajuste todos os campos que mudam por consequencia.\n'
+    + '- FRETE VALOR: e o valor bruto negociado entre a transportadora e o cliente. Tres formas: (1) digitado a mao (a regra nao calcula); (2) tarifaDigitada x peso total das notas: a tarifa e um VALOR (preco por kg ou por tonelada): por kg, if (obt("tarifaDigitada") > 0) def("valorFrete", obt("merc_quantKg[]") * obt("tarifaDigitada")); por tonelada, o peso dividido por 1000; (3) tarifaDigitada x valor total das notas, que varia conforme a operacao do cliente: como VALOR (obt("tarifaDigitada") * obt("merc_valor[]")) ou como PERCENTUAL ((obt("tarifaDigitada")/100) * obt("merc_valor[]")). Se o pedido nao disser se a tarifa e por kg, por tonelada ou percentual, NAO adivinhe em silencio: escolha a forma mais usual (por kg), aplique e registre a escolha nos pontos de atencao, dizendo como mudar. O campo tarifaCalculada (Tarifa Real) NAO se usa em regra nova (foi ocultado para clientes novos): so preserve se a regra do cliente ja o tiver.\n'
+    + '- TOTAL PRESTACAO: por padrao e igual ao valorFrete. Despesas acessorias (valorPedagioConhecimento, Gris, diaria, valorSeguro, valorSeguroAduaneiro, valoresOutros / outrosValores[nome] e o proprio ICMS no "Somar ICMS") so entram na base ou no total quando o pedido mandar ou quando a regra ja as soma: NUNCA acrescente despesa por conta propria, nem numa regra nova nem numa regra colada. (Campo vazio vale 0, entao somar um campo que o cliente nao usa nao muda o valor.)\n'
+    + '- O ICMS NUNCA entra na base de calculo (criaria loop). Ele so entra no totalPrestacao, e so no "Somar ICMS". No calculo inverso a base ja carrega o ICMS pela divisao por (1 - aliquota/100).\n'
+    + '- ALIQUOTA: o sistema preenche sozinho pela UF de origem e de destino. NAO escreva def("aliquota", ...) a menos que a regra do cliente ja faca isso (ex.: clientes Datamex/e-login, que usam a forma antiga) ou que o pedido mande.\n'
+    + '- SIMPLES NACIONAL: nao existe calculo de ICMS (o recolhimento e pela guia do Simples). A regra so calcula o frete e o total, sem ICMS, e a base de calculo, a aliquota e o valor do ICMS ficam em 0 (como no modelo pronto "Simples Nacional"). Unica excecao: empresa que passou do sublimite (Codigo de Regime Tributario 2 no cadastro da Empresa) recolhe ICMS: por isso, se a regra do cliente ja tem o padrao "if (aliquota > 0) calcula a base / if (aliquota < 1) base = 0", PRESERVE-o: aliquota 0 = nenhum ICMS, aliquota maior que 0 = calcula normalmente. Nao ponha calculo de ICMS numa regra de Simples Nacional que nao tinha.\n'
+    + '- SEGURO e GRIS dependem do cliente: podem vir prontos da Tabela de Precos (valor fixo; ao associar a tabela ao Ct-e o sistema preenche os campos sozinho, e o Gris so aparece se o parametro dos campos visiveis da Composicao do Frete o liberar) ou ter calculo proprio (percentual da tabela sobre o frete, o total, o valor ou o peso das notas; ou um campo personalizado como o advalorem). So crie esse calculo se o pedido mandar; se nao disser sobre o que incide, escolha a forma mais usual, aplique e registre a escolha nos pontos de atencao.\n'
+    + '- PERCENTUAIS DA TABELA (percentualSeguro, percentualGris): o campo traz o numero inteiro (ex.: 0,3 para 0,3%), entao na regra SEMPRE divida por 100: def("valorSeguro", tabelaPrecos.percentualSeguro / 100 * obt("valorFrete")). O mesmo vale para campos personalizados de percentual (ex.: tabelaPrecos.Advalorem / 100 * obt("merc_valor[]")).\n'
+    + '- TABELA DE PRECOS: seus campos leem-se SEMPRE como tabelaPrecos.nomeInterno, sem obt() (ex.: tabelaPrecos.percentualSeguro, tabelaPrecos.percentualGris, tabelaPrecos.valorFreteMinimo, e o campo personalizado tabelaPrecos.advalorem). Campos do proprio Ct-e e os campos personalizados do Ct-e (outrosValores[nome]) usam obt().\n'
+    + '- Componentes que entram nas somas: valorFrete, valoresOutros e/ou outrosValores[nome], valorPedagioConhecimento, valorSeguro, diaria, Gris, valorSeguroAduaneiro (so os que a regra ou o pedido usam). Alguns deles sao CALCULADOS na propria regra (ex.: valorSeguro = outrosValores[advalorem], que vem de tabelaPrecos.advalorem * merc_valor[]): o def() deles tem que vir ANTES de quem os soma.\n'
+    + '- Cadeia do ICMS: componentes -> baseCalculo -> aliquota -> valorICMS -> totalPrestacao -> derivados do ICMS (ex.: outrosValores[vICMSGNRE] = valorICMS * 0.80, baseResultadoCT). Mudou um elo, mudam todos os seguintes: revise e ajuste cada um.\n'
+    + '- valorICMS = baseCalculo * (aliquota / 100), SEMPRE (ver TRAVA DO ICMS).\n'
+    + '- ICMS DEMONSTRATIVO: baseCalculo = soma dos componentes; valorICMS = baseCalculo * aliquota/100; totalPrestacao = soma dos componentes (o ICMS so aparece, nao soma no total).\n'
+    + '- SOMAR ICMS: baseCalculo = soma dos componentes; valorICMS = baseCalculo * aliquota/100; totalPrestacao = soma dos componentes + valorICMS.\n'
+    + '- CALCULO INVERSO (ICMS "por dentro"): o ICMS ja esta DENTRO do valor cobrado, entao a BASE e a soma dos componentes DIVIDIDA por (1 - aliquota/100) (ou por ((100 - aliquota)/100)): a base ja inclui o proprio ICMS. baseCalculo = (soma dos componentes) / (1 - aliquota/100); valorICMS = baseCalculo * aliquota/100; totalPrestacao = baseCalculo (e igual a soma dos componentes + valorICMS). NUNCA deixe a base como a soma bruta e calcule o ICMS em cima de outro campo (ex.: totalPrestacao * aliquota): o ICMS e sempre baseCalculo * aliquota/100. Com aliquota 0 a base e 0 (if aliquota < 0.01 -> baseCalculo 0), e esse if vem DEPOIS de calcular a base e ANTES do valorICMS. Estilos equivalentes sao aceitos (ex.: totalPrestacao = soma / (1 - aliquota/100) e baseCalculo = totalPrestacao): se a regra ja estiver num deles, preserve o estilo e corrija so o que falta.\n'
+    + '- "Somar X na base de calculo" = X entra na soma dos componentes da base (no inverso, entra na soma que e dividida por (1 - aliquota/100)). Pedir "base some pedagio e outros" = ACRESCENTAR obt("valorPedagioConhecimento") e os outros valores a soma que a base ja tem (o que ja estava na soma, como seguro, diaria e desova, continua nela).\n\n';
 const CONTEXTO_REGRAS = `
 Para definir um campo não visível como por exemplo o CST (definir apenas se o usuário solicitar), pode usar a função $SV colocando como no exemplo abaixo:
 $SV("dados_CST", '40');
@@ -26,23 +98,24 @@ valoresOutros
 valorPedagioConhecimento
 valorSeguro
 valorSeguroAduaneiro
-Tabela de preço - campos disponíveis para usar para fazer a regra, da esquerda nome real da direita nome que deve usar na regra, exemplo obt("valorFreteMinimo"):
+Tabela de preço - campos disponíveis para usar para fazer a regra, da esquerda nome real da direita nome interno que deve usar na regra, SEMPRE na forma tabelaPrecos.nomeInterno (sem obt), exemplo tabelaPrecos.percentualSeguro:
 L. max: limiteMaximo
 L. min: limiteMinimo
-Tarifa real: tarifaReal
-Tarifa final: tarifaFinal
-Outros: outros
+Tarifa real: tarifaCalculada
+Tarifa final: tarifaDigitada
+Outros: valoresOutros
 Frete Mínimo: valorFreteMinimo
 Diaria: diaria
-Frete valor: freteValor
+Frete valor: valorFrete
 Total Prestação: totalPrestacao
-Pedágio: pedagio
-Fração pedágio: percPedagio
-Seguro: seguro
-%Seguro: percSeguro
+Pedágio: valorPedagioConhecimento
+Fração pedágio: percentualPedagio
+Valor Fração: valorFracao
+Seguro: valorSeguro
+%Seguro: percentualSeguro
 Seg. aduaneiro: valorSeguroAduaneiro
-Gris: gris
-%Gris: percGris
+Gris: Gris
+%Gris: percentualGris
 Excesso: valorExcesso
 Podem ser criados campos personalizados para a Tabela de preço, para criar é em Transporte > Configurações > Tabelas de Preços > Tabela de preços Valores Outros. Para criar pede um nome interno e uma descrição. O nome interno é o que deve ser usado na regra. Exemplo: Nome Interno: advalorem, Descrição: Valor Advalorem, na regra colocar sem obt e nem nada, apenas tabelaPrecos.nomeinterno, que ficaria tabelaPrecos.advalorem. Obs. todos os campos da tabela preço devem ser sem o obt("").
 Ct-e(Conhecimento) - campos disponíveis para usar para fazer a regra, da esquerda nome real da direita nome que deve usar na regra, exemplo obt("tarifaDigitada"):
@@ -70,7 +143,7 @@ if ( obt("tarifaDigitada") > 0)
    def("valorFrete", (obt("merc_quantKg[]")) * obt("tarifaDigitada"));
 var inverso = ((100 - obt("aliquota")) /100)
 if ( obt("aliquota") > 0)
-def("baseCalculo", ((obt("valorFrete") + obt("valoresOutros")) / inverso));
+def("baseCalculo", (obt("valorFrete") / inverso));
 if ( obt("aliquota") < 1)
 def("baseCalculo", 0);
 valor = obt("baseCalculo") * (obt("aliquota")/100);
@@ -195,7 +268,7 @@ function perguntarModoCte(){return Promise.resolve('dnd');}
 const REGRAS_PREDEFINIDAS_CODE_CLASSICA={
     icms_demo:`def("tarifaCalculada",0);\nvar valorcalculado = (obt("merc_quantKg[]")) * obt("tarifaDigitada")/1000;\nif ( obt("tarifaDigitada") > 0)\n   def("valorFrete", valorcalculado);\n//CÁLCULO FRETE MÍNIMO\nif (valorcalculado < tabelaPrecos.valorFreteMinimo)\ndef("valorFrete", tabelaPrecos.valorFreteMinimo);\n//FIM CÁLCULO FRETE MÍNIMO\nif ( obt("aliquota") > 0)\n   def("baseCalculo", (obt("valorFrete")));\nif ( obt("aliquota") < 1)\n   def("baseCalculo",0);\nvalor = obt("baseCalculo") * (obt("aliquota")/100);\ndef("valorICMS",valor);\ndef("totalPrestacao",  (obt("valorFrete")));`,
     simples:`def("tarifaCalculada",0);\nvar valorcalculado = (obt("merc_quantKg[]")) * obt("tarifaDigitada");\nif ( obt("tarifaDigitada") > 0)\n   def("valorFrete", valorcalculado);\n//CÁLCULO FRETE MÍNIMO\nif (valorcalculado < tabelaPrecos.valorFreteMinimo)\ndef("valorFrete", tabelaPrecos.valorFreteMinimo);\n//FIM CÁLCULO FRETE MÍNIMO\ndef("totalPrestacao",  (obt("valorFrete")));`,
-    inverso:`def("tarifaCalculada",0);\nvar valorcalculado = (obt("merc_quantKg[]")) * obt("tarifaDigitada");\nif ( obt("tarifaDigitada") > 0)\n   def("valorFrete", valorcalculado);\n//CÁLCULO FRETE MÍNIMO\nif (valorcalculado < tabelaPrecos.valorFreteMinimo)\ndef("valorFrete", tabelaPrecos.valorFreteMinimo);\n//FIM CÁLCULO FRETE MÍNIMO\nvar inverso = ((100 - obt("aliquota")) /100)\nif ( obt("aliquota") > 0)\n   def("baseCalculo", ((obt("valorFrete") + obt("valoresOutros")) / inverso));\nif ( obt("aliquota") < 1)\n   def("baseCalculo", 0);\nvalor = obt("baseCalculo") * (obt("aliquota")/100);\ndef("valorICMS",valor);\ndef("totalPrestacao",  (obt("valorFrete") + obt("valorICMS")));`,
+    inverso:`def("tarifaCalculada",0);\nvar valorcalculado = (obt("merc_quantKg[]")) * obt("tarifaDigitada");\nif ( obt("tarifaDigitada") > 0)\n   def("valorFrete", valorcalculado);\n//CÁLCULO FRETE MÍNIMO\nif (valorcalculado < tabelaPrecos.valorFreteMinimo)\ndef("valorFrete", tabelaPrecos.valorFreteMinimo);\n//FIM CÁLCULO FRETE MÍNIMO\nvar inverso = ((100 - obt("aliquota")) /100)\nif ( obt("aliquota") > 0)\n   def("baseCalculo", (obt("valorFrete") / inverso));\nif ( obt("aliquota") < 1)\n   def("baseCalculo", 0);\nvalor = obt("baseCalculo") * (obt("aliquota")/100);\ndef("valorICMS",valor);\ndef("totalPrestacao",  (obt("valorFrete") + obt("valorICMS")));`,
     soma_icms:`def("tarifaCalculada",0);\nvar valorcalculado = (obt("merc_quantKg[]")) * obt("tarifaDigitada");\nif ( obt("tarifaDigitada") > 0)\n   def("valorFrete", valorcalculado);\n//CÁLCULO FRETE MÍNIMO\nif (valorcalculado < tabelaPrecos.valorFreteMinimo)\ndef("valorFrete", tabelaPrecos.valorFreteMinimo);\n//FIM CÁLCULO FRETE MÍNIMO\nif ( obt("aliquota") > 0)\n   def("baseCalculo", (obt("valorFrete")));\nif ( obt("aliquota") < 1)\n   def("baseCalculo", 0);\nvalor = obt("baseCalculo") * (obt("aliquota")/100);\ndef("valorICMS",valor);\ndef("totalPrestacao",  (obt("valorFrete") + obt("valorICMS")));`,
     peso_cubado_gris:`var pesoReal = obt("merc_quantKg[]");\nvar pesoCubado = obt("merc_cubagem[]") * 150;\nvar pesoDeUso = 0;\n\nif (pesoCubado > pesoReal) {\n    pesoDeUso = pesoCubado;\n} else {\n    pesoDeUso = pesoReal;\n}\n\nvar freteBaseTabela = tabelaPrecos.valorFrete;\nvar valorFinalFrete = 0;\n\nif (pesoDeUso > 150) {\n    var kgExcedente = pesoDeUso - 150;\n    var valorDoExcesso = kgExcedente * tabelaPrecos.valorExcesso;\n    valorFinalFrete = freteBaseTabela + valorDoExcesso;\n} else {\n    valorFinalFrete = freteBaseTabela;\n}\n\ndef("valorFrete", valorFinalFrete);\n\n//CÁLCULO FRETE MÍNIMO\nif (valorFinalFrete < tabelaPrecos.valorFreteMinimo)\ndef("valorFrete", tabelaPrecos.valorFreteMinimo);\n//FIM CÁLCULO FRETE MÍNIMO\n\nvar vGris = obt("merc_valor[]") * (0.2 / 100);\ndef("Gris", vGris);\n\ndef("totalPrestacao", (\n    obt("valorFrete") + \n    obt("valoresOutros") + \n    obt("valorSeguro") + \n    obt("valorPedagioConhecimento") + \n    obt("diaria") +\n    obt("Gris")\n));`,
     tabela_simples:`def("aliquota", 0);\ndef("baseCalculo", 0);\ndef("valorICMS", 0);\n\nvar valorcalculado = (obt("tarifaDigitada")) * obt("merc_quantKg[]")/1000;\nif (obt("tarifaDigitada") > 0)\ndef("valorFrete", valorcalculado);\n\n//CÁLCULO FRETE MÍNIMO\nif (valorcalculado < tabelaPrecos.valorFreteMinimo)\ndef("valorFrete", tabelaPrecos.valorFreteMinimo);\n//FIM CÁLCULO FRETE MÍNIMO\n\ndef('totalPrestacao', obt('valorFrete'));`,
@@ -499,7 +572,7 @@ async function enviarWizardRegra(){
     const ld=ferrCarregando('regra', '⚙️ Elaborando regra de frete...');
     const li=Date.now();
     try{
-        const result=await callMCPSemPensamento([{role:'system',content:sysMsg},{role:'user',content:userContent}],{temperature:0.15,maxTokens: REGRAS_MAX_TOKENS});
+        const result=await callMCPSemPensamento([{role:'system',content:sysMsg},{role:'user',content:userContent}],{temperature:REGRAS_TEMPERATURA,maxTokens: REGRAS_MAX_TOKENS});
         ld.remove();
         renderizarCardRegra(result.text,li,result._iaUsada,result._iaModelo,'cte',{query:_wizardQueryOriginal,estadoForm:_estadoForm,cteExtra:_cteExtra});
         ferrConversa('regra', 'ai',result.text);
@@ -534,7 +607,7 @@ const CTE_CAMPOS=[
 ];
 // Campos da Tabela de Preços (objeto externo "tabelaPrecos", ver peso_cubado_gris/CTE_OPCOES_MONTAGEM)
 // — mostrados na MESMA área de arrastar dos campos de Ct-e acima, mas entram na regra SEM obt()
-// (é acesso direto à propriedade, ex.: "tabelaPrecos.percSeguro") — só os campos do Ct-e (lista
+// (é acesso direto à propriedade, ex.: "tabelaPrecos.percentualSeguro") — só os campos do Ct-e (lista
 // acima) usam obt('campo'); a diferença é feita em _fatTermoParaExpressao (pelo "." no nome).
 const TABELA_PRECOS_CAMPOS=[
     {label:'Tarifa final',campo:'tabelaPrecos.tarifaDigitada'},
@@ -603,16 +676,16 @@ const CTE_OPCOES_MONTAGEM=[
         {id:'pedagio_eixo', label:'Por eixo', codigo:'let qtdVezesMultiplica = Math.ceil(obt("freteMinimo_nroEixos") / 100);\nlet vPedagio = tabelaPrecos.percentualPedagio * qtdVezesMultiplica;\ndef("valorPedagioConhecimento", vPedagio);'}
     ]},
     {titulo:'📋 Tabela de Preços — Seguro (%)', itens:[
-        {id:'seguro_frete', label:'Em cima do valor frete', codigo:'if (tabelaPrecos.percSeguro > 0)\ndef("valorSeguro", tabelaPrecos.percSeguro * obt("valorFrete"));'},
-        {id:'seguro_prestacao', label:'Em cima do total prestação', codigo:'if (tabelaPrecos.percSeguro > 0)\ndef("valorSeguro", tabelaPrecos.percSeguro * obt("totalPrestacao"));'},
-        {id:'seguro_merc_valor', label:'Em cima do total valor mercadorias', codigo:'if (tabelaPrecos.percSeguro > 0)\ndef("valorSeguro", tabelaPrecos.percSeguro * obt("merc_valor[]"));'},
-        {id:'seguro_merc_peso', label:'Em cima do total peso mercadorias', codigo:'if (tabelaPrecos.percSeguro > 0)\ndef("valorSeguro", tabelaPrecos.percSeguro * obt("merc_quantKg[]"));'}
+        {id:'seguro_frete', label:'Em cima do valor frete', codigo:'if (tabelaPrecos.percentualSeguro > 0)\ndef("valorSeguro", tabelaPrecos.percentualSeguro / 100 * obt("valorFrete"));'},
+        {id:'seguro_prestacao', label:'Em cima do total prestação', codigo:'if (tabelaPrecos.percentualSeguro > 0)\ndef("valorSeguro", tabelaPrecos.percentualSeguro / 100 * obt("totalPrestacao"));'},
+        {id:'seguro_merc_valor', label:'Em cima do total valor mercadorias', codigo:'if (tabelaPrecos.percentualSeguro > 0)\ndef("valorSeguro", tabelaPrecos.percentualSeguro / 100 * obt("merc_valor[]"));'},
+        {id:'seguro_merc_peso', label:'Em cima do total peso mercadorias', codigo:'if (tabelaPrecos.percentualSeguro > 0)\ndef("valorSeguro", tabelaPrecos.percentualSeguro / 100 * obt("merc_quantKg[]"));'}
     ]},
     {titulo:'📋 Tabela de Preços — Gris (%)', itens:[
-        {id:'gris_frete', label:'Em cima do valor frete', codigo:'if (tabelaPrecos.percGris > 0)\ndef("Gris", tabelaPrecos.percGris * obt("valorFrete"));'},
-        {id:'gris_prestacao', label:'Em cima do total prestação', codigo:'if (tabelaPrecos.percGris > 0)\ndef("Gris", tabelaPrecos.percGris * obt("totalPrestacao"));'},
-        {id:'gris_merc_valor', label:'Em cima do total valor mercadorias', codigo:'if (tabelaPrecos.percGris > 0)\ndef("Gris", tabelaPrecos.percGris * obt("merc_valor[]"));'},
-        {id:'gris_merc_peso', label:'Em cima do total peso mercadorias', codigo:'if (tabelaPrecos.percGris > 0)\ndef("Gris", tabelaPrecos.percGris * obt("merc_quantKg[]"));'}
+        {id:'gris_frete', label:'Em cima do valor frete', codigo:'if (tabelaPrecos.percentualGris > 0)\ndef("Gris", tabelaPrecos.percentualGris / 100 * obt("valorFrete"));'},
+        {id:'gris_prestacao', label:'Em cima do total prestação', codigo:'if (tabelaPrecos.percentualGris > 0)\ndef("Gris", tabelaPrecos.percentualGris / 100 * obt("totalPrestacao"));'},
+        {id:'gris_merc_valor', label:'Em cima do total valor mercadorias', codigo:'if (tabelaPrecos.percentualGris > 0)\ndef("Gris", tabelaPrecos.percentualGris / 100 * obt("merc_valor[]"));'},
+        {id:'gris_merc_peso', label:'Em cima do total peso mercadorias', codigo:'if (tabelaPrecos.percentualGris > 0)\ndef("Gris", tabelaPrecos.percentualGris / 100 * obt("merc_quantKg[]"));'}
     ]}
 ];
 // Todos os grupos de opções "monte com um clique" que as funções _cte* precisam percorrer: os de CTE_OPCOES_MONTAGEM (que o montador clássico desenha) mais os que SÓ os assistentes em telas

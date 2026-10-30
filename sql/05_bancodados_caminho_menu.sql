@@ -9,7 +9,7 @@
 --   "Salvar no banco de dados" (e a janela "Corrigir artigo") ganha o campo "Caminho no menu (opcional)", logo depois de "Categoria (opcional)":
 --   o que for escrito ali é gravado direto nesta coluna, por exemplo:
 --       Transporte > Configurações > Informações de cobrança padrão
---   A IA recebe esse caminho junto do artigo e o escreve literalmente na resposta ("Ou pelo menu: Transporte > Configurações > …").
+--   A IA recebe esse caminho junto do artigo e o escreve literalmente na resposta (ex.: "Transporte > Configurações > …").
 --
 -- Enquanto este SQL não for rodado, o sistema funciona normalmente: o campo aparece, mas ao tentar gravar um caminho a Revisão avisa para rodar
 -- este arquivo (nada é gravado pela metade); sem caminho preenchido, tudo grava como sempre. As regras de segurança do 03_seguranca_rls.sql já

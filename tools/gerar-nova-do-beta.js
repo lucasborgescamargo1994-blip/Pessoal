@@ -43,7 +43,7 @@ function renomear(txt) {
 
 // ── JS ───────────────────────────────────────────────────────────────────────
 const INICIO_JS = 'const CB_PASSOS = [';   // o cabeçalho (comentário) do Beta fica de fora: a Nova Versão tem o seu
-const CABECALHO_NOVA = `/* js/app/regra-cte-nova.js — Criar Regra › "Ct-e / Conhecimento Nova Versão": assistente em 6 passos (regra base → campos → cálculo do Frete Valor, do ICMS e do Total Prestação → montagem). */
+const CABECALHO_NOVA = `/* js/app/regra-cte-nova.js — Criar Regra › "Ct-e / Conhecimento Nova Versão": assistente em 7 passos (regra base → campos → gerar regra com IA → cálculo do Frete Valor, do ICMS e do Total Prestação → montagem). */
 // ═══════════════════════════════════════════════════════════
 //  Ct-e / CONHECIMENTO — NOVA VERSÃO (assistente em telas)
 // ═══════════════════════════════════════════════════════════
@@ -146,6 +146,8 @@ if (args.includes('--escrever')) {
 if (!existe(ARQ.nova)) { console.log('Ainda não existe ' + ARQ.nova + ' — rode com --escrever para gerar.'); process.exit(0); }
 const novaAtual = ler(ARQ.nova);
 if (args.includes('--checar')) { const p = checar(novaAtual); console.log(p ? p + ' problema(s).' : 'Nova Versão sã: sintaxe ok e nenhum nome do Beta sobrando.'); process.exit(p ? 1 : 0); }
-const nJs = mostrarDiff('JS — ' + ARQ.nova, 'Beta (já renomeado)', 'Nova Versão atual', novaGerada.slice(novaGerada.indexOf(INICIO_JS)), novaAtual.slice(novaAtual.indexOf(INICIO_JS)));
+// (o ponto de corte é o mesmo texto JÁ RENOMEADO: na Nova Versão a constante se chama NV_PASSOS; procurar CB_PASSOS devolvia -1 e o slice comparava só o último caractere — o diff dizia "(igual)" sempre)
+const INICIO_NOVA = renomear(INICIO_JS);
+const nJs = mostrarDiff('JS — ' + ARQ.nova, 'Beta (já renomeado)', 'Nova Versão atual', novaGerada.slice(Math.max(0, novaGerada.indexOf(INICIO_NOVA))), novaAtual.slice(Math.max(0, novaAtual.indexOf(INICIO_NOVA))));
 const nCss = mostrarDiff('CSS — bloco .nv- de ' + ARQ.css, 'Beta (já renomeado)', 'Nova Versão atual', cssNovoGerado, pc.nova);
 console.log('\n' + (nJs + nCss ? 'Diferenças: ' + nJs + ' linha(s) no JS, ' + nCss + ' no CSS. Tudo o que tem "-" é novidade do Beta ainda não promovida.' : 'A Nova Versão está igual ao Beta.'));

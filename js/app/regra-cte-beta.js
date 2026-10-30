@@ -7,11 +7,13 @@
 // tem a mais) e a seção "Promover do Beta para a Nova Versão" do README. Mexeu AQUI e quer que a Nova Versão acompanhe? Só vale depois de promover. Os passos:
 //   1. Regra base ............. colar a regra do cliente, escolher uma regra pronta OU marcar "Para montar do zero clique em avançar" (o Avançar só libera com uma das 3);
 //   2. Campos personalizados .. igual à Nova Versão;
-//   3. Cálculo do Frete Valor . a tela de opções da Nova Versão, só com as opções que calculam o Frete Valor;
-//   4. Cálculo do ICMS ........ idem, só com as opções do ICMS;
-//   5. Cálculo Total Prestação  idem, só com as opções do Total Prestação;
-//   6. Montagem manual ........ a área de montagem de sempre (o MESMO HTML: _cteHtmlAreaMontagem()).
-// Os passos 3, 4 e 5 são UMA tela só (cbSlide2) que troca de título e de opções (painéis .cb-etapa-opcoes); a caixa da IA e o rodapé são os mesmos, e a IA recebe tudo o que foi marcado nos três.
+//   3. Gerar regra com IA ..... só a caixa para explicar à IA o que o cliente precisa (o caminho de quem cola a regra do cliente e descreve a mudança), com o botão "Gerar Regra com IA" logo abaixo;
+//                               quem prefere montar sem IA segue pelo "Próximo: Cálculo do Frete Valor";
+//   4. Cálculo do Frete Valor . a tela de opções da Nova Versão, só com as opções que calculam o Frete Valor;
+//   5. Cálculo do ICMS ........ idem, só com as opções do ICMS;
+//   6. Cálculo Total Prestação  idem, só com as opções do Total Prestação;
+//   7. Montagem manual ........ a área de montagem de sempre (o MESMO HTML: _cteHtmlAreaMontagem()).
+// Os passos 4, 5 e 6 são UMA tela só (cbSlide2) que troca de título e de opções (painéis .cb-etapa-opcoes); o rodapé é o mesmo e o "Gerar Regra" dele usa o que foi marcado nos três E o texto escrito no passo 3 (a caixa da IA, #wCteDescricao, fica só no passo 3).
 // O que é próprio deste arquivo (e da cópia dele, a Nova Versão): telas, navegação, rodapé, estado e as travas (ICMS/loop) como aparecem na tela. O que é COMPARTILHADO pelos dois (js/app/regra-cte-passos.js, carregado antes — mexer lá muda os dois): o catálogo
 // de opções (CN_BUSCA, CN_SOMA_*, CN_OPCOES_DEMAIS, que _cteGruposOpcoes() aplica), as regras prontas, os textos do prompt (CN_PROMPT_REGRA) e os analisadores puros (_cnLoopsDoCodigo, _cnIcmsLinhasInvalidas,
 // _cnPedeReduzirIcms, _cnLoopNaResposta, _cnNomesCampos...). Os ids de opção (wCteOpc_*) e da montagem (wCteColarRegra, wCteDescricao, wCteBlocosContainer...) são os mesmos do montador clássico,
@@ -21,12 +23,14 @@
 const CB_PASSOS = [
     { id: 'base',     nome: 'Regra base',              slide: 0 },
     { id: 'campos',   nome: 'Campos personalizados',   slide: 1 },
-    { id: 'frete',    nome: 'Cálculo do Frete Valor',  slide: 2, etapa: 'frete' },
+    { id: 'ia',       nome: 'Gerar regra com IA',      slide: 4 },
+    { id: 'frete',   nome: 'Cálculo do Frete Valor',  slide: 2, etapa: 'frete' },
     { id: 'icms',     nome: 'Cálculo do ICMS',         slide: 2, etapa: 'icms' },
     { id: 'total',    nome: 'Cálculo Total Prestação', slide: 2, etapa: 'total' },
     { id: 'montagem', nome: 'Montagem manual',         slide: 3 }
 ];
 const CB_MONTAGEM = CB_PASSOS.length - 1;                  // índice do passo da montagem manual
+const CB_IA = CB_PASSOS.findIndex(p => p.id === 'ia');       // índice do passo "Gerar regra com IA" (a caixa de texto da IA só existe nele)
 const CB_PRIMEIRO_CALCULO = CB_PASSOS.findIndex(p => p.etapa);   // índice do 1º passo de cálculo
 const CB_ETAPAS = {
     // grupos = pedaço do título do grupo em CTE_OPCOES_MONTAGEM; somar = campo de destino das contas "Somar X no Y" (CN_SOMA_ALVOS)
@@ -34,9 +38,12 @@ const CB_ETAPAS = {
     icms:  { grupos: ['Cálculo do ICMS'],        somar: ['baseCalculo'],    dica: 'demonstrativo, inverso, st, gnre, reduzir, somar seguro...' },
     total: { grupos: [],                         somar: ['totalPrestacao'], dica: 'somar frete, somar ICMS, somar pedágio...' }
 };
-// Opção que SÓ este assistente tem (o montador clássico não): "Somar Frete Valor no Total Prestação". Vem MARCADA por padrão (ver _cbMarcarPadrao) — o Total Prestação sempre parte do Frete Valor — e é a única das contas "Somar"
-// que CRIA o campo quando a regra ainda não o calcula (criaSeAusente, em _aplicarSomaEmCampo): numa regra montada do zero é ela que cria def("totalPrestacao", obt('valorFrete')), e as outras
-// contas "Somar … no Total Prestação" passam a ter onde entrar. Com uma regra base/colada que já soma o frete no total, não muda nada (o termo já está lá, não duplica).
+// Opção que SÓ este assistente tem (o montador clássico não): "Somar Frete Valor no Total Prestação". Até a v28.28 vinha MARCADA por padrão numa regra do zero (o Total Prestação sempre partia do Frete Valor); desde a v28.29 NÃO vem
+// mais marcada (CB_MARCAR_PADRAO = false, a pedido do dono do sistema: a regra do zero começa sem nada, a pessoa monta o que precisa) — ela continua existindo, para quem quer o Total Prestação partindo do Frete Valor. É a única das contas "Somar"
+// que CRIA o campo quando a regra ainda não o calcula (criaSeAusente, em _aplicarSomaEmCampo): numa regra montada do zero, marcada, é ela que cria def("totalPrestacao", obt('valorFrete')), e as outras
+// contas "Somar … no Total Prestação" (e o ICMS no total) passam a ter onde entrar — sem ela, numa regra do zero, essas contas ficam "sem efeito" e o assistente avisa para marcá-la (ver _cbDicaCriarTotal).
+// Com uma regra base/colada que já soma o frete no total, não muda nada (o termo já está lá, não duplica).
+const CB_MARCAR_PADRAO = false;   // true = volta o comportamento da v28.28 (a opção abaixo nasce marcada numa regra do zero e o Total Prestação já sai com o Frete Valor)
 const CB_ID_PADRAO = 'somar_totalPrestacao_valorFrete';
 const CB_ITEM_SOMAR_FRETE = {
     id: CB_ID_PADRAO, label: 'Somar Frete Valor no Total Prestação', grupoExclusivo: CB_ID_PADRAO,
@@ -57,7 +64,7 @@ const CB_ROTULOS = {
     frete_kg:         'Tarifa x peso (KG)',
     frete_valor_docs: 'Tarifa x Valor Total das Notas'
 };
-// "Somar Frete Valor na Base de Cálculo" (passo 4, caixa "Somar na Base de Cálculo"): a Base de Cálculo parte do Frete Valor. Ela é DERIVADA da regra: vem marcada quando a base montada usa o Frete Valor — numa regra colada,
+// "Somar Frete Valor na Base de Cálculo" (passo 5, caixa "Somar na Base de Cálculo"): a Base de Cálculo parte do Frete Valor. Ela é DERIVADA da regra: vem marcada quando a base montada usa o Frete Valor — numa regra colada,
 // numa regra base e quando um cálculo padrão (ICMS Demonstrativo, Cálculo Inverso, Redução) é escolhido, pois todos eles calculam em cima do frete — e desmarca sozinha quando a base deixa de usá-lo (ver _cbSincronizar).
 // É EXCLUSIVA de "Somar Total Prestação na Base de Cálculo" (mesmo grupo de exclusividade): o total prestação já inclui o frete, então marcar o total TIRA o frete da base — não soma os dois (ver _cbAposAplicar).
 const CB_ID_FRETE_BASE = 'somar_baseCalculo_valorFrete';
@@ -68,9 +75,9 @@ const CB_ITEM_FRETE_BASE = {
     modo: 'somarEm', campoAlvo: 'baseCalculo', alvoNome: 'Base de Cálculo', termoNovo: { termo: "obt('valorFrete')", acao: '+' },
     buscaExtra: 'somar soma adicionar incluir acrescentar frete valor base calculo bc'
 };
-// "Somar ICMS" (passo 4, logo depois de ICMS Demonstrativo e Cálculo Inverso): a TERCEIRA escolha de como calcular o ICMS. As três (Demonstrativo, Inverso, Somar ICMS) são EXCLUSIVAS: não tem grupoExclusivo próprio, então cai
+// "Somar ICMS" (passo 5, logo depois de ICMS Demonstrativo e Cálculo Inverso): a TERCEIRA escolha de como calcular o ICMS. As três (Demonstrativo, Inverso, Somar ICMS) são EXCLUSIVAS: não tem grupoExclusivo próprio, então cai
 // no mesmo grupo das duas (ver _cbHtmlOpcao). Marcada, ela PREENCHE a regra com o cálculo da base e do valorICMS do Demonstrativo (aliquota == 0 → base 0; aliquota > 0 → base = Frete Valor; valorICMS = base × alíquota)
-// E marca "Somar ICMS no Total Prestação" (passo 5, icms_somar): é a "regra base SOMAR ICMS" como opção. Quando a regra colada/base já tem os dois (o cálculo do Demonstrativo + o ICMS somado no total) é ELA que aparece
+// E marca "Somar ICMS no Total Prestação" (passo 6, icms_somar): é a "regra base SOMAR ICMS" como opção. Quando a regra colada/base já tem os dois (o cálculo do Demonstrativo + o ICMS somado no total) é ELA que aparece
 // marcada, no lugar do Demonstrativo (ver _cbPresente e _cbSincronizar, que mantém as duas pontas coerentes: tirar o ICMS do total a transforma em Demonstrativo e vice-versa).
 const CB_ID_DEMONSTRATIVO = 'icms_demonstrativo', CB_ID_ICMS_SOMAR = 'icms_somar';
 const CB_ID_SOMAR_ICMS = 'cb_espelho_somar_icms';   // (o id do atalho antigo foi mantido)
@@ -135,7 +142,7 @@ function _cbHtmlBase() {
           <input type="checkbox" id="wCteBetaZero" onchange="_cbZeroMudou(this.checked)">
           <span class="cb-zero-tx"><b>Para montar do zero clique em avançar</b><small>Marque esta opção para começar com a montagem vazia. Ela descarta a regra colada ou a regra base escolhida.</small></span>
         </label>
-        <div class="cn-nota">ℹ️ Trocar a regra base aqui recomeça a montagem: as opções marcadas nos passos de cálculo (3 a 5) são desmarcadas.</div>
+        <div class="cn-nota">ℹ️ Trocar a regra base aqui recomeça a montagem: as opções marcadas nos passos de cálculo (${CB_PRIMEIRO_CALCULO + 1} a ${CB_MONTAGEM}) são desmarcadas.</div>
       </div>
     </section>`;
 }
@@ -224,26 +231,39 @@ function _cbHtmlOpcoes() {
     return `<section class="cn-slide" id="cbSlide2" aria-labelledby="cbT2" hidden>
       <div class="cn-wrap">
         <div class="cn-topo-aviso" id="wCteBetaAvisoManual"><span aria-hidden="true">💡</span><span>Se preferir montar a regra manualmente, marque a opção <b>“Desejo fazer a montagem manual da regra”</b> no rodapé e clique em <b>avançar para montagem manual</b></span></div>
-        <div class="cb-cab"><div class="cn-etapa" id="wCteBetaEtapa">Passo 3 de ${_cbTotalPassos}</div>
+        <div class="cb-cab"><div class="cn-etapa" id="wCteBetaEtapa">Passo ${CB_PRIMEIRO_CALCULO + 1} de ${_cbTotalPassos}</div>
         <h2 class="cn-h2" id="cbT2" tabindex="-1">${esc(CB_PASSOS[CB_PRIMEIRO_CALCULO].nome)}</h2></div>
         <div class="cb-filtro-linha"><input type="search" id="wCteBetaFiltro" class="cn-filtro" placeholder="🔎 Digite para filtrar as opções..." autocomplete="off" spellcheck="false" aria-label="Digite para filtrar as opções deste passo" oninput="_cbFiltrar()" onkeydown="_cbFiltroTecla(event)">
         <div class="cn-filtro-info" id="wCteBetaFiltroInfo" role="status" aria-live="polite"></div></div>
         <div class="cn-marcadas vazio" id="wCteBetaMarcadas"></div>
-        <div class="cn-colunas-opcoes">
+        <div class="cn-colunas-opcoes cb-uma-coluna">
           <div>
             <div class="cn-legenda">🧱 Monte com um clique — marque o que a regra precisa</div>
             <div id="wCteBetaOpcoes">${paineis}
               <div class="cn-sem-resultado" id="wCteBetaSemResultado" hidden></div>
             </div>
           </div>
-          <aside class="cn-ia" id="wCteBetaIA">
-            <label class="cn-ia-titulo" for="wCteDescricao">✨ Ou se preferir, explique diretamente para a IA o que o cliente necessita, seja bem claro</label>
-            <textarea id="wCteDescricao" class="cn-ia-texto" placeholder="Ex.: o cliente quer o frete calculado pelo peso em toneladas, com ICMS por dentro e seguro de 0,3% sobre o valor das notas."></textarea>
-            <div class="cn-aviso erro" id="wCteBetaAvisoIcmsTexto" role="alert"></div>
-            <div class="cn-dica">A IA junta o que você marcou ao lado com o que você escrever aqui.</div>
-            <div class="cn-dica">⛔ Não peça para reduzir o <b>valor do ICMS</b>: a SEFAZ rejeita. Para pagar menos ICMS, peça a redução da <b>base de cálculo</b>.</div>
-          </aside>
         </div>
+      </div>
+    </section>`;
+}
+// Passo 3 — Gerar regra com IA: só a caixa para explicar à IA o que o cliente precisa, com o botão logo abaixo dela. Quem cola a regra do cliente no passo 1 e descreve aqui a mudança não precisa passar pelas opções.
+// Quem prefere montar sem IA clica no "Próximo" do rodapé. A caixa (#wCteDescricao) é a mesma de sempre: o "Gerar Regra" dos passos de cálculo também a usa.
+function _cbHtmlIA() {
+    const prox = CB_PASSOS[CB_PRIMEIRO_CALCULO].nome;
+    return `<section class="cn-slide" id="cbSlide4" aria-labelledby="cbT4" hidden>
+      <div class="cn-wrap">
+        <div class="cb-cab"><div class="cn-etapa">Passo ${CB_IA + 1} de ${_cbTotalPassos}</div>
+        <h2 class="cn-h2" id="cbT4" tabindex="-1">${esc(CB_PASSOS[CB_IA].nome)}</h2></div>
+        <aside class="cn-ia" id="wCteBetaIA">
+          <label class="cn-ia-titulo" for="wCteDescricao">✨ Explique diretamente para a IA o que o cliente necessita, seja bem claro</label>
+          <textarea id="wCteDescricao" class="cn-ia-texto" placeholder="Ex.: o cliente quer o frete calculado pelo peso em toneladas, com ICMS por dentro e seguro de 0,3% sobre o valor das notas."></textarea>
+          <div class="cn-aviso erro" id="wCteBetaAvisoIcmsTexto" role="alert"></div>
+          <div class="cb-ia-acoes"><button type="button" class="cn-btn ia" onclick="_cbGerarIA()" title="A IA monta a regra com o que você escreveu aqui (partindo da regra do passo 1 e do que estiver marcado nos passos seguintes)">✨ Gerar Regra com IA</button></div>
+          <div class="cn-dica">A IA parte da regra que você colou ou escolheu no passo 1 e junta ao que você escrever aqui o que estiver marcado nos passos ${CB_PRIMEIRO_CALCULO + 1} a ${CB_MONTAGEM}.</div>
+          <div class="cn-dica">⛔ Não peça para reduzir o <b>valor do ICMS</b>: a SEFAZ rejeita. Para pagar menos ICMS, peça a redução da <b>base de cálculo</b>.</div>
+        </aside>
+        <p class="cb-ia-manual">Se deseja criar manualmente, clique em <b>Próximo: ${esc(prox)}</b>.</p>
       </div>
     </section>`;
 }
@@ -286,7 +306,7 @@ function mostrarWizardRegraCteBeta(queryOriginal) {
     card.innerHTML = _cbHtmlTopo()
         + '<div class="cn-aviso-icms" id="wCteBetaAvisoIcms" role="alert" hidden></div>'   // trava do ICMS: aparece em qualquer tela enquanto a regra montada alterar o valor do ICMS (ver _cbAtualizarAvisoIcms)
         + '<div class="cn-aviso-icms cn-aviso-loop" id="wCteBetaAvisoLoop" role="alert" hidden></div>'   // trava de loop: idem, enquanto campos da regra dependerem um do outro (ver _cbAtualizarAvisoLoop)
-        + '<div class="cn-corpo" id="wCteBetaCorpo">' + _cbHtmlBase() + _cbHtmlCampos() + _cbHtmlOpcoes() + _cbHtmlMontagem() + '</div>'
+        + '<div class="cn-corpo" id="wCteBetaCorpo">' + _cbHtmlBase() + _cbHtmlCampos() + _cbHtmlIA() + _cbHtmlOpcoes() + _cbHtmlMontagem() + '</div>'
         + '<div class="cn-rodape" id="wCteBetaRodape"></div>';
     corpo.appendChild(card);
     // Faixa dos campos personalizados da Tabela de Preços: só existe nesta versão, logo abaixo da caixa "Utiliza Valores outros" (que é dos campos do Ct-e) e só aparece
@@ -295,7 +315,7 @@ function mostrarWizardRegraCteBeta(queryOriginal) {
     if (caixaRosa) caixaRosa.insertAdjacentHTML('afterend', '<div class="cn-tab-custom" id="wCteTabCustomBox" hidden><div class="cn-tab-custom-t">📋 Campos personalizados da Tabela de Preços <span>(entram sem obt)</span></div><div class="cn-chips" id="wCteTabCustomChips"></div></div>');
     card.addEventListener('input', _cbAoDigitar);
     _cteRenderBlocos();
-    _cbMarcarPadrao();          // "Somar Frete Valor no Total Prestação" já nasce marcada
+    _cbMarcarPadrao();          // (v28.29: não marca mais "Somar Frete Valor no Total Prestação" sozinha — só acerta a caixa "Somar no …"; ver CB_MARCAR_PADRAO)
     _abrirBuilderModal(null);   // sem o tutorial automático: ele só faz sentido na tela da montagem (ver _cbTourPrimeiraVez)
     _cbSomarSync();
     _cbLigarAjuste(card);
@@ -365,14 +385,15 @@ function _cbLigarAjuste(card) {
     card.addEventListener('input', () => _cbAjustarAgendado(150));
     if (!window.__cbResizeLigado) { window.__cbResizeLigado = true; window.addEventListener('resize', () => { if (_cnEl('wizardRegraBetaCard')) _cbAjustarAgendado(0); }); }
 }
-// "Somar Frete Valor no Total Prestação" vem MARCADA por padrão. Trocar a regra base no passo 1 (colar, escolher uma regra pronta, "do zero") desmarca todas as opções, então esta é marcada de novo
-// logo depois — a não ser que a pessoa a tenha desmarcado de propósito (_cbPadraoDesmarcado). Com uma regra base que já soma o frete no total, marcar não muda a regra (não duplica).
+// "Somar Frete Valor no Total Prestação" NÃO vem mais marcada por padrão (CB_MARCAR_PADRAO = false, desde a v28.29: a regra do zero começa sem nada associado). Com CB_MARCAR_PADRAO ligado, o comportamento da v28.28
+// volta: trocar a regra base no passo 1 (colar, escolher uma regra pronta, "do zero") desmarca todas as opções, então esta é marcada de novo logo depois — a não ser que a pessoa a tenha desmarcado de propósito
+// (_cbPadraoDesmarcado). Com uma regra base que já soma o frete no total, marcar não muda a regra (não duplica). Desligado, esta função só acerta a caixa "Somar no …" (conta marcada nunca fica escondida).
 // Só vale para a regra montada do zero: com uma regra colada / regra base escolhida (_cbBaseExterna) NADA é marcado nem aplicado sozinho — as caixinhas só refletem o que a regra já tem
 // (ver "marcar conforme a regra", logo abaixo), para não editar a regra da pessoa sem ela querer.
 // "Desmarquei a opção padrão de propósito" só vale numa regra montada do zero: numa regra de fora, desmarcá-la é tirar uma parte DAQUELA regra (não uma preferência), e não pode valer para a próxima regra.
 function _cbNotaPadrao(desmarcou) { if (!_cbBaseExterna) _cbPadraoDesmarcado = !!desmarcou; }
 function _cbMarcarPadrao() {
-    if (_cbPadraoDesmarcado || _cbBaseExterna) { _cbSomarSync(); return; }
+    if (!CB_MARCAR_PADRAO || _cbPadraoDesmarcado || _cbBaseExterna) { _cbSomarSync(); return; }
     const c = _cnEl('wCteOpc_' + CB_ID_PADRAO);
     if (!c || c.checked) { _cbSomarSync(); return; }
     c.checked = true;
@@ -382,7 +403,7 @@ function _cbMarcarPadrao() {
 }
 
 // ── marcar conforme a regra ──────────────────────────────────────────────────
-// Ao COLAR uma regra ou ESCOLHER uma regra base, as caixinhas dos passos 3 a 5 já vêm marcadas conforme o que a regra JÁ tem (ex.: "Somar Gris no Total Prestação" só vem marcada se o Total Prestação da
+// Ao COLAR uma regra ou ESCOLHER uma regra base, as caixinhas dos passos 4 a 6 já vêm marcadas conforme o que a regra JÁ tem (ex.: "Somar Gris no Total Prestação" só vem marcada se o Total Prestação da
 // regra já soma o Gris; "Somar Frete Valor no Total Prestação" idem), para ninguém editar a regra sem querer. Marcar assim NÃO mexe na regra: ela fica exatamente como entrou.
 // A leitura é feita sobre a BASE das opções (window._cteOpcionaisBase = a regra como entrou), nunca sobre o resultado já mexido, então a mesma regra dá sempre a mesma resposta (também depois do "Voltar").
 // Depois disso as caixinhas funcionam nos dois sentidos, pelo gancho prepararBase do motor das opções (_cteAplicarOpcionais): desmarcar uma que veio da regra TIRA da regra o que ela fazia (a soma sai
@@ -666,7 +687,7 @@ function _cbCalcDaBase() {
     }) || null;
 }
 // Deixa as caixinhas "derivadas" de acordo com a regra montada (chamada sempre que a faixa "Marcadas" é refeita, isto é, depois de cada mudança):
-//  • as escolhas de ICMS: "Somar ICMS" (passo 4) = Demonstrativo + "Somar ICMS no Total Prestação" (passo 5). Tirou o ICMS do total com "Somar ICMS" marcada → sobra o Demonstrativo (a regra é a mesma); marcou o ICMS no total
+//  • as escolhas de ICMS: "Somar ICMS" (passo 5) = Demonstrativo + "Somar ICMS no Total Prestação" (passo 6). Tirou o ICMS do total com "Somar ICMS" marcada → sobra o Demonstrativo (a regra é a mesma); marcou o ICMS no total
 //    com o Demonstrativo marcado → vira "Somar ICMS" (também a mesma regra). Assim nunca ficam duas das três marcadas e as duas pontas combinam;
 //  • "Somar Frete Valor na Base de Cálculo" = a base montada usa o Frete Valor (regra colada, regra base, cálculo padrão escolhido...). Com "Somar Total Prestação na Base" marcado ela fica desmarcada (o total já inclui o frete).
 function _cbSincronizar() {
@@ -707,7 +728,7 @@ function _cbTrocarNaBase(blocos, de, para) {
 // Não mexe numa regra que veio de fora já com o total na base (o total estava marcado ao colar: é a regra do cliente, avisada no passo 1).
 function _cbAposAplicar(blocos, extras) {
     // "Somar ICMS no Total Prestação" numa regra que NÃO calcula o Total Prestação: o motor clássico CRIARIA def("totalPrestacao", obt('valorICMS')) e o total ficaria só o ICMS, sem o frete. Aqui não cria: a opção
-    // fica "sem efeito" (aviso na faixa e no Gerar), como as outras contas "Somar". (Na regra montada do zero o total criado já ganha o frete da opção padrão e fica com 2 parcelas: esse não é desfeito.)
+    // fica "sem efeito" (aviso na faixa e no Gerar), como as outras contas "Somar". (Na regra montada do zero com "Somar Frete Valor no Total Prestação" marcada o total criado ganha o frete e fica com 2 parcelas: esse não é desfeito.)
     // (Só não desfaz quando o total da PRÓPRIA regra colada já era só o ICMS: aí é do cliente.)
     const ic = _cnEl('wCteOpc_' + CB_ID_ICMS_SOMAR), soIcms = b => b.destino === 'totalPrestacao' && (b.termos || []).length === 1 && _cbMesmoTermo(b.termos[0].termo, "obt('valorICMS')");
     if (ic && ic.checked && !(((window._cteOpcionaisBase || {}).blocos) || []).some(soIcms)) blocos = blocos.filter(b => !soIcms(b));
@@ -738,8 +759,8 @@ function _cbIrPara(n, opcoes) {
     if (_cbPasso === CB_MONTAGEM && n !== CB_MONTAGEM && typeof _tourFechar === 'function') _tourFechar();   // o tutorial só vale na montagem
     _cbPasso = n; _cbVisitados.add(n);
     card.dataset.passo = String(n);
-    const slide = CB_PASSOS[n].slide;   // 0 = regra base, 1 = campos, 2 = cálculo (passos 3, 4 e 5), 3 = montagem
-    [0, 1, 2, 3].forEach(i => { const s = _cnEl('cbSlide' + i); if (s) s.hidden = i !== slide; });
+    const slide = CB_PASSOS[n].slide;   // 0 = regra base, 1 = campos, 2 = cálculo (passos 4, 5 e 6), 3 = montagem, 4 = gerar regra com IA (passo 3)
+    [0, 1, 2, 3, 4].forEach(i => { const s = _cnEl('cbSlide' + i); if (s) s.hidden = i !== slide; });
     card.querySelectorAll('.cn-passo-btn').forEach(b => {
         const i = Number(b.dataset.passo), feito = i < n && _cbVisitados.has(i), num = b.querySelector('.cn-num');
         b.classList.toggle('atual', i === n); b.classList.toggle('feito', feito);
@@ -805,7 +826,7 @@ function _cbAtualizarAvancar() {
 }
 // Marcar "do zero" descarta a regra colada, a regra base e as opções marcadas (a montagem fica vazia); desmarcar só trava o Avançar de novo se nada mais foi escolhido.
 function _cbZeroMudou(marcado) {
-    if (marcado) { _cbBaseExterna = false; _cbFreteBaseTirado = false; _cbFreteBaseManual = false; _cbAvisoBaseDupla = false; _cteLimparCanvas(); _cbMarcarPronta(null); _cbResumoColar(); _cbAtualizarMarcadas(); _cbMarcarPadrao(); }   // do zero: o Total Prestação começa pelo Frete Valor
+    if (marcado) { _cbBaseExterna = false; _cbFreteBaseTirado = false; _cbFreteBaseManual = false; _cbAvisoBaseDupla = false; _cteLimparCanvas(); _cbMarcarPronta(null); _cbResumoColar(); _cbAtualizarMarcadas(); _cbMarcarPadrao(); }   // do zero: sem nada associado (desde a v28.29 o Total Prestação não começa mais pelo Frete Valor sozinho)
     _cbAtualizarAvancar();
 }
 // Colou texto ou escolheu uma regra base: então "do zero" não vale mais
@@ -868,6 +889,7 @@ function _cbRodape() {
         const ok = _cbBaseOk();
         dir = `<button type="button" id="wCteBetaBtnAvancar" class="cn-btn pri${ok ? '' : ' bloq'}" aria-disabled="${ok ? 'false' : 'true'}" onclick="_cbProximo()"${ok ? '' : ' title="Cole a regra, escolha uma regra base ou marque “Para montar do zero clique em avançar” para liberar este botão"'}>Avançar ▶</button>`;
     } else if (n === 1) dir = botao('pri', '_cbProximo()', 'Avançar ▶');
+    else if (n === CB_IA) dir = botao('pri', '_cbProximo()', 'Próximo: ' + esc(CB_PASSOS[n + 1].nome) + ' ▶', 'Vai para o passo ' + (n + 2) + ' — para montar a regra sem a IA, escolhendo as opções');   // (o "Gerar Regra com IA" fica dentro da tela, logo abaixo da caixa de texto)
     else {
         // Passos de cálculo: "Avançar para montagem manual" (sem seta) vem ANTES do "Gerar Regra" e começa travado e cinza; a caixa de cima o libera. Fica com aria-disabled (e não
         // "disabled") de propósito: clicar no botão travado explica o que falta em vez de não fazer nada. O "Próximo: …" leva ao cálculo seguinte (o último passo de cálculo não tem).
@@ -887,7 +909,7 @@ function _cbAtualizarAvisoIA() {
     const el = _cnEl('wCteBetaAvisoIA'); if (!el) return;
     if (!_cnTemInstrucoes()) { el.hidden = true; el.innerHTML = ''; return; }
     el.hidden = false;
-    el.innerHTML = `<span>✨ <b>Você escreveu instruções para a IA nos passos de cálculo (3 a 5).</b> Elas só entram na regra se você usar o botão ao lado. Se continuar montando à mão e clicar em <b>Gerar Regra Montada</b>, elas não serão usadas.</span><button type="button" class="cn-btn ia peq" onclick="_cbGerar()" title="Usa a regra montada aqui + o texto que você escreveu para a IA nos passos de cálculo">✨ Gerar com a IA (usar minhas instruções)</button>`;
+    el.innerHTML = `<span>✨ <b>Você escreveu instruções para a IA no passo ${CB_IA + 1} (${esc(CB_PASSOS[CB_IA].nome)}).</b> Elas só entram na regra se você usar o botão ao lado. Se continuar montando à mão e clicar em <b>Gerar Regra Montada</b>, elas não serão usadas.</span><button type="button" class="cn-btn ia peq" onclick="_cbGerar()" title="Usa a regra montada aqui + o texto que você escreveu para a IA nos passos de cálculo">✨ Gerar com a IA (usar minhas instruções)</button>`;
 }
 
 // ── passo 1: regra base ──────────────────────────────────────────────────────
@@ -898,11 +920,11 @@ function _cbColarInput() {
     let marcadas = 0;
     if (((_cnEl('wCteColarRegra') || {}).value || '').trim()) {
         _cbDesmarcarZero();                   // colou uma regra: "montar do zero" não vale mais
-        marcadas = _cbMarcarConformeRegra();  // as caixinhas dos passos 3 a 5 ficam marcadas conforme o que a regra colada já tem (sem mexer nela)
+        marcadas = _cbMarcarConformeRegra();  // as caixinhas dos passos 4 a 6 ficam marcadas conforme o que a regra colada já tem (sem mexer nela)
     } else {
         // apagou o texto: a regra volta a ser montada do zero (a montagem foi esvaziada; as caixinhas e a base antiga das opções não podem ficar para trás)
         _cbBaseExterna = false; window._cteOpcionaisBase = null; _cbDetBase = null; _cteDesmarcarOpcionais();
-        _cbMarcarPadrao();   // "Somar Frete Valor no Total Prestação" volta a ficar marcada
+        _cbMarcarPadrao();   // (v28.29: não marca mais sozinha; ver CB_MARCAR_PADRAO)
     }
     _cbResumoColar(marcadas);
     _cbAtualizarMarcadas();
@@ -924,11 +946,12 @@ function _cbResumoColar(marcadas) {
         + (trechos ? ' e ' + trechos + (trechos === 1 ? ' trecho mantido' : ' trechos mantidos') + ' como estão' : '') + '. Já está na montagem (passo ' + _cbTotalPassos + ').' + _cbTextoMarcadas(marcadas);
     el.className = 'cn-resumo ok';
 }
-// Frase final do aviso do passo 1: quantas caixinhas dos passos 3 a 5 foram marcadas por já fazerem parte da regra (e que marcar não muda a regra)
+// Frase final do aviso do passo 1: quantas caixinhas dos passos de cálculo (4 a 6) foram marcadas por já fazerem parte da regra (e que marcar não muda a regra)
 function _cbTextoMarcadas(n) {
     if (n === undefined || n === null) return '';
     const dupla = _cbAvisoBaseDupla ? ' ⚠️ Atenção: a Base de Cálculo desta regra soma o Frete Valor E o Total Prestação (o frete entra duas vezes).' : '';
-    return (n ? ' Marquei nos passos 3 a 5 o que ela já tem (' + n + (n === 1 ? ' opção' : ' opções') + '): a regra segue como está.' : ' Nenhuma opção dos passos 3 a 5 foi marcada: a regra segue como está.') + dupla;
+    const passos = (CB_PRIMEIRO_CALCULO + 1) + ' a ' + CB_MONTAGEM;   // os passos de cálculo
+    return (n ? ' Marquei nos passos ' + passos + ' o que ela já tem (' + n + (n === 1 ? ' opção' : ' opções') + '): a regra segue como está.' : ' Nenhuma opção dos passos ' + passos + ' foi marcada: a regra segue como está.') + dupla;
 }
 function _cbEscolherPronta(chave) {
     // a leitura da regra ANTERIOR (colada ou outra base) não vale mais: _cteUsarPredefinida já roda o motor das opções, que não pode tirar da regra nova as somas que a caixinha ainda não marcou
@@ -1055,7 +1078,7 @@ function _cbUsarSugestao() {
     _cbCamposMudou();
 }
 
-// ── passos 3, 4 e 5: cálculo do Frete Valor / do ICMS / do Total Prestação ───────────────────
+// ── passos 4, 5 e 6: cálculo do Frete Valor / do ICMS / do Total Prestação ───────────────────
 // Texto de quando a pessoa tenta tirar o Frete Valor da base mas ele faz parte do cálculo de ICMS escolhido
 const _cbAvisoFreteNoCalculo = calc => 'O Frete Valor faz parte do cálculo “' + _cbNomeOpcao(calc) + '” (a Base de Cálculo é calculada em cima dele). Para tirá-lo da base, desmarque esse cálculo ou marque “Somar Total Prestação na Base de Cálculo”.';
 function _cbOpcaoClicada(chk) {
@@ -1088,6 +1111,7 @@ function _cbOpcaoClicada(chk) {
                 ? '“Somar Total Prestação na Base de Cálculo” marcada, mas o Frete Valor ainda aparece na conta da base: confira na montagem manual para o frete não contar duas vezes.'
                 : '“Somar Total Prestação na Base de Cálculo” marcada: o Frete Valor saiu da base (o Total Prestação já o inclui — não conta duas vezes).', 'aviso');
     }
+    if (chk.checked && !((_cnEl('wCteBetaMsg') || {}).textContent)) { const dicaTotal = _cbDicaTotalAusente(id); if (dicaTotal) _cbMsg(dicaTotal, 'aviso'); }   // marcou uma conta que soma no Total Prestação sem ele existir: diz o que falta
     if (chk.checked && (id === CB_ID_SOMAR_ICMS || id === CB_ID_ICMS_SOMAR || id === CB_ID_DEMONSTRATIVO || id === 'icms_inverso') && _cbTotalAntesDoIcms())
         _cbAvisoTroca = (_cbAvisoTroca ? _cbAvisoTroca + ' ' : '') + 'Atenção: nesta regra o Total Prestação (que soma o ICMS) vem ANTES do cálculo do valorICMS — na execução ele leria o ICMS ainda não calculado. Mova o cálculo do ICMS para antes do total na montagem manual.';
     _cbMostrarAvisoTroca();   // (por último: as trocas automáticas entre as 3 escolhas de ICMS e o aviso de ordem acompanham a mensagem do clique)
@@ -1098,7 +1122,7 @@ function _cbTotalAntesDoIcms() {
     const iTot = bl.findIndex(b => b.destino === 'totalPrestacao' && _cbUsaTermo(b, "obt('valorICMS')")), iIcms = bl.findIndex(b => b.destino === 'valorICMS');
     return iTot !== -1 && iIcms !== -1 && iTot < iIcms;
 }
-// As três escolhas de ICMS (Demonstrativo / Inverso / Somar ICMS) são exclusivas. "Somar ICMS" marca (ou desmarca) junto o ICMS no Total Prestação (passo 5, e a caixa dele abre); trocar "Somar ICMS" por outro cálculo
+// As três escolhas de ICMS (Demonstrativo / Inverso / Somar ICMS) são exclusivas. "Somar ICMS" marca (ou desmarca) junto o ICMS no Total Prestação (passo 6, e a caixa dele abre); trocar "Somar ICMS" por outro cálculo
 // tira esse ICMS do total, que era dele (e avisa). Usada tanto pelo clique na caixinha quanto pelo ✕ da faixa "Marcadas".
 function _cbPreIcms(id, quis) {
     const somIcms = _cnEl('wCteOpc_' + CB_ID_SOMAR_ICMS), icmsTotal = _cnEl('wCteOpc_' + CB_ID_ICMS_SOMAR);
@@ -1106,7 +1130,7 @@ function _cbPreIcms(id, quis) {
     if (id === CB_ID_SOMAR_ICMS) { icmsTotal.checked = quis; if (quis) _cbSomarSync(); }
     else if (quis && (id === CB_ID_DEMONSTRATIVO || id === 'icms_inverso') && somIcms.checked && icmsTotal.checked) {
         icmsTotal.checked = false;
-        _cbAvisoTroca = '“Somar ICMS no Total Prestação” saiu do total: o cálculo escolhido não soma o ICMS (marque-o de novo no passo 5 se precisar).';
+        _cbAvisoTroca = '“Somar ICMS no Total Prestação” saiu do total: o cálculo escolhido não soma o ICMS (marque-o de novo no passo ' + (CB_PASSOS.findIndex(p => p.etapa === 'total') + 1) + ' se precisar).';
     }
 }
 // Mostra o aviso de uma troca automática entre as 3 escolhas de ICMS (se houve), depois do resto da mensagem do clique
@@ -1233,7 +1257,7 @@ function _cbSomarToggle(chk) {
     if (chk.checked) {
         delete sub.dataset.naoAbrir;
         itens.hidden = false;
-        if (itens.querySelector('#wCteOpc_' + CB_ID_PADRAO)) { _cbNotaPadrao(false); _cbMarcarPadrao(); }   // reabrir o Total Prestação traz de volta a opção padrão
+        if (itens.querySelector('#wCteOpc_' + CB_ID_PADRAO)) { _cbNotaPadrao(false); _cbMarcarPadrao(); }   // reabrir o Total Prestação traz de volta a opção padrão (só com CB_MARCAR_PADRAO ligado)
     } else {
         const marcadas = [...itens.querySelectorAll('.wCteOpcCheckbox:checked')];
         // "Somar Frete Valor na Base" marcada por um cálculo de ICMS (Demonstrativo/Inverso/Redução) não sai fechando a caixa: a base é calculada em cima do frete — a caixa fica aberta e a pessoa é avisada
@@ -1287,7 +1311,7 @@ function _cbBloqueiaOpcaoIncompleta() {
 }
 // Se há uma opção "Somar X no Y" marcada que não entrou na regra (a regra montada não calcula Y): sem este aviso a regra sairia sem ela, em silêncio.
 function _cbBloqueiaOpcaoSemEfeito() {
-    // a opção marcada por padrão (Somar Frete Valor no Total Prestação) nunca bloqueia: a pessoa não a escolheu; se ela ficou sem efeito (ex.: o Total Prestação está dentro de um if/else da regra colada),
+    // "Somar Frete Valor no Total Prestação" nunca bloqueia (era a opção marcada por padrão e a pessoa não a escolhia): se ela ficou sem efeito (ex.: o Total Prestação está dentro de um if/else da regra colada),
     // o aviso continua na faixa "Marcadas" e basta desmarcá-la se incomodar
     const it = _cnTodasOpcoes().find(o => o.id !== CB_ID_PADRAO && _cbMotivoSemEfeito(o));
     if (!it) return false;
@@ -1296,8 +1320,22 @@ function _cbBloqueiaOpcaoSemEfeito() {
     const c = _cnEl('wCteOpc_' + it.id); if (c) { c.scrollIntoView({ block: 'center' }); c.focus(); }
     _cbMsg(motivo === 'soma'
         ? 'A opção “' + it.label + '” não soma nada: ' + it.alvoNome + ' da regra já usa esse campo, mas subtraindo/multiplicando/dividindo (ou como 1º termo de uma conta que continua com subtração). Ajuste isso na montagem manual ou desmarque a opção.'
-        : 'A opção “' + it.label + '” não tem onde entrar: a regra montada ainda não calcula ' + (it.alvoNome || 'Total Prestação') + '. Escolha uma regra base no passo 1 (ou monte esse campo na montagem manual) ou desmarque a opção.', 'erro');
+        : 'A opção “' + it.label + '” não tem onde entrar: a regra montada ainda não calcula ' + (it.alvoNome || 'Total Prestação') + '.' + (_cbDicaCriarTotal(it)
+            ? ' Marque também “' + CB_ITEM_SOMAR_FRETE.label + '” (é ela que cria o Total Prestação a partir do Frete Valor), escolha uma regra base no passo 1, monte esse campo na montagem manual ou desmarque a opção.'
+            : ' Escolha uma regra base no passo 1 (ou monte esse campo na montagem manual) ou desmarque a opção.'), 'erro');
     return true;
+}
+// Desde a v28.29 "Somar Frete Valor no Total Prestação" não vem mais marcada sozinha: numa regra do zero o Total Prestação só existe se a pessoa pedir. As contas que somam NO Total Prestação (e o ICMS no total) precisam dele para ter onde
+// entrar, e quem o cria é essa opção. true = a opção `it` soma no Total Prestação (e não é a que o cria).
+function _cbDicaCriarTotal(it) { return !!it && it.id !== CB_ID_PADRAO && (it.campoAlvo === 'totalPrestacao' || it.id === CB_ID_ICMS_SOMAR); }
+// Logo depois de MARCAR uma conta "Somar … no Total Prestação" (ou "Somar ICMS") numa regra que ainda não calcula o Total Prestação: diz o que falta, sem esperar o "Gerar Regra" (a faixa "Marcadas" já mostra "sem efeito"). '' = nada a dizer.
+function _cbDicaTotalAusente(id) {
+    for (const i of (id === CB_ID_SOMAR_ICMS ? [CB_ID_SOMAR_ICMS, CB_ID_ICMS_SOMAR] : [id])) {
+        const it = _cnTodasOpcoes().find(o => o.id === i), c = _cnEl('wCteOpc_' + i);
+        if (it && c && c.checked && _cbDicaCriarTotal(it) && _cbMotivoSemEfeito(it) === 'calc')
+            return '“' + _cbNomeOpcao(it) + '” precisa do Total Prestação, e a regra ainda não o calcula. Marque também “' + CB_ITEM_SOMAR_FRETE.label + '” (ela cria o Total Prestação a partir do Frete Valor), escolha uma regra base no passo 1 ou monte o total na montagem manual.';
+    }
+    return '';
 }
 // Opção "Somar X no Y" marcada que NÃO entrou na regra: 'calc' = a regra não calcula Y (ver _cnOpcaoSemEfeito); 'soma' = X já aparece na conta de Y mas não como parcela somada (subtraindo, multiplicando...): o motor
 // entende que "já tem" e não soma nada. Vazio = está tudo certo.
@@ -1346,7 +1384,7 @@ function _cbAtualizarAvisoIcms(linhas) {
 function _cbBloqueiaReducaoIcms(opcoes) {
     if (!_cnEl('wizardRegraBetaCard')) return false;   // só vale no assistente em telas: o montador clássico (que usa as mesmas funções de gerar) continua como sempre foi
     if (!(opcoes && opcoes.soCodigo) && _cnTemInstrucoes() && _cnPedeReduzirIcms(_cnEl('wCteDescricao').value)) {
-        _cbIrParaCalculo();   // a caixa da IA está em todos os passos de cálculo
+        if (_cbPasso !== CB_IA) _cbIrPara(CB_IA, { semFoco: true });   // a caixa da IA fica no passo "Gerar regra com IA"
         _cbAvisoTextoIcms();
         const t = _cnEl('wCteDescricao'); if (t) { t.scrollIntoView({ block: 'center' }); t.focus(); }
         _cbMsg(CN_ICMS_MSG + ' Ajuste o texto da IA para continuar.', 'erro');
@@ -1415,6 +1453,15 @@ function _cbVoltarPorLoop(loop, estado) {
     _voltarParaWizardRegra(ts);
 }
 
+// "Gerar Regra com IA" (passo 3, botão logo abaixo da caixa de texto): sem texto não há o que pedir à IA (o _cbGerar geraria sem IA, e este botão promete a IA) — avisa e põe o cursor na caixa.
+function _cbGerarIA() {
+    if (!_cnTemInstrucoes()) {
+        const t = _cnEl('wCteDescricao'); if (t) t.focus();
+        _cbMsg('Escreva acima o que o cliente precisa para a IA montar a regra. Se prefere montar sem a IA, clique em “Próximo: ' + CB_PASSOS[CB_PRIMEIRO_CALCULO].nome + '”.', 'aviso');
+        return;
+    }
+    _cbGerar();
+}
 // "Gerar Regra": com texto para a IA, a IA monta (usando também o que foi marcado/carregado); só com marcações/regra base, gera direto, sem IA.
 function _cbGerar() {
     _cbMsg('');
@@ -1507,6 +1554,7 @@ function _cbAposRestaurar(info) {
     atualizarAvisos: l => _cbAtualizarAvisos(l),
     loopNaResposta: t => _cbLoopNaResposta(t),
     voltarPorLoop: (loop, estado) => _cbVoltarPorLoop(loop, estado),
-    avisoIcmsNaResposta: t => _cnAvisoIcmsNaResposta(t),
+    problemasNaResposta: (t, ctx) => _cnProblemasDaResposta(t, ctx),        // o que a IA ainda pode corrigir na regra que entregou (ICMS alterado, campo lido antes de calculado): vira a 2ª passada
+    avisoIcmsNaResposta: t => _cnAvisoOrdemNaResposta(_cnAvisoIcmsNaResposta(t)),   // alerta do ICMS no topo + conferência da ordem das linhas no fim
     cardErro: estado => _cbCardErroIA(estado)
 };

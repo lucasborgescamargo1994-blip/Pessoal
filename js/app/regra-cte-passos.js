@@ -312,6 +312,64 @@ function _cnLoopsDoCodigo(codigo) {
         return { campos: comp, caminho, linhas };
     });
 }
+// ── conferência da ORDEM das linhas ──────────────────────────────────────────
+// As linhas rodam de cima para baixo: um obt("campo") de um campo que a PRÓPRIA regra só define mais abaixo lê o valor que já estava na tela, não o calculado (ex.: totalPrestacao soma o valorSeguro, mas o
+// def("valorSeguro", …) vem depois). Devolve [{ campo, lidoPor, definidoEm }] (definidoEm = nº da definição na ordem do código) — só campos que a regra define e que nenhuma linha anterior já definiu. Não bloqueia nada:
+// vira um "ponto de atenção" no fim da resposta da IA (ver _cnAvisoOrdemNaResposta).
+function _cnOrdemNoCodigo(codigo) {
+    const defs = _cnDefsDoCodigo(codigo), vistos = new Set(), achados = [], jaAchado = new Set();
+    defs.forEach((d, i) => {
+        d.deps.forEach(c => {
+            if (c === d.alvo || vistos.has(c) || jaAchado.has(c + '\u0001' + d.alvo)) return;
+            if (defs.slice(i + 1).some(x => x.alvo === c)) { achados.push({ campo: c, lidoPor: d.alvo }); jaAchado.add(c + '\u0001' + d.alvo); }
+        });
+        vistos.add(d.alvo);
+    });
+    return achados;
+}
+// Depois que a IA responde: se a regra entregue ainda lê um campo antes de defini-lo, acrescenta a conferência no fim do texto (a IA já foi instruída a reordenar; isto é a segunda checagem).
+function _cnAvisoOrdemNaResposta(texto) {
+    const blocos = [...String(texto || '').matchAll(/```[\w]*\n?([\s\S]*?)```/g)].map(m => m[1]);
+    if (!blocos.length) return texto;
+    const achados = _cnOrdemNoCodigo(blocos.join('\n'));
+    if (!achados.length) return texto;
+    const rot = c => { const r = _cnRotuloCampo(c); return r && r !== c ? r + ' (' + c + ')' : c; };
+    const linhas = achados.slice(0, 4).map(a => '- ' + rot(a.lidoPor) + ' usa ' + rot(a.campo) + ', que só é calculado mais abaixo na regra: nessa conta entra o valor que já estava na tela, não o calculado. Se o valor calculado deve entrar, mova o def de ' + a.campo + ' para antes de ' + a.lidoPor + '.').join('\n');
+    return texto + '\n\n**🔎 Conferência automática da ordem:**\n' + linhas + (achados.length > 4 ? '\n- (e mais ' + (achados.length - 4) + ' caso(s) parecido(s))' : '');
+}
+// Problemas que a regra entregue pela IA ainda tem e que ela mesma pode corrigir (o ICMS alterado e campos lidos antes de serem calculados): lista de frases, para a SEGUNDA passada ("conferência automática"
+// em enviarWizardRegraDnd: a IA recebe a lista e entrega a regra de novo). Vazia = nada a corrigir (ou nenhum código na resposta, como na recusa "LOOP DETECTADO").
+// ctx (opcional): { original: a regra de antes do pedido, pedido: o texto escrito para a IA } — com ele também confere se a IA TIROU de uma conta (base, total) algo que a regra original somava sem o pedido mandar tirar.
+function _cnProblemasDaResposta(texto, ctx) {
+    const blocos = [...String(texto || '').matchAll(/```[\w]*\n?([\s\S]*?)```/g)].map(m => m[1]);
+    if (!blocos.length) return [];
+    const codigo = blocos.join('\n'), p = [];
+    _cnIcmsLinhasInvalidas(codigo).slice(0, 3).forEach(l => p.push('A linha ' + l + ' altera o valor do ICMS; o valorICMS tem que ser SEMPRE obt("baseCalculo") * (obt("aliquota")/100).'));
+    _cnOrdemNoCodigo(codigo).slice(0, 6).forEach(a => p.push('O campo ' + a.lidoPor + ' le obt("' + a.campo + '"), mas o def("' + a.campo + '", ...) so vem mais abaixo: coloque o def de ' + a.campo + ' (e o que ele precisa) ANTES de ' + a.lidoPor + '.'));
+    if (ctx && ctx.original && !CN_PEDIDO_TIRA.test(_cnPalavras(ctx.pedido || ''))) {
+        const antes = _cnFolhasPorCampo(ctx.original), depois = _cnFolhasPorCampo(codigo);
+        ['baseCalculo', 'totalPrestacao', 'totalServico'].forEach(alvo => {
+            if (!antes.has(alvo) || !depois.has(alvo)) return;
+            const perdidos = [...antes.get(alvo)].filter(x => !depois.get(alvo).has(x) && x !== alvo);
+            if (perdidos.length) p.push('A conta de ' + alvo + ' deixou de considerar: ' + perdidos.slice(0, 8).join(', ') + ' (a regra original considerava, direta ou indiretamente). Se o pedido NAO mandou retirar, volte a incluir; se mandou, mantenha e registre nos pontos de atencao.');
+        });
+    }
+    return p;
+}
+const CN_PEDIDO_TIRA = /\b(tira\w*|tirar|remov\w*|retir\w*|exclu\w*|apag\w*|delet\w*|elimin\w*|sem|nao some\w*|nao soma\w*|nao inclu\w*|nao conside\w*|deixa\w* de)\b/;
+// Para cada campo definido no código: os campos "de origem" (os que a regra não define) de que ele depende, seguindo as definições (total -> base -> frete + pedágio…). Map campo -> Set.
+function _cnFolhasPorCampo(codigo) {
+    const defs = _cnDefsDoCodigo(codigo), dep = new Map();
+    defs.forEach(d => { if (!dep.has(d.alvo)) dep.set(d.alvo, new Set()); d.deps.forEach(x => { if (x !== d.alvo) dep.get(d.alvo).add(x); }); });
+    const folhas = (c, vis) => {
+        const r = new Set();
+        dep.get(c).forEach(x => { if (dep.has(x)) { if (!vis.has(x)) { vis.add(x); folhas(x, vis).forEach(y => r.add(y)); } } else r.add(x); });
+        return r;
+    };
+    const saida = new Map();
+    dep.forEach((_, c) => saida.set(c, folhas(c, new Set([c]))));
+    return saida;
+}
 // Opções marcadas (nos passos de cálculo) que criam alguma das dependências do loop: é por onde a pessoa corrige.
 function _cnOpcoesDoLoop(ciclos) {
     const arestas = new Set();
@@ -335,7 +393,7 @@ function _cnLoopHtml(ciclos, opcoes) {
         + `<ul class="cn-loop-lista">${linhas}</ul>`
         + (c.campos.length > c.caminho.length - 1 ? `<div>Também estão envolvidos: ${esc(c.campos.filter(x => !c.caminho.includes(x)).map(rot).join(', '))}. Pode haver outro caminho de loop: se este aviso voltar depois da correção, repita o mesmo passo.</div>` : '')
         + (ciclos.length > 1 ? `<div>Há mais ${ciclos.length - 1} grupo(s) de campos em loop na regra.</div>` : '')
-        + (opcoes.length ? `<div><b>Opção(ões) marcada(s) que causam isso:</b> ${opcoes.map(o => '“' + esc(o) + '”').join(', ')}. Desmarque-a(s) ou escolha outra forma de calcular.</div>` : '<div>Corrija o pedido para a IA, a regra colada ou a montagem manual (passo 4): um dos campos tem que ser calculado só a partir dos campos de origem, não do outro.</div>')
+        + (opcoes.length ? `<div><b>Opção(ões) marcada(s) que causam isso:</b> ${opcoes.map(o => '“' + esc(o) + '”').join(', ')}. Desmarque-a(s) ou escolha outra forma de calcular.</div>` : '<div>Corrija o pedido para a IA, a regra colada ou a montagem manual: um dos campos tem que ser calculado só a partir dos campos de origem, não do outro.</div>')
         + '<div>A regra só é gerada depois que o loop for desfeito.</div>';
 }
 // Resposta da IA com loop? Devolve { html } (o aviso) ou null. Vale quando a própria IA recusou ("LOOP DETECTADO: …", como o prompt manda) ou quando o código que ela entregou tem loop.

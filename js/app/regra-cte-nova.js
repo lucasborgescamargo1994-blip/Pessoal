@@ -1,4 +1,4 @@
-/* js/app/regra-cte-nova.js — Criar Regra › "Ct-e / Conhecimento Nova Versão": assistente em 6 passos (regra base → campos → cálculo do Frete Valor, do ICMS e do Total Prestação → montagem). */
+/* js/app/regra-cte-nova.js — Criar Regra › "Ct-e / Conhecimento Nova Versão": assistente em 7 passos (regra base → campos → gerar regra com IA → cálculo do Frete Valor, do ICMS e do Total Prestação → montagem). */
 // ═══════════════════════════════════════════════════════════
 //  Ct-e / CONHECIMENTO — NOVA VERSÃO (assistente em telas)
 // ═══════════════════════════════════════════════════════════
@@ -11,12 +11,14 @@
 const NV_PASSOS = [
     { id: 'base',     nome: 'Regra base',              slide: 0 },
     { id: 'campos',   nome: 'Campos personalizados',   slide: 1 },
-    { id: 'frete',    nome: 'Cálculo do Frete Valor',  slide: 2, etapa: 'frete' },
+    { id: 'ia',       nome: 'Gerar regra com IA',      slide: 4 },
+    { id: 'frete',   nome: 'Cálculo do Frete Valor',  slide: 2, etapa: 'frete' },
     { id: 'icms',     nome: 'Cálculo do ICMS',         slide: 2, etapa: 'icms' },
     { id: 'total',    nome: 'Cálculo Total Prestação', slide: 2, etapa: 'total' },
     { id: 'montagem', nome: 'Montagem manual',         slide: 3 }
 ];
 const NV_MONTAGEM = NV_PASSOS.length - 1;                  // índice do passo da montagem manual
+const NV_IA = NV_PASSOS.findIndex(p => p.id === 'ia');       // índice do passo "Gerar regra com IA" (a caixa de texto da IA só existe nele)
 const NV_PRIMEIRO_CALCULO = NV_PASSOS.findIndex(p => p.etapa);   // índice do 1º passo de cálculo
 const NV_ETAPAS = {
     // grupos = pedaço do título do grupo em CTE_OPCOES_MONTAGEM; somar = campo de destino das contas "Somar X no Y" (CN_SOMA_ALVOS)
@@ -24,9 +26,12 @@ const NV_ETAPAS = {
     icms:  { grupos: ['Cálculo do ICMS'],        somar: ['baseCalculo'],    dica: 'demonstrativo, inverso, st, gnre, reduzir, somar seguro...' },
     total: { grupos: [],                         somar: ['totalPrestacao'], dica: 'somar frete, somar ICMS, somar pedágio...' }
 };
-// Opção que SÓ este assistente tem (o montador clássico não): "Somar Frete Valor no Total Prestação". Vem MARCADA por padrão (ver _nvMarcarPadrao) — o Total Prestação sempre parte do Frete Valor — e é a única das contas "Somar"
-// que CRIA o campo quando a regra ainda não o calcula (criaSeAusente, em _aplicarSomaEmCampo): numa regra montada do zero é ela que cria def("totalPrestacao", obt('valorFrete')), e as outras
-// contas "Somar … no Total Prestação" passam a ter onde entrar. Com uma regra base/colada que já soma o frete no total, não muda nada (o termo já está lá, não duplica).
+// Opção que SÓ este assistente tem (o montador clássico não): "Somar Frete Valor no Total Prestação". Até a v28.28 vinha MARCADA por padrão numa regra do zero (o Total Prestação sempre partia do Frete Valor); desde a v28.29 NÃO vem
+// mais marcada (NV_MARCAR_PADRAO = false, a pedido do dono do sistema: a regra do zero começa sem nada, a pessoa monta o que precisa) — ela continua existindo, para quem quer o Total Prestação partindo do Frete Valor. É a única das contas "Somar"
+// que CRIA o campo quando a regra ainda não o calcula (criaSeAusente, em _aplicarSomaEmCampo): numa regra montada do zero, marcada, é ela que cria def("totalPrestacao", obt('valorFrete')), e as outras
+// contas "Somar … no Total Prestação" (e o ICMS no total) passam a ter onde entrar — sem ela, numa regra do zero, essas contas ficam "sem efeito" e o assistente avisa para marcá-la (ver _nvDicaCriarTotal).
+// Com uma regra base/colada que já soma o frete no total, não muda nada (o termo já está lá, não duplica).
+const NV_MARCAR_PADRAO = false;   // true = volta o comportamento da v28.28 (a opção abaixo nasce marcada numa regra do zero e o Total Prestação já sai com o Frete Valor)
 const NV_ID_PADRAO = 'somar_totalPrestacao_valorFrete';
 const NV_ITEM_SOMAR_FRETE = {
     id: NV_ID_PADRAO, label: 'Somar Frete Valor no Total Prestação', grupoExclusivo: NV_ID_PADRAO,
@@ -47,7 +52,7 @@ const NV_ROTULOS = {
     frete_kg:         'Tarifa x peso (KG)',
     frete_valor_docs: 'Tarifa x Valor Total das Notas'
 };
-// "Somar Frete Valor na Base de Cálculo" (passo 4, caixa "Somar na Base de Cálculo"): a Base de Cálculo parte do Frete Valor. Ela é DERIVADA da regra: vem marcada quando a base montada usa o Frete Valor — numa regra colada,
+// "Somar Frete Valor na Base de Cálculo" (passo 5, caixa "Somar na Base de Cálculo"): a Base de Cálculo parte do Frete Valor. Ela é DERIVADA da regra: vem marcada quando a base montada usa o Frete Valor — numa regra colada,
 // numa regra base e quando um cálculo padrão (ICMS Demonstrativo, Cálculo Inverso, Redução) é escolhido, pois todos eles calculam em cima do frete — e desmarca sozinha quando a base deixa de usá-lo (ver _nvSincronizar).
 // É EXCLUSIVA de "Somar Total Prestação na Base de Cálculo" (mesmo grupo de exclusividade): o total prestação já inclui o frete, então marcar o total TIRA o frete da base — não soma os dois (ver _nvAposAplicar).
 const NV_ID_FRETE_BASE = 'somar_baseCalculo_valorFrete';
@@ -58,9 +63,9 @@ const NV_ITEM_FRETE_BASE = {
     modo: 'somarEm', campoAlvo: 'baseCalculo', alvoNome: 'Base de Cálculo', termoNovo: { termo: "obt('valorFrete')", acao: '+' },
     buscaExtra: 'somar soma adicionar incluir acrescentar frete valor base calculo bc'
 };
-// "Somar ICMS" (passo 4, logo depois de ICMS Demonstrativo e Cálculo Inverso): a TERCEIRA escolha de como calcular o ICMS. As três (Demonstrativo, Inverso, Somar ICMS) são EXCLUSIVAS: não tem grupoExclusivo próprio, então cai
+// "Somar ICMS" (passo 5, logo depois de ICMS Demonstrativo e Cálculo Inverso): a TERCEIRA escolha de como calcular o ICMS. As três (Demonstrativo, Inverso, Somar ICMS) são EXCLUSIVAS: não tem grupoExclusivo próprio, então cai
 // no mesmo grupo das duas (ver _nvHtmlOpcao). Marcada, ela PREENCHE a regra com o cálculo da base e do valorICMS do Demonstrativo (aliquota == 0 → base 0; aliquota > 0 → base = Frete Valor; valorICMS = base × alíquota)
-// E marca "Somar ICMS no Total Prestação" (passo 5, icms_somar): é a "regra base SOMAR ICMS" como opção. Quando a regra colada/base já tem os dois (o cálculo do Demonstrativo + o ICMS somado no total) é ELA que aparece
+// E marca "Somar ICMS no Total Prestação" (passo 6, icms_somar): é a "regra base SOMAR ICMS" como opção. Quando a regra colada/base já tem os dois (o cálculo do Demonstrativo + o ICMS somado no total) é ELA que aparece
 // marcada, no lugar do Demonstrativo (ver _nvPresente e _nvSincronizar, que mantém as duas pontas coerentes: tirar o ICMS do total a transforma em Demonstrativo e vice-versa).
 const NV_ID_DEMONSTRATIVO = 'icms_demonstrativo', NV_ID_ICMS_SOMAR = 'icms_somar';
 const NV_ID_SOMAR_ICMS = 'nv_espelho_somar_icms';   // (o id do atalho antigo foi mantido)
@@ -125,7 +130,7 @@ function _nvHtmlBase() {
           <input type="checkbox" id="wCteNovaZero" onchange="_nvZeroMudou(this.checked)">
           <span class="nv-zero-tx"><b>Para montar do zero clique em avançar</b><small>Marque esta opção para começar com a montagem vazia. Ela descarta a regra colada ou a regra base escolhida.</small></span>
         </label>
-        <div class="cn-nota">ℹ️ Trocar a regra base aqui recomeça a montagem: as opções marcadas nos passos de cálculo (3 a 5) são desmarcadas.</div>
+        <div class="cn-nota">ℹ️ Trocar a regra base aqui recomeça a montagem: as opções marcadas nos passos de cálculo (${NV_PRIMEIRO_CALCULO + 1} a ${NV_MONTAGEM}) são desmarcadas.</div>
       </div>
     </section>`;
 }
@@ -214,26 +219,39 @@ function _nvHtmlOpcoes() {
     return `<section class="cn-slide" id="nvSlide2" aria-labelledby="nvT2" hidden>
       <div class="cn-wrap">
         <div class="cn-topo-aviso" id="wCteNovaAvisoManual"><span aria-hidden="true">💡</span><span>Se preferir montar a regra manualmente, marque a opção <b>“Desejo fazer a montagem manual da regra”</b> no rodapé e clique em <b>avançar para montagem manual</b></span></div>
-        <div class="nv-cab"><div class="cn-etapa" id="wCteNovaEtapa">Passo 3 de ${_nvTotalPassos}</div>
+        <div class="nv-cab"><div class="cn-etapa" id="wCteNovaEtapa">Passo ${NV_PRIMEIRO_CALCULO + 1} de ${_nvTotalPassos}</div>
         <h2 class="cn-h2" id="nvT2" tabindex="-1">${esc(NV_PASSOS[NV_PRIMEIRO_CALCULO].nome)}</h2></div>
         <div class="nv-filtro-linha"><input type="search" id="wCteNovaFiltro" class="cn-filtro" placeholder="🔎 Digite para filtrar as opções..." autocomplete="off" spellcheck="false" aria-label="Digite para filtrar as opções deste passo" oninput="_nvFiltrar()" onkeydown="_nvFiltroTecla(event)">
         <div class="cn-filtro-info" id="wCteNovaFiltroInfo" role="status" aria-live="polite"></div></div>
         <div class="cn-marcadas vazio" id="wCteNovaMarcadas"></div>
-        <div class="cn-colunas-opcoes">
+        <div class="cn-colunas-opcoes nv-uma-coluna">
           <div>
             <div class="cn-legenda">🧱 Monte com um clique — marque o que a regra precisa</div>
             <div id="wCteNovaOpcoes">${paineis}
               <div class="cn-sem-resultado" id="wCteNovaSemResultado" hidden></div>
             </div>
           </div>
-          <aside class="cn-ia" id="wCteNovaIA">
-            <label class="cn-ia-titulo" for="wCteDescricao">✨ Ou se preferir, explique diretamente para a IA o que o cliente necessita, seja bem claro</label>
-            <textarea id="wCteDescricao" class="cn-ia-texto" placeholder="Ex.: o cliente quer o frete calculado pelo peso em toneladas, com ICMS por dentro e seguro de 0,3% sobre o valor das notas."></textarea>
-            <div class="cn-aviso erro" id="wCteNovaAvisoIcmsTexto" role="alert"></div>
-            <div class="cn-dica">A IA junta o que você marcou ao lado com o que você escrever aqui.</div>
-            <div class="cn-dica">⛔ Não peça para reduzir o <b>valor do ICMS</b>: a SEFAZ rejeita. Para pagar menos ICMS, peça a redução da <b>base de cálculo</b>.</div>
-          </aside>
         </div>
+      </div>
+    </section>`;
+}
+// Passo 3 — Gerar regra com IA: só a caixa para explicar à IA o que o cliente precisa, com o botão logo abaixo dela. Quem cola a regra do cliente no passo 1 e descreve aqui a mudança não precisa passar pelas opções.
+// Quem prefere montar sem IA clica no "Próximo" do rodapé. A caixa (#wCteDescricao) é a mesma de sempre: o "Gerar Regra" dos passos de cálculo também a usa.
+function _nvHtmlIA() {
+    const prox = NV_PASSOS[NV_PRIMEIRO_CALCULO].nome;
+    return `<section class="cn-slide" id="nvSlide4" aria-labelledby="nvT4" hidden>
+      <div class="cn-wrap">
+        <div class="nv-cab"><div class="cn-etapa">Passo ${NV_IA + 1} de ${_nvTotalPassos}</div>
+        <h2 class="cn-h2" id="nvT4" tabindex="-1">${esc(NV_PASSOS[NV_IA].nome)}</h2></div>
+        <aside class="cn-ia" id="wCteNovaIA">
+          <label class="cn-ia-titulo" for="wCteDescricao">✨ Explique diretamente para a IA o que o cliente necessita, seja bem claro</label>
+          <textarea id="wCteDescricao" class="cn-ia-texto" placeholder="Ex.: o cliente quer o frete calculado pelo peso em toneladas, com ICMS por dentro e seguro de 0,3% sobre o valor das notas."></textarea>
+          <div class="cn-aviso erro" id="wCteNovaAvisoIcmsTexto" role="alert"></div>
+          <div class="nv-ia-acoes"><button type="button" class="cn-btn ia" onclick="_nvGerarIA()" title="A IA monta a regra com o que você escreveu aqui (partindo da regra do passo 1 e do que estiver marcado nos passos seguintes)">✨ Gerar Regra com IA</button></div>
+          <div class="cn-dica">A IA parte da regra que você colou ou escolheu no passo 1 e junta ao que você escrever aqui o que estiver marcado nos passos ${NV_PRIMEIRO_CALCULO + 1} a ${NV_MONTAGEM}.</div>
+          <div class="cn-dica">⛔ Não peça para reduzir o <b>valor do ICMS</b>: a SEFAZ rejeita. Para pagar menos ICMS, peça a redução da <b>base de cálculo</b>.</div>
+        </aside>
+        <p class="nv-ia-manual">Se deseja criar manualmente, clique em <b>Próximo: ${esc(prox)}</b>.</p>
       </div>
     </section>`;
 }
@@ -276,7 +294,7 @@ function mostrarWizardRegraCteNova(queryOriginal) {
     card.innerHTML = _nvHtmlTopo()
         + '<div class="cn-aviso-icms" id="wCteNovaAvisoIcms" role="alert" hidden></div>'   // trava do ICMS: aparece em qualquer tela enquanto a regra montada alterar o valor do ICMS (ver _nvAtualizarAvisoIcms)
         + '<div class="cn-aviso-icms cn-aviso-loop" id="wCteNovaAvisoLoop" role="alert" hidden></div>'   // trava de loop: idem, enquanto campos da regra dependerem um do outro (ver _nvAtualizarAvisoLoop)
-        + '<div class="cn-corpo" id="wCteNovaCorpo">' + _nvHtmlBase() + _nvHtmlCampos() + _nvHtmlOpcoes() + _nvHtmlMontagem() + '</div>'
+        + '<div class="cn-corpo" id="wCteNovaCorpo">' + _nvHtmlBase() + _nvHtmlCampos() + _nvHtmlIA() + _nvHtmlOpcoes() + _nvHtmlMontagem() + '</div>'
         + '<div class="cn-rodape" id="wCteNovaRodape"></div>';
     corpo.appendChild(card);
     // Faixa dos campos personalizados da Tabela de Preços: só existe nesta versão, logo abaixo da caixa "Utiliza Valores outros" (que é dos campos do Ct-e) e só aparece
@@ -285,7 +303,7 @@ function mostrarWizardRegraCteNova(queryOriginal) {
     if (caixaRosa) caixaRosa.insertAdjacentHTML('afterend', '<div class="cn-tab-custom" id="wCteTabCustomBox" hidden><div class="cn-tab-custom-t">📋 Campos personalizados da Tabela de Preços <span>(entram sem obt)</span></div><div class="cn-chips" id="wCteTabCustomChips"></div></div>');
     card.addEventListener('input', _nvAoDigitar);
     _cteRenderBlocos();
-    _nvMarcarPadrao();          // "Somar Frete Valor no Total Prestação" já nasce marcada
+    _nvMarcarPadrao();          // (v28.29: não marca mais "Somar Frete Valor no Total Prestação" sozinha — só acerta a caixa "Somar no …"; ver NV_MARCAR_PADRAO)
     _abrirBuilderModal(null);   // sem o tutorial automático: ele só faz sentido na tela da montagem (ver _nvTourPrimeiraVez)
     _nvSomarSync();
     _nvLigarAjuste(card);
@@ -355,14 +373,15 @@ function _nvLigarAjuste(card) {
     card.addEventListener('input', () => _nvAjustarAgendado(150));
     if (!window.__cbResizeLigado) { window.__cbResizeLigado = true; window.addEventListener('resize', () => { if (_cnEl('wizardRegraNovaCard')) _nvAjustarAgendado(0); }); }
 }
-// "Somar Frete Valor no Total Prestação" vem MARCADA por padrão. Trocar a regra base no passo 1 (colar, escolher uma regra pronta, "do zero") desmarca todas as opções, então esta é marcada de novo
-// logo depois — a não ser que a pessoa a tenha desmarcado de propósito (_nvPadraoDesmarcado). Com uma regra base que já soma o frete no total, marcar não muda a regra (não duplica).
+// "Somar Frete Valor no Total Prestação" NÃO vem mais marcada por padrão (NV_MARCAR_PADRAO = false, desde a v28.29: a regra do zero começa sem nada associado). Com NV_MARCAR_PADRAO ligado, o comportamento da v28.28
+// volta: trocar a regra base no passo 1 (colar, escolher uma regra pronta, "do zero") desmarca todas as opções, então esta é marcada de novo logo depois — a não ser que a pessoa a tenha desmarcado de propósito
+// (_nvPadraoDesmarcado). Com uma regra base que já soma o frete no total, marcar não muda a regra (não duplica). Desligado, esta função só acerta a caixa "Somar no …" (conta marcada nunca fica escondida).
 // Só vale para a regra montada do zero: com uma regra colada / regra base escolhida (_nvBaseExterna) NADA é marcado nem aplicado sozinho — as caixinhas só refletem o que a regra já tem
 // (ver "marcar conforme a regra", logo abaixo), para não editar a regra da pessoa sem ela querer.
 // "Desmarquei a opção padrão de propósito" só vale numa regra montada do zero: numa regra de fora, desmarcá-la é tirar uma parte DAQUELA regra (não uma preferência), e não pode valer para a próxima regra.
 function _nvNotaPadrao(desmarcou) { if (!_nvBaseExterna) _nvPadraoDesmarcado = !!desmarcou; }
 function _nvMarcarPadrao() {
-    if (_nvPadraoDesmarcado || _nvBaseExterna) { _nvSomarSync(); return; }
+    if (!NV_MARCAR_PADRAO || _nvPadraoDesmarcado || _nvBaseExterna) { _nvSomarSync(); return; }
     const c = _cnEl('wCteOpc_' + NV_ID_PADRAO);
     if (!c || c.checked) { _nvSomarSync(); return; }
     c.checked = true;
@@ -372,7 +391,7 @@ function _nvMarcarPadrao() {
 }
 
 // ── marcar conforme a regra ──────────────────────────────────────────────────
-// Ao COLAR uma regra ou ESCOLHER uma regra base, as caixinhas dos passos 3 a 5 já vêm marcadas conforme o que a regra JÁ tem (ex.: "Somar Gris no Total Prestação" só vem marcada se o Total Prestação da
+// Ao COLAR uma regra ou ESCOLHER uma regra base, as caixinhas dos passos 4 a 6 já vêm marcadas conforme o que a regra JÁ tem (ex.: "Somar Gris no Total Prestação" só vem marcada se o Total Prestação da
 // regra já soma o Gris; "Somar Frete Valor no Total Prestação" idem), para ninguém editar a regra sem querer. Marcar assim NÃO mexe na regra: ela fica exatamente como entrou.
 // A leitura é feita sobre a BASE das opções (window._cteOpcionaisBase = a regra como entrou), nunca sobre o resultado já mexido, então a mesma regra dá sempre a mesma resposta (também depois do "Voltar").
 // Depois disso as caixinhas funcionam nos dois sentidos, pelo gancho prepararBase do motor das opções (_cteAplicarOpcionais): desmarcar uma que veio da regra TIRA da regra o que ela fazia (a soma sai
@@ -656,7 +675,7 @@ function _nvCalcDaBase() {
     }) || null;
 }
 // Deixa as caixinhas "derivadas" de acordo com a regra montada (chamada sempre que a faixa "Marcadas" é refeita, isto é, depois de cada mudança):
-//  • as escolhas de ICMS: "Somar ICMS" (passo 4) = Demonstrativo + "Somar ICMS no Total Prestação" (passo 5). Tirou o ICMS do total com "Somar ICMS" marcada → sobra o Demonstrativo (a regra é a mesma); marcou o ICMS no total
+//  • as escolhas de ICMS: "Somar ICMS" (passo 5) = Demonstrativo + "Somar ICMS no Total Prestação" (passo 6). Tirou o ICMS do total com "Somar ICMS" marcada → sobra o Demonstrativo (a regra é a mesma); marcou o ICMS no total
 //    com o Demonstrativo marcado → vira "Somar ICMS" (também a mesma regra). Assim nunca ficam duas das três marcadas e as duas pontas combinam;
 //  • "Somar Frete Valor na Base de Cálculo" = a base montada usa o Frete Valor (regra colada, regra base, cálculo padrão escolhido...). Com "Somar Total Prestação na Base" marcado ela fica desmarcada (o total já inclui o frete).
 function _nvSincronizar() {
@@ -697,7 +716,7 @@ function _nvTrocarNaBase(blocos, de, para) {
 // Não mexe numa regra que veio de fora já com o total na base (o total estava marcado ao colar: é a regra do cliente, avisada no passo 1).
 function _nvAposAplicar(blocos, extras) {
     // "Somar ICMS no Total Prestação" numa regra que NÃO calcula o Total Prestação: o motor clássico CRIARIA def("totalPrestacao", obt('valorICMS')) e o total ficaria só o ICMS, sem o frete. Aqui não cria: a opção
-    // fica "sem efeito" (aviso na faixa e no Gerar), como as outras contas "Somar". (Na regra montada do zero o total criado já ganha o frete da opção padrão e fica com 2 parcelas: esse não é desfeito.)
+    // fica "sem efeito" (aviso na faixa e no Gerar), como as outras contas "Somar". (Na regra montada do zero com "Somar Frete Valor no Total Prestação" marcada o total criado ganha o frete e fica com 2 parcelas: esse não é desfeito.)
     // (Só não desfaz quando o total da PRÓPRIA regra colada já era só o ICMS: aí é do cliente.)
     const ic = _cnEl('wCteOpc_' + NV_ID_ICMS_SOMAR), soIcms = b => b.destino === 'totalPrestacao' && (b.termos || []).length === 1 && _nvMesmoTermo(b.termos[0].termo, "obt('valorICMS')");
     if (ic && ic.checked && !(((window._cteOpcionaisBase || {}).blocos) || []).some(soIcms)) blocos = blocos.filter(b => !soIcms(b));
@@ -728,8 +747,8 @@ function _nvIrPara(n, opcoes) {
     if (_nvPasso === NV_MONTAGEM && n !== NV_MONTAGEM && typeof _tourFechar === 'function') _tourFechar();   // o tutorial só vale na montagem
     _nvPasso = n; _nvVisitados.add(n);
     card.dataset.passo = String(n);
-    const slide = NV_PASSOS[n].slide;   // 0 = regra base, 1 = campos, 2 = cálculo (passos 3, 4 e 5), 3 = montagem
-    [0, 1, 2, 3].forEach(i => { const s = _cnEl('nvSlide' + i); if (s) s.hidden = i !== slide; });
+    const slide = NV_PASSOS[n].slide;   // 0 = regra base, 1 = campos, 2 = cálculo (passos 4, 5 e 6), 3 = montagem, 4 = gerar regra com IA (passo 3)
+    [0, 1, 2, 3, 4].forEach(i => { const s = _cnEl('nvSlide' + i); if (s) s.hidden = i !== slide; });
     card.querySelectorAll('.cn-passo-btn').forEach(b => {
         const i = Number(b.dataset.passo), feito = i < n && _nvVisitados.has(i), num = b.querySelector('.cn-num');
         b.classList.toggle('atual', i === n); b.classList.toggle('feito', feito);
@@ -795,7 +814,7 @@ function _nvAtualizarAvancar() {
 }
 // Marcar "do zero" descarta a regra colada, a regra base e as opções marcadas (a montagem fica vazia); desmarcar só trava o Avançar de novo se nada mais foi escolhido.
 function _nvZeroMudou(marcado) {
-    if (marcado) { _nvBaseExterna = false; _nvFreteBaseTirado = false; _nvFreteBaseManual = false; _nvAvisoBaseDupla = false; _cteLimparCanvas(); _nvMarcarPronta(null); _nvResumoColar(); _nvAtualizarMarcadas(); _nvMarcarPadrao(); }   // do zero: o Total Prestação começa pelo Frete Valor
+    if (marcado) { _nvBaseExterna = false; _nvFreteBaseTirado = false; _nvFreteBaseManual = false; _nvAvisoBaseDupla = false; _cteLimparCanvas(); _nvMarcarPronta(null); _nvResumoColar(); _nvAtualizarMarcadas(); _nvMarcarPadrao(); }   // do zero: sem nada associado (desde a v28.29 o Total Prestação não começa mais pelo Frete Valor sozinho)
     _nvAtualizarAvancar();
 }
 // Colou texto ou escolheu uma regra base: então "do zero" não vale mais
@@ -858,6 +877,7 @@ function _nvRodape() {
         const ok = _nvBaseOk();
         dir = `<button type="button" id="wCteNovaBtnAvancar" class="cn-btn pri${ok ? '' : ' bloq'}" aria-disabled="${ok ? 'false' : 'true'}" onclick="_nvProximo()"${ok ? '' : ' title="Cole a regra, escolha uma regra base ou marque “Para montar do zero clique em avançar” para liberar este botão"'}>Avançar ▶</button>`;
     } else if (n === 1) dir = botao('pri', '_nvProximo()', 'Avançar ▶');
+    else if (n === NV_IA) dir = botao('pri', '_nvProximo()', 'Próximo: ' + esc(NV_PASSOS[n + 1].nome) + ' ▶', 'Vai para o passo ' + (n + 2) + ' — para montar a regra sem a IA, escolhendo as opções');   // (o "Gerar Regra com IA" fica dentro da tela, logo abaixo da caixa de texto)
     else {
         // Passos de cálculo: "Avançar para montagem manual" (sem seta) vem ANTES do "Gerar Regra" e começa travado e cinza; a caixa de cima o libera. Fica com aria-disabled (e não
         // "disabled") de propósito: clicar no botão travado explica o que falta em vez de não fazer nada. O "Próximo: …" leva ao cálculo seguinte (o último passo de cálculo não tem).
@@ -877,7 +897,7 @@ function _nvAtualizarAvisoIA() {
     const el = _cnEl('wCteNovaAvisoIA'); if (!el) return;
     if (!_cnTemInstrucoes()) { el.hidden = true; el.innerHTML = ''; return; }
     el.hidden = false;
-    el.innerHTML = `<span>✨ <b>Você escreveu instruções para a IA nos passos de cálculo (3 a 5).</b> Elas só entram na regra se você usar o botão ao lado. Se continuar montando à mão e clicar em <b>Gerar Regra Montada</b>, elas não serão usadas.</span><button type="button" class="cn-btn ia peq" onclick="_nvGerar()" title="Usa a regra montada aqui + o texto que você escreveu para a IA nos passos de cálculo">✨ Gerar com a IA (usar minhas instruções)</button>`;
+    el.innerHTML = `<span>✨ <b>Você escreveu instruções para a IA no passo ${NV_IA + 1} (${esc(NV_PASSOS[NV_IA].nome)}).</b> Elas só entram na regra se você usar o botão ao lado. Se continuar montando à mão e clicar em <b>Gerar Regra Montada</b>, elas não serão usadas.</span><button type="button" class="cn-btn ia peq" onclick="_nvGerar()" title="Usa a regra montada aqui + o texto que você escreveu para a IA nos passos de cálculo">✨ Gerar com a IA (usar minhas instruções)</button>`;
 }
 
 // ── passo 1: regra base ──────────────────────────────────────────────────────
@@ -888,11 +908,11 @@ function _nvColarInput() {
     let marcadas = 0;
     if (((_cnEl('wCteColarRegra') || {}).value || '').trim()) {
         _nvDesmarcarZero();                   // colou uma regra: "montar do zero" não vale mais
-        marcadas = _nvMarcarConformeRegra();  // as caixinhas dos passos 3 a 5 ficam marcadas conforme o que a regra colada já tem (sem mexer nela)
+        marcadas = _nvMarcarConformeRegra();  // as caixinhas dos passos 4 a 6 ficam marcadas conforme o que a regra colada já tem (sem mexer nela)
     } else {
         // apagou o texto: a regra volta a ser montada do zero (a montagem foi esvaziada; as caixinhas e a base antiga das opções não podem ficar para trás)
         _nvBaseExterna = false; window._cteOpcionaisBase = null; _nvDetBase = null; _cteDesmarcarOpcionais();
-        _nvMarcarPadrao();   // "Somar Frete Valor no Total Prestação" volta a ficar marcada
+        _nvMarcarPadrao();   // (v28.29: não marca mais sozinha; ver NV_MARCAR_PADRAO)
     }
     _nvResumoColar(marcadas);
     _nvAtualizarMarcadas();
@@ -914,11 +934,12 @@ function _nvResumoColar(marcadas) {
         + (trechos ? ' e ' + trechos + (trechos === 1 ? ' trecho mantido' : ' trechos mantidos') + ' como estão' : '') + '. Já está na montagem (passo ' + _nvTotalPassos + ').' + _nvTextoMarcadas(marcadas);
     el.className = 'cn-resumo ok';
 }
-// Frase final do aviso do passo 1: quantas caixinhas dos passos 3 a 5 foram marcadas por já fazerem parte da regra (e que marcar não muda a regra)
+// Frase final do aviso do passo 1: quantas caixinhas dos passos de cálculo (4 a 6) foram marcadas por já fazerem parte da regra (e que marcar não muda a regra)
 function _nvTextoMarcadas(n) {
     if (n === undefined || n === null) return '';
     const dupla = _nvAvisoBaseDupla ? ' ⚠️ Atenção: a Base de Cálculo desta regra soma o Frete Valor E o Total Prestação (o frete entra duas vezes).' : '';
-    return (n ? ' Marquei nos passos 3 a 5 o que ela já tem (' + n + (n === 1 ? ' opção' : ' opções') + '): a regra segue como está.' : ' Nenhuma opção dos passos 3 a 5 foi marcada: a regra segue como está.') + dupla;
+    const passos = (NV_PRIMEIRO_CALCULO + 1) + ' a ' + NV_MONTAGEM;   // os passos de cálculo
+    return (n ? ' Marquei nos passos ' + passos + ' o que ela já tem (' + n + (n === 1 ? ' opção' : ' opções') + '): a regra segue como está.' : ' Nenhuma opção dos passos ' + passos + ' foi marcada: a regra segue como está.') + dupla;
 }
 function _nvEscolherPronta(chave) {
     // a leitura da regra ANTERIOR (colada ou outra base) não vale mais: _cteUsarPredefinida já roda o motor das opções, que não pode tirar da regra nova as somas que a caixinha ainda não marcou
@@ -1045,7 +1066,7 @@ function _nvUsarSugestao() {
     _nvCamposMudou();
 }
 
-// ── passos 3, 4 e 5: cálculo do Frete Valor / do ICMS / do Total Prestação ───────────────────
+// ── passos 4, 5 e 6: cálculo do Frete Valor / do ICMS / do Total Prestação ───────────────────
 // Texto de quando a pessoa tenta tirar o Frete Valor da base mas ele faz parte do cálculo de ICMS escolhido
 const _nvAvisoFreteNoCalculo = calc => 'O Frete Valor faz parte do cálculo “' + _nvNomeOpcao(calc) + '” (a Base de Cálculo é calculada em cima dele). Para tirá-lo da base, desmarque esse cálculo ou marque “Somar Total Prestação na Base de Cálculo”.';
 function _nvOpcaoClicada(chk) {
@@ -1078,6 +1099,7 @@ function _nvOpcaoClicada(chk) {
                 ? '“Somar Total Prestação na Base de Cálculo” marcada, mas o Frete Valor ainda aparece na conta da base: confira na montagem manual para o frete não contar duas vezes.'
                 : '“Somar Total Prestação na Base de Cálculo” marcada: o Frete Valor saiu da base (o Total Prestação já o inclui — não conta duas vezes).', 'aviso');
     }
+    if (chk.checked && !((_cnEl('wCteNovaMsg') || {}).textContent)) { const dicaTotal = _nvDicaTotalAusente(id); if (dicaTotal) _nvMsg(dicaTotal, 'aviso'); }   // marcou uma conta que soma no Total Prestação sem ele existir: diz o que falta
     if (chk.checked && (id === NV_ID_SOMAR_ICMS || id === NV_ID_ICMS_SOMAR || id === NV_ID_DEMONSTRATIVO || id === 'icms_inverso') && _nvTotalAntesDoIcms())
         _nvAvisoTroca = (_nvAvisoTroca ? _nvAvisoTroca + ' ' : '') + 'Atenção: nesta regra o Total Prestação (que soma o ICMS) vem ANTES do cálculo do valorICMS — na execução ele leria o ICMS ainda não calculado. Mova o cálculo do ICMS para antes do total na montagem manual.';
     _nvMostrarAvisoTroca();   // (por último: as trocas automáticas entre as 3 escolhas de ICMS e o aviso de ordem acompanham a mensagem do clique)
@@ -1088,7 +1110,7 @@ function _nvTotalAntesDoIcms() {
     const iTot = bl.findIndex(b => b.destino === 'totalPrestacao' && _nvUsaTermo(b, "obt('valorICMS')")), iIcms = bl.findIndex(b => b.destino === 'valorICMS');
     return iTot !== -1 && iIcms !== -1 && iTot < iIcms;
 }
-// As três escolhas de ICMS (Demonstrativo / Inverso / Somar ICMS) são exclusivas. "Somar ICMS" marca (ou desmarca) junto o ICMS no Total Prestação (passo 5, e a caixa dele abre); trocar "Somar ICMS" por outro cálculo
+// As três escolhas de ICMS (Demonstrativo / Inverso / Somar ICMS) são exclusivas. "Somar ICMS" marca (ou desmarca) junto o ICMS no Total Prestação (passo 6, e a caixa dele abre); trocar "Somar ICMS" por outro cálculo
 // tira esse ICMS do total, que era dele (e avisa). Usada tanto pelo clique na caixinha quanto pelo ✕ da faixa "Marcadas".
 function _nvPreIcms(id, quis) {
     const somIcms = _cnEl('wCteOpc_' + NV_ID_SOMAR_ICMS), icmsTotal = _cnEl('wCteOpc_' + NV_ID_ICMS_SOMAR);
@@ -1096,7 +1118,7 @@ function _nvPreIcms(id, quis) {
     if (id === NV_ID_SOMAR_ICMS) { icmsTotal.checked = quis; if (quis) _nvSomarSync(); }
     else if (quis && (id === NV_ID_DEMONSTRATIVO || id === 'icms_inverso') && somIcms.checked && icmsTotal.checked) {
         icmsTotal.checked = false;
-        _nvAvisoTroca = '“Somar ICMS no Total Prestação” saiu do total: o cálculo escolhido não soma o ICMS (marque-o de novo no passo 5 se precisar).';
+        _nvAvisoTroca = '“Somar ICMS no Total Prestação” saiu do total: o cálculo escolhido não soma o ICMS (marque-o de novo no passo ' + (NV_PASSOS.findIndex(p => p.etapa === 'total') + 1) + ' se precisar).';
     }
 }
 // Mostra o aviso de uma troca automática entre as 3 escolhas de ICMS (se houve), depois do resto da mensagem do clique
@@ -1223,7 +1245,7 @@ function _nvSomarToggle(chk) {
     if (chk.checked) {
         delete sub.dataset.naoAbrir;
         itens.hidden = false;
-        if (itens.querySelector('#wCteOpc_' + NV_ID_PADRAO)) { _nvNotaPadrao(false); _nvMarcarPadrao(); }   // reabrir o Total Prestação traz de volta a opção padrão
+        if (itens.querySelector('#wCteOpc_' + NV_ID_PADRAO)) { _nvNotaPadrao(false); _nvMarcarPadrao(); }   // reabrir o Total Prestação traz de volta a opção padrão (só com NV_MARCAR_PADRAO ligado)
     } else {
         const marcadas = [...itens.querySelectorAll('.wCteOpcCheckbox:checked')];
         // "Somar Frete Valor na Base" marcada por um cálculo de ICMS (Demonstrativo/Inverso/Redução) não sai fechando a caixa: a base é calculada em cima do frete — a caixa fica aberta e a pessoa é avisada
@@ -1277,7 +1299,7 @@ function _nvBloqueiaOpcaoIncompleta() {
 }
 // Se há uma opção "Somar X no Y" marcada que não entrou na regra (a regra montada não calcula Y): sem este aviso a regra sairia sem ela, em silêncio.
 function _nvBloqueiaOpcaoSemEfeito() {
-    // a opção marcada por padrão (Somar Frete Valor no Total Prestação) nunca bloqueia: a pessoa não a escolheu; se ela ficou sem efeito (ex.: o Total Prestação está dentro de um if/else da regra colada),
+    // "Somar Frete Valor no Total Prestação" nunca bloqueia (era a opção marcada por padrão e a pessoa não a escolhia): se ela ficou sem efeito (ex.: o Total Prestação está dentro de um if/else da regra colada),
     // o aviso continua na faixa "Marcadas" e basta desmarcá-la se incomodar
     const it = _cnTodasOpcoes().find(o => o.id !== NV_ID_PADRAO && _nvMotivoSemEfeito(o));
     if (!it) return false;
@@ -1286,8 +1308,22 @@ function _nvBloqueiaOpcaoSemEfeito() {
     const c = _cnEl('wCteOpc_' + it.id); if (c) { c.scrollIntoView({ block: 'center' }); c.focus(); }
     _nvMsg(motivo === 'soma'
         ? 'A opção “' + it.label + '” não soma nada: ' + it.alvoNome + ' da regra já usa esse campo, mas subtraindo/multiplicando/dividindo (ou como 1º termo de uma conta que continua com subtração). Ajuste isso na montagem manual ou desmarque a opção.'
-        : 'A opção “' + it.label + '” não tem onde entrar: a regra montada ainda não calcula ' + (it.alvoNome || 'Total Prestação') + '. Escolha uma regra base no passo 1 (ou monte esse campo na montagem manual) ou desmarque a opção.', 'erro');
+        : 'A opção “' + it.label + '” não tem onde entrar: a regra montada ainda não calcula ' + (it.alvoNome || 'Total Prestação') + '.' + (_nvDicaCriarTotal(it)
+            ? ' Marque também “' + NV_ITEM_SOMAR_FRETE.label + '” (é ela que cria o Total Prestação a partir do Frete Valor), escolha uma regra base no passo 1, monte esse campo na montagem manual ou desmarque a opção.'
+            : ' Escolha uma regra base no passo 1 (ou monte esse campo na montagem manual) ou desmarque a opção.'), 'erro');
     return true;
+}
+// Desde a v28.29 "Somar Frete Valor no Total Prestação" não vem mais marcada sozinha: numa regra do zero o Total Prestação só existe se a pessoa pedir. As contas que somam NO Total Prestação (e o ICMS no total) precisam dele para ter onde
+// entrar, e quem o cria é essa opção. true = a opção `it` soma no Total Prestação (e não é a que o cria).
+function _nvDicaCriarTotal(it) { return !!it && it.id !== NV_ID_PADRAO && (it.campoAlvo === 'totalPrestacao' || it.id === NV_ID_ICMS_SOMAR); }
+// Logo depois de MARCAR uma conta "Somar … no Total Prestação" (ou "Somar ICMS") numa regra que ainda não calcula o Total Prestação: diz o que falta, sem esperar o "Gerar Regra" (a faixa "Marcadas" já mostra "sem efeito"). '' = nada a dizer.
+function _nvDicaTotalAusente(id) {
+    for (const i of (id === NV_ID_SOMAR_ICMS ? [NV_ID_SOMAR_ICMS, NV_ID_ICMS_SOMAR] : [id])) {
+        const it = _cnTodasOpcoes().find(o => o.id === i), c = _cnEl('wCteOpc_' + i);
+        if (it && c && c.checked && _nvDicaCriarTotal(it) && _nvMotivoSemEfeito(it) === 'calc')
+            return '“' + _nvNomeOpcao(it) + '” precisa do Total Prestação, e a regra ainda não o calcula. Marque também “' + NV_ITEM_SOMAR_FRETE.label + '” (ela cria o Total Prestação a partir do Frete Valor), escolha uma regra base no passo 1 ou monte o total na montagem manual.';
+    }
+    return '';
 }
 // Opção "Somar X no Y" marcada que NÃO entrou na regra: 'calc' = a regra não calcula Y (ver _cnOpcaoSemEfeito); 'soma' = X já aparece na conta de Y mas não como parcela somada (subtraindo, multiplicando...): o motor
 // entende que "já tem" e não soma nada. Vazio = está tudo certo.
@@ -1336,7 +1372,7 @@ function _nvAtualizarAvisoIcms(linhas) {
 function _nvBloqueiaReducaoIcms(opcoes) {
     if (!_cnEl('wizardRegraNovaCard')) return false;   // só vale no assistente em telas: o montador clássico (que usa as mesmas funções de gerar) continua como sempre foi
     if (!(opcoes && opcoes.soCodigo) && _cnTemInstrucoes() && _cnPedeReduzirIcms(_cnEl('wCteDescricao').value)) {
-        _nvIrParaCalculo();   // a caixa da IA está em todos os passos de cálculo
+        if (_nvPasso !== NV_IA) _nvIrPara(NV_IA, { semFoco: true });   // a caixa da IA fica no passo "Gerar regra com IA"
         _nvAvisoTextoIcms();
         const t = _cnEl('wCteDescricao'); if (t) { t.scrollIntoView({ block: 'center' }); t.focus(); }
         _nvMsg(CN_ICMS_MSG + ' Ajuste o texto da IA para continuar.', 'erro');
@@ -1405,6 +1441,15 @@ function _nvVoltarPorLoop(loop, estado) {
     _voltarParaWizardRegra(ts);
 }
 
+// "Gerar Regra com IA" (passo 3, botão logo abaixo da caixa de texto): sem texto não há o que pedir à IA (o _nvGerar geraria sem IA, e este botão promete a IA) — avisa e põe o cursor na caixa.
+function _nvGerarIA() {
+    if (!_cnTemInstrucoes()) {
+        const t = _cnEl('wCteDescricao'); if (t) t.focus();
+        _nvMsg('Escreva acima o que o cliente precisa para a IA montar a regra. Se prefere montar sem a IA, clique em “Próximo: ' + NV_PASSOS[NV_PRIMEIRO_CALCULO].nome + '”.', 'aviso');
+        return;
+    }
+    _nvGerar();
+}
 // "Gerar Regra": com texto para a IA, a IA monta (usando também o que foi marcado/carregado); só com marcações/regra base, gera direto, sem IA.
 function _nvGerar() {
     _nvMsg('');
@@ -1497,6 +1542,7 @@ function _nvAposRestaurar(info) {
     atualizarAvisos: l => _nvAtualizarAvisos(l),
     loopNaResposta: t => _nvLoopNaResposta(t),
     voltarPorLoop: (loop, estado) => _nvVoltarPorLoop(loop, estado),
-    avisoIcmsNaResposta: t => _cnAvisoIcmsNaResposta(t),
+    problemasNaResposta: (t, ctx) => _cnProblemasDaResposta(t, ctx),        // o que a IA ainda pode corrigir na regra que entregou (ICMS alterado, campo lido antes de calculado): vira a 2ª passada
+    avisoIcmsNaResposta: t => _cnAvisoOrdemNaResposta(_cnAvisoIcmsNaResposta(t)),   // alerta do ICMS no topo + conferência da ordem das linhas no fim
     cardErro: estado => _nvCardErroIA(estado)
 };
