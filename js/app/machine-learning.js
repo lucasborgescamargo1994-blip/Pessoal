@@ -38,5 +38,6 @@ async function saveMLFeedback(id, tipo, btn) {
 async function processarProximaSolucao(po) {
     if (filaSolucoes.length === 0) { appendMessage('ai', '😕 <b>Não encontrei mais soluções</b> no manual para essa pergunta. Tente <b>reformular</b> ou pergunte sobre outro assunto do Bsoft TMS.'); adicionarMensagemNaConversa('ai', 'Não encontrei mais soluções no manual. Reformule a pergunta ou pergunte sobre outro assunto.'); return; }
     const sa = filaSolucoes.shift(); appendMessage('system', '🔍 Outra solução do manual...');
+    if (typeof _paramModoDesligar === 'function') _paramModoDesligar();   // "outra solução" é do chat: não pode cair no modo "só Parâmetros" do Copilot
     document.getElementById('searchInput').value = `Solução alternativa: ${sa.erro}`; await handleChat();
 }

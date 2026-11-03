@@ -15,7 +15,9 @@ function _jsRefazer(opts, rq) {
 async function handleChat(opts) {
     opts = (opts && typeof opts === 'object' && !(typeof Event !== 'undefined' && opts instanceof Event)) ? opts : {};
     const _reuso = !!opts.reutilizarMensagem;
-    if (_paramFuncMode && !_reuso) { _paramFuncMode = false; return handleParametrosFuncionalidades(); }
+    // Modo "só Parâmetros / Funcionalidades" (Copilot e simulador, que não têm abas): TODA pergunta digitada no campo vira uma busca ali, até a pessoa clicar em "Voltar ao chat" (js/app/parametros.js).
+    // Antes só a 1ª ia para a busca e a 2ª caía na IA do chat. Nas abas (Ferr.emAba) a ferramenta tem a própria caixa e isto nunca é usado.
+    if (_paramFuncMode && !_reuso) return handleParametrosFuncionalidades();
     const ch = obterContextoHorario();
     if (isVectorizing) return;
     const input = document.getElementById('searchInput');

@@ -220,7 +220,7 @@ function _cbHtmlPainelEtapa(chave) {
     }).join('');
     const demais = `<section class="cn-grupo" aria-labelledby="cbGd-${chave}">
           <h3 class="cn-grupo-titulo" id="cbGd-${chave}">${esc(CN_TITULO_DEMAIS)}</h3>
-          <p class="cn-grupo-nota"><span aria-hidden="true">ℹ️</span><span>Contas prontas para somar um campo em outro (ex.: “Somar ICMS no Frete Valor”). Marque a caixa abaixo para ver as contas e marque quantas precisar. Cada uma entra na conta que a regra base já faz do campo de destino: escolha uma regra base no passo 1 ou monte esse campo na montagem manual (passo ${_cbTotalPassos}).</span></p>
+          <p class="cn-grupo-nota"><span aria-hidden="true">ℹ️</span><span>Contas prontas para somar um campo em outro (ex.: “Somar ICMS no Frete Valor”). Marque a caixa abaixo para ver as contas e marque quantas precisar. Cada uma entra na conta que a regra base já faz do campo de destino: escolha uma regra base no passo 1 ou monte esse campo na montagem manual (passo ${_cbTotalPassos}). Numa regra do zero o Total Prestação ainda não existe: marque “${esc(CB_ITEM_SOMAR_FRETE.label)}” para criá-lo a partir do Frete Valor.</span></p>
           ${blocos}
         </section>`;
     return `<div class="cb-etapa-opcoes" data-etapa="${chave}" hidden>${grupos}${demais}</div>`;
@@ -563,7 +563,7 @@ function _cbMarcarConformeRegra() {
         if (r.valor != null) { const inp = _cnEl('wCteOpcEntrada_' + id); if (inp) inp.value = r.valor; }
     });
     _cbPadraoDesmarcado = false; _cbFreteBaseTirado = false; _cbAvisoBaseDupla = !!det.dupla;
-    // as caixas "Somar no …" voltam a ser "fechadas, a não ser que tenha conta marcada" (a do Total Prestação nasceu aberta por causa da opção padrão, que numa regra de fora não vale)
+    // as caixas "Somar no …" voltam a ser "fechadas, a não ser que tenha conta marcada" (com CB_MARCAR_PADRAO ligado, a do Total Prestação nascia aberta por causa da opção padrão, que numa regra de fora não vale; desligado, ela só abre se alguma conta dela estiver marcada)
     _cbSomarCaixas().forEach(sub => {
         const c = sub.querySelector('input[id^="wCteBetaSomar_"]'), it = sub.querySelector('.cb-sub-itens'); if (!c || !it) return;
         c.checked = !!it.querySelector('.wCteOpcCheckbox:checked'); it.hidden = !c.checked;
@@ -730,8 +730,15 @@ function _cbAposAplicar(blocos, extras) {
     // "Somar ICMS no Total Prestação" numa regra que NÃO calcula o Total Prestação: o motor clássico CRIARIA def("totalPrestacao", obt('valorICMS')) e o total ficaria só o ICMS, sem o frete. Aqui não cria: a opção
     // fica "sem efeito" (aviso na faixa e no Gerar), como as outras contas "Somar". (Na regra montada do zero com "Somar Frete Valor no Total Prestação" marcada o total criado ganha o frete e fica com 2 parcelas: esse não é desfeito.)
     // (Só não desfaz quando o total da PRÓPRIA regra colada já era só o ICMS: aí é do cliente.)
+    const base = window._cteOpcionaisBase || {};
     const ic = _cnEl('wCteOpc_' + CB_ID_ICMS_SOMAR), soIcms = b => b.destino === 'totalPrestacao' && (b.termos || []).length === 1 && _cbMesmoTermo(b.termos[0].termo, "obt('valorICMS')");
-    if (ic && ic.checked && !(((window._cteOpcionaisBase || {}).blocos) || []).some(soIcms)) blocos = blocos.filter(b => !soIcms(b));
+    if (ic && ic.checked && !(base.blocos || []).some(soIcms)) blocos = blocos.filter(b => !soIcms(b));
+    // (v28.29) Numa regra SEM Total Prestação (nem nos blocos, nem nas linhas extras) e SEM a opção que o cria ("Somar Frete Valor no Total Prestação"), nenhuma conta pode CRIAR o total. O filtro acima só pegava o total com UM termo
+    // (só o ICMS): marcando junto outra conta "Somar … no Total Prestação" (Pedágio, Gris...), o total criado pelo "Somar ICMS" ganhava a 2ª parcela, passava pelo filtro e a regra saía com um Total Prestação SEM o Frete Valor, em
+    // silêncio (e as duas contas nem apareciam como "sem efeito"). Aqui esse total é descartado: as contas ficam "sem efeito" e o assistente manda marcar a opção do frete (ver _cbDicaCriarTotal). Só o "Somar ICMS no Total
+    // Prestação" cria total (as outras contas só somam num total que já existe) e a opção do frete, quando marcada, é quem tem o direito de criá-lo.
+    const padrao = _cnEl('wCteOpc_' + CB_ID_PADRAO);
+    if (!_cbTotalNaRegra(base.blocos, base.extras) && !(padrao && padrao.checked)) blocos = blocos.filter(b => b.destino !== 'totalPrestacao');
     const t = _cnEl('wCteOpc_' + CB_ID_TOTAL_BASE);
     if (!t || !t.checked || _cbJaNaRegraAtual.has(CB_ID_TOTAL_BASE)) return { blocos, extras };
     const novos = blocos.map(b => {
@@ -1203,7 +1210,7 @@ function _cbFiltrar() {
     const acha = (busca, p) => (' ' + busca).includes(' ' + p) || (p.length > 3 && p.endsWith('s') && (' ' + busca).includes(' ' + p.slice(0, -1)));
     // Quem pesquisa não pode achar que "não existe" só porque a conta está dentro de uma caixa "Somar no …" fechada: a caixa do passo que tem conta combinando com a busca ABRE SOZINHA (marca a caixa e já mostra
     // o resultado) e, quando a busca muda para algo que não combina mais (ou é apagada), FECHA de volta — só se ela foi aberta pela busca e nada dentro dela ficou marcado. Abrir assim não é "reabrir a caixa":
-    // não traz de volta a opção padrão do Total Prestação. Se a pessoa fechar a caixa à mão enquanto a mesma busca está escrita, ela não é reaberta (até a busca mudar).
+    // não "reabre" nada (e, com CB_MARCAR_PADRAO ligado, não traz de volta a opção padrão do Total Prestação). Se a pessoa fechar a caixa à mão enquanto a mesma busca está escrita, ela não é reaberta (até a busca mudar).
     document.querySelectorAll('#wCteBetaOpcoes .cb-sub-recolhivel').forEach(sub => {
         const chk = sub.querySelector('input[id^="wCteBetaSomar_"]'), itens = sub.querySelector('.cb-sub-itens');
         if (!chk || !itens) return;
@@ -1311,9 +1318,9 @@ function _cbBloqueiaOpcaoIncompleta() {
 }
 // Se há uma opção "Somar X no Y" marcada que não entrou na regra (a regra montada não calcula Y): sem este aviso a regra sairia sem ela, em silêncio.
 function _cbBloqueiaOpcaoSemEfeito() {
-    // "Somar Frete Valor no Total Prestação" nunca bloqueia (era a opção marcada por padrão e a pessoa não a escolhia): se ela ficou sem efeito (ex.: o Total Prestação está dentro de um if/else da regra colada),
-    // o aviso continua na faixa "Marcadas" e basta desmarcá-la se incomodar
-    const it = _cnTodasOpcoes().find(o => o.id !== CB_ID_PADRAO && _cbMotivoSemEfeito(o));
+    // Com CB_MARCAR_PADRAO ligado (v28.28), "Somar Frete Valor no Total Prestação" nasce marcada sem a pessoa a escolher: aí ela nunca bloqueia (se ficou sem efeito — ex.: o Total Prestação está dentro de um if/else da regra
+    // colada — o aviso continua na faixa "Marcadas" e basta desmarcá-la). Desligado (v28.29+), ela só está marcada por ESCOLHA da pessoa (ou lida da regra colada): então bloqueia como as outras contas "Somar".
+    const it = _cnTodasOpcoes().find(o => (!CB_MARCAR_PADRAO || o.id !== CB_ID_PADRAO) && _cbMotivoSemEfeito(o));
     if (!it) return false;
     const motivo = _cbMotivoSemEfeito(it);
     _cbMostrarOpcao(it.id);
@@ -1321,19 +1328,30 @@ function _cbBloqueiaOpcaoSemEfeito() {
     _cbMsg(motivo === 'soma'
         ? 'A opção “' + it.label + '” não soma nada: ' + it.alvoNome + ' da regra já usa esse campo, mas subtraindo/multiplicando/dividindo (ou como 1º termo de uma conta que continua com subtração). Ajuste isso na montagem manual ou desmarque a opção.'
         : 'A opção “' + it.label + '” não tem onde entrar: a regra montada ainda não calcula ' + (it.alvoNome || 'Total Prestação') + '.' + (_cbDicaCriarTotal(it)
-            ? ' Marque também “' + CB_ITEM_SOMAR_FRETE.label + '” (é ela que cria o Total Prestação a partir do Frete Valor), escolha uma regra base no passo 1, monte esse campo na montagem manual ou desmarque a opção.'
+            ? ' Marque também ' + _cbOndeFrete() + ' — é ela que cria o Total Prestação a partir do Frete Valor —, escolha uma regra base no passo 1, monte esse campo na montagem manual ou desmarque a opção.'
             : ' Escolha uma regra base no passo 1 (ou monte esse campo na montagem manual) ou desmarque a opção.'), 'erro');
     return true;
 }
+// Alguma linha define o Total Prestação — nos blocos montados ou nas "linhas extras" (if/else e trechos que o montador não decompõe)?
+const _cbReTotalDef = /def\(\s*["']totalPrestacao["']/;
+function _cbTotalNaRegra(blocos, extras) {
+    return (blocos || []).some(b => b.destino === 'totalPrestacao') || (extras || []).some(x => _cbReTotalDef.test(_semLinhasComentario(x.linha)));
+}
+// Onde está a opção que cria o Total Prestação (para a dica dizer onde clicar): passo do Total Prestação, dentro da caixa "Somar no Total Prestação" (que nasce fechada)
+const _cbOndeFrete = () => '“' + CB_ITEM_SOMAR_FRETE.label + '” (passo ' + (CB_PASSOS.findIndex(p => p.etapa === 'total') + 1) + ', dentro da caixa “Somar no Total Prestação”)';
 // Desde a v28.29 "Somar Frete Valor no Total Prestação" não vem mais marcada sozinha: numa regra do zero o Total Prestação só existe se a pessoa pedir. As contas que somam NO Total Prestação (e o ICMS no total) precisam dele para ter onde
-// entrar, e quem o cria é essa opção. true = a opção `it` soma no Total Prestação (e não é a que o cria).
-function _cbDicaCriarTotal(it) { return !!it && it.id !== CB_ID_PADRAO && (it.campoAlvo === 'totalPrestacao' || it.id === CB_ID_ICMS_SOMAR); }
+// entrar, e quem o cria é essa opção. true = a opção `it` soma no Total Prestação (e não é a que o cria) E marcar a opção do frete resolve: ela ainda não está marcada e NENHUMA linha da regra define o Total Prestação
+// (se o total existe — número fixo, if/else da regra colada — a opção do frete também ficaria sem efeito, e o conselho certo é outro: regra base ou montagem manual).
+function _cbDicaCriarTotal(it) {
+    const c = _cnEl('wCteOpc_' + CB_ID_PADRAO);
+    return !!it && it.id !== CB_ID_PADRAO && (it.campoAlvo === 'totalPrestacao' || it.id === CB_ID_ICMS_SOMAR) && !(c && c.checked) && !_cbTotalNaRegra(window._cteBlocos, window._cteExtras);
+}
 // Logo depois de MARCAR uma conta "Somar … no Total Prestação" (ou "Somar ICMS") numa regra que ainda não calcula o Total Prestação: diz o que falta, sem esperar o "Gerar Regra" (a faixa "Marcadas" já mostra "sem efeito"). '' = nada a dizer.
 function _cbDicaTotalAusente(id) {
     for (const i of (id === CB_ID_SOMAR_ICMS ? [CB_ID_SOMAR_ICMS, CB_ID_ICMS_SOMAR] : [id])) {
         const it = _cnTodasOpcoes().find(o => o.id === i), c = _cnEl('wCteOpc_' + i);
         if (it && c && c.checked && _cbDicaCriarTotal(it) && _cbMotivoSemEfeito(it) === 'calc')
-            return '“' + _cbNomeOpcao(it) + '” precisa do Total Prestação, e a regra ainda não o calcula. Marque também “' + CB_ITEM_SOMAR_FRETE.label + '” (ela cria o Total Prestação a partir do Frete Valor), escolha uma regra base no passo 1 ou monte o total na montagem manual.';
+            return '“' + _cbNomeOpcao(it) + '” precisa do Total Prestação, e a regra ainda não o calcula. Marque também ' + _cbOndeFrete() + ' — ela cria o Total Prestação a partir do Frete Valor —, escolha uma regra base no passo 1 ou monte o total na montagem manual.';
     }
     return '';
 }
@@ -1415,7 +1433,7 @@ function _cbFecharAlertaLoop() { _cbAlertaLoopIA = ''; _cbAtualizarAvisoLoop(); 
 function _cbAtualizarAvisos(linhas) { _cbAtualizarAvisoIcms(linhas); _cbAtualizarAvisoLoop(linhas); _cbAjustarAgendado(); }   // (as faixas abrem/fecham e a montagem muda de altura: reencaixa o passo)   // chamado a cada vez que a área de montagem muda (ver _cteAtualizarPreview)
 // Passo de cálculo da 1ª opção marcada que cria uma das dependências do loop (é por onde corrigir); null se não for por opção (regra colada, montagem manual).
 function _cbPassoDoLoop(ciclos) {
-    // a opção marcada por padrão (Somar Frete Valor no Total Prestação) vai por último: se o loop também envolve uma opção que a PESSOA marcou, é nela que se corrige
+    // "Somar Frete Valor no Total Prestação" vai por último (é a mais "de base": o total sempre parte do frete): se o loop também envolve uma opção que a pessoa marcou por outro motivo, é nela que se corrige
     const rotulos = _cnOpcoesDoLoop(ciclos).sort((a, b) => (a === CB_ITEM_SOMAR_FRETE.label) - (b === CB_ITEM_SOMAR_FRETE.label));
     for (const r of rotulos) {
         const it = _cnTodasOpcoes().find(o => o.label === r), n = it ? _cbPassoDaOpcao(it.id) : null;
@@ -1503,15 +1521,15 @@ function _cbCardErroIA(estadoVoltar) {
 function _cbAposRestaurar(info) {
     // a regra veio de fora (colada / regra base)? Então as caixinhas refletem o que ela tem (ver "marcar conforme a regra"); a leitura é refeita da base restaurada
     _cbBaseExterna = !!(info && info.baseExterna); _cbDetBase = null; _cbFreteBaseTirado = !!(info && info.freteBaseTirado); _cbFreteBaseManual = !!(info && info.freteBaseManual);
-    // a opção padrão já nasceu marcada ao reabrir (a regra aberta é a do zero); o "restaurar" só sabe marcar caixinhas, não desmarcar: as caixinhas voltam EXATAMENTE como estavam
+    // (com CB_MARCAR_PADRAO ligado a opção padrão já nascia marcada ao reabrir, pois a regra aberta é a do zero); o "restaurar" só sabe marcar caixinhas, não desmarcar: as caixinhas voltam EXATAMENTE como estavam
     if (info && Array.isArray(info.marcadas)) {
         _cnTodasOpcoes().forEach(it => { const c = _cnEl('wCteOpc_' + it.id); if (c) c.checked = info.marcadas.includes(it.id); });
         _cteSincronizarEntradasOpcao();
     }
-    // a opção padrão: se a pessoa a tinha desmarcado, ela volta desmarcada
+    // a opção padrão (só existe como "nasce marcada" com CB_MARCAR_PADRAO ligado): se a pessoa a tinha desmarcado, ela volta desmarcada
     _cbPadraoDesmarcado = !!(info && info.padraoDesmarcado);
     if (_cbPadraoDesmarcado) { const p = _cnEl('wCteOpc_' + CB_ID_PADRAO); if (p) p.checked = false; }
-    // as caixas "Somar no …" voltam abertas/fechadas como estavam (a do Total Prestação já nasceu aberta por causa da opção padrão); conta marcada mantém a sua caixa aberta
+    // as caixas "Somar no …" voltam abertas/fechadas como estavam (a do Total Prestação só abre sozinha se alguma conta dela estiver marcada, ou — com CB_MARCAR_PADRAO ligado — por causa da opção padrão); conta marcada mantém a sua caixa aberta
     if (info && Array.isArray(info.somarAbertos)) _cbSomarCaixas().forEach(sub => { const c = sub.querySelector('input[id^="wCteBetaSomar_"]'); if (c) c.checked = info.somarAbertos.includes(sub.dataset.somar); });
     _cbSomarSync();
     const chk = _cnEl('wCteOutrosValoresCheck');

@@ -39,7 +39,7 @@ const Ferr = (() => {
                 </div>
             </div>
             <div class="ft-stream" id="ftStream_${id}" data-ferr="${id}"></div>
-            ${ent ? `<div class="ft-composer"><div class="ft-input-wrap"><input type="text" id="ftInput_${id}" placeholder="${esc(ent.placeholder || 'Digite aqui...')}" autocomplete="off" aria-label="${esc(ent.placeholder || 'Digite aqui')}"><button type="button" id="ftEnviar_${id}" class="ft-send" title="${esc(ent.rotulo || 'Buscar')}">${icon('search', 17)}<span>${esc(ent.rotulo || 'Buscar')}</span></button></div></div>` : ''}
+            ${ent ? `<div class="ft-composer"><div class="ft-input-wrap"><input type="text" id="ftInput_${id}" placeholder="${esc(ent.placeholder || 'Digite aqui...')}" autocomplete="off" aria-label="${esc(ent.placeholder || 'Digite aqui')}"><button type="button" id="ftEnviar_${id}" class="ft-send" title="${esc(ent.rotulo || 'Buscar')}">${icon('search', 17)}<span>${esc(ent.rotulo || 'Buscar')}</span></button></div><div class="ft-escopo">🔎 Esta caixa pesquisa <b>só em ${esc(t.short)}</b>. Para perguntar ao Chat, use a aba <b>Chat</b>.</div></div>` : ''}
         </div>`;
         p.querySelector('.ft-head').addEventListener('click', e => {
             const b = e.target.closest('[data-a]'); if (!b) return;

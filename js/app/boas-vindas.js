@@ -74,11 +74,9 @@ function btnWelcomeParametros() {
     if (Ferr.abrir('params')) return;
     const welcome = document.getElementById('welcomeMsg');
     if (welcome) welcome.remove();
-    _paramFuncMode = true;
-    appendMessage('ai', '⚙️ <strong>Parâmetros / Funcionalidades</strong><br>Digite o que você precisa habilitar ou configurar e pressione Enter.<br><small style="color:var(--text-muted);">Ex: <em>CIOT, NF-e automática, exclusão de CT-e, permissão de emissão...</em></small>');
-    const input = document.getElementById('searchInput');
-    input.placeholder = 'Ex: CIOT, NF-e automática, exclusão de CT-e...';
-    input.focus();
+    appendMessage('ai', '⚙️ <strong>Parâmetros / Funcionalidades</strong><br>Digite o que você precisa habilitar ou configurar e pressione Enter. <b>Tudo o que você digitar daqui em diante é pesquisado só em Parâmetros / Funcionalidades</b> — para voltar a perguntar ao chat, clique em <b>Voltar ao chat</b>.<br><small style="color:var(--text-muted);">Ex: <em>CIOT, NF-e automática, exclusão de CT-e, permissão de emissão...</em></small>');
+    _paramModoLigar();   // (js/app/parametros.js: liga o modo, troca o texto do campo e mostra a faixa "Voltar ao chat")
+    document.getElementById('searchInput').focus();
 }
 // "Pesquisa Latitude/Longitude" (js/app/geolocalizacao.js): abre no chat um campo para o endereço; depois pergunta se há um segundo endereço (rota). Digitar o pedido direto no chat continua funcionando.
 // A Agenda (antes "Minha agenda" aqui) abre pelo menu lateral; no chat, perguntar "quais tarefas tenho hoje?" ainda funciona.

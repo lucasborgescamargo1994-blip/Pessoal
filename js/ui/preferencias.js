@@ -8,11 +8,14 @@ const Prefs = (() => {
     // depois disso vale o que ela escolher, e "Restaurar padrões" volta a escondê-los. Mudou a lista? Some 1 em RAIL_DEFAULTS para a novidade chegar a todo mundo de novo.
     const HIDDEN_DEFAULT = ['blog', 'repo'], RAIL_DEFAULTS = 1;
     const base = () => ({ accent: null, accentRgb: null, bg: 'aurora', efeitos: 'completo', density: 'confortavel', startup: 'restore', sidebar: 'open',
-        railOrder: 'fixa', railLabels: true, smartDock: true, desambiguar: true, esclarecer: true, formatoResposta: 'perguntar', rememberSide: true, hidden: HIDDEN_DEFAULT.slice(), railDefaults: RAIL_DEFAULTS, ws: null, usage: {}, newsSeen: 0, updated: 0,
+        railOrder: 'fixa', railLabels: true, abasDestaque: true, abasDica: false, smartDock: true, desambiguar: true, esclarecer: true, formatoResposta: 'perguntar', rememberSide: true, hidden: HIDDEN_DEFAULT.slice(), railDefaults: RAIL_DEFAULTS, ws: null, usage: {}, newsSeen: 0, updated: 0,
         // Agenda: forma de ver (calendário/lista/cronograma), quadro ao abrir o sistema, avisos e início da semana
         agView: 'cal', agCrono: 28, agBoard: 'sempre', agToast: true, agNotify: false, agSound: false, agWeek: 'dom',
         // Recursos em teste (Personalizar › Recursos em teste): todos nascem DESLIGADOS. betaRegra = mostra o "Ct-e / Conhecimento Beta" no Criar Regra (js/app/regra-cte-beta.js): a versão em desenvolvimento do assistente; a "Nova Versão" (js/app/regra-cte-nova.js) é a cópia estável dele.
-        betaRegra: false });
+        // A voz ao vivo (Gemini, js/app/voz-ao-vivo.js) NÃO é preferência de cada pessoa: o administrador liga e põe a chave no painel (aba IA / MCP) e vale para todos. A chave nunca passa por aqui (as preferências podem ser exportadas).
+        // vozSemAoVivo = escolha da pessoa de NÃO usar a voz ao vivo neste computador (o 📞 abre a conversa rápida).
+        // vozAntiga = o 📞 volta ao jeito antigo (cada pergunta passa pelo chat inteiro): válvula de escape caso a "conversa rápida" (js/app/conversa-voz.js, o padrão) dê problema num computador.
+        betaRegra: false, vozSemAoVivo: false, vozAntiga: false });
     // Preferências antigas (sem o marcador railDefaults) ganham os atalhos ocultos de fábrica. Confere o objeto GUARDADO/recebido (o base() já traz o marcador) e mexe no `atual`.
     function migrar(guardadas, atual) {
         if ((guardadas.railDefaults || 0) >= RAIL_DEFAULTS) return false;
@@ -35,6 +38,7 @@ const Prefs = (() => {
         const h = document.documentElement;
         h.dataset.bg = d.bg || 'aurora'; h.dataset.efeitos = d.efeitos || 'completo'; h.dataset.density = d.density || 'confortavel';
         h.dataset.labels = d.railLabels === false ? 'off' : 'on';
+        h.dataset.abas = d.abasDestaque === false ? 'normal' : 'destaque';   // abas grandes e coloridas + atalhos das ferramentas ainda fechadas (css/workspace.css, js/ui/workspace.js)
         if (d.accent && d.accentRgb) { h.style.setProperty('--primary', d.accent); h.style.setProperty('--primary-rgb', String(d.accentRgb).replace(/,/g, ' ').replace(/\s+/g, ' ').trim()); }
         else { h.style.removeProperty('--primary'); h.style.removeProperty('--primary-rgb'); }
     }

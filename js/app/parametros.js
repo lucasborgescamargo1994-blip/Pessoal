@@ -15,7 +15,7 @@ async function handleParametrosFuncionalidades(queryParam, dest) {
     else {
         const input = document.getElementById('searchInput');
         query = input.value.trim();
-        if (query) { input.value = ''; input.placeholder = 'Digite sua dúvida...'; }
+        if (query) { input.value = ''; if (!_paramFuncMode) input.placeholder = 'Digite sua dúvida...'; }
     }
     if (!query) return;
 
@@ -127,7 +127,7 @@ INSTRUÇÕES:
                 <button class="feedback-btn" onclick="saveFeedback(${ts},'positivo',this)">👍</button>
                 <button class="feedback-btn" onclick="saveFeedback(${ts},'negativo',this)">👎</button>
                 ${ferrBotaoNovoHtml(dest)}
-                <button onclick="${Ferr.emAba(dest) ? `document.getElementById('ftInput_${dest}').focus()` : `_paramFuncMode=true;document.getElementById('searchInput').placeholder='Ex: CIOT, NF-e automática...';document.getElementById('searchInput').focus();`}" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border:1.5px solid #bbf7d0;border-radius:8px;background:#f0fdf4;cursor:pointer;font-size:13px;font-weight:500;color:#166534;transition:all .2s;">⚙️ Nova busca de parâmetro</button>
+                <button onclick="${Ferr.emAba(dest) ? `document.getElementById('ftInput_${dest}').focus()` : `_paramModoLigar();document.getElementById('searchInput').focus();`}" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border:1.5px solid #bbf7d0;border-radius:8px;background:#f0fdf4;cursor:pointer;font-size:13px;font-weight:500;color:#166534;transition:all .2s;">⚙️ Nova busca de parâmetro</button>
                 <span style="margin-left:auto;">${badge}</span>
             </div>`;
         Ferr.stream(dest).appendChild(card);
@@ -154,7 +154,7 @@ INSTRUÇÕES:
             _btnRetry.onclick = () => {
                 card.remove();
                 if (Ferr.emAba(dest)) handleParametrosFuncionalidades(query, dest);
-                else { _paramFuncMode = true; document.getElementById('searchInput').value = query; handleChat(); }
+                else { _paramModoLigar(); document.getElementById('searchInput').value = query; handleChat(); }
             };
             contentEl.appendChild(_btnRetry);
             feedbackEl.style.display = 'flex';
@@ -184,6 +184,32 @@ INSTRUÇÕES:
             ferrConversa(dest, 'ai', 'Não encontrei nos Parâmetros/Funcionalidades. Tente reformular a busca.');
         }
     }
+}
+
+// ── Modo "só Parâmetros / Funcionalidades" no chat SEM abas (Copilot e simulador) ─────────────────────────────────────────────────────────────────────────
+// Com abas, a ferramenta tem a própria caixa de busca e tudo o que se digita nela fica nela. Sem abas só existe o campo do chat: depois de abrir Parâmetros / Funcionalidades,
+// TODA pergunta digitada ali vira uma busca na ferramenta (antes só a 1ª: a 2ª "caía" no handleChat, a IA geral). Uma faixa avisa e o botão "Voltar ao chat" (ou uma conversa nova,
+// ou um atalho do chat) desliga. A flag é a mesma de sempre (_paramFuncMode, em js/app/boas-vindas.js, lida por handleChat).
+const PARAM_PLACEHOLDER = 'Ex: CIOT, NF-e automática, exclusão de CT-e...';
+function _paramModoChip(ligado) {
+    let chip = document.getElementById('paramModoChip');
+    if (!ligado) { if (chip) chip.remove(); return; }
+    if (chip) return;
+    const area = document.querySelector('.input-wrapper .input-area'); if (!area) return;
+    chip = document.createElement('div'); chip.id = 'paramModoChip'; chip.className = 'tool-mode-chip'; chip.setAttribute('role', 'status');
+    chip.innerHTML = '<span>⚙️ <b>Buscando só em Parâmetros / Funcionalidades</b> — o que você digitar aqui é pesquisado nesta ferramenta, não vai para a IA do chat.</span><button type="button" onclick="_paramModoDesligar(true)">Voltar ao chat</button>';
+    area.parentNode.insertBefore(chip, area);
+}
+function _paramModoLigar() {
+    _paramFuncMode = true;
+    const input = document.getElementById('searchInput'); if (input) input.placeholder = PARAM_PLACEHOLDER;
+    _paramModoChip(true);
+}
+function _paramModoDesligar(foco) {
+    const estava = _paramFuncMode || !!document.getElementById('paramModoChip');
+    _paramFuncMode = false; _paramModoChip(false);
+    const input = document.getElementById('searchInput');
+    if (estava && input) { input.placeholder = 'Digite sua dúvida...'; if (foco) input.focus({ preventScroll: true }); }
 }
 
 // ── ferramenta em aba (Workspace → "Parâmetros / Funcionalidades"): tem o próprio campo de busca ──

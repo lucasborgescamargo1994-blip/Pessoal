@@ -10,6 +10,12 @@ const Personalizar = (() => {
     const hexRgb = hex => { const m = /^#?([0-9a-f]{6})$/i.exec(hex || ''); if (!m) return null; const n = parseInt(m[1], 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
     const luminance = ([r, g, b]) => { const f = c => { c /= 255; return c <= .03928 ? c / 12.92 : Math.pow((c + .055) / 1.055, 2.4); }; return .2126 * f(r) + .7152 * f(g) + .0722 * f(b); };
 
+    // Voz ao vivo (Gemini, js/app/voz-ao-vivo.js): quem liga/desliga e guarda a chave é o administrador, no painel (aba IA / MCP) — vale para todos.
+    // Aqui só aparece (quando ela está ligada) a escolha de cada pessoa de NÃO usá-la neste computador, caso dê eco/problema ou prefira a conversa rápida.
+    function vozAoVivoSw(p) {
+        if (typeof VozAoVivo === 'undefined' || !VozAoVivo.liberada()) return '';
+        return sw('vozSemAoVivo', 'Não usar a voz ao vivo (Gemini) neste computador', 'O administrador liberou a voz ao vivo: o 📞 abre uma conversa em tempo real, em que você pode interromper a IA no meio da frase. No plano gratuito do Google as conversas podem ser usadas para melhorar os produtos dele — por isso não fale dados pessoais de clientes. Ligue esta opção se ela der problema no seu computador (eco, microfone) ou se preferir a conversa rápida: o 📞 passa a abrir a conversa rápida.', !!p.vozSemAoVivo);
+    }
     function html() {
         const p = Prefs.all(), hidden = p.hidden || [], m = MeuEspaco.info();
         const stMap = { conectado: ['ok', `Salvo na pasta “${esc(m.folder)}”`, `${m.count} nota(s) · ${m.tasks} tarefa(s) · ${m.trash} na lixeira`], permissao: ['warn', 'Falta reconectar a pasta', 'Abra o Meu Espaço e clique em Reconectar.'],
@@ -27,6 +33,7 @@ const Personalizar = (() => {
             <div class="dr-row"><span class="dr-lbl">Ao abrir o sistema</span>${seg('startup', [['chat', 'Só o chat'], ['restore', 'Reabrir minhas abas'], ['space', 'Meu Espaço'], ['agenda', 'Agenda']], p.startup)}</div>
             <div class="dr-row"><span class="dr-lbl">Lista de conversas</span>${seg('sidebar', [['open', 'Aberta'], ['collapsed', 'Recolhida']], p.sidebar)}</div>
             <div class="dr-row"><span class="dr-lbl">Ordem dos atalhos na lateral</span>${seg('railOrder', [['fixa', 'Fixa'], ['uso', 'Mais usados primeiro']], p.railOrder)}</div>
+            ${sw('abasDestaque', 'Abas em destaque', 'Mostra as ferramentas como abas grandes e coloridas no topo, com atalhos para abrir as que ainda não estão abertas (SEFAZ, Regras, Relatórios, Parâmetros…). Desligado, só as abas abertas aparecem, em tamanho pequeno.', p.abasDestaque !== false)}
             ${sw('railLabels', 'Mostrar o nome sob os ícones', '', p.railLabels !== false)}
             ${sw('rememberSide', 'Lembrar a tela lateral de cada conversa', 'Cada conversa guarda qual ferramenta estava aberta ao lado dela.', p.rememberSide !== false)}
             ${sw('smartDock', 'Sugestões inteligentes', 'Depois de uma resposta, sugere abrir o Manual, o CIOT, vídeos… quando fizer sentido.', p.smartDock !== false)}
@@ -43,7 +50,9 @@ const Personalizar = (() => {
             <div class="dr-row"><span class="dr-lbl">A semana começa em</span>${seg('agWeek', [['dom', 'Domingo'], ['seg', 'Segunda']], p.agWeek || 'dom')}</div>
           </section>
           <section class="dr-sec"><h3>${icon('sparkles', 13)}Recursos em teste (Beta)</h3>
-            ${sw('betaRegra', 'Criador de regra Beta (Ct-e / Conhecimento)', 'Mostra mais uma opção em Criar Regra: a versão em desenvolvimento do assistente em 6 passos (a “Nova Versão”). As novidades são testadas aqui primeiro e chegam à Nova Versão aos poucos. Pode mudar e ter falhas. As outras opções do Criar Regra não são afetadas.', !!p.betaRegra)}
+            ${sw('betaRegra', 'Criador de regra Beta (Ct-e / Conhecimento)', 'Mostra mais uma opção em Criar Regra: a versão em desenvolvimento do assistente em 7 passos (a “Nova Versão”). As novidades são testadas aqui primeiro e chegam à Nova Versão aos poucos. Pode mudar e ter falhas. As outras opções do Criar Regra não são afetadas.', !!p.betaRegra)}
+            ${vozAoVivoSw(p)}
+            ${sw('vozAntiga', 'Usar a chamada de voz antiga (pelo chat)', 'O 📞 normal agora é a “conversa rápida”: responde em frases curtas, na hora, sem passar pelo chat. Ligue isto só se ela der algum problema no seu computador — a chamada antiga manda cada pergunta pelo chat inteiro e só fala quando a resposta termina.', !!p.vozAntiga)}
           </section>
           <section class="dr-sec"><h3>${icon('note', 13)}Meu Espaço — seus dados</h3>
             <div class="dr-card"><div class="dc-top"><span class="dc-ic">${icon('folder', 19)}</span><div><b>${st[1]}</b><small>${st[2]}</small></div></div>
@@ -114,6 +123,7 @@ const Personalizar = (() => {
         const k = e.target.dataset && e.target.dataset.k; if (!k || e.target.type !== 'checkbox') return;
         Prefs.set({ [k]: e.target.checked });
         if (k === 'railLabels') Workspace.renderRail();
+        if (k === 'abasDestaque') Workspace.render();
         if (k === 'smartDock') Smart.renderDock();
         if (k === 'agNotify' && e.target.checked) V.Agenda.Remind.allowNotifications().then(ok => { if (!ok) { Prefs.set({ agNotify: false }); render(); Toast.show('O navegador não liberou as notificações. Libere nas configurações do site (ícone de cadeado) e tente de novo.', { kind: 'warn', ms: 7000 }); } });
     }

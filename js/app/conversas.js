@@ -21,13 +21,14 @@ function limparTodasConversas() {
     criarNovaConversa();
 }
 function criarNovaConversa(titulo = 'Nova Conversa') {
+    if (typeof _paramModoDesligar === 'function') _paramModoDesligar();   // modo "só Parâmetros" (Copilot/simulador) não atravessa conversas
     const id = 'conv_' + Date.now();
     // logTimestamp / ultimaPerguntaLog = a ÚLTIMA pergunta registrada no log desta conversa (toda pergunta gera uma linha: ver feedback-log.js)
     conversas.unshift({ id, titulo, data: new Date().toISOString(), mensagens: [], contexto: [], primeiraPergunta: "", logTimestamp: null, ultimaPerguntaLog: "", topicoAtual: null, documentoContexto: null, mlKnowledgeId: null });
     conversaAtivaId = id; salvarConversas(); renderizarListaConversas(); limparChatStream(); return id;
 }
 function novaConversa() { criarNovaConversa(); document.getElementById('searchInput').focus({ preventScroll: true }); }   // (preventScroll: no simulador, o foco não "puxa" a página do painel administrativo)
-function selecionarConversa(id) { if (conversaAtivaId === id) return; conversaAtivaId = id; salvarConversas(); renderizarListaConversas(); restaurarConversa(id); }
+function selecionarConversa(id) { if (conversaAtivaId === id) return; if (typeof _paramModoDesligar === 'function') _paramModoDesligar(); conversaAtivaId = id; salvarConversas(); renderizarListaConversas(); restaurarConversa(id); }
 function excluirConversa(id, event) {
     event.stopPropagation();
     if (!confirm('Excluir esta conversa?')) return;

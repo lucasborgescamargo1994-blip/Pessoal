@@ -4,7 +4,7 @@
 const Workspace = (() => {
     const st = { tabs: ['chat'], pinned: [], active: 'chat', right: null, ratio: .5 };
     const hist = ['chat'], loaded = {}, activity = {}, mem = {};
-    let stage, tabsEl, indEl, railEl, emptyEl, dividerEl, tabbarEl, launcherEl;
+    let stage, tabsEl, indEl, railEl, emptyEl, dividerEl, tabbarEl, launcherEl, ghostsEl, hintEl;
     let booted = false, touched = false, emptyRight = false, ytOriginal = null, prevVis = new Set(['chat']), newTabId = null, dragId = null, lastCan = null;
 
     const isOpen = id => st.tabs.includes(id);
@@ -27,13 +27,18 @@ const Workspace = (() => {
 
         tabbarEl = el('div', 'tabbar', 'wsTabbar');
         tabbarEl.innerHTML = `<div class="tabs-scroll" id="wsTabs" role="tablist" aria-label="Abas abertas"><i class="tab-indicator" id="wsInd"></i></div>
-            <button class="tb-btn" id="wsAdd" title="Abrir ferramenta em uma nova aba" aria-label="Nova aba">${icon('plus', 17)}</button>
-            <div class="tabbar-spacer"></div><div class="tabbar-end" id="wsEnd"></div>`;
+            <div class="tab-zona" id="wsZona"><div class="tab-ghosts" id="wsGhosts" role="group" aria-label="Ferramentas que ainda não estão abertas — clique para abrir em uma aba"></div>
+            <button class="tb-btn tb-more" id="wsAdd" title="Ver todas as ferramentas e abrir em uma nova aba" aria-label="Abrir ferramenta em uma nova aba">${icon('plus', 17, 2.4)}<span>Ferramentas</span></button></div>
+            <div class="tabbar-end" id="wsEnd"></div>`;
         header.after(tabbarEl);
+        // dica de 1ª vez (some ao abrir qualquer ferramenta ou ao clicar em "Entendi"): quem nunca viu as abas fica sabendo que elas existem
+        hintEl = el('div', 'tabs-hint', 'wsHint'); hintEl.hidden = true; hintEl.setAttribute('role', 'note');
+        hintEl.innerHTML = `<span class="th-ic" aria-hidden="true">💡</span><span class="th-tx"><b>Suas ferramentas abrem em abas aqui em cima.</b> Clique em <b>SEFAZ, Regras, Relatórios, Parâmetros…</b> (ou em <b>Ferramentas</b>) para abrir cada uma — o <b>Chat</b> continua aberto e você troca de aba quando quiser.</span><button type="button" class="th-ok">Entendi</button>`;
+        tabbarEl.after(hintEl);
         const end = $('#wsEnd', tabbarEl);
         ['horarioBadge', 'statusSefazBadge', 'statusAnttBadge'].forEach(id => { const n = document.getElementById(id); if (n) end.appendChild(n); });
         end.insertAdjacentHTML('beforeend', `<span class="tabbar-sep"></span><button class="tb-btn tb-split" id="wsSplit" title="Dividir a tela (Ctrl+\\)" aria-label="Dividir a tela">${icon('split', 17)}</button>`);
-        tabsEl = $('#wsTabs'); indEl = $('#wsInd');
+        tabsEl = $('#wsTabs'); indEl = $('#wsInd'); ghostsEl = $('#wsGhosts');
 
         stage = el('div', 'ws-stage', 'wsStage');
         main.insertBefore(stage, $('#topTermsBar', main));
@@ -86,6 +91,7 @@ const Workspace = (() => {
         snapScroll();
         if (!isOpen(id)) { st.tabs.push(id); sortTabs(); newTabId = id; }
         Prefs.bump(id);
+        if (id !== 'chat' && !Prefs.get('abasDica')) Prefs.set({ abasDica: true }, { quiet: true });   // abriu uma ferramenta: já descobriu as abas, a dica de 1ª vez não precisa mais aparecer
         if (id === 'chat') { st.active = 'chat'; if (st.right === 'chat') st.right = null; }
         else if (o.beside && canSplit()) {
             if (st.active === id) st.active = 'chat';
@@ -151,7 +157,7 @@ const Workspace = (() => {
     /* renderização --------------------------------------------------------- */
     function commit(o = {}) { if (booted) touched = true; sortTabs(); persist(); render(o); }
     // as preferências chegaram depois (vindas da pasta do Meu Espaço): se o usuário ainda não mexeu nas abas, usa o layout salvo
-    function reloadFromPrefs() { if (touched) { renderRail(); return; } restore(); render(); }
+    function reloadFromPrefs() { if (touched) { renderRail(); renderGhosts(); renderHint(); return; } restore(); render(); }
 
     function makeTab(id) {
         const t = TOOLS[id], n = el('div', 'tab');
@@ -184,6 +190,7 @@ const Workspace = (() => {
     function positionIndicator() {
         const a = $('.tab.is-active', tabsEl);
         if (!a) { indEl.style.width = '0px'; return; }
+        indEl.style.setProperty('--ind-c', (TOOLS[a.dataset.id] || {}).color || 'var(--primary)');   // a cor da aba ativa tinge o "fundo deslizante" (abas em destaque)
         indEl.style.width = a.offsetWidth + 'px';
         indEl.style.transform = `translateX(${a.offsetLeft}px)`;
         const l = a.offsetLeft, r = l + a.offsetWidth;
@@ -215,6 +222,45 @@ const Workspace = (() => {
             else if (bd) bd.remove();
         });
     }
+    /* atalhos das ferramentas ainda FECHADAS (v28.30 "abas em destaque") ----------
+       Antes só havia a aba "Chat" e um "+" pequeno: muita gente nunca percebia que existem SEFAZ, Regras, Relatórios, Parâmetros... em abas. Agora, ao lado das abas abertas,
+       aparecem as ferramentas que ainda não estão abertas como "abas tracejadas": um clique abre em uma aba. As mais usadas vêm primeiro (depois a ordem de GHOST_PRIORITY) e só
+       cabem as que couberem na barra (o botão "Ferramentas" sempre fica e mostra todas). Desligável em Ajustes › "Abas em destaque" (Prefs.abasDestaque). */
+    const GHOST_PRIORITY = ['sefaz', 'regra', 'relatorios', 'params', 'central', 'manual', 'space', 'agenda', 'news', 'ciot', 'yt', 'blog', 'repo'];
+    const ghostRank = id => { const i = GHOST_PRIORITY.indexOf(id); return i < 0 ? 99 : i; };
+    const abasEmDestaque = () => (document.documentElement.dataset.abas || 'destaque') === 'destaque';
+    function ghostIds() {
+        const hidden = Prefs.get('hidden') || [];
+        return TOOL_ORDER.filter(id => id !== 'chat' && !isOpen(id) && !hidden.includes(id)).sort((a, b) => usageN(b) - usageN(a) || ghostRank(a) - ghostRank(b));
+    }
+    function renderGhosts() {
+        if (!ghostsEl) return;
+        const ids = abasEmDestaque() ? ghostIds() : [], sig = ids.join(',');
+        if (ghostsEl.dataset.sig !== sig) {
+            ghostsEl.dataset.sig = sig;
+            ghostsEl.innerHTML = ids.map(id => { const t = TOOLS[id]; return `<button type="button" class="tab-ghost" data-open="${id}" style="--tool-c:${t.color}" title="Abrir ${esc(t.label)} em uma aba — ${esc(t.desc)}"><span class="tg-ic">${icon(t.icon, 14)}</span><span class="tg-tx">${esc(t.short)}</span></button>`; }).join('');
+        }
+        fitGhosts();
+    }
+    // com pouco espaço, esconde os atalhos do FIM da fila até os que sobram caberem inteiros (nunca meio cortados)
+    function fitGhosts() {
+        if (!ghostsEl) return;
+        const kids = [...ghostsEl.children];
+        const encaixa = () => { kids.forEach(k => { k.hidden = false; }); for (let i = kids.length - 1; i >= 0 && ghostsEl.scrollWidth > ghostsEl.clientWidth + 1; i--) kids[i].hidden = true; return kids.filter(k => !k.hidden).length; };
+        tabbarEl.classList.remove('is-aperta');
+        // barra apertada (tela de notebook): com poucas abas abertas, se nem os 4 primeiros atalhos cabem, o relógio some da barra para dar lugar às ferramentas
+        if (encaixa() < Math.min(4, kids.length) && st.tabs.length <= 2) { tabbarEl.classList.add('is-aperta'); encaixa(); }
+        // sem espaço nem para o texto do botão (muitas abas abertas): ele vira só o ícone "+" em vez de ficar cortado
+        const zona = document.getElementById('wsZona');
+        if (zona) { zona.classList.remove('is-curta'); if (zona.scrollWidth > zona.clientWidth + 1) zona.classList.add('is-curta'); }
+    }
+    function renderHint() {
+        if (!hintEl) return;
+        const show = booted && abasEmDestaque() && !Prefs.get('abasDica') && st.tabs.length <= 1;
+        hintEl.hidden = !show;
+        const add = document.getElementById('wsAdd'); if (add) add.classList.toggle('is-chamando', show);   // o botão "Ferramentas" pulsa enquanto a dica está na tela
+    }
+    function dismissHint() { if (!Prefs.get('abasDica')) Prefs.set({ abasDica: true }, { quiet: true }); renderHint(); }
     function renderEmpty() {
         const ids = TOOL_ORDER.filter(id => id !== 'chat' && id !== st.active && (Prefs.get('hidden') || []).indexOf(id) < 0);
         emptyEl.innerHTML = `<div class="er-ic">${icon('split', 26)}</div><b>Escolha o que abrir ao lado</b><span>A tela dividida mostra duas abas ao mesmo tempo.</span>
@@ -235,7 +281,7 @@ const Workspace = (() => {
             p.classList.toggle('is-right', splitOn() && id === st.right);
             p.setAttribute('aria-hidden', vis.has(id) ? 'false' : 'true');
         });
-        renderTabs(); renderRail();
+        renderTabs(); renderRail(); renderGhosts(); renderHint();
         $('#wsSplit').classList.toggle('is-on', split);
         $('#wsSplit').title = split ? 'Fechar a tela dividida (Ctrl+\\)' : 'Dividir a tela (Ctrl+\\)';
         // painéis antigos: flag "aberto" = visível; efeitos de carga na primeira vez que aparecem
@@ -358,6 +404,11 @@ const Workspace = (() => {
         });
         tabsEl.addEventListener('dragend', () => { dragId = null; $$('.is-dragging', tabsEl).forEach(t => t.classList.remove('is-dragging')); persist(); renderTabs(); });
         $('#wsAdd').addEventListener('click', openLauncher);
+        ghostsEl.addEventListener('click', e => { const b = e.target.closest('.tab-ghost'); if (b) open(b.dataset.open, { beside: (e.shiftKey || e.ctrlKey || e.metaKey) && canSplit() }); });
+        hintEl.addEventListener('click', e => { if (e.target.closest('.th-ok')) dismissHint(); });
+        // a largura da barra muda (janela, abas abertas, fonte que chega depois): reencaixa os atalhos que cabem
+        new ResizeObserver(() => fitGhosts()).observe(tabbarEl);
+        new ResizeObserver(() => fitGhosts()).observe(tabsEl);
         $('#wsSplit').addEventListener('click', toggleSplit);
         emptyEl.addEventListener('click', e => { const b = e.target.closest('[data-open]'); if (b) open(b.dataset.open, { beside: true }); });
         // divisor arrastável
@@ -424,7 +475,7 @@ const Workspace = (() => {
 
     return {
         init, ready, open, close, toggle, activate, pin, closeOthers, toggleSplit, showChat, refreshChatLabel, markActivity, reloadFromPrefs,
-        isOpen, isVisible, canSplit, renderRail, render, openLauncher,
+        isOpen, isVisible, canSplit, renderRail, render, openLauncher, renderGhosts,
         get state() { return { tabs: st.tabs.slice(), active: st.active, right: st.right, pinned: st.pinned.slice(), split: splitOn() }; },
         get stage() { return stage; },
     };

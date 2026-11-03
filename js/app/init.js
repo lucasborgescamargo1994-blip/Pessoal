@@ -10,6 +10,7 @@ function _iniciarPonteSimulador() {
             mcpAplicar(mcpNormalizar(d.config), 'simulador');
             console.info('[simulação] usando a configuração de IA em edição no painel.');
         } else if (d.tipo === 'bsoft:sim:perguntar' && d.texto) {
+            if (typeof _paramModoDesligar === 'function') _paramModoDesligar();   // a pergunta que o painel admin manda ao simulador é sempre do chat
             document.getElementById('searchInput').value = String(d.texto);
             handleChat();
         } else if (d.tipo === 'bsoft:sim:novaConversa') {

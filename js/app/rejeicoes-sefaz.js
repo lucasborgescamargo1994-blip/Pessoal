@@ -128,12 +128,43 @@ function renderizarCardRejeicaoIA(parsed, tr, li, dest) { const s = Ferr.stream(
 
 function formatarTexto(texto) { return _linkify(texto).replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>'); }
 
+// ── caixa de busca da aba SEFAZ (v28.30) ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+// A caixa pertence à aba: tudo o que se digita nela é busca de rejeição (nunca vai para o chat). Aceita "CT-e 539", "mdf-e 203", "rejeição 225 nf-e", "NFS-e E305" ou só "539":
+// sem o tipo, usa o último escolhido; sem nenhum, pergunta com botões. O assistente de botões (tipo → código) continua aparecendo ao abrir a aba, como sempre.
+const _SEFAZ_TIPOS = [['NFS-e', /\bnfs-?e\b|nota\s+(?:fiscal\s+)?(?:de\s+)?servi[cç]o/i], ['MDF-e', /\bmdf-?e\b|manifesto/i], ['CT-e', /\bct-?e\b|conhecimento/i], ['NF-e', /\bnf-?e\b|nota\s+fiscal/i]];
+let _sefazTipoUltimo = null;
+function sefazInterpretarDigitado(q) {
+    const txt = String(q || '');
+    const tipo = (_SEFAZ_TIPOS.find(([, re]) => re.test(txt)) || [null])[0];
+    const resto = txt.replace(/\bnfs-?e\b|\bmdf-?e\b|\bct-?e\b|\bnf-?e\b/ig, ' ');
+    const m = resto.match(/\b[eE]?\d{1,5}\b/);
+    return { tipo, codigo: m ? m[0] : '' };
+}
+function sefazRodarDigitado(codigo, tipo) {
+    _sefazTipoUltimo = tipo;
+    document.querySelectorAll('#sefazWizardCard').forEach(c => c.remove());   // o assistente de botões (se ainda estiver na tela) fica de lado
+    Ferr.sessao('sefaz').logado = false;   // cada rejeição digitada é uma consulta (e uma linha de log) própria
+    ferrLog('sefaz', `Erros Sefaz - ${codigo} (${tipo})`, true);
+    return gerarRespostaSefaz(codigo, tipo, 'sefaz');
+}
+function sefazBuscaDigitada(q) {
+    const { tipo, codigo } = sefazInterpretarDigitado(q);
+    ferrMsg('sefaz', 'user', `🔎 ${escapeHtml(String(q).trim())}`);
+    if (!codigo) { ferrMsg('sefaz', 'ai', '🔢 Não achei o <b>código</b> da rejeição no que você digitou. Escreva o tipo e o número, por exemplo: <em>CT-e 539</em>, <em>MDF-e 203</em> ou <em>NFS-e E305</em>.'); return; }
+    const t = tipo || _sefazTipoUltimo;
+    if (t) { sefazRodarDigitado(codigo, t); return; }
+    const cod = escapeHtml(codigo);
+    ferrMsg('sefaz', 'ai', `📄 Qual é o tipo de documento da rejeição <b>${cod}</b>?<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">${['CT-e', 'MDF-e', 'NF-e', 'NFS-e'].map(x => `<button type="button" onclick="this.parentNode.remove();sefazRodarDigitado('${cod}','${x}')" style="padding:8px 18px;background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;">${x}</button>`).join('')}</div>`);
+}
+
 // ── ferramenta em aba (Workspace → "Erros SEFAZ"): tipo de documento → código → resposta ──
 // O log da consulta é gravado quando o usuário busca um código (não ao abrir a aba), então abrir a aba só para olhar não gera registro.
 Ferr.registrar('sefaz', {
+    entrada: { placeholder: 'Digite o tipo e o código — ex.: CT-e 539, MDF-e 203, NFS-e E305', rotulo: 'Buscar', aoEnviar: q => sefazBuscaDigitada(q) },
     async iniciar() {
         const r = await wizardRejeicaoSefaz(false, 'sefaz');
         if (!r || !r.codigo) return;
+        _sefazTipoUltimo = r.tipo;
         ferrLog('sefaz', `Erros Sefaz - ${r.codigo} (${r.tipo})`, true);
         await gerarRespostaSefaz(r.codigo, r.tipo, 'sefaz');
     },

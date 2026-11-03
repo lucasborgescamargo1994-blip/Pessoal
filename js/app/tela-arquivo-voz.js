@@ -145,7 +145,17 @@ function _callVoltarAOuvir() {
     try { recognition.start(); } catch (e) {} // já pode estar rodando — ignora o erro nesse caso
 }
 
+// O botão 📞 abre, nesta ordem:
+//   1) a "voz ao vivo" (Gemini Live, js/app/voz-ao-vivo.js), se o administrador ligou no painel (aba IA / MCP › Voz ao vivo, com a chave do Google) e a pessoa não optou por não usar;
+//   2) a CONVERSA RÁPIDA (js/app/conversa-voz.js): motor à parte do chat, grátis e sem chave — é o padrão;
+//   3) a chamada antiga abaixo (reconhecimento de voz → handleChat → voz sintética) só se a opção "chamada de voz antiga" estiver ligada em Ajustes
+//      ou se o navegador não tiver os recursos da conversa rápida. Ela continua como sempre foi.
 function toggleVoice() {
+    if (!isCallActive && typeof VozAoVivo !== 'undefined' && VozAoVivo.disponivel()) { VozAoVivo.iniciar(); return; }
+    if (!isCallActive && typeof ConversaVoz !== 'undefined' && ConversaVoz.disponivel() && ConversaVoz.iniciar()) return;
+    toggleVoiceClassico();
+}
+function toggleVoiceClassico() {
     if (!(window.SpeechRecognition || window.webkitSpeechRecognition)) {
         alert('Seu navegador não tem suporte a reconhecimento de voz. Tente pelo Google Chrome no computador ou celular.');
         return;
@@ -162,6 +172,8 @@ function toggleVoice() {
 }
 
 function endVoiceCall() {
+    if (typeof VozAoVivo !== 'undefined' && VozAoVivo.ativa()) { VozAoVivo.encerrar('usuario'); return; }   // voz ao vivo: quem encerra é ela
+    if (typeof ConversaVoz !== 'undefined' && ConversaVoz.ativa()) { ConversaVoz.encerrar('usuario'); return; }   // conversa rápida idem
     isCallActive = false;
     callFase = 'encerrada';
     clearTimeout(silenceTimer);

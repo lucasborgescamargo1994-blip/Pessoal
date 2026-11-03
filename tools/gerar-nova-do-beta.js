@@ -34,6 +34,7 @@ function renomear(txt) {
         .replace(/wCteBeta/g, 'wCteNova')
         .replace(/cte-beta/g, 'cte-nova')
         .replace(/cteBeta/g, 'cteNova')
+        .replace(/__cb/g, '__nv')   // (variável global com dois "_": window.__cbResizeLigado; o \b_cb abaixo não a pega)
         .replace(/\b_cb/g, '_nv')
         .replace(/\bCB_/g, 'NV_')
         .replace(/\bcb(?=[A-Z0-9])/g, 'nv')
@@ -104,12 +105,12 @@ function diffLinhas(a, b) {   // a = o que a Nova Versão TERIA se fosse gerada 
     }
     return out;
 }
-function mostrarDiff(titulo, rotuloA, rotuloB, a, b) {
+function mostrarDiff(titulo, rotuloA, rotuloB, a, b, offA, offB) {   // offA/offB = linhas que vêm ANTES do trecho comparado no arquivo do Beta / da Nova Versão (para o número impresso ser a linha do arquivo)
     const d = diffLinhas(a, b);
     console.log('\n=== ' + titulo + ' ===');
     if (!d.length) { console.log('  (igual)'); return 0; }
-    console.log('  "-" = só no ' + rotuloA + '   "+" = só em ' + rotuloB + '   (número = linha no arquivo respectivo)');
-    d.forEach(x => console.log('  ' + x.t + String(x.l).padStart(5) + '  ' + x.s.slice(0, 220)));
+    console.log('  "-" = só no ' + rotuloA + '   "+" = só em ' + rotuloB + '   (número = linha no arquivo: a do Beta nas linhas "-", a da Nova Versão atual nas linhas "+")');
+    d.forEach(x => console.log('  ' + x.t + String(x.l + (x.t === '+' ? (offB || 0) : (offA || 0))).padStart(5) + '  ' + x.s.slice(0, 220)));
     return d.length;
 }
 
@@ -118,7 +119,7 @@ function checar(js) {
     let problemas = 0;
     try { new vm.Script(js, { filename: ARQ.nova }); } catch (e) { console.log('SINTAXE: ' + e.message); problemas++; }
     const corpo = js.slice(Math.max(0, js.indexOf('const NV_PASSOS = [')));   // (o cabeçalho explica a cópia e por isso cita os nomes do Beta)
-    const sobras = (corpo.match(/(\b_cb[A-Za-z0-9_]*|\bCB_[A-Z0-9_]+|\bcb-[a-z-]+|wCteBeta\w*|wizardRegraBetaCard|cte-beta|cteBeta|mostrarWizardRegraCteBeta)/g) || []);
+    const sobras = (corpo.match(/(\b_cb[A-Za-z0-9_]*|__cb[A-Za-z0-9_]*|\bCB_[A-Z0-9_]+|\bcb-[a-z-]+|wCteBeta\w*|wizardRegraBetaCard|cte-beta|cteBeta|mostrarWizardRegraCteBeta)/g) || []);
     if (sobras.length) { console.log('NOMES DO BETA SOBRANDO: ' + [...new Set(sobras)].join(', ')); problemas++; }
     return problemas;
 }
@@ -148,6 +149,8 @@ const novaAtual = ler(ARQ.nova);
 if (args.includes('--checar')) { const p = checar(novaAtual); console.log(p ? p + ' problema(s).' : 'Nova Versão sã: sintaxe ok e nenhum nome do Beta sobrando.'); process.exit(p ? 1 : 0); }
 // (o ponto de corte é o mesmo texto JÁ RENOMEADO: na Nova Versão a constante se chama NV_PASSOS; procurar CB_PASSOS devolvia -1 e o slice comparava só o último caractere — o diff dizia "(igual)" sempre)
 const INICIO_NOVA = renomear(INICIO_JS);
-const nJs = mostrarDiff('JS — ' + ARQ.nova, 'Beta (já renomeado)', 'Nova Versão atual', novaGerada.slice(Math.max(0, novaGerada.indexOf(INICIO_NOVA))), novaAtual.slice(Math.max(0, novaAtual.indexOf(INICIO_NOVA))));
-const nCss = mostrarDiff('CSS — bloco .nv- de ' + ARQ.css, 'Beta (já renomeado)', 'Nova Versão atual', cssNovoGerado, pc.nova);
+const linhasAntes = (txt, i) => (txt.slice(0, Math.max(0, i)).match(/\n/g) || []).length;   // quantas linhas vêm antes da posição i
+const nJs = mostrarDiff('JS — ' + ARQ.nova, 'Beta (já renomeado)', 'Nova Versão atual', novaGerada.slice(Math.max(0, novaGerada.indexOf(INICIO_NOVA))), novaAtual.slice(Math.max(0, novaAtual.indexOf(INICIO_NOVA))),
+    linhasAntes(beta, beta.indexOf(INICIO_JS)), linhasAntes(novaAtual, novaAtual.indexOf(INICIO_NOVA)));
+const nCss = mostrarDiff('CSS — bloco .nv- de ' + ARQ.css, 'Beta (já renomeado)', 'Nova Versão atual', cssNovoGerado, pc.nova, linhasAntes(css, pc.antes.length), linhasAntes(css, pc.antes.length + pc.beta.length));
 console.log('\n' + (nJs + nCss ? 'Diferenças: ' + nJs + ' linha(s) no JS, ' + nCss + ' no CSS. Tudo o que tem "-" é novidade do Beta ainda não promovida.' : 'A Nova Versão está igual ao Beta.'));

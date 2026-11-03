@@ -97,6 +97,10 @@ function mcpPadrao() {
         // Esclarecimento com botões (js/app/esclarecimento.js): a IA faz uma pergunta curta com opções clicáveis em vez de dizer só "não encontrei" (ou quando a pergunta é vaga).
         // maxRodadas = quantas vezes seguidas pode perguntar sobre a mesma dúvida; maxOpcoes = quantos botões de resposta (fora "Outra resposta" e "Não sei").
         esclarecimento: { ativo: true, maxRodadas: 2, maxOpcoes: 5 },
+        // Voz ao vivo (Gemini Live, js/app/voz-ao-vivo.js): LIGADA/DESLIGADA para todo mundo, aqui no painel (aba IA / MCP). chave = chave do Google AI Studio, em pedaços como as outras.
+        // voz = voz da Gemini (Kore, Aoede, Puck…); limiteMinutos = duração máxima de cada chamada (0 = sem limite; poupa a cota gratuita, que é de todos);
+        // modelo = vazio usa o padrão do código; funcaoToken = (avançado) nome de uma Edge Function do Supabase que entrega um token temporário no lugar da chave.
+        vozAoVivo: { ativo: false, chave: [], voz: 'Kore', limiteMinutos: 5, modelo: '', funcaoToken: '' },
     };
 }
 // Aceita o objeto do arquivo (mesmo incompleto/com erro de digitação) e devolve sempre um objeto completo.
@@ -115,6 +119,7 @@ function mcpNormalizar(raw) {
         respostasRapidas: Object.assign({}, d.respostasRapidas, r.respostasRapidas || {}),
         desambiguacao: Object.assign({}, d.desambiguacao, r.desambiguacao || {}),
         esclarecimento: Object.assign({}, d.esclarecimento, r.esclarecimento || {}),
+        vozAoVivo: Object.assign({}, d.vozAoVivo, r.vozAoVivo || {}),
     };
     out.provedor.chave = mcpChaveArray(out.provedor.chave);
     out.prioritario.chave = mcpChaveArray(out.prioritario.chave);
@@ -136,11 +141,18 @@ function mcpNormalizar(raw) {
     ec.ativo = ec.ativo !== false;
     ec.maxRodadas = Math.min(4, Math.max(1, parseInt(ec.maxRodadas, 10) || d.esclarecimento.maxRodadas));
     ec.maxOpcoes = Math.min(6, Math.max(2, parseInt(ec.maxOpcoes, 10) || d.esclarecimento.maxOpcoes));
+    const vz = out.vozAoVivo, limVoz = Number(vz.limiteMinutos);
+    vz.ativo = vz.ativo === true;   // desligada por padrão: só liga quem marca no painel
+    vz.chave = mcpChaveArray(vz.chave);
+    vz.voz = String(vz.voz || '').trim() || d.vozAoVivo.voz;
+    vz.limiteMinutos = (vz.limiteMinutos !== '' && vz.limiteMinutos != null && isFinite(limVoz) && limVoz >= 0) ? Math.min(60, Math.round(limVoz)) : d.vozAoVivo.limiteMinutos;   // 0 = sem limite
+    vz.modelo = String(vz.modelo || '').trim();
+    vz.funcaoToken = String(vz.funcaoToken || '').trim().replace(/[^A-Za-z0-9_-]/g, '');
     return out;
 }
 // Impressão digital do CONTEÚDO (ignora versão/data/autor): é ela que decide se a configuração mudou.
 function mcpHash(cfg) {
-    const base = JSON.stringify([cfg.provedor, cfg.cadeia, cfg.rascunho, cfg.prioritario, cfg.visao, cfg.embeddings, cfg.respostasRapidas, cfg.desambiguacao, cfg.esclarecimento]);
+    const base = JSON.stringify([cfg.provedor, cfg.cadeia, cfg.rascunho, cfg.prioritario, cfg.visao, cfg.embeddings, cfg.respostasRapidas, cfg.desambiguacao, cfg.esclarecimento, cfg.vozAoVivo]);
     let h = 5381; for (let i = 0; i < base.length; i++) h = ((h * 33) ^ base.charCodeAt(i)) >>> 0;
     return h.toString(36);
 }
