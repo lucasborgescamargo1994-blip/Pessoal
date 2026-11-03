@@ -227,3 +227,72 @@ html[data-labels="off"] .rail-btn { padding: 13px 2px; }
 .dock-chip:hover { transform: translateY(-2px); background: #fff; box-shadow: 0 10px 22px -12px color-mix(in srgb, var(--tool-c) 60%, transparent); }
 .sd-x { margin-left: auto; width: 26px; height: 26px; border-radius: 9px; border: none; background: transparent; color: var(--text-muted); cursor: pointer; display: grid; place-items: center; transition: background var(--dur-1); }
 .sd-x:hover { background: rgba(28,25,23,.08); color: var(--text); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   v28.30 — ABAS EM DESTAQUE (html[data-abas="destaque"], Ajustes › "Abas em destaque", ligado por padrão)
+   Antes a barra de abas tinha só a aba "Chat" e um "+" pequeno: muita gente nunca percebia que existem as outras ferramentas. Agora a barra é maior e colorida, cada aba
+   tem o ícone da ferramenta, as ferramentas ainda FECHADAS aparecem ao lado como atalhos tracejados (um clique abre) e há um botão "Ferramentas" com texto.
+   Desligado, tudo volta ao visual compacto de antes.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.tab-ghosts, .tabs-hint { display: none; }
+.tb-more span { display: none; }
+
+html[data-abas="destaque"] { --tabbar-h: 60px; }
+html[data-abas="destaque"][data-density="compacta"] { --tabbar-h: 52px; }
+html[data-abas="destaque"] .tabbar { gap: 8px; padding: 0 14px; background: linear-gradient(180deg, rgba(255,255,255,.86), rgba(255,255,255,.5)); box-shadow: 0 12px 24px -22px rgba(28,25,23,.55); }
+html[data-abas="destaque"] .tabs-scroll { gap: 6px; padding: 9px 0; }
+
+/* abas abertas */
+html[data-abas="destaque"] .tab-indicator { top: 9px; bottom: 9px; border-radius: 14px; border: 1.5px solid color-mix(in srgb, var(--ind-c, var(--primary)) 42%, #fff); background: color-mix(in srgb, var(--ind-c, var(--primary)) 9%, #fff);
+    box-shadow: var(--shadow-sm), 0 12px 24px -14px color-mix(in srgb, var(--ind-c, var(--primary)) 75%, transparent); }
+html[data-abas="destaque"] .tab-indicator::after { content: ""; position: absolute; left: 16px; right: 16px; bottom: -1.5px; height: 3.5px; border-radius: 4px 4px 0 0; background: var(--ind-c, var(--primary)); }
+html[data-abas="destaque"] .tab { height: 42px; gap: 9px; padding: 0 9px; max-width: 250px; border-radius: 14px; font-size: 13.5px; font-weight: 800; color: var(--text); background: rgba(255,255,255,.66); border: 1.5px solid var(--line); }
+html[data-abas="destaque"] .tab:hover { background: #fff; border-color: color-mix(in srgb, var(--tool-c, var(--primary)) 45%, #fff); transform: translateY(-1px); }
+html[data-abas="destaque"] .tab.is-active { background: transparent; border-color: transparent; transform: none; }
+html[data-abas="destaque"] .tab .tab-ic { width: 28px; height: 28px; border-radius: 10px; background: color-mix(in srgb, var(--tool-c, var(--primary)) 16%, #fff); color: var(--tool-c, var(--primary)); transition: background var(--dur-1), color var(--dur-1), transform var(--dur-2) var(--ease-spring); }
+html[data-abas="destaque"] .tab.is-active .tab-ic { background: var(--tool-c, var(--primary)); color: #fff; }
+html[data-abas="destaque"] .tab-x { width: 22px; height: 22px; opacity: .5; }
+html[data-abas="destaque"] .tab.is-pinned { padding: 0 9px; }
+
+/* atalhos das ferramentas fechadas */
+/* a "zona" ocupa TODO o espaço que sobra entre as abas e o relógio/status (nunca empurra as abas abertas): dentro dela os atalhos encolhem/somem e o botão "Ferramentas" fica sempre à vista */
+.tab-zona { display: flex; align-items: center; gap: 8px; flex: 1 1 0; min-width: 54px; overflow: hidden; }
+html[data-abas="destaque"] .tab-ghosts { display: flex; align-items: center; gap: 6px; flex: 0 1 auto; min-width: 0; overflow: hidden; padding: 9px 0; }
+.tab-ghost { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px 0 7px; border-radius: 14px; font-family: inherit; font-size: 13px; font-weight: 700; color: var(--text); cursor: pointer; white-space: nowrap;
+    border: 1.5px dashed color-mix(in srgb, var(--tool-c) 48%, #fff); background: color-mix(in srgb, var(--tool-c) 5%, rgba(255,255,255,.6)); transition: transform var(--dur-2) var(--ease-spring), background var(--dur-1), box-shadow var(--dur-2), border-color var(--dur-1); }
+.tab-ghost[hidden] { display: none; }
+.tab-ghost .tg-ic { width: 26px; height: 26px; border-radius: 9px; display: grid; place-items: center; background: color-mix(in srgb, var(--tool-c) 15%, #fff); color: var(--tool-c); transition: transform var(--dur-2) var(--ease-spring); }
+.tab-ghost:hover { border-style: solid; border-color: color-mix(in srgb, var(--tool-c) 55%, #fff); background: #fff; transform: translateY(-2px); box-shadow: 0 14px 26px -16px color-mix(in srgb, var(--tool-c) 70%, transparent); }
+.tab-ghost:hover .tg-ic { transform: scale(1.1) rotate(-4deg); }
+.tab-ghost:active { transform: scale(.96); }
+.tab-ghost:focus-visible, html[data-abas="destaque"] .tb-more:focus-visible { outline: 2.5px solid var(--primary); outline-offset: 2px; }
+
+/* botão "Ferramentas" (com texto) */
+html[data-abas="destaque"] .tb-more { width: auto; height: 40px; padding: 0 15px 0 11px; display: inline-flex; align-items: center; gap: 7px; flex: 0 0 auto; border-radius: 14px; border: 1.5px solid var(--primary);
+    background: rgb(var(--primary-rgb) / .10); color: var(--primary-dark); font-family: inherit; font-size: 13px; font-weight: 800; white-space: nowrap; }
+html[data-abas="destaque"] .tb-more span { display: inline; }
+html[data-abas="destaque"] .tb-more:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+.tb-more.is-chamando { animation: maisPulso 1.9s ease-out infinite; }
+@keyframes maisPulso { 0% { box-shadow: 0 0 0 0 rgb(var(--primary-rgb) / .5); } 100% { box-shadow: 0 0 0 13px rgb(var(--primary-rgb) / 0); } }
+
+/* dica de 1ª vez (some ao abrir uma ferramenta ou em "Entendi") */
+html[data-abas="destaque"] .tabs-hint:not([hidden]) { display: flex; align-items: center; gap: 12px; flex: 0 0 auto; margin: 8px 14px 0; padding: 9px 12px 9px 14px; border-radius: 14px;
+    background: rgb(var(--primary-rgb) / .09); border: 1px solid rgb(var(--primary-rgb) / .3); color: var(--text); font-size: 12.5px; line-height: 1.45; animation: msgIn var(--dur-3) var(--ease-out) both; }
+.tabs-hint .th-ic { font-size: 18px; flex: 0 0 auto; }
+.tabs-hint .th-tx { flex: 1 1 auto; min-width: 0; }
+.tabs-hint .th-ok { flex: 0 0 auto; margin-left: auto; padding: 7px 14px; border: none; border-radius: 10px; background: var(--primary); color: #fff; font-family: inherit; font-size: 12px; font-weight: 800; cursor: pointer; transition: transform var(--dur-2) var(--ease-spring); }
+.tabs-hint .th-ok:hover { transform: translateY(-1px); }
+
+@media (max-width: 1100px) { html[data-abas="destaque"] .tab { max-width: 190px; } }
+@media (max-width: 768px) {
+    html[data-abas="destaque"] { --tabbar-h: 50px; }
+    html[data-abas="destaque"] .tab-ghosts, html[data-abas="destaque"] .tabs-hint:not([hidden]) { display: none; }
+    /* (no celular o botão continua com o texto "Ferramentas" — a lateral some nessa largura e ele é o caminho para as ferramentas; se faltar espaço, o .is-curta do JS o reduz ao ícone) */
+    html[data-abas="destaque"] .tab { height: 38px; font-size: 13px; }
+}
+
+/* barra apertada: o relógio sai para as ferramentas caberem (ver fitGhosts em js/ui/workspace.js) */
+html[data-abas="destaque"] .tabbar.is-aperta #horarioBadge { display: none; }
+
+.tab-zona.is-curta .tb-more span { display: none !important; }
+.tab-zona.is-curta .tb-more { width: 40px !important; padding: 0 !important; justify-content: center; }

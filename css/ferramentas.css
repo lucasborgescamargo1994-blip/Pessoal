@@ -41,3 +41,14 @@
 /* os cartões das ferramentas ocupam toda a largura útil */
 .ft-stream .answer-card { width: 100%; max-width: 920px; }
 .ft-stream .message { max-width: min(92%, 760px); }
+
+/* aviso de escopo embaixo da caixa de busca de cada ferramenta (v28.30): a caixa pertence à aba, não vai para o chat */
+.ft-escopo { max-width: 860px; margin: 7px auto 0; text-align: center; font-size: 11.5px; line-height: 1.4; color: var(--text-muted); }
+.ft-escopo b { color: var(--tool-c); }
+
+/* faixa do modo "só Parâmetros / Funcionalidades" no chat SEM abas (Copilot e simulador; js/app/parametros.js) */
+.tool-mode-chip { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; max-width: 860px; margin: 0 auto 8px; padding: 8px 8px 8px 14px; border-radius: 16px; font-size: 12.5px; line-height: 1.4; color: var(--text);
+    background: color-mix(in srgb, #0891b2 10%, #fff); border: 1.5px solid color-mix(in srgb, #0891b2 38%, #fff); box-shadow: var(--shadow-sm); }
+.tool-mode-chip > span { flex: 1 1 260px; min-width: 0; }
+.tool-mode-chip button { flex: 0 0 auto; margin-left: auto; padding: 7px 14px; border: none; border-radius: 10px; background: #0891b2; color: #fff; font-family: inherit; font-size: 12px; font-weight: 800; cursor: pointer; transition: transform var(--dur-2) var(--ease-spring); }
+.tool-mode-chip button:hover { transform: translateY(-1px); }

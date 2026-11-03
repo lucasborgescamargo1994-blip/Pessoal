@@ -1,4 +1,4 @@
-/* admin/js/aba-mcp.js — Aba "IA / MCP": edita config/mcp-config.js (provedor, cadeia de modelos, visão, embeddings, respostas rápidas).
+/* admin/js/aba-mcp.js — Aba "IA / MCP": edita config/mcp-config.js (provedor, cadeia de modelos, visão, embeddings, voz ao vivo, respostas rápidas).
    Fluxo: você edita aqui → testa (modelos e simulador) → "Salvar" grava o arquivo config/mcp-config.js → você sobe o arquivo no GitHub →
    o sistema confere a cada 2 horas (e ao abrir) e passa a usar a configuração nova sozinho, sem ninguém mexer em nada. */
 (function () {
@@ -82,6 +82,13 @@
         if (a.visao.join('|') !== b.visao.join('|')) d.push('Modelos de visão alterados');
         if (a.embeddings.modelo !== b.embeddings.modelo) d.push('Modelo de embeddings alterado');
         if (mcpJuntar(a.embeddings.chave) !== mcpJuntar(b.embeddings.chave)) d.push('Chave da Jina (embeddings) alterada');
+        const va = a.vozAoVivo, vb = b.vozAoVivo, lim = n => n ? n + ' min' : 'sem limite';
+        if (va.ativo !== vb.ativo) d.push('Voz ao vivo (Gemini): ' + (vb.ativo ? 'ligada para todos' : 'desligada'));
+        if (mcpJuntar(va.chave) !== mcpJuntar(vb.chave)) d.push('Chave do Google (voz ao vivo) alterada');
+        if (va.voz !== vb.voz) d.push(`Voz ao vivo — voz: ${va.voz} → ${vb.voz}`);
+        if (va.limiteMinutos !== vb.limiteMinutos) d.push(`Voz ao vivo — duração máxima da chamada: ${lim(va.limiteMinutos)} → ${lim(vb.limiteMinutos)}`);
+        if (va.modelo !== vb.modelo) d.push('Voz ao vivo — modelo alterado');
+        if (va.funcaoToken !== vb.funcaoToken) d.push('Voz ao vivo — função de token (Supabase) alterada');
         const ra = a.respostasRapidas, rb = b.respostasRapidas;
         if (ra.ativo !== rb.ativo) d.push('Respostas rápidas: ' + (rb.ativo ? 'ligadas' : 'desligadas'));
         if (ra.limiarLexical !== rb.limiarLexical) d.push(`Limiar de termos em comum: ${ADM.fmt.pct(ra.limiarLexical)} → ${ADM.fmt.pct(rb.limiarLexical)}`);
@@ -110,6 +117,10 @@
         if (!cfg.cadeia.some(x => x.ativo)) erros.push('Deixe pelo menos um modelo ativo na cadeia.');
         if (cfg.rascunho.ativo && !cfg.rascunho.modelo) erros.push('Escolha o modelo da resposta provisória (ou desligue-a).');
         if (cfg.prioritario.ativo && (!cfg.prioritario.modelo)) erros.push('O modelo prioritário está ligado, mas sem nome de modelo.');
+        const vz = cfg.vozAoVivo, chaveVoz = mcpJuntar(vz.chave);
+        if (vz.ativo && !chaveVoz && !vz.funcaoToken) erros.push('A voz ao vivo está ligada, mas falta a chave do Google AI Studio (cole a chave no cartão “Voz ao vivo” ou desligue-a).');
+        if (chaveVoz && (/\s/.test(chaveVoz) || chaveVoz.length < 20)) erros.push('A chave do Google (voz ao vivo) não parece válida: precisa ter pelo menos 20 caracteres e nenhum espaço. Copie de novo em aistudio.google.com/apikey.');
+        else if (chaveVoz && !/^AIza/.test(chaveVoz)) avisos.push('A chave do Google (voz ao vivo) não começa com “AIza”, o formato usual. Use “Testar conexão” para conferir.');
         if (!mcpJuntar(cfg.embeddings.chave)) avisos.push('Sem chave da Jina (embeddings): a busca por significado deixa de funcionar.');
         if (!cfg.visao.length) avisos.push('Nenhum modelo de visão: “Analisar tela” e leitura de imagens não vão funcionar.');
         const dup = cfg.cadeia.map(x => x.modelo).filter((m, i, a) => a.indexOf(m) !== i);
@@ -255,6 +266,58 @@
             h('div', { class: 'linha' }, h('button', { class: 'btn peq', type: 'button', onclick: async ev => { await ADM.ui.ocupado(ev.currentTarget, async () => { const t0 = performance.now(); try { const v = await ADM.jinaVetor('teste de conexão', mcpJuntar(e.chave)); res.className = 'resultado ok'; res.textContent = `✔ respondeu em ${Math.round(performance.now() - t0)} ms (${v.length} dimensões)`; } catch (x) { res.className = 'resultado er'; res.textContent = '✖ ' + x.message; } }); } }, I('zap', 13), 'Testar chave'), res)]);
     }
 
+    // Voz ao vivo (Gemini Live, js/app/voz-ao-vivo.js): liga/desliga para TODOS e guarda a chave do Google AI Studio. O app lê daqui (MCP_CFG.vozAoVivo).
+    const VOZES_GEMINI = ['Kore', 'Aoede', 'Leda', 'Zephyr', 'Puck', 'Charon', 'Orus', 'Fenrir'];
+    function secVozAoVivo() {
+        const v = M.rascunho.vozAoVivo;
+        const estado = h('span', { class: 'sel' });
+        const refletir = () => {
+            const tem = !!mcpJuntar(v.chave).trim() || !!v.funcaoToken;
+            estado.className = 'sel ' + (v.ativo ? (tem ? 'ok' : 'er') : '');
+            estado.textContent = v.ativo ? (tem ? 'Ligada para todos' : 'Ligada, mas sem chave') : 'Desligada';
+        };
+        const ch = ADM.ui.chave(v.ativo, x => { v.ativo = x; refletir(); mudou(); }, 'Voz ao vivo ligada para todos');
+        const chave = campoChave(() => mcpJuntar(v.chave), x => { v.chave = mcpDividirChave(x); refletir(); mudou(); }, 'Chave do Google AI Studio');
+        const voz = h('select', { 'aria-label': 'Voz da assistente' }, VOZES_GEMINI.concat(VOZES_GEMINI.includes(v.voz) ? [] : [v.voz]).map(n => h('option', { value: n }, n)));
+        voz.value = v.voz;
+        voz.addEventListener('change', () => { v.voz = voz.value; mudou(); });
+        const limite = h('input', { type: 'number', min: 0, max: 60, step: 1, value: v.limiteMinutos, 'aria-label': 'Duração máxima de cada chamada, em minutos' });
+        limite.addEventListener('input', () => { const n = parseInt(limite.value, 10); v.limiteMinutos = isNaN(n) ? 5 : Math.min(60, Math.max(0, n)); mudou(); });
+        const modelo = h('input', { type: 'text', spellcheck: 'false', placeholder: 'vazio = o padrão do sistema', 'aria-label': 'Modelo da voz ao vivo' }); modelo.value = v.modelo || '';
+        modelo.addEventListener('input', () => { v.modelo = modelo.value.trim(); mudou(); });
+        const funcao = h('input', { type: 'text', spellcheck: 'false', placeholder: 'vazio = usa a chave acima (ex.: voz-token)', 'aria-label': 'Função de token no Supabase' }); funcao.value = v.funcaoToken || '';
+        funcao.addEventListener('input', () => { const limpo = funcao.value.trim().replace(/[^A-Za-z0-9_-]/g, ''); if (limpo !== funcao.value) funcao.value = limpo; v.funcaoToken = limpo; refletir(); mudou(); });
+        const res = h('div', { class: 'resultado-voz', role: 'status', 'aria-live': 'polite' });
+        const mostrar = (k, t) => { res.className = 'resultado-voz ' + k; res.textContent = t; };
+        const testar = h('button', { class: 'btn peq', type: 'button', title: 'Confere a chave e abre uma conexão de voz com o Google, sem usar microfone' }, I('zap', 13), 'Testar conexão');
+        testar.onclick = async e => {
+            await ADM.ui.ocupado(e.currentTarget, async () => {
+                if (typeof VozAoVivo === 'undefined') { mostrar('er', '❌ O módulo da voz ao vivo não carregou. Recarregue a página (Ctrl+F5).'); return; }
+                mostrar('in', 'Testando a conexão com o Google…');
+                const r = await VozAoVivo.testarConexao(mcpJuntar(v.chave), { modelo: v.modelo, voz: v.voz, funcaoToken: v.funcaoToken });
+                mostrar(r.ok ? 'ok' : 'er', r.mensagem);
+            });
+        };
+        const avancado = h('details', { class: 'sanfona' }, h('summary', null, 'Avançado'),
+            h('div', { class: 'pilha', style: { gap: '10px', paddingTop: '8px' } },
+                campo('Modelo (opcional)', modelo, 'Deixe vazio: o sistema usa o modelo gratuito de voz ao vivo atual e, se o Google não o aceitar, o de reserva. Só preencha se o Google trocar o nome do modelo.'),
+                campo('Função de token no Supabase (opcional)', funcao, 'Para NÃO deixar a chave no arquivo: publique a função voz-token no Supabase (guarda a chave lá e entrega um token temporário a cada chamada — passo a passo no cabeçalho de supabase/functions/voz-token/index.ts e no README), apague a chave acima e escreva aqui o nome da função. Não testado com uma função publicada de verdade.')));
+        refletir();
+        return cartao('Voz ao vivo (Gemini Live)', 'megaphone', [
+            h('label', { class: 'linha', style: { flexWrap: 'nowrap', alignItems: 'flex-start' } }, ch.el, h('span', { style: { minWidth: 0 } }, h('b', null, 'Ligada para todos'), h('span', { class: 'mu' }, ' — o botão 📞 passa a abrir uma conversa por voz em tempo real, como uma ligação: a IA responde falando, pode ser interrompida no meio da frase e consulta o mesmo banco de dados do chat. Desligada, o 📞 usa a conversa rápida (grátis, sem chave). Vale para todos assim que você salvar e subir o arquivo no GitHub.'))),
+            campo('Chave do Google AI Studio', chave.el, 'Começa com AIza… Grátis em aistudio.google.com/apikey → “Criar chave de API” num projeto SEM cobrança ativada. Fica no arquivo de configuração dividida em pedaços, como as outras chaves.'),
+            h('div', { class: 'g2' },
+                campo('Voz da assistente', voz),
+                campo('Duração máxima de cada chamada (minutos)', limite, '0 = sem limite. Chamadas curtas poupam a cota gratuita, que é uma só para todos. Recomendado: 5.')),
+            h('div', { class: 'linha' }, testar, res),
+            avancado,
+            ADM.ui.aviso('wa', h('b', null, 'Leia antes de ligar para todos.'), h('ul', { class: 'diff-lista', style: { marginTop: '6px' } },
+                h('li', null, 'A chave fica no arquivo ', h('code', null, 'config/mcp-config.js'), ', que é público: quem abrir as ferramentas do desenvolvedor do navegador consegue vê-la. Por isso use uma chave de um projeto sem cobrança — o pior caso é alguém gastar a cota grátis e a voz ao vivo ficar indisponível por um tempo (o 📞 abre a conversa rápida).'),
+                h('li', null, 'A cota gratuita do Google é uma só para todo mundo que usa o sistema (inclusive quantas chamadas podem estar abertas ao mesmo tempo).'),
+                h('li', null, 'No plano gratuito o Google pode usar as conversas para melhorar os produtos dele. A tela da chamada já avisa para não falar dados pessoais de clientes; cada pessoa também pode escolher não usar a voz ao vivo em Personalizar.')))],
+            estado);
+    }
+
     function secRespostasRapidas() {
         const r = M.rascunho.respostasRapidas;
         const ch = ADM.ui.chave(r.ativo, v => { r.ativo = v; mudou(); }, 'Respostas rápidas ligadas');
@@ -307,7 +370,7 @@
     /* ───────────── status / publicação (direita) ───────────── */
     function textoArquivo(cfg, mascarar) {
         const c = clone(cfg);
-        if (mascarar) ['provedor', 'prioritario', 'embeddings'].forEach(k => { if (c[k] && c[k].chave && c[k].chave.length) c[k].chave = ['••••••••']; });
+        if (mascarar) ['provedor', 'prioritario', 'embeddings', 'vozAoVivo'].forEach(k => { if (c[k] && c[k].chave && c[k].chave.length) c[k].chave = ['••••••••']; });
         return mcpSerializar(c);
     }
     function proximaVersao() { const c = norm(); c.versao = (M.publicado.versao || 0) + (sujo() ? 1 : 0); c.atualizadoEm = new Date().toISOString(); c.atualizadoPor = ADM.auth.usuario(); return c; }
@@ -413,13 +476,13 @@
     /* ───────────── montagem ───────────── */
     function construir() {
         R.dl = R.dl || h('datalist', { id: 'dlModelos' });
-        limpar(R.esq).append(R.dl, secProvedor(), secCadeia(), secRascunho(), secPrioritario(), secVisao(), secEmbeddings(), secRespostasRapidas(), secDesambiguacao(), secEsclarecimento());
+        limpar(R.esq).append(R.dl, secProvedor(), secCadeia(), secRascunho(), secPrioritario(), secVisao(), secEmbeddings(), secVozAoVivo(), secRespostasRapidas(), secDesambiguacao(), secEsclarecimento());
         atualizarDatalist(); atualizarStatus();
     }
 
     ADM.registrarAba({
         id: 'mcp', titulo: 'IA / MCP', icone: 'bot', ordem: 40,
-        descricao: 'Modelos de IA, chaves e regras das respostas rápidas. Salva em config/mcp-config.js — você só sobe o arquivo no GitHub e todo mundo passa a usar.',
+        descricao: 'Modelos de IA, chaves, voz ao vivo (liga/desliga e chave do Google) e regras das respostas rápidas. Salva em config/mcp-config.js — você só sobe o arquivo no GitHub e todo mundo passa a usar.',
         sujo,
         montar(ctx) {
             M.publicado = mcpNormalizar(window.BSOFT_MCP_CONFIG);

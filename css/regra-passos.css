@@ -303,7 +303,7 @@ html[data-efeitos="zero"] .cb-zero.chama { animation: none; border-color: #f59e0
 .cn-card.cb-medindo .cn-opcao[hidden] { display: block !important; }
 .cn-card.cb-medindo .cn-sub-bloco[hidden], .cn-card.cb-medindo .cn-grupo[hidden] { display: grid !important; }
 /* a caixa "Somar no …" é um .cn-sub-bloco, mas na tela é display:block (não grid): na medição ela precisa continuar block, senão o título e as contas viram células de uma grade e a altura medida cresce (era isso que
-   encolhia o passo 5 ao digitar uma busca sem resultado nele) */
+   encolhia o passo do Total Prestação ao digitar uma busca sem resultado nele) */
 .cn-card.cb-medindo .cb-sub-recolhivel[hidden] { display: block !important; }
 /* "Nenhuma opção encontrada…" só aparece quando TODAS as opções estão escondidas pelo filtro (sobra espaço de sobra), então na medição ele não conta: senão digitar uma busca sem resultado encolhia a tela */
 .cn-card.cb-medindo .cn-sem-resultado { display: none !important; }
@@ -391,7 +391,7 @@ html[data-efeitos="zero"] .cb-zero.chama { animation: none; border-color: #f59e0
 .cb-ia-manual { margin: 10px 0 0; font-size: 14px; line-height: 1.45; color: var(--cn-mudo); }
 .cb-anti .cb-ia-manual { margin: 8px 0 0; font-size: 13.5px; }
 
-/* passo 6: a montagem em duas colunas (ferramentas | área de montagem), os campos soltos em colunas */
+/* passo 7: a montagem em duas colunas (ferramentas | área de montagem), os campos soltos em colunas */
 .cb-anti #cbSlide3 .cn-wrap { padding: 8px 14px 6px; }
 .cb-anti .cn-montagem-topo { margin: 0 0 6px; gap: 8px 14px; }
 .cb-anti .cn-montagem-topo .cn-sub { margin: 0; font-size: 12.5px; }
@@ -438,7 +438,7 @@ html[data-efeitos="zero"] .cb-zero.chama { animation: none; border-color: #f59e0
 .cb-anti .cb-sub-itens { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
 .cb-anti .cb-sub-itens > .cn-opcao:first-child { border-top: 1px solid #eef2f7; }
 
-/* nota curta ao lado do nome de uma opção (ex.: "Somar ICMS — soma o Valor do ICMS no Total Prestação (passo 5)") */
+/* nota curta ao lado do nome de uma opção (ex.: "Somar ICMS — soma o Valor do ICMS no Total Prestação (passo 6)") */
 .cb-anti .cb-opc-nota { font-size: 11.5px; font-weight: 500; color: var(--cn-mudo); }
 /* ── "Ct-e / Conhecimento Nova Versão" (js/app/regra-cte-nova.js): CÓPIA do bloco do Beta (.cb-… → .nv-…), gerada por tools/gerar-nova-do-beta.js; reaproveita tudo acima (.cn-*) ── */
 .nv-selo { background: linear-gradient(135deg, #f97316, #c2410c); }
@@ -474,7 +474,7 @@ html[data-efeitos="zero"] .nv-zero.chama { animation: none; border-color: #f59e0
 .cn-card.nv-medindo .cn-opcao[hidden] { display: block !important; }
 .cn-card.nv-medindo .cn-sub-bloco[hidden], .cn-card.nv-medindo .cn-grupo[hidden] { display: grid !important; }
 /* a caixa "Somar no …" é um .cn-sub-bloco, mas na tela é display:block (não grid): na medição ela precisa continuar block, senão o título e as contas viram células de uma grade e a altura medida cresce (era isso que
-   encolhia o passo 5 ao digitar uma busca sem resultado nele) */
+   encolhia o passo do Total Prestação ao digitar uma busca sem resultado nele) */
 .cn-card.nv-medindo .nv-sub-recolhivel[hidden] { display: block !important; }
 /* "Nenhuma opção encontrada…" só aparece quando TODAS as opções estão escondidas pelo filtro (sobra espaço de sobra), então na medição ele não conta: senão digitar uma busca sem resultado encolhia a tela */
 .cn-card.nv-medindo .cn-sem-resultado { display: none !important; }
@@ -562,7 +562,7 @@ html[data-efeitos="zero"] .nv-zero.chama { animation: none; border-color: #f59e0
 .nv-ia-manual { margin: 10px 0 0; font-size: 14px; line-height: 1.45; color: var(--cn-mudo); }
 .nv-anti .nv-ia-manual { margin: 8px 0 0; font-size: 13.5px; }
 
-/* passo 6: a montagem em duas colunas (ferramentas | área de montagem), os campos soltos em colunas */
+/* passo 7: a montagem em duas colunas (ferramentas | área de montagem), os campos soltos em colunas */
 .nv-anti #nvSlide3 .cn-wrap { padding: 8px 14px 6px; }
 .nv-anti .cn-montagem-topo { margin: 0 0 6px; gap: 8px 14px; }
 .nv-anti .cn-montagem-topo .cn-sub { margin: 0; font-size: 12.5px; }
@@ -609,5 +609,5 @@ html[data-efeitos="zero"] .nv-zero.chama { animation: none; border-color: #f59e0
 .nv-anti .nv-sub-itens { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
 .nv-anti .nv-sub-itens > .cn-opcao:first-child { border-top: 1px solid #eef2f7; }
 
-/* nota curta ao lado do nome de uma opção (ex.: "Somar ICMS — soma o Valor do ICMS no Total Prestação (passo 5)") */
+/* nota curta ao lado do nome de uma opção (ex.: "Somar ICMS — soma o Valor do ICMS no Total Prestação (passo 6)") */
 .nv-anti .nv-opc-nota { font-size: 11.5px; font-weight: 500; color: var(--cn-mudo); }

@@ -327,6 +327,8 @@ details.ctx-artigo > summary { cursor: pointer; font-weight: 700; font-size: 12.
 .modelo-linha .grip { cursor: grab; color: var(--ad-mu); display: grid; place-items: center; }
 .modelo-linha .resultado { grid-column: 3 / -1; font-size: 12px; }
 .modelo-linha .resultado.ok { color: var(--ad-ok); } .modelo-linha .resultado.er { color: var(--ad-er); }
+.resultado-voz { flex: 1 1 220px; min-width: 0; font-size: 12.5px; line-height: 1.5; color: var(--ad-mu); overflow-wrap: anywhere; }   /* teste da voz ao vivo (cartão "Voz ao vivo" da aba IA / MCP) */
+.resultado-voz.ok { color: var(--ad-ok); } .resultado-voz.er { color: var(--ad-er); } .resultado-voz.in { color: var(--ad-mu); }
 .barra-fixa { position: sticky; bottom: 0; z-index: 6; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 14px; margin-top: 16px;
     background: color-mix(in srgb, var(--ad-sf) 94%, transparent); backdrop-filter: blur(12px); border: 1px solid var(--ad-ln); border-radius: var(--ad-r); box-shadow: var(--ad-sh-lg); }
 .diff-lista { margin: 0; padding-left: 18px; font-size: 12.5px; display: flex; flex-direction: column; gap: 3px; }
