@@ -8,7 +8,7 @@ function _menuBtnsHtml() {
         ['📊', 'Assistente de Relatórios', 'Gera o arquivo .dat de relatório personalizado', 'btnWelcomeRelatorios()', '#2563eb'],
         ['⚙️', 'Parâmetros / Funcionalidades', 'Busca parâmetros e funcionalidades do sistema', 'btnWelcomeParametros()', '#0891b2'],
         ['🖥️', 'Analisar tela', 'Compartilhe a tela e a IA analisa pra você', 'btnWelcomeAnalisarTela()', '#059669'],
-        isPiP ? null : ['🗒️', 'Meu Espaço', 'Suas anotações pessoais — ficam só no seu computador', "Workspace.open('space')", '#d97706'],
+        isPiP ? null : ['📞', 'Chamada de Voz com IA', 'Converse por voz com a IA, como numa ligação', 'toggleVoice()', '#ea580c'],   // (o Meu Espaço saiu daqui: abre pelo menu lateral; o card chama o mesmo botão 📞 do campo de digitação)
         ['📍', 'Pesquisa Latitude/Longitude', 'Latitude e longitude de um endereço — e a rota entre dois', 'btnWelcomeLatLong()', '#0d9488'],   // (a Agenda saiu daqui: abre pelo menu lateral)
         isPiP ? null : ['🤖', 'Modo Copilot', 'Abre o assistente em janela flutuante', 'abrirCopilot()', '#6d28d9'],
         ['💬', 'Gestão de Feedback', 'Veja seus feedbacks e retornos do suporte', 'btnWelcomeFeedback()', '#be185d'],
