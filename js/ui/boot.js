@@ -8,6 +8,7 @@ function boot() {
     Prefs.apply();
     Workspace.init();
     News.init(); Smart.init(); compactClock();
+    if (typeof Perf !== 'undefined') Perf.iniciar();   // desempenho automático: ajusta o visual sozinho se o computador estiver lento (js/ui/desempenho.js)
     MeuEspaco.on(() => Workspace.renderRail());   // bolinha "!" no atalho quando a pasta pede atenção
     MeuEspaco.init().catch(e => console.warn('[Meu Espaço]', e)).then(() => Agenda.Remind.start());   // quadro do dia + lembretes das tarefas (só com o sistema aberto; tudo local)
     const ready = () => {

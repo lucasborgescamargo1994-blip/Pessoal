@@ -302,6 +302,7 @@ const Workspace = (() => {
     // Efeitos de "abrir" que o painel antigo fazia ao deslizar para dentro da tela
     const EVERY_SHOW = { repo: () => { try { carregarRepositorio().then(() => renderizarListaRepositorio()); } catch (e) { /* offline */ } } };
     const ONCE = {
+        central: () => { const f = $('#centralIframe'); if (f && !f.getAttribute('src') && f.dataset.src) f.src = f.dataset.src; },   // a Central de Ajuda (site de terceiros) só carrega quando a aba abre pela 1ª vez
         ciot: () => { const f = $('#ciotIframe'); if (f && (!f.getAttribute('src') || f.getAttribute('src') === 'about:blank')) { f.src = CIOT_URL; const s = $('#ciotStatus'); if (s) s.textContent = '🗺️ Carregando Geolocalizador CIOT...'; } },
         yt: () => { try { carregarCanalNoPlayer(); } catch (e) { /* offline */ } },
     };

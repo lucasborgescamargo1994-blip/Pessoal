@@ -97,7 +97,7 @@ FALE SEMPRE em português do Brasil, com voz calma, simpática e natural, em fra
 COMO TRABALHAR
 1. Para QUALQUER dúvida sobre o Bsoft TMS (telas, parâmetros, funcionalidades, CT-e, MDF-e, NF-e, NFS-e, SEFAZ, regras, relatórios, erros, cadastros…), chame SEMPRE a função consultar_base_bsoft ANTES de responder. Antes de chamar, diga uma frase bem curta, como "Só um instante, vou verificar.".
 2. Responda SOMENTE com o que a consulta devolver. Se ela não trouxer a resposta, diga com sinceridade que não encontrou na base e faça UMA pergunta curta para entender melhor (qual tela, qual documento, qual mensagem de erro). NUNCA invente caminho de menu, parâmetro, campo, valor, passo ou código.
-3. PRÉ-REQUISITO PRIMEIRO: se a consulta trouxer parâmetros ou funcionalidades que CONDICIONAM o que a pessoa quer fazer, comece por eles: "Antes de tudo, verifique…" — diga a DESCRIÇÃO do item (nunca o código ou número) e onde conferir; só depois dê o passo a passo.
+3. PRÉ-REQUISITO PRIMEIRO: se a consulta trouxer parâmetros ou funcionalidades que CONDICIONAM o que a pessoa quer fazer, comece por eles: "Antes de tudo, verifique…" — diga a DESCRIÇÃO do item (nunca o código ou número, veja a regra 14) e onde conferir; só depois dê o passo a passo.
 4. CAMINHOS DE MENU: só cite caminhos que apareçam LITERALMENTE no resultado da consulta, na mesma ordem. Fale devagar, dizendo "depois" entre os níveis (ex.: "Cadastros, depois Pessoas, depois Pessoas").
 5. PASSO A PASSO: dite poucos passos por vez (até 4), com pausa, e pergunte "Posso continuar?". Se a resposta for longa (muitos passos, fórmulas, tabelas), faça um resumo falado e ofereça deixar a resposta COMPLETA por escrito no chat; se a pessoa aceitar, chame mostrar_resposta_completa_no_chat.
 6. Em voz, não leia links, símbolos, markdown, emojis nem trechos de código.
@@ -107,7 +107,8 @@ COMO TRABALHAR
 10. Criar regra, montar relatório e buscar parâmetro na tela: oriente a abrir as abas Regras, Relatórios ou Parâmetros do sistema; por voz você só explica e orienta.
 11. Se a pessoa se despedir ("tchau", "pode desligar", "era só isso, obrigado"), despeça-se numa frase e chame encerrar_chamada.
 12. Se o assunto não for o sistema, diga gentilmente que só ajuda com o Bsoft TMS.
-13. Não peça CPF, CNPJ, senhas nem dados pessoais; se a pessoa disser algum, não o repita.`;
+13. Não peça CPF, CNPJ, senhas nem dados pessoais; se a pessoa disser algum, não o repita.
+14. ⛔ REGRA INEGOCIÁVEL, A MAIS IMPORTANTE: NUNCA fale o código (número) de parâmetro ou funcionalidade — nada de "parâmetro mil cento e dezessete" nem "funcionalidade trezentos e quinze" —, nem quando a consulta trouxer o número. Os códigos não seguem mais um padrão e falar o número só atrapalha a pessoa a achar o item na tela. Diga SEMPRE só o NOME do item (a Descrição, como aparece na tela); se a consulta não trouxer o nome, descreva o item pelo que ele faz. Esta regra vale mais do que qualquer outra.`;
     }
     const FERRAMENTAS = [{ functionDeclarations: [
         { name: 'consultar_base_bsoft',
@@ -330,12 +331,14 @@ registerProcessor('captura-bsoft', CapturaBsoft);`;
         const c = C, T = c.turno;
         if (c.legendaNova) { c.legendaNova = false; PainelChamada.legendaResposta(''); }
         T.modeloIniciou = true; T.resp += t;
-        PainelChamada.legendaResposta(T.resp);
+        PainelChamada.legendaResposta(semCodigo(T.resp));
     }
+    // Regra "nunca o código (número) de parâmetro/funcionalidade": o áudio não dá para corrigir depois de falado (por isso a instrução e o conhecimento já vão sem o número), mas o que fica ESCRITO — legenda e chat — sai sem ele.
+    const semCodigo = t => { try { return typeof _semCodigoParam === 'function' ? _semCodigoParam(t) : t; } catch (e) { return t; } };
     function confirmarTurno(motivo) {
         const c = C; if (!c) return;
         const T = c.turno, interrompido = motivo === 'interrompido';
-        const fala = limpar(interrompido ? T.fala : T.fala + ' ' + T.falaDepois), resp = limpar(T.resp);
+        const fala = limpar(interrompido ? T.fala : T.fala + ' ' + T.falaDepois), resp = semCodigo(limpar(T.resp));
         const novo = novoTurno(); if (interrompido) novo.fala = T.falaDepois;   // o que a pessoa já disse por cima da IA vale para a próxima vez
         c.turno = novo; c.legendaNova = true;
         if (!fala && !resp) return;

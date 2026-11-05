@@ -86,7 +86,12 @@ async function handleParametrosFuncionalidades(queryParam, dest) {
         funcsRel.forEach((f, i) => { ctx += `\n[FUNCIONALIDADE ${i+1}]\n${_formatarRegistro(f)}\n`; });
     }
 
+    // Regra inegociável "nunca o código (número) de parâmetro/funcionalidade" (texto em js/app/prerequisitos.js): no início do prompt e de novo nas instruções.
+    const _regraSemCod = (typeof Prereq !== 'undefined' && Prereq.REGRA_SEM_CODIGO) ? Prereq.REGRA_SEM_CODIGO : '⛔ REGRA INEGOCIÁVEL: NUNCA escreva o código (número) de parâmetro ou funcionalidade, em nenhuma parte da resposta. Identifique o item pela Descrição (em negrito) e, no parâmetro, pelo Nome Interno entre parênteses.';
+    const _lembreteSemCod = (typeof Prereq !== 'undefined' && Prereq.LEMBRETE_SEM_CODIGO) ? Prereq.LEMBRETE_SEM_CODIGO : '⛔ NUNCA escreva o código (número) de parâmetro ou funcionalidade: só a Descrição e o Nome Interno.';
     const prompt = `Você é um especialista no sistema Bsoft TMS.
+
+${_regraSemCod}
 
 No sistema, rotinas exigem habilitar parâmetros e/ou funcionalidades para que opções apareçam em tela ou permitam executar ações específicas.
 
@@ -102,7 +107,7 @@ INSTRUÇÕES:
   **⚙️ Funcionalidades relacionadas** — liste TODAS as funcionalidades acima que se aplicam, com nome e o que cada uma faz.
 - Se não houver nenhum em uma seção, escreva "Nenhum encontrado nesta seção."
 - Inclua TODOS os itens relevantes das duas seções — não escolha apenas um.
-- Identifique cada item pela **Descrição** (em negrito) e pelo **Nome Interno** entre parênteses (funcionalidade não tem nome interno: só a Descrição). NUNCA escreva o código (número) de parâmetro ou funcionalidade: os códigos mudaram entre versões do sistema.
+- Identifique cada item pela **Descrição** (em negrito) e pelo **Nome Interno** entre parênteses (funcionalidade não tem nome interno: só a Descrição). ${_lembreteSemCod} Isso vale também para parênteses, listas e tabelas: nada de "(1117)", "parâmetro 1117" nem coluna "Código".
 - Ao final, lembre: após habilitar, acesse **Opções do Sistema > Atualizar Permissões**.
 - Use **negrito** para nomes e caminhos de menu. Responda em Markdown limpo.\n- OBRIGATÓRIO: ao encerrar toda resposta completa, escreva \`#finalizado\` sozinho na última linha.`;
 
@@ -143,7 +148,7 @@ INSTRUÇÕES:
         });
 
         const _pfRaw = _pfFilter.finish();
-        let finalText = _pfRaw.replace(/#finalizado\s*/gi, '').trim();
+        let finalText = _semCodigoParam(_pfRaw.replace(/#finalizado\s*/gi, '').trim());   // rede de segurança da regra "nunca o código de parâmetro/funcionalidade" (a tela, o log e a memória só recebem o texto sem o número)
         // Truncado = API sinalizou limit de tokens. Ausência de #finalizado não é critério.
         const _pfTruncado = _pfFR === 'length' || _pfFR === 'max_tokens';
         if (_pfTruncado || !finalText) {

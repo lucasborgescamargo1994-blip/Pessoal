@@ -43,7 +43,8 @@ REGRAS
 2. Se o conhecimento trouxer parâmetro ou funcionalidade que CONDICIONA o que a pessoa quer (seção "PARÂMETROS E FUNCIONALIDADES RELACIONADOS"), comece por ele: "Antes de tudo, confira…" e diga onde conferir, copiando o caminho que o conhecimento indica para parâmetros ou para funcionalidades (são caminhos diferentes).
    NUNCA fale o número/código de um parâmetro ou funcionalidade (nada de "funcionalidade 315"): diga só o NOME (a Descrição).
 3. Se o conhecimento não responder, diga com sinceridade que não encontrou e faça UMA pergunta para entender melhor (qual tela, qual documento, qual mensagem de erro).
-4. Diferencie CT-e, MDF-e, NF-e (mercadoria) e NFS-e (serviço). Não peça nem repita CPF, CNPJ ou senhas.`;
+4. Diferencie CT-e, MDF-e, NF-e (mercadoria) e NFS-e (serviço). Não peça nem repita CPF, CNPJ ou senhas.
+5. ⛔ REGRA INEGOCIÁVEL, A MAIS IMPORTANTE: NUNCA fale o código (número) de parâmetro ou funcionalidade — nada de "parâmetro mil cento e dezessete" nem "funcionalidade 315" —, nem quando o conhecimento trouxer o número. Os códigos não seguem mais um padrão e falar o número só atrapalha a pessoa a achar o item na tela. Diga SEMPRE só o NOME do item (a Descrição, como aparece na tela); se o conhecimento não trouxer o nome, descreva o item pelo que ele faz. Esta regra vale mais do que qualquer outra.`;
 
     const FILLERS = ['Um instante…', 'Deixa eu ver…', 'Hum, só um segundo…', 'Já vejo isso…', 'Certo, um momento…'];   // curtos: se a resposta chegar enquanto um deles toca, ela espera pouco
     const COMANDO_CURTO = /^(sim|n[aã]o|ok|certo|pode|continua|continue|segue|pr[oó]ximo|isso|tchau|obrigad[oa]|valeu|oi|ol[aá]|repete|repita|para|pare|beleza|entendi|show|quero)$/i;

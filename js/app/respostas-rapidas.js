@@ -191,7 +191,7 @@ function rrMostrarResposta(m, query, ms) {
     const feedbackId = Date.now();
     const trace = BSOFT_SIM ? `<span class="rr-trace" title="Só aparece no simulador">🔬 ${escapeHtml(m.motivo)} · léxico ${(m.lex * 100).toFixed(0)}%${m.sem != null ? ' · significado ' + (m.sem * 100).toFixed(0) + '%' : ''}</span>` : '';
     card.innerHTML = `<div class="rr-head"><span class="rr-badge">⚡ Resposta rápida</span><span class="rr-sub">aprovada pela equipe${item.categoria ? ' · ' + escapeHtml(item.categoria) : ''}</span>${trace}</div>
-        <div class="answer-section"><div class="section-content">${renderMd(item.resposta)}</div></div>
+        <div class="answer-section"><div class="section-content">${renderMd(_semCodigoParam(item.resposta))}</div></div>
         <div class="feedback-area" data-log-ts="${logTs || ''}">
             <span class="feedback-util">Esta resposta foi útil?</span>
             <button class="feedback-btn" onclick="saveFeedback(${feedbackId},'positivo',this)">👍</button>
@@ -201,7 +201,7 @@ function rrMostrarResposta(m, query, ms) {
         </div>`;
     document.getElementById('chatStream').appendChild(card);
     scrollToBottom(true);
-    const texto = item.resposta.replace(/\*\*(.*?)\*\*/g, '$1');
+    const texto = _semCodigoParam(item.resposta).replace(/\*\*(.*?)\*\*/g, '$1');   // (regra "nunca o código de parâmetro/funcionalidade": vale também para a resposta aprovada mostrada, lembrada e falada; o texto salvo na base não muda)
     adicionarMensagemNaConversa('ai', texto);
     const c = getConversaAtiva();
     if (c && c.contexto.length) RR_CTX.get(ctxId).contextoMsg = c.contexto[c.contexto.length - 1];

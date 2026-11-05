@@ -79,7 +79,7 @@ const Smart = (() => {
         const buf = [];
         new MutationObserver(recs => {
             recs.forEach(r => { if (r.target === stream && r.addedNodes.length) buf.push(r); });
-            if (!raf) raf = requestAnimationFrame(() => scan(buf.splice(0)));   // no máx. 1x por quadro, mesmo com a resposta chegando aos pedaços
+            if (!raf) raf = setTimeout(() => scan(buf.splice(0)), 100);   // no máx. ~10x por segundo (antes 1x por quadro = 60x): com a resposta chegando aos pedaços, cada pedaço mexe no DOM e o scan varre o chat inteiro
         }).observe(stream, { childList: true, subtree: true });
         // salvar resposta no Meu Espaço
         stream.addEventListener('click', e => {

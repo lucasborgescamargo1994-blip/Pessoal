@@ -228,5 +228,38 @@ const Prereq = (function () {
         return '\n🔎 PRÉ-REQUISITO (regra 9): esta pergunta pode depender de um parâmetro ou funcionalidade. Confira a seção PARÂMETROS E FUNCIONALIDADES RELACIONADOS antes de responder; se algum CONDICIONA o que foi perguntado, a resposta COMEÇA por "⚙️ Antes de tudo, verifique:".\n';
     }
 
-    return { ehPerguntaDeCondicao, buscar, buscarEm, indexar, tokens, citadosNosArtigos, combinar, montarContexto, formatarItem, dica, REGRA, CAMINHOS, PADRAO, GRUPOS };
+    // ── NUNCA o código (número) de parâmetro ou funcionalidade (instrução do dono do projeto, v28.36.0) ──
+    // Os códigos já não seguem um padrão e informar o número só atrapalha a pessoa a achar o item na tela. Duas camadas:
+    //  1) REGRA_SEM_CODIGO / LEMBRETE_SEM_CODIGO: vão em TODO prompt que apresenta parâmetro ou funcionalidade (chat, ferramenta Parâmetros, Analisar tela; a voz tem o texto dela, em js/app/conversa-voz.js e voz-ao-vivo.js);
+    //  2) semCodigo(): rede de segurança que tira o número do texto antes de ir para a tela, se a IA (ou um artigo / resposta aprovada copiado na íntegra) escrever mesmo assim.
+    // Mexa aqui para mudar o texto da regra — ele é o mesmo em todos os prompts.
+    const REGRA_SEM_CODIGO = `⛔ REGRA INEGOCIÁVEL — NUNCA ESCREVA O CÓDIGO (NÚMERO) DE PARÂMETRO OU FUNCIONALIDADE: sempre que você apresentar, citar ou mandar conferir um PARÂMETRO ou uma FUNCIONALIDADE do Bsoft TMS — venha ele da seção "PARÂMETROS E FUNCIONALIDADES RELACIONADOS", de um artigo do banco de dados, de uma resposta aprovada ou de qualquer outra parte do conhecimento — NÃO escreva o código (o número) dele, em nenhum lugar da resposta: nada de "parâmetro 1117", "parâmetro nº 268", "parâmetro 268 - Regra padrão…", "funcionalidade 315", "cód. 1117", "(1117)" ao lado do nome, nem tabela ou lista com coluna "Código". Os códigos não seguem mais um padrão, e informar o número só atrapalha a pessoa a encontrar o item na tela. Identifique o item SEMPRE pela DESCRIÇÃO, como aparece na tela (em negrito), e, se for parâmetro, pelo NOME INTERNO entre parênteses (funcionalidade não tem nome interno: só a Descrição). Se um artigo ou resposta aprovada trouxer só o número, troque-o pela Descrição e pelo Nome Interno do item correspondente da seção PARÂMETROS E FUNCIONALIDADES RELACIONADOS (ou pelo nome que o próprio texto trouxer); se não houver nome nenhum, descreva o item pelo que ele faz — sem número. Esta regra vale MAIS do que qualquer outra, inclusive a de reproduzir o artigo na íntegra: ao copiar um passo a passo, mantenha tudo, menos o número do parâmetro/funcionalidade. Certo: **Pode criar CF com documentos de talões diferentes?** (transp_podeCriarCFComDocsDeTaloesDiferentes). Errado: "parâmetro 1117", "funcionalidade 315".`;
+    const LEMBRETE_SEM_CODIGO = '⛔ NUNCA escreva o código (número) de parâmetro ou funcionalidade: só a Descrição (em negrito) e, no parâmetro, o Nome Interno entre parênteses. Vale mais que qualquer outra regra.';
+
+    // O que o texto tem de "código": a palavra parâmetro/funcionalidade seguida do número ("parâmetro 1117", "parâmetro nº 268 - Regra padrão", "funcionalidades 315 e 316", "parâmetro (código 1117)"),
+    // e um Nome Interno com o número entre parênteses ("transp_podeCriarCF (1117)"). Só na MESMA linha (nunca come quebra de linha: "Parâmetros\n1. Empresa" é uma lista, não um código).
+    // Não mexe em: "[PARÂMETRO 1]" (rótulo interno do contexto), "parâmetro 30 dias / 5 vezes / 1,5 / 80%" (valores), nem em números sem a palavra (código de rejeição, cStat, "100%").
+    const _SP = '[ \\t\\u00a0]', _PAL = '(?:par[aâ]metros?|par[aâ]m\\.|funcionalidades?)';
+    const _ROT = '(?:(?:de|com|do|da)' + _SP + '+(?:o' + _SP + '+)?)?(?:n\\.?[º°o]\\.?|n\\.|n[úu]m(?:ero|\\.)?|c[oó]d(?:igo|\\.)?|id)';
+    const _NUM = '\\d{1,5}';
+    const _UNID = '(?:%|(?:dias?|horas?|min|minutos?|segundos?|meses|m[eê]s|anos?|vezes|reais|casas|d[ií]gitos?|caracteres|registros?|itens?|linhas?|mb|kb|gb|x)\\b)';
+    const _LISTA = _NUM + '(?:' + _SP + '*(?:;|\\be\\b|\\bou\\b|/)' + _SP + '*' + _NUM + '|,' + _SP + '+' + _NUM + ')*';   // "1117" ou "1117 e 1118" ou "1117, 1118" (mas não o decimal "1,5")
+    const _MEIO = '(?:' + _ROT + _SP + '*[:.\\-–]?' + _SP + '*)?#?';                                                     // rótulo opcional ("nº", "código", "id", "de código") e "#"
+    const RE_SEM_COD = new RegExp(
+        '(^|[^\\[\\w])(' + _PAL + ')' +                                                        // 1 = o que vem antes (nunca "[" nem letra) · 2 = a palavra
+        '(?:' + _SP + '*[:\\-–—]' + _SP + '*|' + _SP + '+)' +                                  // separador: espaço, ou ":" / "-"
+        '(?:\\(' + _SP + '*' + _MEIO + _LISTA + _SP + '*\\)|' + _MEIO + _LISTA + ')' +         // "(1117)" / "(código 1117)" (leva os parênteses junto) ou o número solto
+        '(?![\\wÀ-ÿºª°]|[.,]\\d|' + _SP + '*' + _UNID + ')' +                                   // número de verdade (valor, quantidade, "1º") fica
+        '(' + _SP + '*[-–—]' + _SP + '+(?=[A-Za-zÀ-ÿ“"\'*]))?', 'gi');                         // 3 = o hífen que ligava o número ao nome ("parâmetro 268 - Regra padrão")
+    const RE_NOME_COD = new RegExp('(\\b[a-z][A-Za-z0-9]*_[A-Za-z0-9_]{3,})' + _SP + '*[\\(\\[]' + _SP + '*(?:(?:c[oó]d(?:igo|\\.)?|n[º°o]\\.?|id)' + _SP + '*[:.\\-–]?' + _SP + '*)?' + _NUM + _SP + '*[\\)\\]]', 'g');
+    function semCodigo(txt) {
+        const t = txt == null ? '' : String(txt);
+        if (!t || !/\d/.test(t)) return t;                                                     // sem nenhum dígito não há o que tirar (o caso mais comum, e barato)
+        return t.replace(RE_SEM_COD, (m, antes, palavra, hifen, pos, todo) => {
+            if (!hifen) return antes + palavra;
+            return antes + palavra + (/[A-ZÀ-Ý“"'*]/.test(todo.charAt(pos + m.length)) ? ': ' : hifen);   // "parâmetro 268 - Regra padrão" → "parâmetro: Regra padrão"; "parâmetro 268 — que libera…" fica com o travessão
+        }).replace(RE_NOME_COD, '$1');
+    }
+
+    return { ehPerguntaDeCondicao, buscar, buscarEm, indexar, tokens, citadosNosArtigos, combinar, montarContexto, formatarItem, dica, REGRA, REGRA_SEM_CODIGO, LEMBRETE_SEM_CODIGO, semCodigo, CAMINHOS, PADRAO, GRUPOS };
 })();

@@ -88,6 +88,8 @@ const VozConsulta = (() => {
 
         let fontes = []; try { fontes = fontesDoBanco({ artigos: rr, aprovadas: rrUsadas, parametros: pf.parametros, funcionalidades: pf.funcionalidades, rotinas }); } catch (e) { /* só informação */ }
         const titulos = fontes.filter(f => f.tipo === 'banco' || f.tipo === 'rr' || f.tipo === 'param' || f.tipo === 'func').slice(0, 4).map(f => f.titulo);
+        // Voz não tem como "apagar" o número depois de falado: por isso o código (número) de parâmetro/funcionalidade já sai do conhecimento entregue à IA (Prereq.semCodigo; os rótulos "[PARÂMETRO 1]" ficam como estão).
+        try { if (typeof Prereq !== 'undefined' && Prereq.semCodigo) t = Prereq.semCodigo(t); } catch (e) { /* segue com o texto original */ }
         return { texto: t, encontrou: !vum, fontes, titulos };
     }
 

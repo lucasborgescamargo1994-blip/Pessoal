@@ -35,6 +35,29 @@ function _makeThinkingFilter() {
 // nunca ultrapassa CPS, mas também nunca fica pra trás de quão rápido o texto real já chegou —
 // se a IA está digitando devagar de verdade, a revelação acompanha no ritmo dela, sem esperar à
 // toa. finalizar() avisa que não vem mais nada novo, só terminar de revelar o que ainda falta.
+// Põe no elemento o HTML do texto revelado até agora SEM refazer tudo. Antes, a cada quadro (60x por segundo) o conteúdo INTEIRO da resposta era jogado fora e recriado (centenas de
+// elementos numa resposta longa, com leiaute e pintura de tudo de novo): era o que mais pesava enquanto a IA respondia, e quanto maior a resposta, pior. Agora só o que mudou é
+// trocado (quase sempre o último pedaço). O resultado na tela é exatamente o mesmo (o conteúdo é igual ao que o innerHTML daria) — e o texto já mostrado deixa de ser recriado,
+// então até dá para selecioná-lo enquanto a resposta continua chegando. O cursor continua sendo recriado a cada quadro, como antes (a animação dele reinicia e ele aparece sempre cheio).
+function _atualizarConteudoFluido(el, html, comCursor) {
+    try {
+        const tpl = el.__tplFluido || (el.__tplFluido = document.createElement('template'));
+        tpl.innerHTML = html;
+        const cursorAntigo = el.lastChild && el.lastChild.nodeType === 1 && el.lastChild.classList.contains('stream-cursor') ? el.lastChild : null;
+        if (cursorAntigo) el.removeChild(cursorAntigo);
+        const novos = tpl.content.childNodes, velhos = el.childNodes;
+        let i = 0;
+        while (i < novos.length && i < velhos.length && velhos[i].isEqualNode(novos[i])) i++;   // o começo que não mudou fica como está
+        while (el.childNodes.length > i) el.removeChild(el.lastChild);                         // sai o resto antigo (inclui o "Pensando…" do início)
+        const resto = Array.prototype.slice.call(novos, i);                                     // (cópia: a lista de nós é "viva")
+        for (let k = 0; k < resto.length; k++) el.appendChild(resto[k]);
+        if (comCursor) { const c = document.createElement('span'); c.className = 'stream-cursor'; el.appendChild(c); }
+    } catch (e) {
+        el.innerHTML = html + (comCursor ? '<span class="stream-cursor"></span>' : '');   // qualquer imprevisto: o jeito de sempre
+    }
+}
+// Regra "nunca o código (número) de parâmetro/funcionalidade" (Prereq.semCodigo, js/app/prerequisitos.js): tudo o que a IA escreve passa por aqui antes de ir para a tela. Sem o módulo, passa direto.
+const _semCodigoParam = t => { try { return (typeof Prereq !== 'undefined' && Prereq.semCodigo) ? Prereq.semCodigo(t) : t; } catch (e) { return t; } };
 function _criarRevelacaoFluida(contentEl, opts = {}) {
     const CPS = opts.cps || 220; // caracteres por segundo — rápido de ler, mas dá pra acompanhar
     let textoCompleto = '', revelados = 0, streamAcabou = false, ultimoTs = null, animando = false, aoTerminar = null;
@@ -43,7 +66,7 @@ function _criarRevelacaoFluida(contentEl, opts = {}) {
         revelados = Math.min(textoCompleto.length, revelados + ((ts - ultimoTs) / 1000) * CPS);
         ultimoTs = ts;
         const falta = revelados < textoCompleto.length;
-        contentEl.innerHTML = renderMd(textoCompleto.slice(0, Math.floor(revelados))) + (falta || !streamAcabou ? '<span class="stream-cursor"></span>' : '');
+        _atualizarConteudoFluido(contentEl, renderMd(textoCompleto.slice(0, Math.floor(revelados))), falta || !streamAcabou);
         // Sem scrollToBottom aqui de propósito: a cada quadro (várias vezes por segundo) isso
         // puxava a página pra baixo o tempo todo durante o streaming, sem deixar o usuário ler
         // desde o começo da resposta enquanto ela ainda está sendo escrita. Em vez disso, só
@@ -55,7 +78,7 @@ function _criarRevelacaoFluida(contentEl, opts = {}) {
     }
     function garantirAnimando() { if (!animando) { animando = true; ultimoTs = null; requestAnimationFrame(passo); } }
     return {
-        atualizar(novoTextoCompleto) { textoCompleto = novoTextoCompleto; garantirAnimando(); },
+        atualizar(novoTextoCompleto) { textoCompleto = _semCodigoParam(novoTextoCompleto); garantirAnimando(); },   // (o número do código nunca chega a aparecer, nem pela metade durante o streaming)
         // cb (opcional): chamado quando o último caractere acabou de aparecer (ex.: os botões de esclarecimento só entram depois do texto)
         // (rede de segurança: com a aba em segundo plano o navegador pausa o requestAnimationFrame — o cb sai por tempo, depois da duração normal da revelação)
         finalizar(cb) {

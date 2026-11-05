@@ -161,7 +161,14 @@ function sefazBuscaDigitada(q) {
 // O log da consulta é gravado quando o usuário busca um código (não ao abrir a aba), então abrir a aba só para olhar não gera registro.
 Ferr.registrar('sefaz', {
     entrada: { placeholder: 'Digite o tipo e o código — ex.: CT-e 539, MDF-e 203, NFS-e E305', rotulo: 'Buscar', aoEnviar: q => sefazBuscaDigitada(q) },
-    async iniciar() {
+    async iniciar(o) {
+        // veio da recomendação do chat (js/app/ferramenta-sugerida.js: "não encontrei no banco de dados, mas esta ferramenta resolve") com o tipo do documento e o código já
+        // identificados na pergunta: abre DIRETO na resposta, sem passar pelo assistente de botões
+        if (o && o.tipo && o.codigo) {
+            if (o.consulta) ferrMsg('sefaz', 'user', `🔎 ${escapeHtml(String(o.consulta).trim())}`);
+            await sefazRodarDigitado(o.codigo, o.tipo);
+            return;
+        }
         const r = await wizardRejeicaoSefaz(false, 'sefaz');
         if (!r || !r.codigo) return;
         _sefazTipoUltimo = r.tipo;
