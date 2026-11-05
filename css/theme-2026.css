@@ -47,10 +47,7 @@ html[data-bg="escuro"] .bg-aurora::after { mix-blend-mode: screen; opacity: .06;
 html[data-bg="foto"] .bg-aurora, html[data-bg="liso"] .bg-aurora i { display: none; }
 html[data-bg="liso"] .bg-aurora { background: var(--bg-base); }
 html[data-bg="liso"] .bg-aurora::after { display: none; }
-@keyframes auroraA { from { transform: translate3d(0,0,0) scale(1); }   to { transform: translate3d(9vmax,7vmax,0) scale(1.16); } }
-@keyframes auroraB { from { transform: translate3d(0,0,0) scale(1.05); } to { transform: translate3d(-8vmax,9vmax,0) scale(.92); } }
-@keyframes auroraC { from { transform: translate3d(0,0,0) scale(1); }   to { transform: translate3d(7vmax,-8vmax,0) scale(1.14); } }
-@keyframes auroraD { from { transform: translate3d(0,0,0) scale(1); }   to { transform: translate3d(-9vmax,-6vmax,0) scale(1.2); } }
+/* @keyframes auroraA–D (a deriva do fundo): ver css/desempenho.css — o mesmo movimento e a mesma suavização, atualizados em degraus (bem mais leve). */
 
 /* ── Casca: vidro ────────────────────────────────────────────────────────── */
 .app-layout { position: relative; z-index: 1; gap: 12px; }
@@ -246,7 +243,7 @@ kbd, .kbd {
 .hero { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 20px; }
 .hero-hello { font-size: clamp(27px, 3.6vw, 40px); font-weight: 800; letter-spacing: -1.1px; line-height: 1.08; text-wrap: balance; animation: msgIn var(--dur-3) var(--ease-out) both; }
 .hero-hello .grad { background: linear-gradient(110deg, var(--primary), #a78bfa 52%, #38bdf8); background-size: 220% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: gradShift 9s ease-in-out infinite alternate; }
-@keyframes gradShift { from { background-position: 0% 50%; } to { background-position: 100% 50%; } }
+/* @keyframes gradShift (brilho do título): ver css/desempenho.css. */
 .hero-sub { font-size: 14.5px; color: var(--text-muted); max-width: 62ch; line-height: 1.58; animation: msgIn var(--dur-3) var(--ease-out) 80ms both; }
 .hero-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; animation: msgIn var(--dur-3) var(--ease-out) 160ms both; }
 .hero-pill { font-size: 11.5px; font-weight: 600; color: var(--text-muted); padding: 5px 11px; border-radius: 999px; background: rgba(255,255,255,.66); border: 1px solid var(--line); }
@@ -289,15 +286,7 @@ kbd, .kbd {
     box-shadow: var(--shadow-lg), inset 0 1px 0 #fff; transition: box-shadow var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out);
 }
 .input-area:focus-within { background: #fff; border-color: transparent; box-shadow: 0 30px 60px -24px rgba(28,25,23,.45), 0 0 0 4px rgb(var(--primary-rgb) / .10); transform: translateY(-2px); }
-.input-area::before {
-    content: ""; position: absolute; inset: -1.5px; border-radius: inherit; padding: 1.5px; pointer-events: none; opacity: 0; transition: opacity .35s;
-    background: conic-gradient(from var(--ring), rgb(var(--primary-rgb)), #a78bfa, #38bdf8, rgb(var(--primary-rgb)));
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
-    animation: ringSpin 4.5s linear infinite;
-}
-.input-area:focus-within::before, body.ai-busy .input-area::before { opacity: 1; }
-body.ai-busy .input-area::before { animation-duration: 1.8s; }
-@keyframes ringSpin { to { --ring: 360deg; } }
+/* O anel colorido do campo de digitação (foco / IA pensando) é o <i class="ia-ring"> do index.html: ver css/desempenho.css (gira por transform, sem repintar a cada quadro). */
 #searchInput { font-size: 15px; padding: 9px 8px; }
 .attach-btn { width: 36px; height: 36px; border-radius: 12px; font-size: 17px; transition: all var(--dur-2) var(--ease-spring); }
 .attach-btn:hover { background: rgb(var(--primary-rgb) / .10); color: var(--primary); transform: translateY(-2px); }

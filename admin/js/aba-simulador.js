@@ -54,6 +54,15 @@
                         h('span', { class: 'sel' }, '⏱ ' + (t.ms >= 1000 ? (t.ms / 1000).toFixed(1) + ' s' : t.ms + ' ms')))));
                 return;
             }
+            if (t.fonte === 'ferramenta') {   // nada no banco de dados resolveu e o assunto é de uma ferramenta: o chat mostrou o botão dela em vez de chamar a IA (js/app/ferramenta-sugerida.js)
+                box.appendChild(h('div', { class: 'rastro-item' },
+                    h('div', { class: 'q' }, t.pergunta ? ADM.fmt.trunc(t.pergunta, 140) : '(pergunta digitada direto no simulador)'),
+                    h('div', { class: 'linha', style: { gap: '5px', flexWrap: 'wrap' } },
+                        h('span', { class: 'sel wa', title: 'O banco de dados não resolveu e o assunto é de uma ferramenta do sistema: o chat recomendou a ferramenta, sem gastar IA' }, '🧭 recomendou a ferramenta'),
+                        ...(Array.isArray(t.ferramentas) ? t.ferramentas : []).map(x => h('span', { class: 'pct', title: x.motivo || '' }, ADM.fmt.trunc(String(x.nome || ''), 40) + (x.direto ? ' · ' + x.direto : ''))),
+                        h('span', { class: 'sel' }, '⏱ ' + (t.ms >= 1000 ? (t.ms / 1000).toFixed(1) + ' s' : t.ms + ' ms')))));
+                return;
+            }
             const ia = t.fonte === 'ia';
             box.appendChild(h('div', { class: 'rastro-item' },
                 h('div', { class: 'q' }, t.pergunta ? ADM.fmt.trunc(t.pergunta, 140) : '(pergunta digitada direto no simulador)'),

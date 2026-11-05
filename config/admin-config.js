@@ -56,6 +56,7 @@ window.BSOFT_ADMIN = {
       "abas": [
         "treinamento",
         "faq",
+        "banco",
         "analise",
         "novidades"
       ],

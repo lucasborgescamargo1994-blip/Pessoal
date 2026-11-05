@@ -46,7 +46,6 @@
         }
 
 /* ── Sistema de design 2026 (v27): sobrescreve as variáveis acima ── */
-@property --ring { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
 
 :root {
     --primary: #f97316;

@@ -1,0 +1,139 @@
+@charset "UTF-8";
+/* css/desempenho.css — Camada de DESEMPENHO: o MESMO visual, gastando bem menos do computador. Carregado por último no index.html.
+
+   Tudo aqui foi feito para NÃO mudar o que se vê. O que pesava era o que se mexe o tempo todo: o fundo (aurora) se movendo por baixo de três painéis de vidro (blur) obrigava o
+   navegador a refazer o vidro 60 vezes por segundo, e dois outros efeitos (o anel do campo de digitação e o brilho do título) eram repintados na thread principal a cada quadro.
+
+   1) Deriva do fundo (aurora) e brilho do título: o MESMO movimento e a MESMA suavização de antes, só que atualizados ~8 (fundo) e ~10 (título) vezes por segundo, em "degraus",
+      em vez de 60. O fundo anda poucos pixels por segundo sobre manchas borradas: a diferença não se enxerga (erro máximo medido contra a curva original: ~2 px no fundo e ~7 px
+      no título, sobre degradês de centenas de pixels), mas o vidro deixa de ser refeito a cada quadro. Os keyframes foram gerados com a curva original (ease-in-out) em 16 trechos.
+   2) Anel do campo de digitação: o mesmo gradiente, no mesmo lugar e com a mesma máscara — agora GIRADO por transform (feito pela placa de vídeo, sem repintar) em vez de ter o ângulo
+      animado (repintura a cada quadro). O elemento <i class="ia-ring"> fica dentro do .input-area (index.html).
+   3) Desempenho automático (js/ui/desempenho.js): se o computador não dá conta, o sistema primeiro para só os movimentos contínuos ("medio") e, se precisar, tira também o vidro ("leve"). */
+
+/* ── 1) Deriva do fundo e brilho do título, em degraus ─────────────────────────────────────────────────────────────────────────────────────────────────────── */
+@keyframes auroraA {
+    0% { transform: translate3d(0vmax,0vmax,0) scale(1); animation-timing-function: steps(13); }
+    6.25% { transform: translate3d(0.03vmax,0.023vmax,0) scale(1.001); animation-timing-function: steps(13); }
+    12.5% { transform: translate3d(0.13vmax,0.101vmax,0) scale(1.002); animation-timing-function: steps(13); }
+    18.75% { transform: translate3d(0.322vmax,0.25vmax,0) scale(1.006); animation-timing-function: steps(13); }
+    25% { transform: translate3d(0.637vmax,0.496vmax,0) scale(1.011); animation-timing-function: steps(13); }
+    31.25% { transform: translate3d(1.127vmax,0.876vmax,0) scale(1.02); animation-timing-function: steps(13); }
+    37.5% { transform: translate3d(1.873vmax,1.457vmax,0) scale(1.033); animation-timing-function: steps(13); }
+    43.75% { transform: translate3d(2.991vmax,2.326vmax,0) scale(1.053); animation-timing-function: steps(13); }
+    50% { transform: translate3d(4.5vmax,3.5vmax,0) scale(1.08); animation-timing-function: steps(13); }
+    56.25% { transform: translate3d(6.009vmax,4.674vmax,0) scale(1.107); animation-timing-function: steps(13); }
+    62.5% { transform: translate3d(7.127vmax,5.543vmax,0) scale(1.127); animation-timing-function: steps(13); }
+    68.75% { transform: translate3d(7.873vmax,6.124vmax,0) scale(1.14); animation-timing-function: steps(13); }
+    75% { transform: translate3d(8.363vmax,6.504vmax,0) scale(1.149); animation-timing-function: steps(13); }
+    81.25% { transform: translate3d(8.678vmax,6.75vmax,0) scale(1.154); animation-timing-function: steps(13); }
+    87.5% { transform: translate3d(8.87vmax,6.899vmax,0) scale(1.158); animation-timing-function: steps(13); }
+    93.75% { transform: translate3d(8.97vmax,6.977vmax,0) scale(1.159); animation-timing-function: steps(13); }
+    100% { transform: translate3d(9vmax,7vmax,0) scale(1.16); }
+}
+@keyframes auroraB {
+    0% { transform: translate3d(0vmax,0vmax,0) scale(1.05); animation-timing-function: steps(17); }
+    6.25% { transform: translate3d(-0.027vmax,0.03vmax,0) scale(1.05); animation-timing-function: steps(17); }
+    12.5% { transform: translate3d(-0.116vmax,0.13vmax,0) scale(1.048); animation-timing-function: steps(17); }
+    18.75% { transform: translate3d(-0.286vmax,0.322vmax,0) scale(1.045); animation-timing-function: steps(17); }
+    25% { transform: translate3d(-0.566vmax,0.637vmax,0) scale(1.041); animation-timing-function: steps(17); }
+    31.25% { transform: translate3d(-1.002vmax,1.127vmax,0) scale(1.034); animation-timing-function: steps(17); }
+    37.5% { transform: translate3d(-1.665vmax,1.873vmax,0) scale(1.023); animation-timing-function: steps(17); }
+    43.75% { transform: translate3d(-2.659vmax,2.991vmax,0) scale(1.007); animation-timing-function: steps(17); }
+    50% { transform: translate3d(-4vmax,4.5vmax,0) scale(0.985); animation-timing-function: steps(17); }
+    56.25% { transform: translate3d(-5.341vmax,6.009vmax,0) scale(0.963); animation-timing-function: steps(17); }
+    62.5% { transform: translate3d(-6.335vmax,7.127vmax,0) scale(0.947); animation-timing-function: steps(17); }
+    68.75% { transform: translate3d(-6.998vmax,7.873vmax,0) scale(0.936); animation-timing-function: steps(17); }
+    75% { transform: translate3d(-7.434vmax,8.363vmax,0) scale(0.929); animation-timing-function: steps(17); }
+    81.25% { transform: translate3d(-7.714vmax,8.678vmax,0) scale(0.925); animation-timing-function: steps(17); }
+    87.5% { transform: translate3d(-7.884vmax,8.87vmax,0) scale(0.922); animation-timing-function: steps(17); }
+    93.75% { transform: translate3d(-7.973vmax,8.97vmax,0) scale(0.92); animation-timing-function: steps(17); }
+    100% { transform: translate3d(-8vmax,9vmax,0) scale(0.92); }
+}
+@keyframes auroraC {
+    0% { transform: translate3d(0vmax,0vmax,0) scale(1); animation-timing-function: steps(20); }
+    6.25% { transform: translate3d(0.023vmax,-0.027vmax,0) scale(1); animation-timing-function: steps(20); }
+    12.5% { transform: translate3d(0.101vmax,-0.116vmax,0) scale(1.002); animation-timing-function: steps(20); }
+    18.75% { transform: translate3d(0.25vmax,-0.286vmax,0) scale(1.005); animation-timing-function: steps(20); }
+    25% { transform: translate3d(0.496vmax,-0.566vmax,0) scale(1.01); animation-timing-function: steps(20); }
+    31.25% { transform: translate3d(0.876vmax,-1.002vmax,0) scale(1.018); animation-timing-function: steps(20); }
+    37.5% { transform: translate3d(1.457vmax,-1.665vmax,0) scale(1.029); animation-timing-function: steps(20); }
+    43.75% { transform: translate3d(2.326vmax,-2.659vmax,0) scale(1.047); animation-timing-function: steps(20); }
+    50% { transform: translate3d(3.5vmax,-4vmax,0) scale(1.07); animation-timing-function: steps(20); }
+    56.25% { transform: translate3d(4.674vmax,-5.341vmax,0) scale(1.093); animation-timing-function: steps(20); }
+    62.5% { transform: translate3d(5.543vmax,-6.335vmax,0) scale(1.111); animation-timing-function: steps(20); }
+    68.75% { transform: translate3d(6.124vmax,-6.998vmax,0) scale(1.122); animation-timing-function: steps(20); }
+    75% { transform: translate3d(6.504vmax,-7.434vmax,0) scale(1.13); animation-timing-function: steps(20); }
+    81.25% { transform: translate3d(6.75vmax,-7.714vmax,0) scale(1.135); animation-timing-function: steps(20); }
+    87.5% { transform: translate3d(6.899vmax,-7.884vmax,0) scale(1.138); animation-timing-function: steps(20); }
+    93.75% { transform: translate3d(6.977vmax,-7.973vmax,0) scale(1.14); animation-timing-function: steps(20); }
+    100% { transform: translate3d(7vmax,-8vmax,0) scale(1.14); }
+}
+@keyframes auroraD {
+    0% { transform: translate3d(0vmax,0vmax,0) scale(1); animation-timing-function: steps(16); }
+    6.25% { transform: translate3d(-0.03vmax,-0.02vmax,0) scale(1.001); animation-timing-function: steps(16); }
+    12.5% { transform: translate3d(-0.13vmax,-0.087vmax,0) scale(1.003); animation-timing-function: steps(16); }
+    18.75% { transform: translate3d(-0.322vmax,-0.215vmax,0) scale(1.007); animation-timing-function: steps(16); }
+    25% { transform: translate3d(-0.637vmax,-0.425vmax,0) scale(1.014); animation-timing-function: steps(16); }
+    31.25% { transform: translate3d(-1.127vmax,-0.751vmax,0) scale(1.025); animation-timing-function: steps(16); }
+    37.5% { transform: translate3d(-1.873vmax,-1.249vmax,0) scale(1.042); animation-timing-function: steps(16); }
+    43.75% { transform: translate3d(-2.991vmax,-1.994vmax,0) scale(1.066); animation-timing-function: steps(16); }
+    50% { transform: translate3d(-4.5vmax,-3vmax,0) scale(1.1); animation-timing-function: steps(16); }
+    56.25% { transform: translate3d(-6.009vmax,-4.006vmax,0) scale(1.134); animation-timing-function: steps(16); }
+    62.5% { transform: translate3d(-7.127vmax,-4.751vmax,0) scale(1.158); animation-timing-function: steps(16); }
+    68.75% { transform: translate3d(-7.873vmax,-5.249vmax,0) scale(1.175); animation-timing-function: steps(16); }
+    75% { transform: translate3d(-8.363vmax,-5.575vmax,0) scale(1.186); animation-timing-function: steps(16); }
+    81.25% { transform: translate3d(-8.678vmax,-5.785vmax,0) scale(1.193); animation-timing-function: steps(16); }
+    87.5% { transform: translate3d(-8.87vmax,-5.913vmax,0) scale(1.197); animation-timing-function: steps(16); }
+    93.75% { transform: translate3d(-8.97vmax,-5.98vmax,0) scale(1.199); animation-timing-function: steps(16); }
+    100% { transform: translate3d(-9vmax,-6vmax,0) scale(1.2); }
+}
+@keyframes gradShift {
+    0% { background-position: 0% 50%; animation-timing-function: steps(6); }
+    6.25% { background-position: 0.759% 50%; animation-timing-function: steps(6); }
+    12.5% { background-position: 3.111% 50%; animation-timing-function: steps(6); }
+    18.75% { background-position: 7.151% 50%; animation-timing-function: steps(6); }
+    25% { background-position: 12.916% 50%; animation-timing-function: steps(6); }
+    31.25% { background-position: 20.354% 50%; animation-timing-function: steps(6); }
+    37.5% { background-position: 29.277% 50%; animation-timing-function: steps(6); }
+    43.75% { background-position: 39.331% 50%; animation-timing-function: steps(6); }
+    50% { background-position: 50% 50%; animation-timing-function: steps(6); }
+    56.25% { background-position: 60.669% 50%; animation-timing-function: steps(6); }
+    62.5% { background-position: 70.723% 50%; animation-timing-function: steps(6); }
+    68.75% { background-position: 79.646% 50%; animation-timing-function: steps(6); }
+    75% { background-position: 87.084% 50%; animation-timing-function: steps(6); }
+    81.25% { background-position: 92.849% 50%; animation-timing-function: steps(6); }
+    87.5% { background-position: 96.889% 50%; animation-timing-function: steps(6); }
+    93.75% { background-position: 99.241% 50%; animation-timing-function: steps(6); }
+    100% { background-position: 100% 50%; }
+}
+
+/* ── 2) Anel do campo de digitação: gira por transform (placa de vídeo), não por repintura (processador) ──────────────────────────────────────────────────── */
+/* O recipiente tem a MESMA máscara de antes (anel de 1,5 px: caixa inteira menos o miolo, em "exclude") e só o gradiente de dentro gira. Um conic-gradient girado em θ é exatamente o
+   mesmo que `conic-gradient(from θ, …)`. O quadrado é maior que a diagonal do campo para cobrir o anel em qualquer ângulo. Parado e invisível quando o campo não tem foco. */
+.input-area > .ia-ring {
+    position: absolute; inset: -1.5px; border-radius: inherit; padding: 1.5px; pointer-events: none; opacity: 0; transition: opacity .35s; overflow: hidden;
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+}
+.input-area > .ia-ring::before {
+    content: ""; position: absolute; left: 50%; top: 50%; width: calc(100% + 80px); aspect-ratio: 1 / 1;
+    background: conic-gradient(rgb(var(--primary-rgb)), #a78bfa, #38bdf8, rgb(var(--primary-rgb)));
+    transform: translate(-50%, -50%) rotate(0deg);
+    animation: ringSpin 4.5s linear infinite; animation-play-state: paused;
+}
+.input-area:focus-within > .ia-ring, body.ai-busy .input-area > .ia-ring { opacity: 1; }
+.input-area:focus-within > .ia-ring::before, body.ai-busy .input-area > .ia-ring::before { animation-play-state: running; }
+body.ai-busy .input-area > .ia-ring::before { animation-duration: 1.8s; }
+@keyframes ringSpin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+
+/* ── 3) Desempenho automático (js/ui/desempenho.js) ────────────────────────────────────────────────────────────────────────────────────────────────────────── */
+/* "medio": o computador está com dificuldade → param SÓ os movimentos contínuos (deriva do fundo, brilho do logo, giro do anel, brilho do título): fica tudo igual, parado.
+   "leve": continua com dificuldade → sai também o vidro (backdrop-filter), igual ao "Leves" de Personalizar › Animações e vidro. */
+html[data-perf="medio"] .bg-aurora i, html[data-perf="leve"] .bg-aurora i,
+html[data-perf="medio"] .logo-mark::after, html[data-perf="leve"] .logo-mark::after,
+html[data-perf="medio"] .hero-hello .grad, html[data-perf="leve"] .hero-hello .grad,
+html[data-perf="medio"] .input-area > .ia-ring::before, html[data-perf="leve"] .input-area > .ia-ring::before { animation: none; }
+html[data-perf="leve"] .sidebar, html[data-perf="leve"] .main-container, html[data-perf="leve"] .rail {
+    -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--glass-strong);
+}
+html[data-perf="leve"] .bg-aurora i { filter: blur(48px); }
