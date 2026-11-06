@@ -144,6 +144,9 @@ html[data-efeitos="zero"] .cn-aviso-icms.chama, html[data-efeitos="zero"] .cn-av
 .cn-aviso { margin-top: 10px; font-size: 13px; line-height: 1.45; color: var(--cn-mudo); }
 .cn-aviso:empty { display: none; }
 .cn-aviso.erro { color: #b91c1c; font-weight: 700; }
+.cn-aviso.ok { color: #047857; font-weight: 600; }   /* "Deixei só o nome interno: …" depois de colar o nome inteiro */
+.cn-campos-colar { font-weight: 500; color: var(--cn-mudo); }
+.cn-campos-colar code { padding: 1px 6px; border-radius: 6px; background: #fce7f3; color: #9d174d; font-family: Consolas, 'Courier New', monospace; font-size: 13px; }
 .cn-sugestao {
     display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; max-width: 760px; margin: 0 0 16px; padding: 12px 14px;
     border: 2px solid #fde68a; border-radius: 12px; background: #fffbeb; color: #78350f; font-size: 14px; line-height: 1.45;
