@@ -723,6 +723,8 @@ function _cteNomesOutrosValores(){
     const chk=document.getElementById('wCteOutrosValoresCheck');
     if(!chk||!chk.checked)return [];
     const raw=document.getElementById('wCteOutrosValoresInput')?.value||'';
+    // Colou o termo inteiro (outrosValores[x], dados_outrosValores[x])? Vale só o nome interno (_cnLimparNomes, regra-cte-passos.js). É daqui que saem os chips arrastáveis E a lista que vai para a IA.
+    if(typeof _cnLimparNomes==='function')return _cnLimparNomes(raw,'ct').itens.map(i=>i.nome);
     return raw.split(',').map(s=>s.trim()).filter(Boolean);
 }
 function _cteMontarPaletteHtml(){

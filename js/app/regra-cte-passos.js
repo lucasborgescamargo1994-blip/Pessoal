@@ -85,14 +85,96 @@ const _cnNorm = s => String(s == null ? '' : s).toLowerCase().normalize('NFD').r
 // Só palavras (letras sem acento, números e %) separadas por um espaço — base do filtro das opções
 const _cnPalavras = s => _cnNorm(s).replace(/[^a-z0-9%]+/g, ' ').trim();
 
+// ── nomes internos dos campos personalizados ─────────────────────────────────
 // Nome interno = letras, números e _ (sem espaço, ponto, colchete, aspas...). Aceita vírgula, ponto e vírgula ou quebra de linha como separador.
-function _cnNomesCampos(texto) {
-    const validos = [], invalidos = [];
-    String(texto || '').split(/[,;\n]+/).map(s => s.trim()).filter(Boolean).forEach(n => {
-        if (/^[\p{L}\p{N}_]+$/u.test(n)) { if (!validos.includes(n)) validos.push(n); }
-        else if (!invalidos.includes(n)) invalidos.push(n);
+// A pessoa costuma COLAR o termo inteiro, do jeito que aparece na regra ou na tela do sistema. O que está fora dos colchetes (ou antes do último ponto) é apagado e fica só o nome interno:
+//     outrosValores[freteterceiros]  ·  dados_outrosValores[freteterceiros]  ·  obt("outrosValores[freteterceiros]")  →  freteterceiros      (Ct-e / Contrato de Frete)
+//     tabelaPrecos.diariaMot  ·  tabelaPrecos[diariaMot]                                                               →  diariaMot            (Tabela de Preços)
+// Só mexe no que SERIA recusado como nome: um nome já escrito direito passa intacto (e a limpeza é idempotente: limpar de novo não muda nada).
+// tipo = 'ct' (Ct-e / Contrato de Frete) ou 'tabela' (Tabela de Preços). O termo da OUTRA caixa (tabelaPrecos.x no campo do Ct-e; outrosValores[x] no da Tabela) NÃO é limpo: viraria o
+// nome certo no lugar errado, em silêncio. Fica como foi escrito e volta em `trocados`, para a tela avisar. Sem tipo, não há essa conferência.
+const _CN_RE_NOME = /^[\p{L}\p{N}_]+$/u;
+const _CN_RE_COLCHETE = /([^\s\[\]{}(),;"'`]*)[\[{]\s*["'`]?([^\s\[\]{}(),;"'`]*)["'`]?\s*(?:[\]}]|$)/g;   // prefixo[nome]  (o fecha-colchete pode faltar no fim: ainda está digitando)
+const _CN_RE_CAMINHO = /^[("'`\s]*([\p{L}_][\p{L}\p{N}_]*(?:\.[\p{L}\p{N}_]+)*?)\.([\p{L}\p{N}_]+)[)"'`\s]*$/u;   // prefixo.nome  (começa por letra: "1.5" não é caminho)
+const _CN_RE_ASPAS = /^(["'`])([\p{L}\p{N}_]+)\1$/u;   // "freteterceiros"
+const _CN_DA_OUTRA_CAIXA = { ct: /tabela/i, tabela: /outros?_?valores/i };   // o prefixo que denuncia a caixa errada
+// Limpa UM trecho (já sem espaços nas pontas). Devolve { nomes: [...], trocado }: um trecho com vários colchetes ("outrosValores[a] outrosValores[b]") dá vários nomes.
+// Nada reconhecido => o trecho volta como foi escrito (o aviso de "nome inválido" cuida dele).
+function _cnLimparTrecho(t, tipo) {
+    if (_CN_RE_NOME.test(t)) return { nomes: [t], trocado: false };
+    const achados = [];
+    if (/[\[{]/.test(t)) t.replace(_CN_RE_COLCHETE, (m, prefixo, nome) => { if (nome) achados.push({ prefixo, nome }); return m; });   // (sem colchete não há o que procurar: evita varrer um texto enorme à toa)
+    if (!achados.length) { const c = _CN_RE_CAMINHO.exec(t); if (c) achados.push({ prefixo: c[1], nome: c[2] }); }
+    if (!achados.length) { const q = _CN_RE_ASPAS.exec(t); if (q) achados.push({ prefixo: '', nome: q[2] }); }
+    if (!achados.length) return { nomes: [t], trocado: false };
+    const outra = _CN_DA_OUTRA_CAIXA[tipo];
+    if (outra && achados.some(a => outra.test(a.prefixo))) return { nomes: [t], trocado: true };
+    return { nomes: achados.map(a => a.nome), trocado: false };
+}
+// Limpa um texto inteiro (vários nomes, separados por vírgula, ponto e vírgula ou quebra de linha), mantendo os separadores e os espaços que a pessoa escreveu.
+// Devolve { itens: [{ nome, trocado }], texto: o texto já limpo, mudou, trocas: [{ de, para }] (o que foi limpo, para o aviso) }.
+function _cnLimparNomes(texto, tipo) {
+    const original = String(texto == null ? '' : texto), itens = [], trocas = [];
+    const limpo = original.replace(/[^,;\n]+/g, trecho => trecho.replace(/\S(?:[\s\S]*\S)?/, nucleo => {
+        const r = _cnLimparTrecho(nucleo, tipo);
+        r.nomes.forEach(n => itens.push({ nome: n, trocado: r.trocado }));
+        if (r.trocado || (r.nomes.length === 1 && r.nomes[0] === nucleo)) return nucleo;
+        const novo = r.nomes.join(', ');
+        trocas.push({ de: nucleo, para: novo });
+        return novo;
+    }));
+    return { itens, texto: limpo, mudou: limpo !== original, trocas };
+}
+function _cnNomesCampos(texto, tipo) {
+    const validos = [], invalidos = [], trocados = [];
+    _cnLimparNomes(texto, tipo).itens.forEach(({ nome, trocado }) => {
+        if (trocado) { if (!trocados.includes(nome)) trocados.push(nome); }
+        else if (_CN_RE_NOME.test(nome)) { if (!validos.includes(nome)) validos.push(nome); }
+        else if (!invalidos.includes(nome)) invalidos.push(nome);
     });
-    return { validos, invalidos };
+    return { validos, invalidos, trocados };
+}
+// Escreve `texto` no lugar da seleção do campo. Primeiro pelo caminho do navegador (mantém o "desfazer" com Ctrl+Z e já dispara o evento input); se ele recusar, na mão.
+function _cnInserirNoCampo(el, texto) {
+    el.focus();
+    let ok = false;
+    try { ok = document.execCommand('insertText', false, texto); } catch (e) { ok = false; }
+    if (ok) return;
+    const ini = el.selectionStart != null ? el.selectionStart : el.value.length, fim = el.selectionEnd != null ? el.selectionEnd : ini;
+    el.value = el.value.slice(0, ini) + texto + el.value.slice(fim);
+    try { el.setSelectionRange(ini + texto.length, ini + texto.length); } catch (e) { /* campo sem seleção */ }
+    el.dispatchEvent(new Event('input', { bubbles: true }));   // a tela refaz chips e montagem a cada input
+}
+// Recado discreto embaixo do campo (a caixa .cn-aviso do mesmo cartão) dizendo o que foi limpo. Só aparece se não houver outro aviso ali (um erro vale mais).
+function _cnAvisoLimpeza(el, trocas) {
+    const cartao = el && el.closest ? el.closest('.cn-campos-box') : null, av = cartao ? cartao.querySelector('.cn-aviso') : null;
+    if (!av || av.textContent || !trocas.length) return;
+    const corta = s => s.length > 48 ? s.slice(0, 47) + '…' : s;
+    av.className = 'cn-aviso ok';
+    av.textContent = '✔ Deixei só o nome interno: ' + trocas.slice(0, 3).map(t => corta(t.de) + ' → ' + t.para).join(' · ') + (trocas.length > 3 ? ' (e mais ' + (trocas.length - 3) + ')' : '');
+}
+// COLAR no campo de nomes (onpaste): o que vier inteiro entra só como nome interno. Se não há nada a limpar, não interfere: o navegador cola do jeito normal.
+// O campo diz qual é pelo atributo data-nomes="ct" | "tabela".
+function _cnColarNomes(ev) {
+    let r, el;
+    try {
+        el = ev.target;
+        const cd = ev.clipboardData || window.clipboardData, colado = cd ? cd.getData('text') : '';
+        if (!colado || colado.length > 4000) return;   // vazio, ou grande demais para ser uma lista de nomes (uma regra inteira, por exemplo): cola do jeito normal
+        r = _cnLimparNomes(colado, el.dataset && el.dataset.nomes);
+    } catch (e) { return; }   // qualquer falha: cola do jeito normal
+    if (!r.mudou) return;
+    ev.preventDefault();
+    _cnInserirNoCampo(el, r.texto);
+    _cnAvisoLimpeza(el, r.trocas);
+}
+// Ao sair do campo (onchange): limpa o que foi digitado ou arrastado para dentro sem passar pelo "colar".
+function _cnLimparCampoNomes(el) {
+    const r = _cnLimparNomes(el.value, el.dataset && el.dataset.nomes);
+    if (!r.mudou) return;
+    el.value = r.texto;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    _cnAvisoLimpeza(el, r.trocas);
 }
 function _cnTodasOpcoes() { return _cteGruposOpcoes().flatMap(g => g.itens); }
 // Opção "Somar X no Y" marcada que não entrou em lugar nenhum porque a regra montada não calcula o campo Y (ver _aplicarSomaEmCampo): o termo não está em nenhuma definição dele.

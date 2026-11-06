@@ -159,20 +159,20 @@ function _cbHtmlCampos() {
         </div>
         <div class="cn-sugestao" id="wCteBetaSugestao" hidden></div>
         <div class="cn-campos-grupo" id="wCteBetaCamposBox" hidden>
-          <p class="cn-campos-instr">Se sim, preencha com o nome interno dos campos abaixo, separados por vírgula. Preencha só o que for usar.</p>
+          <p class="cn-campos-instr">Se sim, preencha com o nome interno dos campos abaixo, separados por vírgula. Preencha só o que for usar. <span class="cn-campos-colar">Pode colar o nome inteiro (ex.: <code>outrosValores[freteterceiros]</code> ou <code>tabelaPrecos.diariaMot</code>): o sistema deixa só o nome interno.</span></p>
           <div class="cn-aviso" id="wCteBetaCamposGeral" role="status"></div>
           <div class="cn-campos-duplo">
             <div class="cn-cartao cn-campos-box">
               <label class="cn-cartao-titulo" for="wCteBetaCamposInput">🧾 Ct-e / Contrato de Frete</label>
               <div class="cn-campos-origem">Criados em Transporte &gt; Configurações &gt; Tipos Valores Outros</div>
-              <textarea id="wCteBetaCamposInput" class="cn-input" rows="3" placeholder="Ex.: advalorem, taxa1, taxa2" autocomplete="off" spellcheck="false" oninput="_cbCamposMudou()"></textarea>
+              <textarea id="wCteBetaCamposInput" class="cn-input" data-nomes="ct" rows="3" placeholder="Ex.: advalorem, taxa1, taxa2" autocomplete="off" spellcheck="false" oninput="_cbCamposMudou()" onpaste="_cnColarNomes(event)" onchange="_cnLimparCampoNomes(this)"></textarea>
               <div class="cn-aviso" id="wCteBetaCamposAviso" role="status"></div>
               <div class="cn-chips" id="wCteBetaCamposChips"></div>
             </div>
             <div class="cn-cartao cn-campos-box cn-tabela">
               <label class="cn-cartao-titulo" for="wCteBetaCamposTabelaInput">📋 Tabela de Preços</label>
               <div class="cn-campos-origem">Criados em Transporte &gt; Tabelas de Preços &gt; Tabela de preços Valores Outros</div>
-              <textarea id="wCteBetaCamposTabelaInput" class="cn-input cn-tabela" rows="3" placeholder="Ex.: advalorem, taxaextra" autocomplete="off" spellcheck="false" oninput="_cbCamposMudou()"></textarea>
+              <textarea id="wCteBetaCamposTabelaInput" class="cn-input cn-tabela" data-nomes="tabela" rows="3" placeholder="Ex.: advalorem, taxaextra" autocomplete="off" spellcheck="false" oninput="_cbCamposMudou()" onpaste="_cnColarNomes(event)" onchange="_cnLimparCampoNomes(this)"></textarea>
               <div class="cn-aviso" id="wCteBetaCamposTabelaAviso" role="status"></div>
               <div class="cn-chips" id="wCteBetaCamposTabelaChips"></div>
             </div>
@@ -996,20 +996,24 @@ function _cbCamposUi() {
     const sim = _cbRadio() === 'sim';
     const box = _cnEl('wCteBetaCamposBox'); if (box) box.hidden = !sim;
     const geral = _cnEl('wCteBetaCamposGeral'); if (geral) { geral.className = 'cn-aviso'; geral.textContent = ''; }
-    const campo = (idInput, idChips, idAviso, classeChip) => {
+    // tipo 'ct' / 'tabela': o termo colado inteiro (outrosValores[x], tabelaPrecos.x...) vira só o nome interno (_cnNomesCampos, regra-cte-passos.js); o termo da OUTRA caixa não é limpo e ganha um aviso
+    const campo = (idInput, idChips, idAviso, classeChip, tipo) => {
         const inp = _cnEl(idInput);
-        const { validos, invalidos } = _cnNomesCampos(inp ? inp.value : '');
+        const { validos, invalidos, trocados } = _cnNomesCampos(inp ? inp.value : '', tipo);
         const chips = _cnEl(idChips);
         if (chips) chips.innerHTML = sim ? validos.map(n => `<span class="${classeChip}">${esc(n)}</span>`).join('') : '';
         const av = _cnEl(idAviso);
         if (av) {
-            if (sim && invalidos.length) { av.className = 'cn-aviso erro'; av.textContent = '⚠️ Estes nomes têm espaço ou símbolo e foram ignorados: ' + invalidos.join(', ') + '. O nome interno é escrito junto, sem espaços (ex.: valorExtra).'; }
+            const msgs = [];
+            if (sim && trocados.length) msgs.push('⚠️ Estes são ' + (tipo === 'ct' ? 'da Tabela de Preços' : 'do Ct-e / Contrato de Frete') + ' e foram ignorados aqui (cole no campo ' + (tipo === 'ct' ? '“Tabela de Preços”' : '“Ct-e / Contrato de Frete”') + ', ao lado): ' + trocados.join(', ') + '.');
+            if (sim && invalidos.length) msgs.push('⚠️ Estes nomes têm espaço ou símbolo e foram ignorados: ' + invalidos.join(', ') + '. O nome interno é escrito junto, sem espaços (ex.: valorExtra).');
+            if (msgs.length) { av.className = 'cn-aviso erro'; av.textContent = msgs.join(' '); }
             else { av.className = 'cn-aviso'; av.textContent = ''; }
         }
         return { validos, invalidos };
     };
-    const ct = campo('wCteBetaCamposInput', 'wCteBetaCamposChips', 'wCteBetaCamposAviso', 'cn-chip-campo');
-    const tab = campo('wCteBetaCamposTabelaInput', 'wCteBetaCamposTabelaChips', 'wCteBetaCamposTabelaAviso', 'cn-chip-campo cn-tabela');
+    const ct = campo('wCteBetaCamposInput', 'wCteBetaCamposChips', 'wCteBetaCamposAviso', 'cn-chip-campo', 'ct');
+    const tab = campo('wCteBetaCamposTabelaInput', 'wCteBetaCamposTabelaChips', 'wCteBetaCamposTabelaAviso', 'cn-chip-campo cn-tabela', 'tabela');
     return { sim, validos: ct.validos, invalidos: ct.invalidos, tabela: tab.validos, tabelaInvalidos: tab.invalidos };
 }
 // Faixa da montagem com os campos personalizados da Tabela de Preços (chips amarelos, arrastáveis; entram na regra como tabelaPrecos.nome, SEM obt).
@@ -1067,7 +1071,7 @@ function _cbSugeridos() {
     const achados = [], re = /outrosValores\[([^\]\s"']+)\]/g;
     let m;
     while ((m = re.exec(txt))) if (/^[\p{L}\p{N}_]+$/u.test(m[1]) && !achados.includes(m[1])) achados.push(m[1]);
-    const ja = _cnNomesCampos((_cnEl('wCteBetaCamposInput') || {}).value).validos;
+    const ja = _cnNomesCampos((_cnEl('wCteBetaCamposInput') || {}).value, 'ct').validos;
     return achados.filter(n => !ja.includes(n));
 }
 function _cbAtualizarSugestao() {
@@ -1079,7 +1083,7 @@ function _cbAtualizarSugestao() {
 }
 function _cbUsarSugestao() {
     const inp = _cnEl('wCteBetaCamposInput'); if (!inp) return;
-    const todos = _cnNomesCampos(inp.value).validos.concat(_cbSugeridos());
+    const todos = _cnNomesCampos(inp.value, 'ct').validos.concat(_cbSugeridos());
     inp.value = todos.join(', ');
     const sim = document.querySelector('#wizardRegraBetaCard input[name="wCteBetaUsaCampos"][value="sim"]'); if (sim) sim.checked = true;
     _cbCamposMudou();

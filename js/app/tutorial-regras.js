@@ -233,7 +233,7 @@ function _cteHtmlAreaMontagem(){
           <input type="checkbox" id="wCteOutrosValoresCheck" onchange="_cteToggleOutrosValores(this.checked)"> Utiliza Valores outros (campos personalizados)?
         </label>
         <div id="wCteOutrosValoresWrap" style="display:none;margin-top:8px;">
-          <input type="text" id="wCteOutrosValoresInput" oninput="_cteRenderPalette()" placeholder="coloque aqui o nome interno dos campos separados por vírgula" style="width:100%;padding:7px 10px;border:1.5px solid #f9a8d4;border-radius:6px;font-size:12px;font-family:monospace;background:white;color:#9d174d;">
+          <input type="text" id="wCteOutrosValoresInput" data-nomes="ct" oninput="_cteRenderPalette()" onpaste="_cnColarNomes(event)" onchange="_cnLimparCampoNomes(this)" placeholder="coloque aqui o nome interno dos campos separados por vírgula" style="width:100%;padding:7px 10px;border:1.5px solid #f9a8d4;border-radius:6px;font-size:12px;font-family:monospace;background:white;color:#9d174d;">
           <div id="wCteOutrosValoresChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;max-height:70px;overflow-y:auto;"></div>
         </div>
       </div>
