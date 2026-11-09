@@ -9,7 +9,16 @@
       no título, sobre degradês de centenas de pixels), mas o vidro deixa de ser refeito a cada quadro. Os keyframes foram gerados com a curva original (ease-in-out) em 16 trechos.
    2) Anel do campo de digitação: o mesmo gradiente, no mesmo lugar e com a mesma máscara — agora GIRADO por transform (feito pela placa de vídeo, sem repintar) em vez de ter o ângulo
       animado (repintura a cada quadro). O elemento <i class="ia-ring"> fica dentro do .input-area (index.html).
-   3) Desempenho automático (js/ui/desempenho.js): se o computador não dá conta, o sistema primeiro para só os movimentos contínuos ("medio") e, se precisar, tira também o vidro ("leve"). */
+   3) Desempenho automático (js/ui/desempenho.js): se o computador não dá conta, o sistema primeiro para só os movimentos contínuos ("medio") e, se precisar, tira também o vidro ("leve").
+
+   v28.38 — a rodada que mediu NO COMPUTADOR (Edge + placa Intel HD 630, janela 1536×730 a 125 %, animações ligadas): 50 quadros/s parado, 18 ao rolar, ~90 ms por tecla (a placa de vídeo é o gargalo: ~19 ms por quadro).
+   Causas, em ordem de peso, e o que foi feito sem mudar o que se vê:
+   0) Manchas do fundo: `filter: blur(72px)` em 4 elementos animados = desfoque refeito pela placa a CADA quadro → viraram imagens já desfocadas (js/core/aurora.js; diferença para o fundo antigo ≤ 4/255). Mesma regra
+      aqui embaixo: `.bg-aurora[data-baked]`.
+   0b) Ruído do fundo com `mix-blend-mode: multiply` (forçava uma superfície inteira de mistura): a mancha é PRETA com transparência, e multiplicar preto = pintar preto normal → `normal` dá o MESMO resultado.
+       No fundo escuro era `screen` com preto = não faz nada → some (display:none).
+   4) Anel do campo e pulsos de box-shadow (botão "Ferramentas", pontinhos de aviso, botão ↓): quadro a quadro na thread principal (repintar + reorganizar camadas + rasterizar na placa, 60×/s o tempo todo) →
+      agora em degraus de 20 quadros/s (pulsos) e 30 (anel), com a MESMA curva (ease-out gerada em degraus; erro ≤ 0,6 px de borda e ≤ 0,03 de transparência). */
 
 /* ── 1) Deriva do fundo e brilho do título, em degraus ─────────────────────────────────────────────────────────────────────────────────────────────────────── */
 @keyframes auroraA {
@@ -119,11 +128,11 @@
     content: ""; position: absolute; left: 50%; top: 50%; width: calc(100% + 80px); aspect-ratio: 1 / 1;
     background: conic-gradient(rgb(var(--primary-rgb)), #a78bfa, #38bdf8, rgb(var(--primary-rgb)));
     transform: translate(-50%, -50%) rotate(0deg);
-    animation: ringSpin 4.5s linear infinite; animation-play-state: paused;
+    animation: ringSpin 4.5s steps(135) infinite; animation-play-state: paused;   /* 135 degraus em 4,5 s = 30 quadros/s (2,7° por degrau: não se vê) */
 }
 .input-area:focus-within > .ia-ring, body.ai-busy .input-area > .ia-ring { opacity: 1; }
 .input-area:focus-within > .ia-ring::before, body.ai-busy .input-area > .ia-ring::before { animation-play-state: running; }
-body.ai-busy .input-area > .ia-ring::before { animation-duration: 1.8s; }
+body.ai-busy .input-area > .ia-ring::before { animation-duration: 1.8s; animation-timing-function: steps(54); }   /* IA respondendo: giro mais rápido, também a 30 quadros/s */
 @keyframes ringSpin { to { transform: translate(-50%, -50%) rotate(360deg); } }
 
 /* ── 3) Desempenho automático (js/ui/desempenho.js) ────────────────────────────────────────────────────────────────────────────────────────────────────────── */
@@ -132,8 +141,170 @@ body.ai-busy .input-area > .ia-ring::before { animation-duration: 1.8s; }
 html[data-perf="medio"] .bg-aurora i, html[data-perf="leve"] .bg-aurora i,
 html[data-perf="medio"] .logo-mark::after, html[data-perf="leve"] .logo-mark::after,
 html[data-perf="medio"] .hero-hello .grad, html[data-perf="leve"] .hero-hello .grad,
-html[data-perf="medio"] .input-area > .ia-ring::before, html[data-perf="leve"] .input-area > .ia-ring::before { animation: none; }
+html[data-perf="medio"] .input-area > .ia-ring::before, html[data-perf="leve"] .input-area > .ia-ring::before,
+html[data-perf="medio"] .tb-more.is-chamando, html[data-perf="leve"] .tb-more.is-chamando,
+html[data-perf="medio"] .tab.has-activity .tab-dot, html[data-perf="leve"] .tab.has-activity .tab-dot,
+html[data-perf="medio"] .status-servico-badge.alerta::before, html[data-perf="leve"] .status-servico-badge.alerta::before { animation: none; }
 html[data-perf="leve"] .sidebar, html[data-perf="leve"] .main-container, html[data-perf="leve"] .rail {
     -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--glass-strong);
 }
-html[data-perf="leve"] .bg-aurora i { filter: blur(48px); }
+html[data-perf="leve"] .bg-aurora i { filter: blur(48px); }   /* (com o fundo "assado" abaixo o `filter: none !important` vence: já vem desfocado) */
+
+/* ── 4) Fundo "assado" (js/core/aurora.js) e ruído com mistura normal ──────────────────────────────────────────────────────────────────────────────────── */
+/* js/core/aurora.js põe `data-baked` no .bg-aurora quando as 4 imagens já desfocadas estão prontas (variáveis --au-1…--au-4 e a margem --au-p). Aí cada mancha passa a ser um elemento MAIOR (a margem guarda a
+   cauda do desfoque), sem `filter`, só com a imagem de fundo; o centro fica no mesmo ponto e a animação (transform) continua girando/escalando em torno dele, como antes. Sem isso vale o CSS de theme-2026.css. */
+.bg-aurora[data-baked] i { filter: none !important; border-radius: 0; background-repeat: no-repeat; background-size: 100% 100%; background-position: 0 0; }
+.bg-aurora[data-baked] i:nth-child(1) { left: calc(-15vmax - var(--au-p)); top: calc(-20vmax - var(--au-p)); width: calc(54vmax + 2 * var(--au-p)); height: calc(54vmax + 2 * var(--au-p)); background-image: var(--au-1); }
+.bg-aurora[data-baked] i:nth-child(2) { right: calc(-12vmax - var(--au-p)); top: calc(-12vmax - var(--au-p)); width: calc(46vmax + 2 * var(--au-p)); height: calc(46vmax + 2 * var(--au-p)); background-image: var(--au-2); }
+.bg-aurora[data-baked] i:nth-child(3) { left: calc(16vmax - var(--au-p)); bottom: calc(-28vmax - var(--au-p)); width: calc(52vmax + 2 * var(--au-p)); height: calc(52vmax + 2 * var(--au-p)); background-image: var(--au-3); }
+.bg-aurora[data-baked] i:nth-child(4) { right: calc(6vmax - var(--au-p)); bottom: calc(-14vmax - var(--au-p)); width: calc(34vmax + 2 * var(--au-p)); height: calc(34vmax + 2 * var(--au-p)); background-image: var(--au-4); }
+/* O ruído do fundo é PRETO com transparência (feColorMatrix zera R, G e B): multiplicar preto = pintar preto normalmente, então `normal` dá o mesmo resultado sem a superfície de mistura (que custava uma
+   passada inteira da placa de vídeo por quadro). No fundo escuro era `screen` com preto, que não muda nada: some. */
+.bg-aurora::after { mix-blend-mode: normal; }
+html[data-bg="escuro"] .bg-aurora::after { display: none; }
+
+/* ── 5) Pulsos de box-shadow em degraus (20 quadros/s), com a mesma curva ease-out do original ─────────────────────────────────────────────────────────────── */
+/* Animar box-shadow é repintar a cada quadro na thread principal (e rasterizar na placa): o botão "Ferramentas" (enquanto a dica está na tela), o pontinho de aviso das abas/do serviço e o botão ↓ faziam isso a
+   60 quadros/s o tempo todo. Gerados por script (gerar-pulsos): cada degrau segura o valor que a curva contínua tinha no início dele; erro máximo contra a curva: ≤ 0,6 px de borda e ≤ 0,03 de transparência. */
+@keyframes maisPulso {
+    0% { box-shadow: 0 0 0 0px rgb(var(--primary-rgb) / 0.5); animation-timing-function: step-end; }
+    2.632% { box-shadow: 0 0 0 0.571px rgb(var(--primary-rgb) / 0.478); animation-timing-function: step-end; }
+    5.263% { box-shadow: 0 0 0 1.124px rgb(var(--primary-rgb) / 0.457); animation-timing-function: step-end; }
+    7.895% { box-shadow: 0 0 0 1.664px rgb(var(--primary-rgb) / 0.436); animation-timing-function: step-end; }
+    10.526% { box-shadow: 0 0 0 2.192px rgb(var(--primary-rgb) / 0.416); animation-timing-function: step-end; }
+    13.158% { box-shadow: 0 0 0 2.71px rgb(var(--primary-rgb) / 0.396); animation-timing-function: step-end; }
+    15.789% { box-shadow: 0 0 0 3.217px rgb(var(--primary-rgb) / 0.376); animation-timing-function: step-end; }
+    18.421% { box-shadow: 0 0 0 3.715px rgb(var(--primary-rgb) / 0.357); animation-timing-function: step-end; }
+    21.053% { box-shadow: 0 0 0 4.203px rgb(var(--primary-rgb) / 0.338); animation-timing-function: step-end; }
+    23.684% { box-shadow: 0 0 0 4.681px rgb(var(--primary-rgb) / 0.32); animation-timing-function: step-end; }
+    26.316% { box-shadow: 0 0 0 5.149px rgb(var(--primary-rgb) / 0.302); animation-timing-function: step-end; }
+    28.947% { box-shadow: 0 0 0 5.607px rgb(var(--primary-rgb) / 0.284); animation-timing-function: step-end; }
+    31.579% { box-shadow: 0 0 0 6.055px rgb(var(--primary-rgb) / 0.267); animation-timing-function: step-end; }
+    34.211% { box-shadow: 0 0 0 6.494px rgb(var(--primary-rgb) / 0.25); animation-timing-function: step-end; }
+    36.842% { box-shadow: 0 0 0 6.922px rgb(var(--primary-rgb) / 0.234); animation-timing-function: step-end; }
+    39.474% { box-shadow: 0 0 0 7.339px rgb(var(--primary-rgb) / 0.218); animation-timing-function: step-end; }
+    42.105% { box-shadow: 0 0 0 7.746px rgb(var(--primary-rgb) / 0.202); animation-timing-function: step-end; }
+    44.737% { box-shadow: 0 0 0 8.142px rgb(var(--primary-rgb) / 0.187); animation-timing-function: step-end; }
+    47.368% { box-shadow: 0 0 0 8.527px rgb(var(--primary-rgb) / 0.172); animation-timing-function: step-end; }
+    50% { box-shadow: 0 0 0 8.9px rgb(var(--primary-rgb) / 0.158); animation-timing-function: step-end; }
+    52.632% { box-shadow: 0 0 0 9.262px rgb(var(--primary-rgb) / 0.144); animation-timing-function: step-end; }
+    55.263% { box-shadow: 0 0 0 9.611px rgb(var(--primary-rgb) / 0.13); animation-timing-function: step-end; }
+    57.895% { box-shadow: 0 0 0 9.947px rgb(var(--primary-rgb) / 0.117); animation-timing-function: step-end; }
+    60.526% { box-shadow: 0 0 0 10.27px rgb(var(--primary-rgb) / 0.105); animation-timing-function: step-end; }
+    63.158% { box-shadow: 0 0 0 10.58px rgb(var(--primary-rgb) / 0.093); animation-timing-function: step-end; }
+    65.789% { box-shadow: 0 0 0 10.875px rgb(var(--primary-rgb) / 0.082); animation-timing-function: step-end; }
+    68.421% { box-shadow: 0 0 0 11.155px rgb(var(--primary-rgb) / 0.071); animation-timing-function: step-end; }
+    71.053% { box-shadow: 0 0 0 11.419px rgb(var(--primary-rgb) / 0.061); animation-timing-function: step-end; }
+    73.684% { box-shadow: 0 0 0 11.667px rgb(var(--primary-rgb) / 0.051); animation-timing-function: step-end; }
+    76.316% { box-shadow: 0 0 0 11.898px rgb(var(--primary-rgb) / 0.042); animation-timing-function: step-end; }
+    78.947% { box-shadow: 0 0 0 12.111px rgb(var(--primary-rgb) / 0.034); animation-timing-function: step-end; }
+    81.579% { box-shadow: 0 0 0 12.304px rgb(var(--primary-rgb) / 0.027); animation-timing-function: step-end; }
+    84.211% { box-shadow: 0 0 0 12.477px rgb(var(--primary-rgb) / 0.02); animation-timing-function: step-end; }
+    86.842% { box-shadow: 0 0 0 12.628px rgb(var(--primary-rgb) / 0.014); animation-timing-function: step-end; }
+    89.474% { box-shadow: 0 0 0 12.756px rgb(var(--primary-rgb) / 0.009); animation-timing-function: step-end; }
+    92.105% { box-shadow: 0 0 0 12.859px rgb(var(--primary-rgb) / 0.005); animation-timing-function: step-end; }
+    94.737% { box-shadow: 0 0 0 12.936px rgb(var(--primary-rgb) / 0.002); animation-timing-function: step-end; }
+    97.368% { box-shadow: 0 0 0 12.983px rgb(var(--primary-rgb) / 0.001); animation-timing-function: step-end; }
+    100% { box-shadow: 0 0 0 13px rgb(var(--primary-rgb) / 0); }
+}
+@keyframes dotPulse {
+    0% { box-shadow: 0 0 0 0px rgba(245,158,11,0.55); animation-timing-function: step-end; }
+    3.125% { box-shadow: 0 0 0 0.468px rgba(245,158,11,0.521); animation-timing-function: step-end; }
+    6.25% { box-shadow: 0 0 0 0.919px rgba(245,158,11,0.494); animation-timing-function: step-end; }
+    9.375% { box-shadow: 0 0 0 1.359px rgba(245,158,11,0.467); animation-timing-function: step-end; }
+    12.5% { box-shadow: 0 0 0 1.787px rgba(245,158,11,0.441); animation-timing-function: step-end; }
+    15.625% { box-shadow: 0 0 0 2.206px rgba(245,158,11,0.415); animation-timing-function: step-end; }
+    18.75% { box-shadow: 0 0 0 2.614px rgba(245,158,11,0.39); animation-timing-function: step-end; }
+    21.875% { box-shadow: 0 0 0 3.014px rgba(245,158,11,0.366); animation-timing-function: step-end; }
+    25% { box-shadow: 0 0 0 3.403px rgba(245,158,11,0.342); animation-timing-function: step-end; }
+    28.125% { box-shadow: 0 0 0 3.783px rgba(245,158,11,0.319); animation-timing-function: step-end; }
+    31.25% { box-shadow: 0 0 0 4.154px rgba(245,158,11,0.296); animation-timing-function: step-end; }
+    34.375% { box-shadow: 0 0 0 4.514px rgba(245,158,11,0.274); animation-timing-function: step-end; }
+    37.5% { box-shadow: 0 0 0 4.865px rgba(245,158,11,0.253); animation-timing-function: step-end; }
+    40.625% { box-shadow: 0 0 0 5.205px rgba(245,158,11,0.232); animation-timing-function: step-end; }
+    43.75% { box-shadow: 0 0 0 5.535px rgba(245,158,11,0.212); animation-timing-function: step-end; }
+    46.875% { box-shadow: 0 0 0 5.854px rgba(245,158,11,0.192); animation-timing-function: step-end; }
+    50% { box-shadow: 0 0 0 6.162px rgba(245,158,11,0.173); animation-timing-function: step-end; }
+    53.125% { box-shadow: 0 0 0 6.458px rgba(245,158,11,0.155); animation-timing-function: step-end; }
+    56.25% { box-shadow: 0 0 0 6.742px rgba(245,158,11,0.138); animation-timing-function: step-end; }
+    59.375% { box-shadow: 0 0 0 7.014px rgba(245,158,11,0.121); animation-timing-function: step-end; }
+    62.5% { box-shadow: 0 0 0 7.272px rgba(245,158,11,0.106); animation-timing-function: step-end; }
+    65.625% { box-shadow: 0 0 0 7.516px rgba(245,158,11,0.091); animation-timing-function: step-end; }
+    68.75% { box-shadow: 0 0 0 7.746px rgba(245,158,11,0.077); animation-timing-function: step-end; }
+    71.875% { box-shadow: 0 0 0 7.961px rgba(245,158,11,0.064); animation-timing-function: step-end; }
+    75% { box-shadow: 0 0 0 8.159px rgba(245,158,11,0.051); animation-timing-function: step-end; }
+    78.125% { box-shadow: 0 0 0 8.34px rgba(245,158,11,0.04); animation-timing-function: step-end; }
+    81.25% { box-shadow: 0 0 0 8.502px rgba(245,158,11,0.03); animation-timing-function: step-end; }
+    84.375% { box-shadow: 0 0 0 8.645px rgba(245,158,11,0.022); animation-timing-function: step-end; }
+    87.5% { box-shadow: 0 0 0 8.766px rgba(245,158,11,0.014); animation-timing-function: step-end; }
+    90.625% { box-shadow: 0 0 0 8.865px rgba(245,158,11,0.008); animation-timing-function: step-end; }
+    93.75% { box-shadow: 0 0 0 8.938px rgba(245,158,11,0.004); animation-timing-function: step-end; }
+    96.875% { box-shadow: 0 0 0 8.984px rgba(245,158,11,0.001); animation-timing-function: step-end; }
+    100% { box-shadow: 0 0 0 9px rgba(245,158,11,0); }
+}
+@keyframes dotPulse2 {
+    0% { box-shadow: 0 0 0 0px rgb(var(--primary-rgb) / 0.55); animation-timing-function: step-end; }
+    3.125% { box-shadow: 0 0 0 0.416px rgb(var(--primary-rgb) / 0.521); animation-timing-function: step-end; }
+    6.25% { box-shadow: 0 0 0 0.817px rgb(var(--primary-rgb) / 0.494); animation-timing-function: step-end; }
+    9.375% { box-shadow: 0 0 0 1.208px rgb(var(--primary-rgb) / 0.467); animation-timing-function: step-end; }
+    12.5% { box-shadow: 0 0 0 1.589px rgb(var(--primary-rgb) / 0.441); animation-timing-function: step-end; }
+    15.625% { box-shadow: 0 0 0 1.961px rgb(var(--primary-rgb) / 0.415); animation-timing-function: step-end; }
+    18.75% { box-shadow: 0 0 0 2.324px rgb(var(--primary-rgb) / 0.39); animation-timing-function: step-end; }
+    21.875% { box-shadow: 0 0 0 2.679px rgb(var(--primary-rgb) / 0.366); animation-timing-function: step-end; }
+    25% { box-shadow: 0 0 0 3.025px rgb(var(--primary-rgb) / 0.342); animation-timing-function: step-end; }
+    28.125% { box-shadow: 0 0 0 3.363px rgb(var(--primary-rgb) / 0.319); animation-timing-function: step-end; }
+    31.25% { box-shadow: 0 0 0 3.692px rgb(var(--primary-rgb) / 0.296); animation-timing-function: step-end; }
+    34.375% { box-shadow: 0 0 0 4.013px rgb(var(--primary-rgb) / 0.274); animation-timing-function: step-end; }
+    37.5% { box-shadow: 0 0 0 4.324px rgb(var(--primary-rgb) / 0.253); animation-timing-function: step-end; }
+    40.625% { box-shadow: 0 0 0 4.627px rgb(var(--primary-rgb) / 0.232); animation-timing-function: step-end; }
+    43.75% { box-shadow: 0 0 0 4.92px rgb(var(--primary-rgb) / 0.212); animation-timing-function: step-end; }
+    46.875% { box-shadow: 0 0 0 5.204px rgb(var(--primary-rgb) / 0.192); animation-timing-function: step-end; }
+    50% { box-shadow: 0 0 0 5.477px rgb(var(--primary-rgb) / 0.173); animation-timing-function: step-end; }
+    53.125% { box-shadow: 0 0 0 5.74px rgb(var(--primary-rgb) / 0.155); animation-timing-function: step-end; }
+    56.25% { box-shadow: 0 0 0 5.993px rgb(var(--primary-rgb) / 0.138); animation-timing-function: step-end; }
+    59.375% { box-shadow: 0 0 0 6.234px rgb(var(--primary-rgb) / 0.121); animation-timing-function: step-end; }
+    62.5% { box-shadow: 0 0 0 6.464px rgb(var(--primary-rgb) / 0.106); animation-timing-function: step-end; }
+    65.625% { box-shadow: 0 0 0 6.681px rgb(var(--primary-rgb) / 0.091); animation-timing-function: step-end; }
+    68.75% { box-shadow: 0 0 0 6.885px rgb(var(--primary-rgb) / 0.077); animation-timing-function: step-end; }
+    71.875% { box-shadow: 0 0 0 7.076px rgb(var(--primary-rgb) / 0.064); animation-timing-function: step-end; }
+    75% { box-shadow: 0 0 0 7.252px rgb(var(--primary-rgb) / 0.051); animation-timing-function: step-end; }
+    78.125% { box-shadow: 0 0 0 7.413px rgb(var(--primary-rgb) / 0.04); animation-timing-function: step-end; }
+    81.25% { box-shadow: 0 0 0 7.557px rgb(var(--primary-rgb) / 0.03); animation-timing-function: step-end; }
+    84.375% { box-shadow: 0 0 0 7.684px rgb(var(--primary-rgb) / 0.022); animation-timing-function: step-end; }
+    87.5% { box-shadow: 0 0 0 7.792px rgb(var(--primary-rgb) / 0.014); animation-timing-function: step-end; }
+    90.625% { box-shadow: 0 0 0 7.88px rgb(var(--primary-rgb) / 0.008); animation-timing-function: step-end; }
+    93.75% { box-shadow: 0 0 0 7.945px rgb(var(--primary-rgb) / 0.004); animation-timing-function: step-end; }
+    96.875% { box-shadow: 0 0 0 7.986px rgb(var(--primary-rgb) / 0.001); animation-timing-function: step-end; }
+    100% { box-shadow: 0 0 0 8px rgb(var(--primary-rgb) / 0); }
+}
+@keyframes scrollDownPulse {
+    0% { box-shadow: var(--shadow-lg), 0 0 0 0px rgba(249,115,22,0.45); animation-timing-function: step-end; }
+    3.571% { box-shadow: var(--shadow-lg), 0 0 0 0.07px rgba(249,115,22,0.446); animation-timing-function: step-end; }
+    7.143% { box-shadow: var(--shadow-lg), 0 0 0 0.286px rgba(249,115,22,0.432); animation-timing-function: step-end; }
+    10.714% { box-shadow: var(--shadow-lg), 0 0 0 0.659px rgba(249,115,22,0.408); animation-timing-function: step-end; }
+    14.286% { box-shadow: var(--shadow-lg), 0 0 0 1.188px rgba(249,115,22,0.374); animation-timing-function: step-end; }
+    17.857% { box-shadow: var(--shadow-lg), 0 0 0 1.862px rgba(249,115,22,0.33); animation-timing-function: step-end; }
+    21.429% { box-shadow: var(--shadow-lg), 0 0 0 2.649px rgba(249,115,22,0.28); animation-timing-function: step-end; }
+    25% { box-shadow: var(--shadow-lg), 0 0 0 3.5px rgba(249,115,22,0.225); animation-timing-function: step-end; }
+    28.571% { box-shadow: var(--shadow-lg), 0 0 0 4.351px rgba(249,115,22,0.17); animation-timing-function: step-end; }
+    32.143% { box-shadow: var(--shadow-lg), 0 0 0 5.138px rgba(249,115,22,0.12); animation-timing-function: step-end; }
+    35.714% { box-shadow: var(--shadow-lg), 0 0 0 5.812px rgba(249,115,22,0.076); animation-timing-function: step-end; }
+    39.286% { box-shadow: var(--shadow-lg), 0 0 0 6.341px rgba(249,115,22,0.042); animation-timing-function: step-end; }
+    42.857% { box-shadow: var(--shadow-lg), 0 0 0 6.714px rgba(249,115,22,0.018); animation-timing-function: step-end; }
+    46.429% { box-shadow: var(--shadow-lg), 0 0 0 6.93px rgba(249,115,22,0.004); animation-timing-function: step-end; }
+    50% { box-shadow: var(--shadow-lg), 0 0 0 7px rgba(249,115,22,0); animation-timing-function: step-end; }
+    53.571% { box-shadow: var(--shadow-lg), 0 0 0 6.93px rgba(249,115,22,0.004); animation-timing-function: step-end; }
+    57.143% { box-shadow: var(--shadow-lg), 0 0 0 6.714px rgba(249,115,22,0.018); animation-timing-function: step-end; }
+    60.714% { box-shadow: var(--shadow-lg), 0 0 0 6.341px rgba(249,115,22,0.042); animation-timing-function: step-end; }
+    64.286% { box-shadow: var(--shadow-lg), 0 0 0 5.812px rgba(249,115,22,0.076); animation-timing-function: step-end; }
+    67.857% { box-shadow: var(--shadow-lg), 0 0 0 5.138px rgba(249,115,22,0.12); animation-timing-function: step-end; }
+    71.429% { box-shadow: var(--shadow-lg), 0 0 0 4.351px rgba(249,115,22,0.17); animation-timing-function: step-end; }
+    75% { box-shadow: var(--shadow-lg), 0 0 0 3.5px rgba(249,115,22,0.225); animation-timing-function: step-end; }
+    78.571% { box-shadow: var(--shadow-lg), 0 0 0 2.649px rgba(249,115,22,0.28); animation-timing-function: step-end; }
+    82.143% { box-shadow: var(--shadow-lg), 0 0 0 1.862px rgba(249,115,22,0.33); animation-timing-function: step-end; }
+    85.714% { box-shadow: var(--shadow-lg), 0 0 0 1.188px rgba(249,115,22,0.374); animation-timing-function: step-end; }
+    89.286% { box-shadow: var(--shadow-lg), 0 0 0 0.659px rgba(249,115,22,0.408); animation-timing-function: step-end; }
+    92.857% { box-shadow: var(--shadow-lg), 0 0 0 0.286px rgba(249,115,22,0.432); animation-timing-function: step-end; }
+    96.429% { box-shadow: var(--shadow-lg), 0 0 0 0.07px rgba(249,115,22,0.446); animation-timing-function: step-end; }
+    100% { box-shadow: var(--shadow-lg), 0 0 0 0 rgba(249,115,22,0.45); }
+}
