@@ -61,7 +61,14 @@ const _semCodigoParam = t => { try { return (typeof Prereq !== 'undefined' && Pr
 function _criarRevelacaoFluida(contentEl, opts = {}) {
     const CPS = opts.cps || 220; // caracteres por segundo — rápido de ler, mas dá pra acompanhar
     let textoCompleto = '', revelados = 0, streamAcabou = false, ultimoTs = null, animando = false, aoTerminar = null;
+    // Adaptação ao computador (v28.38): cada atualização da tela custa (refazer o HTML, estilo, leiaute) e cresce com o tamanho da resposta. Medido num i3 de 2 núcleos, uma resposta de 8.000 caracteres
+    // consumia ~43 % da thread principal o tempo todo (ao digitar ou rolar durante a resposta, tudo travava). Se o passo anterior custou caro, pula quadros: o texto continua aparecendo na MESMA velocidade
+    // (o ritmo é por tempo, não por quadro: só chega em pedaços maiores, 30 ou 20 vezes por segundo em vez de 60) e sobra thread principal. Em computador rápido (passo barato) nada muda.
+    const ORCAMENTO_MS = 2.4;   // custo médio do passo (sem a pintura, que soma ~75 % por cima) que ainda deixa a resposta em ≈ 25 % da thread principal
+    let custo = 0, intervalo = 0, ultimoRender = 0, ultimoBotao = 0;
     function passo(ts) {
+        if (intervalo > 0 && ultimoRender && ts - ultimoRender < intervalo && (revelados < textoCompleto.length || !streamAcabou)) { requestAnimationFrame(passo); return; }   // quadro pulado (o fim da revelação nunca é adiado)
+        const t0 = performance.now();
         if (ultimoTs === null) ultimoTs = ts;
         revelados = Math.min(textoCompleto.length, revelados + ((ts - ultimoTs) / 1000) * CPS);
         ultimoTs = ts;
@@ -72,7 +79,9 @@ function _criarRevelacaoFluida(contentEl, opts = {}) {
         // desde o começo da resposta enquanto ela ainda está sendo escrita. Em vez disso, só
         // atualiza o indicador "↓" flutuante -- ele avisa que ainda tem conteúdo vindo, sem forçar
         // a rolagem de ninguém.
-        _atualizarBotaoScrollDown(falta || !streamAcabou);
+        if (!falta && streamAcabou || ts - ultimoBotao > 160) { _atualizarBotaoScrollDown(falta || !streamAcabou); ultimoBotao = ts; }   // o botão ↓ lê o leiaute (força um cálculo da página inteira): ~6×/s basta para ele
+        const gasto = performance.now() - t0; custo = custo ? custo * 0.6 + gasto * 0.4 : gasto;
+        intervalo = custo > ORCAMENTO_MS ? Math.min(100, Math.ceil(custo / ORCAMENTO_MS) * 16.7 - 9) : 0; ultimoRender = ts;
         if (falta || !streamAcabou) { requestAnimationFrame(passo); }
         else { animando = false; if (aoTerminar) { const f = aoTerminar; aoTerminar = null; try { f(); } catch (e) { console.warn('[revelação] aoTerminar:', e); } } }
     }

@@ -41,6 +41,7 @@ const Prefs = (() => {
         h.dataset.abas = d.abasDestaque === false ? 'normal' : 'destaque';   // abas grandes e coloridas + atalhos das ferramentas ainda fechadas (css/workspace.css, js/ui/workspace.js)
         if (d.accent && d.accentRgb) { h.style.setProperty('--primary', d.accent); h.style.setProperty('--primary-rgb', String(d.accentRgb).replace(/,/g, ' ').replace(/\s+/g, ' ').trim()); }
         else { h.style.removeProperty('--primary'); h.style.removeProperty('--primary-rgb'); }
+        if (typeof Aurora !== 'undefined') Aurora.assar();   // o fundo "assado" (js/core/aurora.js) acompanha o tom, o tipo de fundo e "Animações e vidro"
     }
     if (migrouNaCarga) persist();   // grava já (o carimbo `updated` novo também faz a versão migrada vencer a cópia da pasta do Meu Espaço)
     return {
