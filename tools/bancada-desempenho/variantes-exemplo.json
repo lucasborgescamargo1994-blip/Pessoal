@@ -1,0 +1,9 @@
+[
+ { "nome": "R0-codigo-real", "css": "" },
+ { "nome": "R1-sem-pulso", "css": ".tb-more.is-chamando{animation:none!important}" },
+ { "nome": "R2-sem-aurora-anim", "css": ".bg-aurora i{animation:none!important}" },
+ { "nome": "R3-sem-anel", "css": ".input-area > .ia-ring::before{animation:none!important}" },
+ { "nome": "R4-sem-brilho-logo", "css": ".logo-mark::after{animation:none!important}" },
+ { "nome": "R5-sem-pulso-e-aurora", "css": ".tb-more.is-chamando,.bg-aurora i{animation:none!important}" },
+ { "nome": "R6-tudo-parado", "css": ".tb-more.is-chamando,.bg-aurora i,.logo-mark::after,.input-area > .ia-ring::before{animation:none!important}" }
+]
