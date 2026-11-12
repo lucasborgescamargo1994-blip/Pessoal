@@ -48,6 +48,10 @@
             catch (e) { add('wa', 'Coluna “fontes_banco” em “logs”', ADM.db.ehColunaAusente(e) ? 'não existe — a Revisão não mostra quais dados do banco a IA usou em cada resposta. Rode sql/04_logs_fontes_banco.sql' : ADM.db.erroTexto(e), '04_logs_fontes_banco.sql'); }
             try { const r = await ADM.sb.from('BancoDados').select('caminho_menu').limit(1); if (r.error) throw r.error; add('ok', 'Coluna “caminho_menu” em “BancoDados” (caminho no menu do artigo — campo da aba Revisão)', 'presente'); }
             catch (e) { add('wa', 'Coluna “caminho_menu” em “BancoDados”', ADM.db.ehColunaAusente(e) ? 'não existe — o campo “Caminho no menu” da Revisão não consegue gravar. Rode sql/05_bancodados_caminho_menu.sql' : ADM.db.erroTexto(e), '05_bancodados_caminho_menu.sql'); }
+            try { const r = await ADM.sb.from('BancoDados').select('imagens').limit(1); if (r.error) throw r.error; add('ok', 'Coluna “imagens” em “BancoDados” (prints do passo a passo dos artigos)', 'presente'); }
+            catch (e) { add('wa', 'Coluna “imagens” em “BancoDados”', ADM.db.ehColunaAusente(e) ? 'não existe — os artigos não podem ter imagens do procedimento. Rode sql/09_bancodados_imagens.sql' : ADM.db.erroTexto(e), '09_bancodados_imagens.sql'); }
+            try { const r = await ADM.sb.storage.from('bancodados-imagens').list('', { limit: 1 }); if (r.error) throw r.error; add('ok', 'Armazenamento das imagens (bucket “bancodados-imagens”)', 'existe'); }
+            catch (e) { add('wa', 'Armazenamento das imagens (bucket “bancodados-imagens”)', /not found|404|bucket/i.test(String((e && (e.message || e.error)) || e)) ? 'não existe — o envio de imagens dos artigos não funciona. Rode sql/09_bancodados_imagens.sql' : ADM.db.erroTexto(e), '09_bancodados_imagens.sql'); }
 
             // segurança
             let sessao = 'anônima (chave pública)';

@@ -1,0 +1,29 @@
+@charset "UTF-8";
+/* css/imagens-banco.css — Imagens do procedimento no chat (v28.39): a galeria abaixo da resposta e a janela de ampliação (js/app/imagens-banco-ui.js). */
+
+/* a galeria fica DENTRO do cartão da resposta, entre o texto e o "esta resposta foi útil?" */
+.bd-imagens { padding: 12px 18px 14px; border-top: 1px solid var(--line); display: grid; gap: 10px; }
+.bd-imagens-tit { display: flex; align-items: center; gap: 4px; font-size: 10.5px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase; color: var(--text-muted); }
+.bd-imagens-tit small { text-transform: none; letter-spacing: 0; font-weight: 600; font-size: 11px; opacity: .85; }
+.bd-imagens-lista { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 12px; align-items: start; }
+.bd-imagens-lista.uma { grid-template-columns: minmax(0, 1fr); }
+.bd-fig { margin: 0; display: grid; gap: 6px; min-width: 0; }
+.bd-fig-btn { display: block; width: 100%; padding: 0; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: #fff; cursor: zoom-in; box-shadow: var(--shadow-sm);
+    transition: box-shadow var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out); }
+.bd-fig-btn:hover { box-shadow: 0 14px 30px -18px rgba(28, 25, 23, .45); transform: translateY(-1px); }
+.bd-fig-btn img { display: block; width: 100%; height: auto; max-height: 520px; object-fit: contain; background: #fff; }
+.bd-fig figcaption { font-size: 12.5px; line-height: 1.45; color: var(--text-muted); }
+.bd-fig-falha { padding: 14px; border: 1px dashed var(--line); border-radius: 14px; font-size: 12.5px; color: var(--text-muted); background: rgba(28, 25, 23, .03); }
+/* conversa restaurada do histórico (texto simples): a galeria entra dentro da mensagem, sem o filete de cima */
+.message .bd-imagens { padding: 10px 0 0; border-top: none; margin-top: 6px; }
+
+/* imagem ampliada */
+.bd-lb { position: fixed; inset: 0; z-index: 3600; display: grid; grid-template-rows: minmax(0, 1fr) auto; justify-items: center; gap: 10px; padding: 18px 16px 14px; background: rgba(20, 16, 12, .8); animation: bdLb .18s ease-out both; }
+@keyframes bdLb { from { opacity: 0; } to { opacity: 1; } }
+.bd-lb-img { max-width: min(100%, 1500px); max-height: 100%; min-height: 0; width: auto; height: auto; object-fit: contain; border-radius: 12px; background: #fff; box-shadow: 0 30px 80px -20px rgba(0, 0, 0, .6); cursor: zoom-out; }
+.bd-lb-x { position: absolute; top: 12px; right: 14px; width: 38px; height: 38px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, .35); background: rgba(255, 255, 255, .14); color: #fff; font-size: 16px; font-weight: 700; cursor: pointer; }
+.bd-lb-x:hover { background: rgba(255, 255, 255, .28); }
+.bd-lb-barra { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 16px; color: #fff; font-size: 13px; text-align: center; }
+.bd-lb-cap { font-weight: 600; max-width: min(90vw, 900px); }
+.bd-lb-abrir { color: #fed7aa; font-weight: 700; text-decoration: none; }
+.bd-lb-abrir:hover { text-decoration: underline; }

@@ -33,7 +33,7 @@
 
     /* ───────────── artigos que já estão no banco de dados (só id, título e categoria) ─────────────
        serve para avisar de duplicidade antes de salvar e para sugerir as categorias que o banco de dados já usa */
-    const BD = { itens: null, quando: 0, promessa: null };
+    const BD = { itens: null, quando: 0, promessa: null, colImagens: null, verificando: false };   // colImagens: a coluna "imagens" existe? (null = ainda não sei; sql/09_bancodados_imagens.sql)
     function carregarBD(forcar) {
         if (BD.promessa) return BD.promessa;
         if (!forcar && BD.itens && Date.now() - BD.quando < 5 * 60 * 1000) return Promise.resolve(BD.itens);
@@ -230,14 +230,25 @@
     }
 
     function selecionar(chave, semRolar) {
-        E.selChave = chave; E.idxResp = 0; E.form = null;
+        E.selChave = chave; E.idxResp = 0; soltarForm();
         renderLista(); renderDetalhe();
         if (!semRolar && window.innerWidth <= 900) R.detalhe.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     /* ───────────── detalhe ───────────── */
     function iniciarForm(g, L) {
-        E.form = { chave: g.chave, logId: L.id, pergunta: String(L.pergunta || '').trim(), variantes: '', categoria: '', caminhoMenu: '', incluirIguais: true, extras: new Set(), rrIdCriado: null };
+        E.form = { chave: g.chave, logId: L.id, pergunta: String(L.pergunta || '').trim(), variantes: '', categoria: '', caminhoMenu: '', incluirIguais: true, extras: new Set(), rrIdCriado: null, estImagens: null };
+    }
+    // a ficha foi trocada/fechada: imagens enviadas e não salvas num artigo saem do armazenamento (admin/js/imagens-artigo.js)
+    function soltarForm() { if (E.form && E.form.estImagens) ADM.imagensArtigo.descartar(E.form.estImagens); E.form = null; }
+    // confere uma vez se a coluna das imagens já existe (sem ela o campo de imagens avisa como habilitar, em vez de falhar ao salvar)
+    function verificarColunaImagens() {
+        if (BD.colImagens !== null || BD.verificando) return;
+        BD.verificando = true;
+        ADM.sb.from('BancoDados').select('imagens').limit(1).then(r => {
+            BD.verificando = false; BD.colImagens = !r.error ? true : (ADM.db.ehColunaAusente(r.error) ? false : null);
+            if (BD.colImagens === false && E.selChave) renderDetalhe();
+        }, () => { BD.verificando = false; });
     }
 
     function renderDetalhe() {
@@ -248,6 +259,7 @@
         if (!E.form || E.form.chave !== g.chave || E.form.logId !== L.id) iniciarForm(g, L);
         const f = E.form;
         const pendente = !L.revisao || L.revisao === 'pendente';
+        verificarColunaImagens();
 
         /* cabeçalho: a pergunta e de onde veio */
         const meta = h('div', { class: 'linha', style: { gap: '6px' } }, selFonte(L), selFeedback(L.feedback),
@@ -261,8 +273,8 @@
             L.revisao_nota ? ADM.ui.aviso('in', h('b', null, 'Nota da revisão: '), L.revisao_nota, L.revisado_por ? h('span', { class: 'mu' }, ' — ' + L.revisado_por) : null) : null,
             g.itens.length > 1 ? h('div', { class: 'linha' },
                 h('span', { class: 'sel in' }, `Esta pergunta apareceu ${g.itens.length} vezes — resposta ${E.idxResp + 1} de ${g.itens.length}`),
-                h('button', { class: 'btn peq', type: 'button', disabled: E.idxResp === 0, onclick: () => { E.idxResp--; E.form = null; renderDetalhe(); } }, I('chevronL', 14), 'Anterior'),
-                h('button', { class: 'btn peq', type: 'button', disabled: E.idxResp >= g.itens.length - 1, onclick: () => { E.idxResp++; E.form = null; renderDetalhe(); } }, 'Próxima', I('chevronR', 14)),
+                h('button', { class: 'btn peq', type: 'button', disabled: E.idxResp === 0, onclick: () => { E.idxResp--; soltarForm(); renderDetalhe(); } }, I('chevronL', 14), 'Anterior'),
+                h('button', { class: 'btn peq', type: 'button', disabled: E.idxResp >= g.itens.length - 1, onclick: () => { E.idxResp++; soltarForm(); renderDetalhe(); } }, 'Próxima', I('chevronR', 14)),
                 h('span', { class: 'dica' }, 'As respostas com 👍 vêm primeiro. Escolha a melhor.')) : null));
         box.appendChild(topo);
 
@@ -280,6 +292,9 @@
         if (f.resposta === undefined) f.resposta = L.resposta;
         ed.textarea.addEventListener('input', () => { f.resposta = ed.obter(); });
         f.ed = ed; f.iVar = iVar;
+        // Imagens do procedimento (coluna imagens — sql/09_bancodados_imagens.sql): vão junto do artigo em "Salvar no banco de dados" e aparecem no chat quando a IA usar o artigo. A lista mora em f.estImagens (sobrevive a redesenhos da tela)
+        if (!f.estImagens) f.estImagens = ADM.imagensArtigo.novoEstado(null);
+        const edImg = ADM.editorImagensArtigo({ estado: f.estImagens, pasta: 'novos', desabilitado: BD.colImagens === false });
 
         const formCard = h('div', { class: 'cartao' },
             h('div', { class: 'cartao-topo' }, h('h3', null, I('edit', 16), 'Pergunta e resposta'),
@@ -292,7 +307,8 @@
                     h('label', { class: 'campo' }, h('span', { class: 'rot' }, 'Categoria (opcional)'), iCat, dl),
                     h('label', { class: 'campo', style: { gridColumn: '1 / -1' } }, h('span', { class: 'rot' }, 'Caminho no menu (opcional — grava na coluna caminho_menu do banco de dados; só vai com “Salvar no banco de dados”)'), iCm)),
                 h('label', { class: 'campo' }, h('span', { class: 'rot' }, 'Variantes da pergunta (só da resposta rápida)'), iVar),
-                ed.el));
+                ed.el,
+                edImg.el, h('div', { class: 'dica' }, 'As imagens só vão com “Salvar no banco de dados” (a resposta rápida não tem imagem).')));
 
         /* coluna da direita: o que já existe */
         const lateral = h('div', { class: 'pilha' });
@@ -377,7 +393,7 @@
         const antes = E.grupos.map(x => x.chave), idx = antes.indexOf(E.selChave);
         agrupar();
         const proxima = E.grupos[Math.min(Math.max(idx, 0), E.grupos.length - 1)];
-        E.selChave = proxima ? proxima.chave : null; E.idxResp = 0; E.form = null;
+        E.selChave = proxima ? proxima.chave : null; E.idxResp = 0; soltarForm();
         renderLista(); renderDetalhe(); ADM.atualizarPendentes();
         if (!E.fim && E.grupos.length < 8) carregar(false);
     }
@@ -432,6 +448,7 @@
         const g = grupoSel(); if (!g) return;
         const L = g.itens[E.idxResp] || g.itens[0], f = E.form;
         const titulo = f.pergunta.trim(), conteudo = f.ed.obter().trim(), categoria = f.categoria.trim(), caminhoMenu = ADM.normalizarCaminhoMenu(f.caminhoMenu);
+        const imagens = (f.estImagens && BD.colImagens !== false) ? ADM.imagensArtigo.valorParaGravar(f.estImagens) : null;   // lista de prints (ou null)
         if (titulo.length < 3) return ADM.ui.toast('Escreva a pergunta principal — ela vira o título do artigo.', 'wa');
         if (conteudo.length < 5) return ADM.ui.toast('A resposta está vazia.', 'wa');
         if (f.rrIdCriado) return ADM.ui.toast(`A resposta rápida #${f.rrIdCriado} já foi criada nesta tela — clique em “Aprovar” para concluir (ou exclua-a na aba Respostas rápidas antes de salvar no banco de dados).`, 'wa', 10000);
@@ -447,16 +464,22 @@
                     const artigo = { titulo, conteudo };
                     if (categoria) artigo.categoria = categoria;
                     if (caminhoMenu) artigo.caminho_menu = caminhoMenu;
+                    if (imagens) artigo.imagens = imagens;
                     const r = await ADM.sb.from('BancoDados').insert(artigo).select('id');
                     ADM.db.exigirAfetadas(r); id = r.data[0].id; f.bancoIdCriado = id;
+                    if (imagens) await ADM.imagensArtigo.aposSalvar(f.estImagens);   // as imagens passam a ser do artigo (não saem mais do armazenamento ao trocar de tela)
                     if (caminhoMenu) ADM.caminhos.invalidar();   // o caminho novo já entra nas sugestões
                     if (BD.itens) { BD.itens.push({ id, titulo, categoria: categoria || null }); sugerirCategorias(); }
                 }
                 await resolver(logsAfetados(g, L, f), { revisao: 'banco', resposta_rapida_id: null, revisao_nota: 'Salvo no banco de dados (#' + id + ')' });
-                ADM.ui.toast(`Salvo no banco de dados (artigo #${id}${caminhoMenu ? ', com o caminho no menu' : ''}). Vale para quem abrir o sistema daqui para frente — o vetor de busca é calculado sozinho na abertura.`, 'ok', 8000);
+                ADM.ui.toast(`Salvo no banco de dados (artigo #${id}${caminhoMenu ? ', com o caminho no menu' : ''}${imagens ? ', com ' + imagens.length + (imagens.length > 1 ? ' imagens' : ' imagem') : ''}). Vale para quem abrir o sistema daqui para frente — o vetor de busca é calculado sozinho na abertura.`, 'ok', 8000);
             } catch (e) {
-                const semColunaCaminho = caminhoMenu && !f.bancoIdCriado && ADM.db.ehColunaAusente(e);   // a coluna caminho_menu ainda não existe: o insert inteiro foi recusado, nada ficou salvo
-                ADM.ui.toast(semColunaCaminho
+                // uma coluna opcional ainda não existe: o insert inteiro foi recusado, nada ficou salvo (descobre qual pelo texto do erro)
+                let colFaltando = null;
+                if (!f.bancoIdCriado && ADM.db.ehColunaAusente(e)) { const m = String((e && e.message) || ''); colFaltando = (imagens && /imagens/.test(m)) ? 'imagens' : caminhoMenu ? 'caminho_menu' : imagens ? 'imagens' : null; }
+                ADM.ui.toast(colFaltando === 'imagens'
+                    ? 'O banco de dados ainda não tem a coluna “imagens” na tabela BancoDados, então NADA foi salvo. Rode o arquivo sql/09_bancodados_imagens.sql uma vez no SQL Editor do Supabase (a aba Sistema tem o botão de copiar) e clique em Salvar no banco de dados de novo — ou tire as imagens para salvar sem elas.'
+                    : colFaltando === 'caminho_menu'
                     ? 'O banco de dados ainda não tem a coluna “caminho_menu” na tabela BancoDados, então NADA foi salvo. Rode o arquivo sql/05_bancodados_caminho_menu.sql uma vez no SQL Editor do Supabase (a aba Sistema tem o botão de copiar) e clique em Salvar no banco de dados de novo — ou apague o caminho para salvar sem ele.'
                     : (f.bancoIdCriado ? `O artigo #${f.bancoIdCriado} foi criado no banco de dados, mas não consegui marcar os logs — clique em Salvar no banco de dados de novo para concluir. ` : '') + ADM.db.erroTexto(e), 'er', 14000);
             }
@@ -501,7 +524,7 @@
                 ADM.db.exigirAfetadas(r);
                 Object.assign(L, { revisao: 'pendente', revisao_nota: null, resposta_rapida_id: null });
                 if (E.filtro.revisao !== 'todas') { E.linhas = E.linhas.filter(l => l.id !== L.id); agrupar(); E.selChave = E.grupos[0] ? E.grupos[0].chave : null; }
-                E.form = null; renderLista(); renderDetalhe(); ADM.atualizarPendentes();
+                soltarForm(); renderLista(); renderDetalhe(); ADM.atualizarPendentes();
                 ADM.ui.toast(eraBanco ? `Voltou para a fila de pendentes. O artigo${idBanco ? ' #' + idBanco : ''} continua no banco de dados — edite ou exclua na aba Banco de dados se não quiser mais.` : 'Voltou para a fila de pendentes.', 'ok', eraBanco ? 8000 : 2500);
             } catch (e) { ADM.ui.toast(ADM.db.erroTexto(e), 'er', 10000); }
         });

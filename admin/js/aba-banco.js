@@ -3,7 +3,7 @@
 (function () {
     'use strict';
     const TABELAS = [
-        { t: 'BancoDados', rot: 'Base de conhecimento (BancoDados)', padrao: ['titulo', 'conteudo', 'como_emitir', 'categoria'], vetor: true, dica: 'Os artigos que a IA usa para responder. Ao editar um registro, o vetor de busca dele é recalculado sozinho na próxima abertura do sistema.' },
+        { t: 'BancoDados', rot: 'Base de conhecimento (BancoDados)', padrao: ['titulo', 'conteudo', 'como_emitir', 'categoria'], vetor: true, dica: 'Os artigos que a IA usa para responder. Ao editar um registro, o vetor de busca dele é recalculado sozinho na próxima abertura do sistema. Em Editar você também pode anexar prints do passo a passo (campo “Imagens do procedimento”): eles aparecem no chat junto da resposta quando a IA usa o artigo.' },
         { t: 'Parametros', rot: 'Parâmetros' },
         { t: 'Funcionalidades', rot: 'Funcionalidades' },
         { t: 'Rotinas', rot: 'Rotinas (telas do sistema)' },
@@ -122,7 +122,12 @@
                 h('button', { class: 'btn peq fantasma', type: 'button', title: 'Duplicar', 'aria-label': 'Duplicar', onclick: () => abrirEdicao(r, true) }, I('copy', 13)),
                 E.tab.t === 'BancoDados' && r.id != null && ADM.podeAba('faq') ? h('button', { class: 'btn peq fantasma', type: 'button', title: 'Levar este artigo para o FAQ (e anexar um vídeo)', 'aria-label': 'Levar para o FAQ', onclick: () => ADM.irParaAba('faq', { banco: r.id }) }, I('life', 13)) : null,
                 h('button', { class: 'btn peq fantasma perigo', type: 'button', title: 'Excluir', 'aria-label': 'Excluir', onclick: () => excluir(r) }, I('trash', 13))),
-            cols.map(c => { const v = r[c], s = v == null ? '' : (typeof v === 'object' ? JSON.stringify(v) : String(v)); return h('td', { class: 'cel' + (E.tipos[c] === 'numero' ? ' tr' : ''), title: ADM.fmt.trunc(s, 600) }, s.length > 90 ? s.slice(0, 88) + '…' : s); })));
+            cols.map(c => {
+                const v = r[c];
+                let s = v == null ? '' : (typeof v === 'object' ? JSON.stringify(v) : String(v));
+                if (c === 'imagens' && E.tab.t === 'BancoDados') s = Array.isArray(v) && v.length ? '🖼 ' + v.length + (v.length > 1 ? ' imagens' : ' imagem') : '';   // lista de prints do artigo: só a contagem (as URLs ficam na janela de edição)
+                return h('td', { class: 'cel' + (E.tipos[c] === 'numero' ? ' tr' : ''), title: c === 'imagens' && s ? 'Abra o registro (Editar) para ver as imagens' : ADM.fmt.trunc(s, 600) }, s.length > 90 ? s.slice(0, 88) + '…' : s);
+            })));
         box.appendChild(h('div', { class: 'tabela-wrap' }, h('table', { class: 'tabela' }, h('thead', null, h('tr', null, h('th', { class: 'sticky-esq' }, ''), cols.map(th))), h('tbody', null, corpo))));
         const rodape = h('div', { class: 'rodape-tabela' }, `Mostrando ${ADM.fmt.num(lista.length)} de ${ADM.fmt.num(todas.length)}${E.filtro ? ' (filtradas)' : ''}`);
         if (lista.length < todas.length) rodape.appendChild(h('button', { class: 'btn peq', type: 'button', onclick: () => { E.mostrando += LOTE; renderTabela(); } }, 'Mostrar mais ' + LOTE));
@@ -133,9 +138,17 @@
     /* ───────────── editar / criar ───────────── */
     function abrirEdicao(row, duplicar) {
         const novo = !row || duplicar, original = row || {}, ctl = {};
+        const ehArtigo = E.tab.t === 'BancoDados';
+        let estImg = null;   // estado das imagens do procedimento (admin/js/imagens-artigo.js) — só na base de conhecimento
         const campos = E.colunas.map(c => {
             const tipo = E.tipos[c] || 'texto', v = original[c], auto = AUTO.has(c) && !novo;
             if (novo && AUTO.has(c)) return null;
+            if (ehArtigo && c === 'imagens') {   // prints do passo a passo: em vez do JSON cru, o editor de imagens (colar/arrastar/legenda/ordem). Duplicar NÃO leva as imagens (os arquivos continuariam sendo do artigo original)
+                estImg = ADM.imagensArtigo.novoEstado(duplicar ? null : v);
+                const ed = ADM.editorImagensArtigo({ estado: estImg, pasta: novo ? 'novos' : 'artigo-' + original[E.pk] });
+                ctl[c] = { get: () => ADM.imagensArtigo.valorParaGravar(estImg), auto: false, imagens: true };
+                return h('div', { class: 'campo longo', style: { gridColumn: '1 / -1' } }, ed.el);
+            }
             let el, get;
             if (tipo === 'boolean') { el = h('select', null, h('option', { value: '' }, '(vazio)'), h('option', { value: 'true' }, 'sim'), h('option', { value: 'false' }, 'não')); el.value = v === true ? 'true' : v === false ? 'false' : ''; get = () => el.value === '' ? null : el.value === 'true'; }
             else if (tipo === 'numero') { el = h('input', { type: 'number', step: 'any' }); el.value = v == null ? '' : v; get = () => el.value === '' ? null : Number(el.value); }
@@ -146,12 +159,15 @@
             ctl[c] = { get, auto };
             return h('label', { class: 'campo' + (el.tagName === 'TEXTAREA' ? ' longo' : '') }, h('span', { class: 'rot' }, c + (c === E.pk ? '  (chave)' : '') + (auto ? '  (automático)' : '')), el);
         }).filter(Boolean);
+        // a coluna "imagens" ainda não existe (SQL 09 não rodado): o campo aparece mesmo assim, com o aviso de como habilitar
+        if (ehArtigo && !E.colunas.includes('imagens')) campos.push(h('div', { class: 'campo longo', style: { gridColumn: '1 / -1' } }, ADM.editorImagensArtigo({ estado: ADM.imagensArtigo.novoEstado(null), desabilitado: true }).el));
 
         const corpo = [E.tab.vetor ? ADM.ui.aviso('in', 'Ao salvar, o vetor de busca deste registro é descartado e recalculado automaticamente na próxima vez que o sistema abrir.') : null,
             h('div', { class: 'campos-form' }, campos)];
         ADM.ui.modal({
             titulo: novo ? (duplicar ? 'Duplicar registro' : 'Novo registro') + ' — ' + E.tab.t : 'Editar registro — ' + E.tab.t + ' (' + E.pk + ' ' + original[E.pk] + ')',
             largura: 760, fecharFora: false, corpo,
+            aoFechar: () => { if (estImg) ADM.imagensArtigo.descartar(estImg); },   // fechou sem salvar: as imagens enviadas nesta edição saem do armazenamento
             botoes: [{ rotulo: 'Cancelar', tipo: 'fantasma' }, {
                 rotulo: novo ? 'Criar registro' : 'Salvar alterações', tipo: 'primario', fechar: false,
                 acao: async (btn, api) => {
@@ -159,6 +175,7 @@
                     Object.keys(ctl).forEach(c => {
                         if (ctl[c].auto) return;
                         const nv = ctl[c].get();
+                        if (ctl[c].imagens) { if (ADM.imagensArtigo.mudou(estImg, novo ? null : original[c])) payload[c] = nv; return; }   // lista de imagens (ou null = sem imagens): compara pelo conteúdo, não pelo texto do JSON
                         if (novo) { if (canon(nv) !== null) payload[c] = nv; }
                         else if (canon(nv) !== canon(original[c])) payload[c] = nv;
                     });
@@ -169,6 +186,7 @@
                     else r = await ADM.sb.from(E.tab.t).update(payload).eq(E.pk, original[E.pk]).select();
                     ADM.db.exigirAfetadas(r);
                     if (E.tab.t === 'BancoDados' && 'caminho_menu' in payload) ADM.caminhos.invalidar();
+                    if (estImg) await ADM.imagensArtigo.aposSalvar(estImg);   // o artigo foi salvo: o que ele deixou de usar sai do armazenamento
                     const gravada = limpaLinha(r.data[0]);
                     if (novo) { E.linhas.unshift(gravada); if (E.total != null) E.total++; }
                     else { const i = E.linhas.findIndex(x => x[E.pk] === original[E.pk]); if (i >= 0) E.linhas[i] = gravada; }
@@ -184,6 +202,7 @@
         if (!(await ADM.ui.confirmar(`Excluir este registro de “${E.tab.t}”?\n\n${ADM.fmt.trunc(previa, 220)}`, { titulo: 'Excluir registro', rotuloOk: 'Excluir', perigo: true, detalhe: 'Não dá para desfazer. Se tiver dúvida, faça uma cópia antes (Exportar CSV).' }))) return;
         try {
             const r = await ADM.sb.from(E.tab.t).delete().eq(E.pk, row[E.pk]).select(E.pk); ADM.db.exigirAfetadas(r);
+            if (E.tab.t === 'BancoDados' && row.imagens) ADM.imagensArtigo.apagarDoArtigo(row.imagens);   // o artigo foi embora: as imagens dele também (sem esperar nem avisar se falhar)
             E.linhas = E.linhas.filter(x => x !== row); if (E.total != null) E.total--;
             renderTudo(); ADM.ui.toast('Registro excluído.', 'ok');
         } catch (e) { ADM.ui.toast(ADM.db.erroTexto(e), 'er', 9000); }

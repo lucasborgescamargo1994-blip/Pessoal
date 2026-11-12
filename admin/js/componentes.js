@@ -193,13 +193,17 @@ ADM.editarArtigoBanco = async function (id, opcoes) {
     // chave do artigo como número: vem de um JSON gravado por qualquer navegador — nunca vai direto para a consulta sem checar
     const chaveId = Number(id);
     if (!Number.isFinite(chaveId)) { ADM.ui.toast('Este item não tem um número de artigo válido.', 'wa'); return null; }
-    let linha, semColunaCaminho = false;
+    let linha, semColunaCaminho = false, semColunaImagens = false;
     try {
-        let r = await ADM.sb.from('BancoDados').select('id, titulo, conteudo, como_emitir, categoria, caminho_menu').eq('id', chaveId).maybeSingle();
-        if (r.error && ADM.db.ehColunaAusente(r.error)) {   // SQL 05 ainda não rodado: o artigo abre igual, só sem o campo do caminho no menu
-            semColunaCaminho = true;
-            r = await ADM.sb.from('BancoDados').select('id, titulo, conteudo, como_emitir, categoria').eq('id', chaveId).maybeSingle();
+        // colunas opcionais (caminho_menu = SQL 05, imagens = SQL 09): se o banco recusar alguma, o artigo abre igual, só sem o campo dela
+        let usar = ['caminho_menu', 'imagens'], r;
+        for (let tentativa = 0; tentativa <= 2; tentativa++) {
+            r = await ADM.sb.from('BancoDados').select(['id, titulo, conteudo, como_emitir, categoria'].concat(usar).join(', ')).eq('id', chaveId).maybeSingle();
+            if (!r.error || !ADM.db.ehColunaAusente(r.error)) break;
+            const msg = String(r.error.message || ''), faltam = usar.filter(c => msg.includes(c));
+            usar = faltam.length ? usar.filter(c => !faltam.includes(c)) : usar.slice(0, -1);
         }
+        semColunaCaminho = !usar.includes('caminho_menu'); semColunaImagens = !usar.includes('imagens');
         if (r.error) throw r.error;
         linha = r.data;
     } catch (e) { ADM.ui.toast('Não consegui abrir o artigo #' + chaveId + ': ' + ADM.db.erroTexto(e), 'er', 9000); return null; }
@@ -217,6 +221,9 @@ ADM.editarArtigoBanco = async function (id, opcoes) {
     const ed = ADM.editorResposta({ valor: linha.conteudo || '', rotulo: 'Conteúdo do artigo', rotuloPrevia: 'Visualização', placeholder: 'O texto que a IA recebe como conhecimento. Corrija o que estiver errado ou desatualizado.' });
     const iEmit = h('textarea', { rows: 4, placeholder: 'Opcional. Passo a passo de como emitir (a IA também recebe este texto).' }); iEmit.value = linha.como_emitir || '';
     const emitir = h('details', { open: !!canon(linha.como_emitir) }, h('summary', { style: { cursor: 'pointer', fontWeight: 700, fontSize: '12.5px' } }, 'Como emitir (opcional)'), h('div', { style: { marginTop: '8px' } }, iEmit));
+    // Imagens do procedimento (coluna imagens — sql/09_bancodados_imagens.sql): prints do passo a passo; aparecem no chat junto da resposta quando a IA usa este artigo
+    const estImg = ADM.imagensArtigo.novoEstado(semColunaImagens ? null : linha.imagens);
+    const edImg = ADM.editorImagensArtigo({ estado: estImg, pasta: 'artigo-' + linha.id, desabilitado: semColunaImagens });
 
     const ctx = opcoes.contexto;
     const blocoCtx = ctx && (ctx.pergunta || ctx.resposta) ? h('details', { class: 'ctx-artigo' },
@@ -234,9 +241,11 @@ ADM.editarArtigoBanco = async function (id, opcoes) {
             h('label', { class: 'campo', style: { gridColumn: '1 / -1' } }, h('span', { class: 'rot' }, 'Caminho no menu (opcional — grava na coluna caminho_menu do banco de dados)'), iCm)),
         ed.el,
         emitir,
+        edImg.el,
     ];
     return ADM.ui.modal({
         titulo: 'Corrigir artigo #' + linha.id + ' — base de conhecimento', largura: 1040, fecharFora: false, corpo,
+        aoFechar: () => { ADM.imagensArtigo.descartar(estImg); },   // fechou sem salvar: as imagens enviadas nesta janela saem do armazenamento
         botoes: [{ rotulo: 'Cancelar', tipo: 'fantasma' }, {
             rotulo: 'Salvar no banco de dados', tipo: 'primario', fechar: false,
             acao: async (btn, api) => {
@@ -246,12 +255,17 @@ ADM.editarArtigoBanco = async function (id, opcoes) {
                 if (canon(novo.conteudo) === null || canon(novo.conteudo).length < 5) { ADM.ui.toast('O conteúdo do artigo está vazio.', 'wa'); ed.textarea.focus(); return false; }
                 const payload = {};
                 Object.keys(novo).forEach(c => { if (canon(novo[c]) !== canon(linha[c])) payload[c] = canon(novo[c]); });
+                if (!semColunaImagens && ADM.imagensArtigo.mudou(estImg)) payload.imagens = ADM.imagensArtigo.valorParaGravar(estImg);   // lista de imagens (ou null = sem imagens)
                 if (!Object.keys(payload).length) { ADM.ui.toast('Nada foi alterado.', 'wa'); return false; }
-                if (Object.keys(payload).some(c => c !== 'caminho_menu')) payload.embedding = null;   // o texto mudou: o vetor de busca antigo não vale mais (igual à aba Banco de dados). Só o caminho no menu mudou? O vetor não depende dele: fica
+                const soExtras = Object.keys(payload).every(c => c === 'caminho_menu' || c === 'imagens');
+                if (!soExtras) payload.embedding = null;   // o texto mudou: o vetor de busca antigo não vale mais (igual à aba Banco de dados). Só o caminho no menu ou as imagens mudaram? O vetor não depende deles: fica
                 const r = await ADM.sb.from('BancoDados').update(payload).eq('id', linha.id).select('id, titulo, categoria');
                 ADM.db.exigirAfetadas(r);
                 if ('caminho_menu' in payload) ADM.caminhos.invalidar();
-                ADM.ui.toast(`Artigo #${linha.id} atualizado no banco de dados. A IA passa a usar o texto novo quando o sistema for aberto de novo (o vetor de busca é recalculado sozinho).`, 'ok', 8000);
+                if (!semColunaImagens) await ADM.imagensArtigo.aposSalvar(estImg);   // o artigo foi salvo: o que ele deixou de usar sai do armazenamento
+                ADM.ui.toast(soExtras && 'imagens' in payload && !('caminho_menu' in payload)
+                    ? `Imagens do artigo #${linha.id} salvas. Elas aparecem nas respostas de quem abrir (ou recarregar) o sistema daqui para frente.`
+                    : `Artigo #${linha.id} atualizado no banco de dados. A IA passa a usar o texto novo quando o sistema for aberto de novo (o vetor de busca é recalculado sozinho).`, 'ok', 8000);
                 api.fechar();
                 if (opcoes.aoSalvar) opcoes.aoSalvar(r.data[0]);
             },
