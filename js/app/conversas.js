@@ -38,9 +38,12 @@ function excluirConversa(id, event) {
 }
 function getConversaAtiva() { return conversas.find(c => c.id === conversaAtivaId) || null; }
 // textoContexto (opcional, só para sender 'user'): o que a IA lê no histórico quando difere do que a tela mostra (ex.: clique num botão de esclarecimento → a IA lê a pergunta refinada)
-function adicionarMensagemNaConversa(sender, text, textoContexto) {
+// extra (opcional): { imagens: [{ url, legenda, titulo, id }] } — as imagens do procedimento que vieram com a resposta (js/core/imagens-banco.js); voltam a aparecer ao reabrir a conversa
+function adicionarMensagemNaConversa(sender, text, textoContexto, extra) {
     const conversa = getConversaAtiva(); if (!conversa) return;
-    conversa.mensagens.push({ sender, text, timestamp: Date.now() });
+    const msg = { sender, text, timestamp: Date.now() };
+    if (extra && Array.isArray(extra.imagens) && extra.imagens.length) msg.imagens = extra.imagens.map(i => ({ url: i.url, legenda: i.legenda || '', titulo: i.titulo || '', id: i.id != null ? i.id : null }));
+    conversa.mensagens.push(msg);
     if (sender === 'user' && conversa.titulo === 'Nova Conversa' && conversa.mensagens.filter(m => m.sender === 'user').length === 1) { conversa.titulo = text.length > 40 ? text.substring(0, 37) + '...' : text; conversa.primeiraPergunta = text; }
     if (sender === 'user') conversa.contexto.push({ role:'user', content: textoContexto || text });
     else if (sender === 'ai' || sender === 'system' || sender === 'ml') conversa.contexto.push({ role:'assistant', content:text.replace(/<[^>]*>/g,'') });

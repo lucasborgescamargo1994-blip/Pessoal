@@ -528,6 +528,11 @@ async function handleChat(opts) {
         // a revelação ainda pode estar no meio do caminho nesse ponto, e forçar desceria a tela
         // antes mesmo dela terminar de aparecer — deixa o usuário livre pra ler do jeito que quiser.
         _revelacao.atualizar(finalText);
+        // Imagens do procedimento (js/core/imagens-banco.js): se o artigo da base de conhecimento em que a resposta se baseou tem prints, eles vêm junto, abaixo do texto. Pergunta de esclarecimento não leva imagem.
+        let _imagensResp = [], _imagensAnalise = [];
+        if (!_opcoesEsc && typeof BancoImg !== 'undefined') { try { const _ai = BancoImg.analisar(rr, finalText); _imagensResp = _ai.imagens; _imagensAnalise = _ai.candidatos; } catch (e) { console.warn('[imagens] não consegui escolher as imagens do artigo:', e); } }
+        if (_imagensResp.length) console.log(`%c📷 [imagens do procedimento] ${_imagensResp.length} imagem(ns) do(s) artigo(s) usado(s) nesta resposta`, 'color:#0369a1;font-weight:600;');
+        else if (_imagensAnalise.length) console.log('%c📷 [imagens do procedimento] a busca trouxe artigo(s) com imagem, mas nenhuma entrou nesta resposta:', 'color:#92400e;font-weight:600;', '\n' + _imagensAnalise.map(c => `  #${c.id} "${c.titulo.slice(0, 60)}" — ${c.motivo} [semelhança ${Math.round(c.sim * 100)}%]`).join('\n'));
         if (_opcoesEsc) {
             // pergunta de esclarecimento: não é uma resposta final (sem "foi útil?", sem atalhos); os botões entram quando o texto termina de aparecer.
             // Quem já escolheu (ou fixou) o formato curta/completa não escolhe de novo na passada seguinte.
@@ -537,15 +542,16 @@ async function handleChat(opts) {
             _revelacao.finalizar(() => { try { Esc.mostrar(card, { base: query, pergunta: _perg, perguntas: (opts.perguntasEsc || []).concat(_perg), opcoes: _opc, rodadas: _rodadasEsc, formato: _fmtSeguinte }); } catch (e) { console.warn('[esclarecimento] não consegui mostrar os botões:', e); } });
             if (document.hidden) _enviarNotificacaoNavegador('🤖 Suporte Bsoft TMS', 'Preciso de uma informação para te ajudar — escolha uma opção no chat.', 'bsoft-ia-resposta');
         } else {
-            _revelacao.finalizar();
+            // (as imagens entram quando a última letra do texto acabou de aparecer)
+            _revelacao.finalizar(_imagensResp.length ? () => { try { BancoImgUI.anexar(card, _imagensResp); } catch (e) { console.warn('[imagens] não consegui mostrar as imagens do artigo:', e); } } : undefined);
             feedbackEl.style.display = 'flex';
         }
-        adicionarMensagemNaConversa('ai', finalText.replace(/\*\*(.*?)\*\*/g, '$1'));
+        adicionarMensagemNaConversa('ai', finalText.replace(/\*\*(.*?)\*\*/g, '$1'), undefined, { imagens: _imagensResp });
         if (_formato === 'curta' && typeof Formato !== 'undefined') Formato.marcarNoContexto(ts);
         // Guarda a resposta apresentada no log (vai para a fila de revisão da Área Administrativa).
         // Pergunta de esclarecimento: guarda também as opções e entra como "ignorada" na Revisão (não é uma resposta que possa virar resposta rápida).
         registrarRespostaNoLog(_logTs, { resposta: finalText + (_opcoesEsc ? '\n\n[Botões oferecidos: ' + _opcoesEsc.join(' | ') + ']' : ''), fonte: 'ia', modelo: _im, fontes: _fontesUsadas, revisao: _opcoesEsc ? 'ignorada' : undefined });
-        simEnviarAoPainel({ tipo: 'bsoft:sim:trace', fonte: 'ia', pergunta: query, modelo: _im, ms: Math.round(performance.now() - _t0), bloqueios: window.BSOFT_SIM_BLOQUEIOS.length, bloqueiosLista: window.BSOFT_SIM_BLOQUEIOS.slice(-20), forcouIA: !!opts.forcarIA, formato: _formato, esclarecimento: _opcoesEsc, modoEsclarecimento: _modoEsc, rrContexto: rrUsadas.map(x => ({ id: x.item.id, pct: Math.round(x.score * 100) })) });
+        simEnviarAoPainel({ tipo: 'bsoft:sim:trace', fonte: 'ia', pergunta: query, modelo: _im, ms: Math.round(performance.now() - _t0), bloqueios: window.BSOFT_SIM_BLOQUEIOS.length, bloqueiosLista: window.BSOFT_SIM_BLOQUEIOS.slice(-20), forcouIA: !!opts.forcarIA, formato: _formato, esclarecimento: _opcoesEsc, modoEsclarecimento: _modoEsc, rrContexto: rrUsadas.map(x => ({ id: x.item.id, pct: Math.round(x.score * 100) })), imagens: _imagensResp.length, imagensAnalise: _imagensAnalise });
         // Resposta pode demorar — se a pessoa saiu da aba/janela nesse meio tempo, avisa que já
         // terminou (só quando não está olhando; quem está vendo o streaming não precisa de aviso).
         if (document.hidden) {

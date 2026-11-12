@@ -51,9 +51,19 @@ async function _carregarTabelaCompleta(tabela){
 }
 // Artigos da base de conhecimento. A coluna caminho_menu (sql/05_bancodados_caminho_menu.sql: o caminho da tela no menu, escrito na Revisão) vem junto; se o SQL ainda não foi rodado o banco recusa a coluna
 // e a carga é refeita sem ela — o sistema nunca deixa de abrir por causa disso.
+// Colunas opcionais, de SQLs que talvez ainda não tenham sido rodados (caminho_menu = sql/05, imagens = sql/09): tenta com todas e, se o banco recusar alguma, refaz sem ela (uma de cada vez) — o sistema
+// nunca deixa de abrir por causa disso. A coluna `imagens` (js/core/imagens-banco.js) leva os prints do passo a passo de cada artigo até o chat.
 async function _carregarBancoDados() {
-    let r = await sb.from('BancoDados').select('id, titulo, conteudo, como_emitir, categoria, caminho_menu');
-    if (r.error && /caminho_menu|42703|PGRST204/.test(String(r.error.code || '') + ' ' + String(r.error.message || ''))) r = await sb.from('BancoDados').select('id, titulo, conteudo, como_emitir, categoria');
+    const base = 'id, titulo, conteudo, como_emitir, categoria', opcionais = ['caminho_menu', 'imagens'];
+    let usar = opcionais.slice(), r;
+    for (let tentativa = 0; tentativa <= opcionais.length; tentativa++) {
+        r = await sb.from('BancoDados').select([base].concat(usar).join(', '));
+        if (!r.error) return r;
+        const msg = String(r.error.code || '') + ' ' + String(r.error.message || '');
+        const faltam = usar.filter(c => msg.includes(c));
+        if (!faltam.length && !/42703|PGRST204/.test(msg)) return r;   // outro problema (rede, permissão): quem chamou trata
+        usar = faltam.length ? usar.filter(c => !faltam.includes(c)) : usar.slice(0, -1);
+    }
     return r;
 }
 async function loadData() {
@@ -146,7 +156,7 @@ if(veArray&&veArray.length>0&&linha.id!=null){
     if(hashSalvo&&hashSalvo!==hashAtual)veArray=null;
     else if(!hashSalvo)_saveEmbToCache(linha.id,veArray,hashAtual);
 }
-if(veArray&&veArray.length>0){manualVetorizado.push({texto:tc2,erro:te,solucao:ts,emitir:tem,categoria:tc,caminhoMenu:tcm,vetor:veArray,idSupabase:linha.id});lcv++;}else{lsv.push({linha,textoCompleto:tc2,textoErro:te,textoSolucao:ts,textoEmitir:tem,textoCategoria:tc,textoCaminhoMenu:tcm,indexPlanilha:i+2,chaveVetor:cv,chaves,idSupabase:linha.id});}});return{linhasComVetor:lcv,linhasSemVetor:lsv,chaves};}
+if(veArray&&veArray.length>0){manualVetorizado.push({texto:tc2,erro:te,solucao:ts,emitir:tem,categoria:tc,caminhoMenu:tcm,imagens:linha.imagens||null,vetor:veArray,idSupabase:linha.id});lcv++;}else{lsv.push({linha,textoCompleto:tc2,textoErro:te,textoSolucao:ts,textoEmitir:tem,textoCategoria:tc,textoCaminhoMenu:tcm,indexPlanilha:i+2,chaveVetor:cv,chaves,idSupabase:linha.id});}});return{linhasComVetor:lcv,linhasSemVetor:lsv,chaves};}
 async function vetorizarEmBackground(lsv,chaves){
     const b=document.getElementById('statusBadge');
     const overlay=document.getElementById('vecOverlay');
@@ -173,7 +183,7 @@ async function vetorizarEmBackground(lsv,chaves){
         await new Promise(r=>setTimeout(r,500));
         const nv=await gerarEmbeddingComRetry(item.textoCompleto);
         if(nv){
-            manualVetorizado.push({texto:item.textoCompleto,erro:item.textoErro,solucao:item.textoSolucao,emitir:item.textoEmitir||"",categoria:item.textoCategoria,caminhoMenu:item.textoCaminhoMenu||"",vetor:nv,idSupabase:item.idSupabase});
+            manualVetorizado.push({texto:item.textoCompleto,erro:item.textoErro,solucao:item.textoSolucao,emitir:item.textoEmitir||"",categoria:item.textoCategoria,caminhoMenu:item.textoCaminhoMenu||"",imagens:(item.linha&&item.linha.imagens)||null,vetor:nv,idSupabase:item.idSupabase});
             BSOFT_VETORES.jina++;
             salvarVetorNoSupabase(item.idSupabase,nv,_hashConteudo(item.textoCompleto));
             es=0;

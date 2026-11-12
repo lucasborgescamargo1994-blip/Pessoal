@@ -7,7 +7,7 @@ function restaurarConversa(id) {
     if (typeof Esc !== 'undefined') Esc.limpar();
     const stream = document.getElementById('chatStream'); stream.innerHTML = '';
     if (conversa.mensagens.length === 0) { stream.appendChild(_criarWelcomeMsg()); return; }
-    conversa.mensagens.forEach(msg => { const d = document.createElement('div'); d.className = msg.sender === 'system' ? 'message system-msg' : msg.sender === 'ml' ? 'message ml-msg' : `message ${msg.sender==='user'?'user-msg':'ai-msg'}`; d.innerHTML = msg.text; stream.appendChild(d); });
+    conversa.mensagens.forEach(msg => { const d = document.createElement('div'); d.className = msg.sender === 'system' ? 'message system-msg' : msg.sender === 'ml' ? 'message ml-msg' : `message ${msg.sender==='user'?'user-msg':'ai-msg'}`; d.innerHTML = msg.text; if (msg.imagens && msg.imagens.length && typeof BancoImgUI !== 'undefined') { try { const g = BancoImgUI.montar(msg.imagens); if (g) d.appendChild(g); } catch (e) { /* sem as imagens, só o texto */ } } stream.appendChild(d); });
     scrollToBottom(true);
 }
 function renderizarListaConversas() {
