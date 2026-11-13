@@ -530,9 +530,10 @@ async function handleChat(opts) {
         _revelacao.atualizar(finalText);
         // Imagens do procedimento (js/core/imagens-banco.js): se o artigo da base de conhecimento em que a resposta se baseou tem prints, eles vêm junto, abaixo do texto. Pergunta de esclarecimento não leva imagem.
         let _imagensResp = [], _imagensAnalise = [];
-        if (!_opcoesEsc && typeof BancoImg !== 'undefined') { try { const _ai = BancoImg.analisar(rr, finalText); _imagensResp = _ai.imagens; _imagensAnalise = _ai.candidatos; } catch (e) { console.warn('[imagens] não consegui escolher as imagens do artigo:', e); } }
-        if (_imagensResp.length) console.log(`%c📷 [imagens do procedimento] ${_imagensResp.length} imagem(ns) do(s) artigo(s) usado(s) nesta resposta`, 'color:#0369a1;font-weight:600;');
-        else if (_imagensAnalise.length) console.log('%c📷 [imagens do procedimento] a busca trouxe artigo(s) com imagem, mas nenhuma entrou nesta resposta:', 'color:#92400e;font-weight:600;', '\n' + _imagensAnalise.map(c => `  #${c.id} "${c.titulo.slice(0, 60)}" — ${c.motivo} [semelhança ${Math.round(c.sim * 100)}%]`).join('\n'));
+        if (!_opcoesEsc && typeof BancoImg !== 'undefined') { try { const _ai = BancoImg.analisar(rr, finalText, query); _imagensResp = _ai.imagens; _imagensAnalise = _ai.candidatos; } catch (e) { console.warn('[imagens] não consegui escolher as imagens do artigo:', e); } }
+        const _vApp = (window.BSOFT_CONFIG && window.BSOFT_CONFIG.versaoApp) || '?';   // (a versão vai na linha: quem manda o print do console diz também qual versão estava rodando)
+        if (_imagensResp.length) console.log(`%c📷 [imagens do procedimento · v${_vApp}] ${_imagensResp.length} imagem(ns) do(s) artigo(s) usado(s) nesta resposta (prova: ${_imagensAnalise.filter(c => c.motivo === 'ok').map(c => '#' + c.id + ' ' + c.prova).join(', ')})`, 'color:#0369a1;font-weight:600;');
+        else if (_imagensAnalise.length) console.log(`%c📷 [imagens do procedimento · v${_vApp}] a busca trouxe artigo(s) com imagem, mas nenhuma entrou nesta resposta:`, 'color:#92400e;font-weight:600;', '\n' + _imagensAnalise.map(c => `  #${c.id} "${c.titulo.slice(0, 60)}" — ${c.motivo} [semelhança ${Math.round(c.sim * 100)}%]`).join('\n'));
         if (_opcoesEsc) {
             // pergunta de esclarecimento: não é uma resposta final (sem "foi útil?", sem atalhos); os botões entram quando o texto termina de aparecer.
             // Quem já escolheu (ou fixou) o formato curta/completa não escolhe de novo na passada seguinte.
