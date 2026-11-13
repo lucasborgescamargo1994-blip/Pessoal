@@ -74,11 +74,13 @@ const PNG1 = png(900, 520, [37, 99, 235, 255]).toString('base64'), PNG2 = png(90
     console.log('CALIBRAGEM (artigos reais da base, n=' + cal.n + '):', JSON.stringify(cal));
     ok('K1 resposta fiel ao artigo (com 35 % de palavras extras) fica ACIMA do limite de 45 % em 90 % dos casos', cal.ruidoso.p10 >= 0.45, 'p10=' + cal.ruidoso.p10 + ' · mediana=' + cal.ruidoso.med);
     ok('K2 artigo vizinho passa em menos de 10 % dos casos e artigo sem relação nunca passa', cal.vizinho.p90 < 0.45 && cal.semRelacao.max < 0.45, 'vizinho p90=' + cal.vizinho.p90 + ' · sem relação máx=' + cal.semRelacao.max);
-    // a prova por CÓPIA DE TRECHOS (28.39.1): resposta que abre com o bloco "Antes de tudo" dilui o vocabulário, mas continua copiando o procedimento do artigo
+    // a prova de que a resposta veio do artigo (28.39.2): o artigo é um dos que MAIS aparecem na resposta, comparado com os outros artigos que a IA recebeu (o contexto de 5 = o artigo + 4 vizinhos)
     const cop = await c.eval(require('fs').readFileSync(__dirname + '/calib-copia.js', 'utf8'));
-    console.log('CALIBRAGEM DA CÓPIA (artigos reais da base, n=' + cop.n + '):', JSON.stringify(cop));
-    ok('K3 resposta copiada do artigo (fiel, diluída pelo bloco "Antes de tudo", parafraseada ou curta) é reconhecida em 95 % ou mais dos casos', Object.values(cop.acerto).every(v => v >= 0.95), JSON.stringify(cop.acerto));
-    ok('K4 pela cópia, artigo vizinho passa em até 10 % dos casos e artigo sem relação em até 3 %', cop.falsoVizinho <= 0.10 && cop.falsoSemRelacao <= 0.03, 'vizinho=' + cop.falsoVizinho + ' · sem relação=' + cop.falsoSemRelacao);
+    console.log('CALIBRAGEM DA PROVA (artigos reais da base):', JSON.stringify(cop));
+    const todos = (g, ks, min) => ks.every(k => g.acerto[k] >= min);
+    ok('K3 artigo LONGO: resposta fiel, diluída pelo "Antes de tudo", parafraseada, curta e a que mistura 2–3 artigos são reconhecidas em 95 % ou mais dos casos', todos(cop.longos, ['fiel', 'diluida', 'parafraseada', 'curta', 'mistura', 'misturaGrande'], 0.95), JSON.stringify(cop.longos.acerto));
+    ok('K4 artigo CURTO (como o #89, de 428 caracteres): as quatro primeiras em 95 % ou mais; as que misturam 2–3 artigos em 90 % ou mais', todos(cop.curtos, ['fiel', 'diluida', 'parafraseada', 'curta'], 0.95) && todos(cop.curtos, ['mistura', 'misturaGrande'], 0.90), JSON.stringify(cop.curtos.acerto));
+    ok('K5 falso positivo: artigo vizinho que NÃO foi a fonte passa em até 4 % (longo) e 8 % (curto); artigo sem relação em até 2 %', cop.longos.falsoVizinho <= 0.04 && cop.curtos.falsoVizinho <= 0.08 && cop.longos.falsoSemRelacao <= 0.02 && cop.curtos.falsoSemRelacao <= 0.02, 'vizinho longo=' + cop.longos.falsoVizinho + ' · curto=' + cop.curtos.falsoVizinho + ' · sem relação=' + cop.longos.falsoSemRelacao + '/' + cop.curtos.falsoSemRelacao);
 
     // ── 3b) analisar(): quais artigos com imagem entram e o MOTIVO de cada um que ficou de fora ─────────────────────────────────────────────────────────────────────────────────
     const t3 = await c.eval(`(()=>{ const B=BancoImg, U='${URLB}'; const im = n => [{ url: U+'a/'+n+'.webp', legenda: 'L'+n }];
@@ -86,7 +88,9 @@ const PNG1 = png(900, 520, [37, 99, 235, 255]).toString('base64'), PNG2 = png(90
       const outro = 'Cadastro de motoristas com habilitacao validade e categoria da carteira registro de vencimentos mensais para controle da frota e emissao de relatorio';
       const mk = (id, conteudo, sim, extra) => Object.assign({ id, titulo: 'Artigo ' + id, conteudo, similaridade: sim, imagens: im(id) }, extra || {});
       const resp = 'Antes de tudo verifique o parametro de permissao do usuario e o ambiente de producao. Siga o procedimento: ' + passos;
-      const d1 = B.analisar([ mk(1, passos, 0.80), mk(2, outro, 0.70), mk(3, passos, 0.40), mk(4, passos, 0.90), mk(5, passos, 0.75, { _reforcoPalavraChave: true }) ], resp);
+      const semImg = (id, conteudo, sim) => ({ id, titulo: 'Artigo ' + id, conteudo, similaridade: sim });   // (entra na comparação "o que mais aparece na resposta", mas nunca é candidato)
+      // 7 artigos: 1 é a fonte; 2 é de outro assunto; 3 tem a mesma fonte mas semelhança baixa; 4 e 5 sem imagem; 6 tem imagem mas é o 6º (não é candidato); 7 é o 6º+ só pelo reforço de palavra-chave
+      const d1 = B.analisar([ mk(1, passos, 0.80), mk(2, outro, 0.70), mk(3, passos, 0.40), semImg(4, passos, 0.7), semImg(5, passos, 0.7), mk(6, passos, 0.7), mk(7, passos, 0.75, { _reforcoPalavraChave: true }) ], resp);
       const d2 = B.analisar([ mk(1, passos, 0.80), mk(2, passos, 0.78), mk(3, passos, 0.77) ], resp);
       const d3 = B.analisar([ { id: 9, titulo: 'sem imagem', conteudo: passos, similaridade: 0.9 }, mk(8, passos, 0.9, { isRepositorio: true }) ], resp);
       const d4 = B.analisar(null, resp), d5 = B.analisar([ mk(1, passos, 0.8) ], '');
@@ -94,10 +98,54 @@ const PNG1 = png(900, 520, [37, 99, 235, 255]).toString('base64'), PNG2 = png(90
                d2: { imagens: d2.imagens.map(x => x.id), motivo3: d2.candidatos[2].motivo },
                d3: { cand: d3.candidatos.length, imagens: d3.imagens.length }, d4: [d4.imagens.length, d4.candidatos.length], d5: d5.imagens.length,
                legenda: d1.imagens[0].legenda, titulo: d1.imagens[0].titulo, escolher: B.escolher([ mk(1, passos, 0.80) ], resp).length } })()`);
-    ok('D1 analisar(): entra o artigo da resposta e o reforço por palavra-chave; ficam de fora o de outro assunto, o de baixa semelhança e o que não é candidato (4º lugar sem reforço)', JSON.stringify(t3.d1.imagens) === '[1,5]' && JSON.stringify(t3.d1.cand) === JSON.stringify(['1:ok', '2:nao-veio', '3:semelhanca', '5:ok']), JSON.stringify(t3.d1));
+    ok('D1 analisar(): entra o artigo da resposta e o reforço por palavra-chave; ficam de fora o de outro assunto, o de baixa semelhança e o que não é candidato (6º lugar, sem reforço)', JSON.stringify(t3.d1.imagens) === '[1,7]' && JSON.stringify(t3.d1.cand) === JSON.stringify(['1:ok', '2:nao-veio', '3:semelhanca', '7:ok']), JSON.stringify(t3.d1));
     ok('D2 no máximo 2 artigos por resposta (o 3º diz o motivo)', JSON.stringify(t3.d2.imagens) === '[1,2]' && /já há 2 artigos/.test(t3.d2.motivo3), JSON.stringify(t3.d2));
     ok('D3 artigo sem imagem e repositório nunca são candidatos; lista vazia/nula e resposta vazia não quebram', t3.d3.cand === 0 && t3.d3.imagens === 0 && t3.d4[0] === 0 && t3.d4[1] === 0 && t3.d5 === 0, JSON.stringify([t3.d3, t3.d4, t3.d5]));
     ok('D4 escolher() continua devolvendo só a lista de imagens (com legenda e título)', t3.escolher === 1 && t3.legenda === 'L1' && t3.titulo === 'Artigo 1', JSON.stringify([t3.escolher, t3.legenda, t3.titulo]));
+
+    // ── 3c) a prova RELATIVA (o artigo é um dos que MAIS aparecem na resposta), o TÍTULO e a ESCOLHA ───────────────────────────────────────────────────────────────────────────
+    const t4 = await c.eval(`(()=>{ const B = BancoImg, U = '${URLB}'; const im = n => [{ url: U + 'r/' + n + '.webp', legenda: '' }];
+      const pal = (a, b) => Array.from({ length: b - a }, (_, i) => 'palavra' + (a + i)).join(' ');        // 'palavra0 palavra1 …': cada trecho de 3 palavras é único
+      const X = pal(0, 60);                                                                                  // a fonte da resposta (58 trechos), sem imagem
+      const art = (id, conteudo, extra) => Object.assign({ id, titulo: 'Titulo diferente ' + id, conteudo, similaridade: 0.8, imagens: im(id) }, extra || {});
+      const fonteSemImg = { id: 100, titulo: 'Fonte sem imagem', conteudo: X, similaridade: 0.8 };
+      const pouco = art(1, pal(0, 14) + ' ' + pal(200, 240));                                                // divide só 12 trechos com a fonte (12 < 70 % de 58 = 40,6) → fora
+      const meio = art(2, pal(0, 37) + ' ' + pal(400, 600));                                                 // 35 trechos (< 40,6) num artigo LONGO (35 ÷ ~235 = 15 % < 30 %): nem a relativa nem a forte → fora
+      const quase = art(3, pal(0, 47) + ' ' + pal(700, 900));                                                // 45 trechos (≥ 40,6) num artigo longo: entra pela RELATIVA
+      const forte = art(4, pal(0, 27) + ' ' + pal(950, 960));                                                // 25 trechos (< 40,6) mas é 71 % do artigo (curto): entra pela cláusula FORTE (20 trechos e 30 % do artigo)
+      const resposta = X + ' ' + pal(2000, 2150);                                                            // a fonte + 150 palavras que não estão em artigo nenhum (resposta longa: nenhum vizinho chega a 50 % dela)
+      const r1 = B.analisar([ fonteSemImg, pouco, meio, quase, forte ], resposta), c1 = r1.candidatos;
+      // título e escolha valem sem a resposta ter copiado nada (mas a resposta tem de existir: 60+ caracteres)
+      const longa = 'Resposta de teste sobre um assunto totalmente diferente, escrita só para ter mais de sessenta caracteres no total.';
+      const tit = 'Como cancelar um Ct-e na SEFAZ', semelhante = art(3, 'Texto sem relação com a resposta de teste', { titulo: tit });
+      const a1 = B.analisar([ semelhante ], longa, 'Como cancelar um Ct-e na SEFAZ?'), a2 = B.analisar([ semelhante ], longa, 'Como cancelar um MDF-e na SEFAZ'), a3 = B.analisar([ semelhante ], longa, 'como cancelar um ct-e na sefaz'), a4 = B.analisar([ semelhante ], 'Não sei.', tit), a5 = B.analisar([ semelhante ], longa), a6 = B.analisar([ semelhante ], longa, 'Como emitir um Ct-e na SEFAZ');
+      const esc = B.analisar([ Object.assign({}, semelhante, { _escolhidoPeloUsuario: true }) ], longa);
+      const m = (a, b) => B.mesmoTitulo(a, b);
+      return { r1: c1.map(x => x.id + ':' + x.motivo.slice(0, 11) + ':' + x.prova), imagens1: r1.imagens.map(x => x.id),
+               a: [a1, a2, a3, a4, a5, a6].map(x => x.imagens.length + '/' + (x.candidatos[0] || {}).prova), esc: esc.imagens.length + '/' + esc.candidatos[0].prova,
+               m: [ m('Como cancelar um Ct-e na SEFAZ', 'Como cancelar um Ct-e na SEFAZ'), m('Como cancelar um Ct-e na SEFAZ', 'como cancelar um ct-e na sefaz?'), m('Como cancelar um Ct-e na SEFAZ', 'Como cancelar um MDF-e na SEFAZ'), m('Como cancelar um Ct-e na SEFAZ', 'Como cancelar uma NF-e na SEFAZ'),
+                    m('Como emitir uma carta de correção para um ct-e?', 'como emitir carta de correcao cte'), m('Cancelar', 'Cancelar'), m('Como cancelar um Ct-e na SEFAZ', 'Como emitir um Ct-e na SEFAZ'), m('Como cancelar um Ct-e na SEFAZ', ''), m(null, undefined) ] } })()`);
+    ok('D5 prova de CÓPIA relativa: o vizinho com 12 ou 35 trechos (< 70 % do que a fonte deu, artigo longo) NÃO entra; o com 45 entra pela relativa; o com 25 trechos que são 71 % do artigo curto entra pela cláusula forte', JSON.stringify(t4.imagens1) === '[3,4]' && /a resposta/.test(t4.r1[0]) && /a resposta/.test(t4.r1[1]) && /:ok:cópia/.test(t4.r1[2]) && /:ok:cópia/.test(t4.r1[3]), JSON.stringify(t4.r1));
+    ok('D6 prova do TÍTULO: pergunta = título (com ?, maiúsculas, acentos) entra mesmo com resposta que não copiou nada; MDF-e ≠ CT-e e NF-e ≠ CT-e; resposta curta demais ("Não sei.") nunca vale', JSON.stringify(t4.a) === JSON.stringify(['1/título', '0/', '1/título', '0/', '0/', '0/']), JSON.stringify(t4.a));
+    ok('D7 prova da ESCOLHA (botões "qual é o seu caso?"): entra mesmo sem cópia', t4.esc === '1/escolha', t4.esc);
+    ok('M1 mesmoTitulo(): só vale com as mesmas palavras-chave (tipo de documento inteiro), ignora acento/caixa/pontuação; título ou pergunta de 1 palavra, vazios e nulos nunca valem', JSON.stringify(t4.m) === JSON.stringify([true, true, false, false, true, false, false, false, false]), JSON.stringify(t4.m));
+
+    // ── 3d) RESPOSTAS REAIS da IA (capturadas em ?sim=1) contra os artigos do momento: a imagem TEM que entrar sem a ajuda do título ─────────────────────────────────────────────────────
+    const FX = JSON.parse(require('fs').readFileSync(__dirname + '/fixtures-imagens.json', 'utf8'));
+    const t5 = await c.eval(`(()=>{ const FX = ${JSON.stringify(FX)}, B = BancoImg, U = '${URLB}'; const saida = [];
+      const rrDe = (p, distrator) => { const l = p.artigos.map(a => Object.assign({ idSupabase: a.id, erro: a.erro, solucao: a.solucao, emitir: a.emitir, caminhoMenu: a.caminhoMenu, similaridade: a.sim }, a.id === p.alvo ? { imagens: [{ url: U + 'fx/' + a.id + '.webp', legenda: '' }] } : {}));
+        if (distrator) l.splice(1, 0, Object.assign({ idSupabase: distrator.id, erro: distrator.erro, solucao: distrator.solucao, emitir: distrator.emitir, caminhoMenu: distrator.caminhoMenu, similaridade: 0.7, imagens: [{ url: U + 'fx/d' + distrator.id + '.webp', legenda: '' }] })); return l; };
+      FX.perguntas.forEach((p, pi) => { const outra = FX.perguntas[1 - pi], dist = outra.artigos.find(a => a.id === outra.alvo);
+        p.respostas.forEach(r => { const sem = B.analisar(rrDe(p), r.texto), com = B.analisar(rrDe(p), r.texto, p.pergunta), mix = B.analisar(rrDe(p, dist), r.texto);
+          const al = sem.candidatos.find(c => c.id === p.alvo), dc = mix.candidatos.find(c => c.id === dist.id);
+          saida.push({ p: pi, rodada: r.rodada, formato: r.formato, semPergunta: !!(al && al.motivo === 'ok'), prova: al && al.prova, n: al && al.trechos, maior: al && al.maiorTrechos, comTitulo: com.candidatos.find(c => c.id === p.alvo).prova, distratorEntrou: !!(dc && dc.motivo === 'ok'), distratorN: dc && dc.trechos }); }); });
+      return saida })()`);
+    const porP = i => t5.filter(x => x.p === i);
+    console.log('RESPOSTAS REAIS (sem a pergunta):', JSON.stringify(t5.map(x => ({ p: x.p, r: x.rodada, f: x.formato, ok: x.semPergunta, prova: x.prova, n: x.n, maior: x.maior }))));
+    ok('R1 "Como cancelar um Ct-e na SEFAZ": as ' + porP(0).length + ' respostas REAIS da IA (8 completas e 3 curtas; a regra da 28.39.1 deixava de fora 7 delas) trazem a imagem do #89 SÓ pela resposta', porP(0).length === 11 && porP(0).every(x => x.semPergunta), JSON.stringify(porP(0).map(x => x.rodada + x.formato[0] + ':' + x.n + '/' + x.maior)));
+    ok('R2 "Como emitir uma carta de correção para um ct-e?": as ' + porP(1).length + ' respostas REAIS (4 completas e 1 curta; a IA reescreve o passo a passo e a regra da 28.39.1 deixava de fora 3 delas) trazem a imagem do #460 SÓ pela resposta', porP(1).length === 5 && porP(1).every(x => x.semPergunta), JSON.stringify(porP(1).map(x => x.rodada + x.formato[0] + ':' + x.n + '/' + x.maior)));
+    ok('R3 com a pergunta (título igual) a prova do título também vale nas respostas reais', t5.every(x => x.comTitulo === 'título' || x.comTitulo === 'cópia'), JSON.stringify(t5.map(x => x.comTitulo)));
+    ok('R4 o artigo de OUTRA pergunta (com imagem, 2º da lista) NÃO entra em nenhuma das ' + t5.length + ' respostas reais', t5.every(x => !x.distratorEntrou), JSON.stringify(t5.map(x => x.distratorN)));
 
     // ── 4) resposta de verdade pelo handleChat (IA simulada) com um artigo REAL que recebeu 2 imagens ───────────────────────────────────────────────────────────────────────
     const prep = await c.eval(`(()=>{ window.normalizarSinonimos = t => t;   // palavras da pergunta exatamente como digitadas (determinístico)
@@ -139,8 +187,10 @@ const PNG1 = png(900, 520, [37, 99, 235, 255]).toString('base64'), PNG2 = png(90
     await c.eval("restaurarConversa(conversaAtivaId); 0"); await L.sleep(800);
     const rest = await c.eval("(()=>{ const g=document.querySelector('#chatStream .ai-msg .bd-imagens'); return g ? { fig: g.querySelectorAll('figure').length, dentro: !!g.closest('.message') } : null })()");
     ok('H2 ao reabrir a conversa as imagens voltam (dentro da mensagem)', rest && rest.fig === 2 && rest.dentro, JSON.stringify(rest));
-    // d) NÃO mostra: resposta que não veio do artigo
-    const rd = await perguntar(prep.titulo, 'Para configurar a impressão de etiquetas de volumes, acesse a rotina de expedição e escolha o modelo de etiqueta desejado, depois informe a quantidade de volumes e confirme a gravação do lote.');
+    // d) NÃO mostra: resposta que não veio do artigo. A pergunta NÃO é o título (duas palavras sem sentido no fim: o artigo continua na busca, mas a prova do título não vale) — aqui só a resposta decide
+    const Q2 = prep.titulo + ' zzqq wwxx';
+    const outroAssunto = 'Para configurar a impressão de etiquetas de volumes, acesse a rotina de expedição e escolha o modelo de etiqueta desejado, depois informe a quantidade de volumes e confirme a gravação do lote.';
+    const rd = await perguntar(Q2, outroAssunto);
     ok('N1 resposta sobre OUTRO assunto (mesmo com o artigo na busca) → sem imagem', rd && !rd.temGaleria, JSON.stringify(rd && rd.ordem));
     // d2) o caso REAL do dono (28.39.1): a resposta abre com o bloco "⚙️ Antes de tudo, verifique:" (vocabulário de outros artigos) e depois copia o procedimento do artigo → a imagem TEM que vir
     const dil = await c.eval(`(()=>{ const art = window.__art, B = BancoImg; const limpa = s => String(s).replace(/[*#>|\`_-]+/g, ' ');
@@ -150,19 +200,24 @@ const PNG1 = png(900, 520, [37, 99, 235, 255]).toString('base64'), PNG2 = png(90
       const montar = () => '## ' + art.titulo + '\\n\\n⚙️ **Antes de tudo, verifique:**\\n' + bloco + '\\nCom isso configurado, siga o procedimento:\\n' + proc;
       while (k < outros.length && k < 14) { bloco += '- ' + limpa(outros[k].conteudo).split(/\\s+/).slice(0, 40).join(' ') + '\\n'; k++; u = B.uso(art, B.tokens(montar())); if (u < 0.43) break; }
       const resp = montar(), cp = B.copia(art, B.trechos(resp));
-      return { resposta: resp, uso: +u.toFixed(3), n: cp.n, fr: +cp.fr.toFixed(3), copiou: B.copiou(cp), blocos: k } })()`);
+      return { resposta: resp, uso: +u.toFixed(3), n: cp.n, fr: +cp.fr.toFixed(3), copiou: cp.n >= 10, blocos: k } })()`);
     console.log('resposta diluída de teste:', JSON.stringify({ uso: dil.uso, trechos: dil.n, fracao: dil.fr, blocos: dil.blocos }));
     logsImagens.length = 0;
-    const rd2 = await perguntar(prep.titulo, dil.resposta);
-    ok('A6 resposta DILUÍDA pelo bloco "Antes de tudo" (vocabulário em comum abaixo de 45 %: a regra antiga recusaria) mas com o procedimento copiado → galeria com 2 figuras', dil.uso < 0.45 && dil.copiou && rd2 && rd2.temGaleria && rd2.figuras === 2, JSON.stringify({ uso: dil.uso, trechos: dil.n, fracao: dil.fr, figuras: rd2 && rd2.figuras }));
+    const rd2 = await perguntar(Q2, dil.resposta);
+    ok('A6 resposta DILUÍDA pelo bloco "Antes de tudo" (vocabulário em comum abaixo de 45 %: a regra da 28.39.0 recusaria) mas com o procedimento copiado → galeria com 2 figuras (sem a ajuda do título)', dil.uso < 0.45 && dil.copiou && rd2 && rd2.temGaleria && rd2.figuras === 2, JSON.stringify({ uso: dil.uso, trechos: dil.n, fracao: dil.fr, figuras: rd2 && rd2.figuras }));
     // d3) NÃO mostra: a resposta é cópia de OUTRO artigo real (o do teste está na busca, com imagem, mas não deu origem à resposta)
     const outroReal = await c.eval(`(()=>{ const art = window.__art, B = BancoImg; const limpa = s => String(s).replace(/[*#>|\`_-]+/g, ' ');
       const ach = bancoCompletoRaw.filter(r => r !== art && (r.conteudo||'').length >= 700 && !/[\\[\\]<>]/.test(r.titulo)).map(r => { const t = '## ' + r.titulo + '\\n\\n' + limpa(r.conteudo).slice(0, 1400); return { t, c: B.copia(art, B.trechos(t)), u: B.uso(art, B.tokens(t)) }; }).filter(x => !B.copiou(x.c) && x.u < 0.45)[0];
       return ach ? { resposta: ach.t, n: ach.c.n, uso: +ach.u.toFixed(3) } : null })()`);
     logsImagens.length = 0;
-    const rd3 = outroReal && await perguntar(prep.titulo, outroReal.resposta);
+    const rd3 = outroReal && await perguntar(Q2, outroReal.resposta);
     ok('N3 resposta copiada de OUTRO artigo real (o do teste só entrou na busca) → sem imagem', outroReal && rd3 && !rd3.temGaleria, JSON.stringify(outroReal && { trechos: outroReal.n, uso: outroReal.uso }));
-    ok('L1 sem imagem por esse motivo, o console diz qual artigo tinha imagem e por que não entrou', logsImagens.some(t => /nenhuma entrou nesta resposta/.test(t) && new RegExp('#' + prep.id + ' ').test(t) && /não parece vir deste artigo/.test(t)), logsImagens.map(t => t.slice(0, 200)).join(' | ') || '(nenhuma linha)');
+    ok('L1 sem imagem por esse motivo, o console diz qual artigo tinha imagem e por que não entrou (e a versão do sistema)', logsImagens.some(t => /nenhuma entrou nesta resposta/.test(t) && new RegExp('#' + prep.id + ' ').test(t) && /não parece vir deste artigo/.test(t) && /· v\d+\.\d+\.\d+\]/.test(t)), logsImagens.map(t => t.slice(0, 200)).join(' | ') || '(nenhuma linha)');
+    // d4) a PERGUNTA é o título do artigo → a imagem vem (prova do título), mesmo que a resposta fale de outro assunto
+    logsImagens.length = 0;
+    const rt1 = await perguntar(prep.titulo, outroAssunto);
+    ok('T1 pergunta IGUAL ao título do artigo → a imagem vem mesmo que a resposta fale de outro assunto (prova do título)', rt1 && rt1.temGaleria && rt1.figuras === 2, JSON.stringify(rt1 && { figuras: rt1.figuras }));
+    ok('T2 o console diz qual prova valeu (título)', logsImagens.some(t => /prova: #\d+ título/.test(t)), logsImagens.map(t => t.slice(0, 200)).join(' | ') || '(nenhuma linha)');
     // e) NÃO mostra: URL inválida gravada na coluna
     await c.eval("window.__art.imagens = [{ url: 'http://evil.example/x.png', legenda: 'x' }, { url: 'javascript:alert(1)' }, { url: 'data:image/png;base64,AAAA' }]; const m = manualVetorizado.find(x => x.idSupabase === window.__art.id); if (m) m.imagens = window.__art.imagens; 0");
     const re = await perguntar(prep.titulo, '## ' + prep.titulo + '\n\n' + await c.eval('window.__texto'));

@@ -1,0 +1,181 @@
+{
+ "nota": "Respostas REAIS da IA (capturadas em ?sim=1, 13/11/2026) e os artigos do contexto no momento da captura. Só para os testes de teste-imagens-chat.js: o texto dos artigos é cópia da base de conhecimento. Rótulo \"a\" = 1ª captura (28.39.1), \"b\" = captura feita com a 28.39.2.",
+ "perguntas": [
+  {
+   "pergunta": "Como cancelar um Ct-e na SEFAZ",
+   "alvo": 89,
+   "artigos": [
+    {
+     "id": 376,
+     "sim": 0.775,
+     "erro": "Como cancelar na SEFAZ um Ct-e/conhecimento?",
+     "solucao": "Cancelamento na SEFAZ de Ct-e/Conhecimento: Para cancelar um Ct-e na SEFAZ, vai em Transporte/Documentos/Ct-e ou Transporte/Conhecimentos, seleciona o documento desejado, depois basta clicar no ícone da SEFAZ (CT-e) e executar a opção Cancelar na SEFAZ.",
+     "emitir": "",
+     "caminhoMenu": ""
+    },
+    {
+     "id": 89,
+     "sim": 0.764,
+     "erro": "Como cancelar um Ct-e na SEFAZ",
+     "solucao": "1º Vai em Transporte > Conhecimentos ou Transporte > Documentos > Ct-e\n2º Selecione o Ct-e que deseja\n3º Clica no ícone da SEFAZ \n4º Seleciona a opção \"Cancelar Ct-e na SEFAZ\"\n5º Digite o motivo do cancelamento\n6º Clica em \"Executar\"\n\nUm dos requisitos é que esteja dentro do prazo de cancelamento que é 8 horas para o MT e 168 horas para demais estados e também não estar com MDF-e vinculado que esteja encerrado ou verificado.",
+     "emitir": "",
+     "caminhoMenu": "Transporte > Conhecimentos ou Transporte > Documentos > Ct-e"
+    },
+    {
+     "id": 147,
+     "sim": 0.741,
+     "erro": "Como cancelar ct-e que está fora do prazo para cancelamento e substituição?",
+     "solucao": "Caso o CT-e esteja fora das condições para cancelamento (prazo de 8 horas para MT e 168 horas para demais estados, ou com MDF-e vinculado que esteja encerrado ou verificado), será necessário entrar em contato com seu contador para que ele abra um chamado na SEFAZ solicitando autorização para o cancelamento extemporâneo do CT-e em questão.\nCaso o cancelamento extemporâneo não for autorizado, pode habilitar a opção de cancelamento gerencial para o usuário gerente de recursos, assim fica cancelamento apenas no SISTEMA o ct-e (Lembrando que não tem efeito nenhum na SEFAZ o cancelamento gerencial).",
+     "emitir": "",
+     "caminhoMenu": ""
+    },
+    {
+     "id": 291,
+     "sim": 0.738,
+     "erro": "Como cancelar gerencialmente um ct-e?",
+     "solucao": "Primeiramente verificar se está habilitado para o usuário a funcionalidade 211 - Quem pode cancelar CT-e gerencialmente. Caminho para funcionalidades é Ambiente / Controle de Acesso / Funcionalidades. Depois de habilitado, atualiza as permissões do usuário, vai no Ct-e que deseja cancelar gerencialmente, clica no ícone da SEFAZ e executa a opção Cancelar CT-e Gerencialmente.",
+     "emitir": "",
+     "caminhoMenu": ""
+    },
+    {
+     "id": 505,
+     "sim": 0.733,
+     "erro": "Preciso cancelar um ct-e que vinculei a um manifesto de carga, porém esse mdf-e não enviei para a SEFAZ, apenas criei e está dando erro de Ct-e vinculado a um Manifesto de carga, como proceder?",
+     "solucao": "Primeiro  de tudo, não existe cancelamento gerencial de Mdf-e, somente tem cancelamento gerencial para Ct-e, Nf-e, Nfs-e.\nSe o manifesto de carga (mdfe) não foi transmitido, basta remover ele. Após removido pode cancelar o ct-e na Sefaz normalmente.",
+     "emitir": "",
+     "caminhoMenu": ""
+    }
+   ],
+   "respostas": [
+    {
+     "rodada": "a1",
+     "formato": "completa",
+     "texto": "Para cancelar um **CT‑e na SEFAZ**, siga os passos abaixo:\n\n- **Acesse** pelo menu do sistema:\n  - `Transporte > Conhecimentos` **ou**\n  - `Transporte > Documentos > Ct-e`\n\n- **Selecione** o CT‑e que deseja cancelar.\n\n- Clique no **ícone da SEFAZ** (o ícone que representa a integração com a SEFAZ).\n\n- **Selecione** a opção **\"Cancelar Ct-e na SEFAZ\"**.\n\n- **Digite** o motivo do cancelamento.\n\n- Clique em **\"Executar\"** para confirmar o cancelamento.\n\n**Observações importantes**\n\n- O cancelamento na SEFAZ só é possível dentro do prazo:\n  - **8 horas** para MT (Mato Grosso)\n  - **168 horas** (7 dias) para os demais estados\n\n- Se o CT‑e estiver vinculado a um **MDF‑e encerrado ou verificado**, a SEFAZ não permite o cancelamento. Nesse caso, será necessário solicitar um **cancelamento extemporâneo** junto à SEFAZ (via contador) ou utilizar o **cancelamento gerencial** (se a funcionalidade “Quem pode cancelar CT-e gerencialmente” estiver habilitada para o usuário).\n\n- Se o CT‑e estiver fora do prazo de cancelamento ou com MDF‑e encerrado, **entre em contato com seu contador** para abertura de chamado na SEFAZ solicitando autorização para cancelamento extemporâneo.\n\nPronto! Após executar os passos, o CT‑e será cancelado junto à SEFAZ, desde que as condições acima sejam atendidas."
+    },
+    {
+     "rodada": "a2",
+     "formato": "completa",
+     "texto": "Olá! 😊 Vou te guiar pelo processo de cancelamento de um CT-e diretamente na SEFAZ, usando as informações que temos no sistema.\n\n**Antes de começar – o que pode impedir o cancelamento**\n\n- **Prazo de cancelamento:** 8 horas para MT e 168 horas para os demais estados.\n- **MDF-e vinculado:** Se o CT-e estiver vinculado a um MDF-e que já foi **encerrado ou verificado** na SEFAZ, o cancelamento não será permitido (a viagem é considerada concluída).\n\nSe você estiver fora do prazo ou com um MDF-e encerrado, será necessário solicitar um **cancelamento extemporâneo** junto à SEFAZ (via contador) ou usar um cancelamento gerencial (se habilitado). Para este guia, vamos assumir que o CT-e atende aos requisitos padrão.\n\n---\n\n**Passos para cancelar um CT-e na SEFAZ**\n\n1. **Acesse o menu do sistema:**\n   - `Transporte > Conhecimentos` **ou**\n   2º `Transporte > Documentos > CT-e`\n\n2. **Selecione o CT-e** que deseja cancelar.\n\n3. **Clique no ícone da SEFAZ (CT-e)** – ele aparece na tela do documento.\n\n4. **Escolha a opção “Cancelar CT-e na SEFAZ”.**\n\n5. **Informe o motivo do cancelamento** – este campo é obrigatório.\n\n6. **Clique em “Executar”** para confirmar o cancelamento.\n\nApós a execução, o sistema exibirá uma mensagem de sucesso e o status do CT-e passará para “Cancelado” na SEFAZ.\n\n---\n\n**Se o cancelamento não for permitido**\n\n- **MDF-e não transmitido:** Se o manifesto ainda não foi enviado, você pode removê-lo primeiro e, em seguida, tentar o cancelamento normal na SEFAZ.\n- **Fora do prazo / MDF-e encerrado:** Entre em contato com seu contador para solicitar um **cancelamento extemporâneo** junto à SEFAZ. Se o cancelamento extemporâneo não for autorizado, você pode habilitar o **cancelamento gerencial** (funcionalidade “Quem pode cancelar CT-e gerencialmente”) para um cancelamento apenas no sistema.\n\n---\n\nÉ isso! Com o CT-e dentro do prazo e sem vínculos com MDF-e encerrados, os passos acima finalizam o cancelamento na SEFAZ. Se algo impedir, siga as alternativas descritas."
+    },
+    {
+     "rodada": "a5",
+     "formato": "completa",
+     "texto": "Olá! 😊 Vou te guiar pelo processo de cancelamento de um CT‑e diretamente na SEFAZ, usando as informações que temos no sistema.\n\n**Antes de começar – o que você precisa verificar:**\n- O CT‑e deve estar dentro do **prazo de cancelamento** (8 horas para MT ou 168 horas para os demais estados).\n- Ele **não pode estar vinculado a um MDF‑e que já tenha sido encerrado ou verificado**.\n\nSe o seu CT‑e não atender a esses requisitos, o cancelamento na SEFAZ será bloqueado — nesse caso, converse com o seu contador sobre um cancelamento extemporâneo ou gerencial.\n\n---\n\n**Passos para cancelar um CT‑e na SEFAZ**\n\n1. **Acesse o menu do sistema**\n   - Pelo caminho **Transporte > Conhecimentos**, **ou**\n   - Pelo caminho **Transporte > Documentos > Ct-e**\n\n2. **Selecione o CT‑e que deseja cancelar**\n   - Na listagem, marque o conhecimento eletrônico que você quer cancelar.\n\n3. **Clique no ícone da SEFAZ** (geralmente representado por um símbolo de nota fiscal ou um ícone de nuvem) que aparece na tela do CT‑e.\n\n4. **Escolha a opção “Cancelar Ct‑e na SEFAZ”**\n   - Um menu ou janela lateral exibirá a ação de cancelamento — selecione-a.\n\n5. **Informe o motivo do cancelamento**\n   - Digite o motivo pelo qual o cancelamento está sendo solicitado (este campo é obrigatório).\n\n6. **Execute o cancelamento**\n   probably the user wants to click \"Executar\" or \"Confirmar\". The article says \"Clica em \"Executar\". So we use that.\n\n7. **Confirme a operação**\n   - O sistema exibirá uma mensagem de sucesso (ou erro) informando se o cancelamento foi realizado com sucesso na SEFAZ.\n\nPronto! O CT‑e agora está cancelado junto à SEFAZ. ✅\n\n---\n\n**Se o cancelamento na SEFAZ não for possível** (por exemplo, MDF‑e encerrado), você pode considerar:\n\n- **Cancelamento gerencial** (apenas no sistema) – disponível para usuários com a funcionalidade “Quem pode cancelar CT‑e gerencialmente” habilitada. Para isso, primeiro libere a funcionalidade em **Ambiente > Controle de Acesso > Funcionalidades**, depois **atualize as permissões** (Opções do Sistema > Atualizar Permissões) e execute o cancelamento gerencial pelo mesmo ícone da SEFAZ.\n\n---\n\nEspero que isso ajude! Se precisar de mais detalhes ou tiver outras dúvidas, é só avisar."
+    },
+    {
+     "rodada": "a6",
+     "formato": "completa",
+     "texto": "Olá! 😊 Vou te guiar pelo processo de cancelamento de um CT‑e diretamente na SEFAZ, usando as informações que temos no sistema.\n\n**Onde encontrar a tela**\nAcesse pelo menu do sistema:\n\n- **Transporte > Conhecimentos**  ou  **Transporte > Documentos > Ct‑e**\n\n**Passos para cancelar o CT‑e na SEFAZ**\n\n1. **Selecione o CT‑e** que deseja cancelar na listagem.\n2. Clique no **ícone da SEFAZ** (o símbolo de CT‑e) que aparece na tela.\n3. Escolha a opção **\"Cancelar Ct‑e na SEFAZ\"**.\n4. **Digite o motivo** do cancelamento (campo obrigatório).\n5. Clique em **\"Executar\"** para confirmar.\n\n**Pontos importantes a considerar**\n\n- O cancelamento só é permitido **dentro do prazo**: 8 horas para MT ou 168 horas para os demais estados.\n- Se o CT‑e estiver vinculado a um MDF‑e **encerrado ou verificado**, a SEFAZ não autoriza o cancelamento.\n- Caso o CT‑e esteja fora do prazo ou vinculado a um MDF‑e encerrado, será necessário entrar em contato com o contador para solicitar um **cancelamento extemporâneo** junto à SEFAZ.\n\nSe o cancelamento extemporâneo não for autorizado, existe a opção de **cancelamento gerencial** (apenas no sistema), mas isso só está disponível para usuários com a funcionalidade “Quem pode cancelar CT‑e gerencialmente” liberada.\n\nÉ isso! Com esses passos você consegue cancelar um CT‑e na SEFAZ sempre que necessário. 🚀"
+    },
+    {
+     "rodada": "a8",
+     "formato": "completa",
+     "texto": "**Como cancelar um CT‑e na SEFAZ**\n\nPara cancelar um CT‑e diretamente na SEFAZ, siga os passos abaixo (eles estão documentados no nosso conhecimento):\n\n1. **Acesse a tela de CT‑e**\n   - Pelo menu do sistema: **Transporte > Conhecimentos** ou **Transporte > Documentos > CT‑e**\n\n2. **Selecione o CT‑e que deseja cancelar**\n   - Escolha o documento específico na listagem.\n\n3. **Clique no ícone da SEFAZ**\n   - O ícone aparece como um **selo/estampa** ao lado do CT‑e selecionado.\n\n4. **Escolha a opção “Cancelar CT‑e na SEFAZ”**\n   - No menu que se abre, selecione a opção de cancelamento.\n\n5. **Informe o motivo do cancelamento**\n   - Digite o motivo pelo qual está solicitando o cancelamento.\n\n6. **Execute o cancelamento**\n   - Clique em **Executar** para confirmar.\n\n---\n\n### Pontos importantes a considerar\n\n- **Prazo de cancelamento:** O CT‑e só pode ser cancelado na SEFAZ dentro do prazo legal (8 horas para MT e 168 horas para os demais estados). Se o prazo já tiver passado, será necessário solicitar um **cancelamento extemporâneo** junto à SEFAZ (via contador).\n- **Vinculação com MDF‑e:** Se o CT‑e estiver vinculado a um MDF‑e **encerrado**, a SEFAZ não permite o cancelamento (a viagem já foi concluída). Nesse caso, você pode considerar um CT‑e complementar, de substituição ou uma carta de correção, ou ainda solicitar o cancelamento extemporâneo.\n- **Cancelamento gerencial:** Se precisar cancelar apenas no sistema (sem efeito na SEFAZ), é preciso ter a funcionalidade **“Quem pode cancelar CT‑e gerencialmente”** liberada em **Ambiente > Controle de Acesso > Funcionalidades** e depois atualizar as permissões do usuário (Opções do Sistema > Atualizar Permissões).\n\n---\n\n**Se o cancelamento na SEFAZ não for possível** (por exemplo, por estar fora do prazo ou vinculado a um MDF‑e encerrado), entre em contato com seu contador para solicitar a autorização de cancelamento extemporâneo junto à SEFAZ."
+    },
+    {
+     "rodada": "a3",
+     "formato": "completa",
+     "texto": "**Para cancelar um CT‑e na SEFAZ**, siga os passos abaixo. Lembre-se de que o cancelamento só é permitido dentro do prazo (8 horas para MT, 168 horas para os demais estados) e se o CT‑e **não** estiver vinculado a um MDF‑e encerrado ou verificado.\n\n1. **Acesse o CT‑e**\n   - Pelo menu do sistema: **Transporte > Conhecimentos** ou **Transporte > Documentos > CT‑e**\n\n2. **Selecione o CT‑e** que deseja cancelar.\n\n3. **Clique no ícone da SEFAZ** (geralmente representado por um símbolo de nota fiscal ou um ícone de nuvem) que aparece na tela do documento.\n\n4. **Escolha a opção “Cancelar CT‑e na SEFAZ”** no menu que se abre.\n\n5. **Informe o motivo do cancelamento** conforme exigido pelo sistema.\n\n6. **Clique em “Executar”** para confirmar o cancelamento.\n\nApós a execução, o CT‑e será cancelado junto à SEFAZ, desde que as condições acima sejam atendidas.\n\n---\n\n**Se o CT‑e estiver fora do prazo ou vinculado a um MDF‑e encerrado**, será necessário entrar em contato com o contador para solicitar um cancelamento extemporâneo junto à SEFAZ ou utilizar o cancelamento gerencial (se a funcionalidade estiver habilitada).\n\n---"
+    },
+    {
+     "rodada": "a9",
+     "formato": "curta",
+     "texto": "1. Vá em **Transporte > Conhecimentos** (ou **Transporte > Documentos > Ct-e**)\n2. Selecione o CT-e desejado\n3. Clique no ícone da **SEFAZ** (CT-e)\n4. Escolha a opção **\"Cancelar CT-e na SEFAZ\"**\n5. Informe o motivo do cancelamento\n6. Clique em **Executar**"
+    },
+    {
+     "rodada": "a10",
+     "formato": "curta",
+     "texto": "- Vá em **Transporte > Conhecimentos** (ou **Transporte > Documentos > Ct-e**)\n- Selecione o CT-e desejado\n- Clique no ícone da **SEFAZ** (CT-e)\n- Escolha a opção **\"Cancelar CT-e na SEFAZ\"**\n- Informe o motivo do cancelamento\n- Clique em **Executar**\n- Importante: só pode cancelar dentro do prazo (8 h para MT, 168 h para outros estados) e se não estiver vinculado a MDF-e encerrado."
+    },
+    {
+     "rodada": "b4",
+     "formato": "completa",
+     "texto": "**Como cancelar um CT‑e na SEFAZ**\n\nAntes de iniciar o cancelamento, verifique se o CT‑e atende aos requisitos básicos:\n\n- **Prazo de cancelamento:** 8 horas para MT ou 168 horas para os demais estados.\n- **Vinculação com MDF‑e:** o CT‑e não pode estar vinculado a um MDF‑e que já esteja **encerrado ou verificado** na SEFAZ.\n\nSe o CT‑e estiver fora do prazo ou vinculado a um MDF‑e encerrado, o cancelamento normal na SEFAZ não será permitido. Nesse caso, consulte o contador para solicitar um cancelamento extemporâneo ou avalie as opções de CT‑e complementar/substitutivo.\n\n---\n\n### Passos para cancelar um CT‑e na SEFAZ\n\n1. **Acesse o menu do sistema**\n   - `Transporte > Conhecimentos` **ou**\n   - `Transporte > Documentos > CT‑e`\n\n2. **Selecione o CT‑e** que deseja cancelar.\n\n3. **Clique no ícone da SEFAZ** (geralmente representado por um símbolo de nota fiscal ou um ícone específico da SEFAZ).\n\n4. **Escolha a opção “Cancelar CT‑e na SEFAZ”**.\n\n5. **Informe o motivo** do cancelamento (campo obrigatório).\n\n6. **Clique em “Executar”** para confirmar.\n\nO sistema exibirá uma mensagem de sucesso se o cancelamento for processado pela SEFAZ.\n\n---\n\n### O que fazer se o cancelamento não for permitido\n\n- **Fora do prazo / MDF‑e encerrado:** Entre em contato com o contador para solicitar um **cancelamento extemporâneo** junto à SEFAZ.\n- **Dados incorretos:** Considere usar um **CT‑e complementar** (para valores/faltantes) ou um **CT‑e de substituição** (para trocar tomador, remetente, destinatário, valores, etc.).\n- **Correções descritivas:** Utilize a **Carta de Correção** para ajustes que não descaracterizem a operação.\n\n---"
+    },
+    {
+     "rodada": "b5",
+     "formato": "completa",
+     "texto": "Olá! 😊 Vou te mostrar como cancelar um CT‑e diretamente na SEFAZ, usando o que temos documentado.\n\n**Pré-requisitos (para que o cancelamento funcione):**\n- O CT‑e deve estar **dentro do prazo de cancelamento** (8 horas para MT ou 168 horas para os demais estados).\n- O CT‑e **não pode estar vinculado a um MDF‑e que já tenha sido encerrado ou verificado** – nesse caso, a SEFAZ bloqueia o cancelamento.\n\nSe o CT‑e estiver fora do prazo ou vinculado a um MDF‑e encerrado, será necessário entrar em contato com o contador para solicitar um cancelamento extemporâneo na SEFAZ (ou usar o cancelamento gerencial, se for o caso).\n\n---\n\n### Como cancelar um CT‑e na SEFAZ\n\n1. **Acesse o CT‑e**\n   - Pelo menu do sistema: **Transporte > Conhecimentos** ou **Transporte > Documentos > CT‑e**.\n   - Localize o CT‑e que deseja cancelar e selecione-o.\n\n2. **Clique no ícone da SEFAZ**\n   - Na tela do CT‑e, encontre o ícone (geralmente um símbolo de “SEFAZ”) e clique nele.\n\n3. **Escolha a opção de cancelamento**\n   - Aparecerá um menu; selecione **“Cancelar CT‑e na SEFAZ”**.\n\n4. **Informe o motivo**\n   - Digite o motivo do cancelamento (campo obrigatório).\n\n5. **Execute o cancelamento**\n   - Confirme a ação e finalize. Se a SEFAZ aceitar, você verá uma mensagem de sucesso.\n\n---\n\n### O que fazer se o cancelamento for bloqueado?\n\n- **Prazo excedido:** converse com seu contador para abrir um pedido de cancelamento extemporâneo na SEFAZ.\n- **MDF‑e encerrado:** se o manifesto estiver fechado, só dá para corrigir o CT‑e com um **CT‑e complementar** ou **substitutivo**, ou ainda solicitar o cancelamento extemporâneo via contador.\n\n---\n\nÉ só seguir estes passos e o CT‑e será cancelado na SEFAZ, desde que as condições acima sejam atendidas. 🚀"
+    },
+    {
+     "rodada": "b7",
+     "formato": "curta",
+     "texto": "- Acesse **Transporte > Conhecimentos** ou **Transporte > Documentos > Ct-e**.\n- Selecione o CT-e desejado.\n- Clique no ícone da **SEFAZ**.\n- Escolha **Cancelar CT-e na SEFAZ**.\n- Digite o motivo do cancelamento.\n- Clique em **Executar**.\n\n**Observação:** Só é possível cancelar dentro do prazo (8h para MT, 168h para outros estados) e se não estiver vinculado a MDF-e encerrado."
+    }
+   ]
+  },
+  {
+   "pergunta": "Como emitir uma carta de correção para um ct-e?",
+   "alvo": 460,
+   "artigos": [
+    {
+     "id": 460,
+     "sim": 0.762,
+     "erro": "Como emitir uma carta de correção para um ct-e?",
+     "solucao": "Finalidade: Corrigir erros operacionais em um CT-e já emitido sem a necessidade de cancelá-lo, desde que não afete valores fiscais.\n\nRestrições Importantes:\n\nNão é possível cancelar uma Carta de Correção.\n\nNão é possível emitir CC-e para um CT-e que já foi substituído.\n\nO que a CC-e PODE corrigir:\n\nDados de Endereço: Rua, número, bairro, cidade e CEP do remetente, destinatário ou local de entrega.\n\nInformações da Carga: Descrição do produto (desde que não altere a alíquota do imposto), peso, volume e quantidade.\n\nDados do Documento: CFOP (desde que não altere a natureza dos impostos) e observações/informações adicionais.\n\nO que a CC-e NÃO PODE corrigir:\n\nValores: Base de cálculo, alíquota, diferença de preço, quantidade do valor do serviço, valor total da prestação (frete, pedágio, etc.).\n\nIdentificação de Partes: Dados cadastrais do emitente, tomador, remetente ou destinatário.\n\nDatas: Data de emissão ou data de saída.\n\nMercadorias: Alteração de descrição que altere a alíquota dos impostos.\n\nAcesse Transporte > Conhecimentos ou Transporte > Documentos > Ct-e, selecione o ct-e que deseja, clica no ícone \"Carta de correção\" e depois em \"Emitir CC-e\".\nVai abrir uma tela nova com todas as opções possíveis para edição na carta de correção, realize o que precisar e depois clica em \"Salvar e gerar carta de correção\" que já irá transmitir ela para o SEFAZ.",
+     "emitir": "",
+     "caminhoMenu": "Transporte > Conhecimentos ou Transporte > Documentos > Ct-e"
+    },
+    {
+     "id": 521,
+     "sim": 0.732,
+     "erro": "Como posso ver as cartas de correção que foram emitidas?",
+     "solucao": "Seleciona o Ct-e em questão, e clica no ícone Carta de Correção, e clica na opção Visualizar CC-e. Vai aparecer todas as cartas de correção vinculadas ao ct-e.",
+     "emitir": "",
+     "caminhoMenu": ""
+    },
+    {
+     "id": 407,
+     "sim": 0.635,
+     "erro": "como emitir cte de devolução?",
+     "solucao": "Não tem como devolver um serviço de Ct-e, mas provavelmente o que quis dizer é realizar o frete de uma mercadoria devolvida. Nesse caso é obrigatório ter a nota fiscal de devolução e fazer o ct-e com essa nota. Não deve fazer com a nota original por conta que o remetente e destinatário dai estar incorreto em relação ao trajeto de retorno da devolução. O processo de emissão do Ct-e é igualmente um Ct-e normal, só muda mesmo que irá fazer com a nota de devolução.",
+     "emitir": "",
+     "caminhoMenu": ""
+    },
+    {
+     "id": 635,
+     "sim": 0.633,
+     "erro": "Cancelar ct-e que possui  carta de correção emitida para ele",
+     "solucao": "Não é possível cancelar um CT-e (Conhecimento de Transporte Eletrônico) que já possua uma Carta de Correção Eletrônica (CC-e) vinculada a ele. Isso é uma regra da SEFAZ.",
+     "emitir": "",
+     "caminhoMenu": ""
+    },
+    {
+     "id": 139,
+     "sim": 0.629,
+     "erro": "Como emitir um Ct-e complementar no sistema?",
+     "solucao": "Informações importantes: Um CTe complementar pode incluir informações como valores de frete, impostos (ICMS), pedágio, taxas e reentrega, que estavam incorretos ou faltaram no CTe original. É obrigatório que as informações sobre remetente, destinatário, tomador, tipo de serviço, CFOP e dados da NFe vinculada sejam idênticas ao documento original. \nAs únicas alterações permitidas são os valores, que devem ser a diferença entre o valor correto e o valor original. \n\nPara emitir um CT-e complementar Acesse no menu Transporte/Documentos/Ct-e ou Transporte/Conhecimentos, clica em adicionar e seleciona a opção Preenchimento Manual. Coloca a mesma agência e talão do ct-e original, e em Tipo de Ct-e coloca a opção Complemento de valores, vai abrir uma opção abaixo para referenciar o ct-e anterior. Depois disso basta avançar e colocar os valores a serem complementados conforme necessidade. Lembrando que para conseguir salvar o Ct-e com valor total prestação zerado deve estar habilitado a funcionalidade 315 - Quem pode salvar CTe com valor zerado\n",
+     "emitir": "",
+     "caminhoMenu": ""
+    }
+   ],
+   "respostas": [
+    {
+     "rodada": "a1",
+     "formato": "completa",
+     "texto": "**Quem pode emitir a Carta de Correção Eletrônica** (funcionalidade)\n\n- **Verifique** se a funcionalidade **Quem pode emitir a Carta de Correção Eletrônica** está **liberada** para o seu usuário (ou grupo dele) em **Ambiente > Controle de Acesso > Funcionalidades**. Se não estiver liberada, solicite ao administrador do sistema que a habilite e atualize as permissões (**Opções do Sistema > Atualizar Permissões**).\n\nCom isso configurado, siga o procedimento:\n\n1. Acesse o menu do sistema **Transporte > Conhecimentos** ou **Transporte > Documentos > Ct-e**.\n2. Na listagem, **selecione** o CT-e que deseja corrigir.\n3. Clique no ícone **Carta de correção** e depois em **Emitir CC-e**.\n4. Vai abrir uma tela nova com todas as opções possíveis para edição na carta de correção. **Realize as alterações necessárias** (dados de endereço, descrição da carga, observações, etc.).\n5. Depois, clique em **Salvar e gerar carta de correção**. O sistema transmitirá a CC-e para o SEFAZ automaticamente.\n\n💡 Verifique também a funcionalidade **Quem pode emitir a Carta de Correção Eletrônica** (caso ainda não tenha liberado, solicite ao administrador)."
+    },
+    {
+     "rodada": "a3",
+     "formato": "completa",
+     "texto": "**⚙️ Antes de tudo, verifique:**\n\n- **Quem pode emitir a Carta de Correção Eletrônica** (funcionalidade) – verifique se o seu usuário ou grupo tem essa funcionalidade **habilitada** em **Ambiente > Controle de Acesso > Funcionalidades**. Se necessário, after making changes, run **Opções do Sistema > Atualizar Permissões** to apply the new permissions.\n\nCom isso configurado, siga o procedimento:\n\n1. **Acesse a tela de emissão de CT-e**\n   - No menu do sistema, vá até **Transporte > Conhecimentos** ou **Transporte > Documentos > Ct-e**.\n\n2. **Selecione o CT-e que deseja corrigir**\n   - Na listagem, clique no CT-e correspondente.\n\n3. **Abra a tela de Carta de Correção**\n   - Clique no ícone **Carta de correção**.\n   - Escolha a opção **Emitir CC-e**.\n\n4. **Preencha as correções necessárias**\n   - A tela de edição da CC-e será aberta, exibindo todos os campos que podem ser alterados (ex.: dados de endereço, descrição da carga, CFOP, observações, etc.).\n   - Faça as alterações desejadas, respeitando as regras da SEFAZ (não é possível corrigir valores, dados cadastrais, datas, etc.).\n\n5. **Gere e transmita a Carta de Correção**\n   - Clique em **Salvar e gerar carta de correção**.\n   - O sistema transmitirá automaticamente a CC-e para a SEFAZ.\n\nPronto! A carta de correção foi emitida e está disponível para consulta e impressão, vinculada ao CT-e original."
+    },
+    {
+     "rodada": "a4",
+     "formato": "curta",
+     "texto": "⚙️ Antes de tudo, verifique:\n- **Quem pode emitir a Carta de Correção Eletrônica** (funcionalidade) precisa estar **habilitada** para o usuário/grupo em **Ambiente > Controle de Acesso > Funcionalidades**. Após alterar, execute **Opções do Sistema > Atualizar Permissões**.\n\nCom isso configurado, siga o procedimento:\n\n- Acesse **Transporte > Conhecimentos** ou **Transporte > Documentos > Ct-e**.\n- Selecione o CT-e que deseja corrigir.\n- Clique no ícone **Carta de correção**.\n- Clique em **Emitir CC-e**.\n- Faça as alterações necessárias na tela que abre.\n- Clique em **Salvar e gerar carta de correção** para transmitir para a SEFAZ."
+    },
+    {
+     "rodada": "b1",
+     "formato": "completa",
+     "texto": "**⚙️ Antes de tudo, verifique:**\n- **Quem pode emitir a Carta de Correção Eletrônica** (funcionalidade) – certifique-se de que o usuário (ou o grupo dele) tem essa funcionalidade **habilitada**. Onde conferir/alterar: **Ambiente > Controle de Acesso > Funcionalidades**. Após alterar, atualize as permissões em **Opções do Sistema > Atualizar Permissões**.\n\nCom isso configurado, siga o procedimento:\n\n1. **Acesse a tela de emissão de CT-e**\n   - No menu do sistema, vá até **Transporte > Conhecimentos** ou **Transporte > Documentos > Ct-e**.\n\n2. **Selecione o CT-e desejado**\n   - Na listagem, clique no CT-e ao qual você quer vincular a carta de correção.\n\n3. **Clique no ícone “Carta de correção”**\n   - Encontre o ícone (ou botão) **Carta de correção** e clique nele.\n\n4. **Escolha “Emitir CC-e”**\n   - No menu ou diálogo que aparece, selecione **Emitir CC-e**.\n\n5. **Edite as informações necessárias**\n   - Uma nova tela será aberta com todas as opções possíveis para edição na carta de correção. Preencha os campos conforme necessário (ex.: dados de endereço, descrição da carga, CFOP, observações, etc.). Lembre-se das restrições da CC-e (não pode corrigir valores, dados cadastrais, datas, etc.).\n\n6. **Salve e gere a carta de correção**\n   - Após preencher as informações, clique em **Salvar e gerar carta de correção**. O sistema transmitirá a CC-e para a SEFAZ automaticamente.\n\n7. **Verifique a transmissão (opcional)**\n   - Se quiser confirmar que a carta foi processada, consulte a listagem de cartas de correção do CT-e (geralmente há um ícone de visualização).\n\nPronto! A carta de correção foi emitida e está disponível para o CT-e selecionado."
+    },
+    {
+     "rodada": "b2",
+     "formato": "completa",
+     "texto": "**⚙️ Antes de tudo, verifique:**\n\n- **Quem pode emitir a Carta de Correção Eletrônica** – esta funcionalidade precisa estar **habilitada** para o usuário (ou grupo dele) poder emitir uma CC-e. Onde conferir/alterar: **Ambiente > Controle de Acesso > Funcionalidades**. Após habilitar, atualize as permissões em **Opções do Sistema > Atualizar Permissões**.\n\nCom isso configurado, siga o procedimento:\n\n1. **Acesse a tela de emissão de CT-e**\n   - No menu do sistema, vá até **Transporte > Conhecimentos** ou **Transporte > Documentos > Ct-e**.\n\n2. **Selecione o CT-e que deseja corrigir**\n   - Na listagem, clique no CT-e desejado.\n\n3. **Inicie a Carta de Correção**\n   - Clique no ícone **Carta de correção** (geralmente representado por um ícone de caneta ou similar).\n   - Escolha a opção **Emitir CC-e**.\n\n4. **Preencha as correções na nova tela**\n   - A tela de edição exibe todos os campos que podem ser alterados em uma CC-e (endereço, descrição da carga, CFOP, observações, etc.).\n   - Faça as alterações necessárias, respeitando as regras da SEFAZ (não é possível corrigir valores, dados cadastrais, datas, etc.).\n\n5. **Salve e transmita a Carta de Correção**\n   - Após preencher os campos, clique em **Salvar e gerar carta de correção**.\n   - O sistema transmitirá a CC-e para a SEFAZ e retornará o protocolo de autorização.\n\n---\n\n**💡 Verifique também o parâmetro/funcionalidade:**\n- **Quem pode emitir a Carta de Correção Eletrônica** – certifique-se de que o usuário tem essa permissão liberada (conforme verificado no início).\n\nPronto! A carta de correção foi emitida e está disponível para consulta no CT-e original."
+    }
+   ]
+  }
+ ]
+}
