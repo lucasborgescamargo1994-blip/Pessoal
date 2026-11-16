@@ -1,13 +1,14 @@
 /* js/app/conversas-ui.js — Renderização da lista de conversas e da barra lateral. */
-function limparChatStream() { if (typeof Desamb !== 'undefined') Desamb.limpar(); if (typeof Formato !== 'undefined') Formato.limpar(); if (typeof Esc !== 'undefined') Esc.limpar(); const stream = document.getElementById('chatStream'); stream.innerHTML = ''; stream.appendChild(_criarWelcomeMsg()); }
+function limparChatStream() { if (typeof Desamb !== 'undefined') Desamb.limpar(); if (typeof Formato !== 'undefined') Formato.limpar(); if (typeof Esc !== 'undefined') Esc.limpar(); if (typeof Anexos !== 'undefined') Anexos.limparLotes(); const stream = document.getElementById('chatStream'); stream.innerHTML = ''; stream.appendChild(_criarWelcomeMsg()); }
 function restaurarConversa(id) {
     const conversa = conversas.find(c => c.id === id); if (!conversa) return;
     if (typeof Desamb !== 'undefined') Desamb.limpar();
     if (typeof Formato !== 'undefined') Formato.limpar();
     if (typeof Esc !== 'undefined') Esc.limpar();
+    if (typeof Anexos !== 'undefined') Anexos.limparLotes();
     const stream = document.getElementById('chatStream'); stream.innerHTML = '';
     if (conversa.mensagens.length === 0) { stream.appendChild(_criarWelcomeMsg()); return; }
-    conversa.mensagens.forEach(msg => { const d = document.createElement('div'); d.className = msg.sender === 'system' ? 'message system-msg' : msg.sender === 'ml' ? 'message ml-msg' : `message ${msg.sender==='user'?'user-msg':'ai-msg'}`; d.innerHTML = msg.text; if (msg.imagens && msg.imagens.length && typeof BancoImgUI !== 'undefined') { try { const g = BancoImgUI.montar(msg.imagens); if (g) d.appendChild(g); } catch (e) { /* sem as imagens, só o texto */ } } stream.appendChild(d); });
+    conversa.mensagens.forEach(msg => { const d = document.createElement('div'); d.className = msg.sender === 'system' ? 'message system-msg' : msg.sender === 'ml' ? 'message ml-msg' : `message ${msg.sender==='user'?'user-msg':'ai-msg'}`; d.innerHTML = msg.text; if (msg.anexos > 0) { const av = document.createElement('div'); av.className = 'anx-restaurado'; av.textContent = '📎 ' + msg.anexos + (msg.anexos > 1 ? ' imagens anexadas' : ' imagem anexada') + ' · não ficam guardadas'; d.insertBefore(av, d.firstChild); } if (msg.imagens && msg.imagens.length && typeof BancoImgUI !== 'undefined') { try { const g = BancoImgUI.montar(msg.imagens); if (g) d.appendChild(g); } catch (e) { /* sem as imagens, só o texto */ } } stream.appendChild(d); });
     scrollToBottom(true);
 }
 function renderizarListaConversas() {

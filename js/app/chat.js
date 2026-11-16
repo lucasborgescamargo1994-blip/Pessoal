@@ -5,6 +5,8 @@
 // opts (uso interno, ex.: botão "pesquisar com a IA" da resposta rápida):
 //   { pergunta, forcarIA, reutilizarMensagem } — refaz a pergunta já exibida, sem repetir a bolha do usuário
 //   e sem procurar de novo nas respostas rápidas.
+//   { deComposer } — a mensagem saiu do campo de digitação (➤ ou Enter): se houver imagem anexada, vai o anexo (js/app/anexos.js).
+//   { instrucaoExtra } — texto que entra no prompt junto do "modo" da resposta (a análise de imagem usa para dizer à IA que fala com o atendente e deve apontar por onde começar).
 // JavaScript do botão "Tentar novamente" de uma resposta que falhou. Na 2ª passada da pergunta vaga (botões "qual é o seu caso?") refaz COM a escolha da pessoa,
 // em vez de recomeçar a pergunta do zero (que duplicaria a bolha e o log e perderia o assunto escolhido).
 function _jsRefazer(opts, rq) {
@@ -20,6 +22,12 @@ async function handleChat(opts) {
     if (_paramFuncMode && !_reuso) return handleParametrosFuncionalidades();
     const ch = obterContextoHorario();
     if (isVectorizing) return;
+    // Imagem anexada ao campo (js/app/anexos.js): enviar pelo campo (botão ➤ ou Enter = opts.deComposer) com imagem pendente → a IA lê a imagem e responde ao que foi perguntado. Os outros caminhos
+    // (atalhos, "Em alta", voz…) nunca levam o anexo junto: a flag sai das opções para não pegar carona numa nova tentativa.
+    if (opts.deComposer) {
+        if (!_reuso && typeof Anexos !== 'undefined' && Anexos.temPendentes()) return Anexos.enviar();
+        opts = Object.assign({}, opts); delete opts.deComposer;
+    }
     const input = document.getElementById('searchInput');
     let query = (opts.pergunta ? String(opts.pergunta) : input.value).trim();
     if (!query) return;
@@ -319,7 +327,8 @@ async function handleChat(opts) {
             return;
         }
     }
-    const _modo = (typeof Formato !== 'undefined') ? Formato.textoModo(_formato, !!opts.expandida) : '';   // instrução do modo (vazia no modo completo normal: a IA responde como sempre)
+    // instrução do modo (vazia no modo completo normal: a IA responde como sempre) + opts.instrucaoExtra (hoje: "análise de imagem", js/app/anexos.js)
+    const _modo = ((typeof Formato !== 'undefined') ? Formato.textoModo(_formato, !!opts.expandida) : '') + (opts.instrucaoExtra ? '\n' + String(opts.instrucaoExtra) + '\n' : '');
     const _logTs = ('logTs' in opts) ? opts.logTs : logSearch(query, !vum);   // (2ª passada da pergunta vaga: a linha de log já foi criada quando os botões apareceram)
     // opções para o botão "Tentar novamente" desta resposta: mesma pergunta, mesma escolha de assunto/formato, sem nova bolha nem nova linha de log
     const _optsRetry = Object.assign({}, opts, { pergunta: query, reutilizarMensagem: true, formatoDecidido: true, formato: _formato, vetor: vp, logTs: _logTs });   // (_logTs = timestamp da linha de log DESTA pergunta — toda pergunta gera a sua; null no simulador: a resposta e o 👍/👎 vão para ela)

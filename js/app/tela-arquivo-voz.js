@@ -3,9 +3,12 @@
 //  TELA / ARQUIVO / VOZ
 // ═══════════════════════════════════════════════════════════
 async function toggleScreenShare() { const b = document.getElementById('btnScreen'); if (screenStream) { screenStream.getTracks().forEach(t => t.stop()); screenStream = null; b.style.color = ""; return; } try { screenStream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: "always" }, audio: false }); b.style.color = "var(--primary)"; } catch (err) {} }
-document.addEventListener('paste', (e) => { for (let item of e.clipboardData.items) { if (item.type.indexOf("image") !== -1) handleFileUpload(item.getAsFile()); } });
+// Colar/escolher imagem agora só ANEXA ao campo de digitação (js/app/anexos.js): a IA lê a imagem quando a pessoa envia, junto da pergunta. O que está abaixo (análise na hora) é só a reserva
+// para o caso de o anexos.js não ter carregado.
+document.addEventListener('paste', (e) => { if (typeof Anexos !== 'undefined') return; for (let item of e.clipboardData.items) { if (item.type.indexOf("image") !== -1) handleFileUpload(item.getAsFile()); } });
 function handleFileUpload(file) {
     if (!file) return;
+    if (typeof Anexos !== 'undefined') { Anexos.adicionar([file]); return; }
     const r = new FileReader();
     r.onload = (e) => {
         const base64Url = e.target.result;

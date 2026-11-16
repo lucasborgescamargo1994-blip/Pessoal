@@ -66,7 +66,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     searchInput.addEventListener("keypress", (e) => {
         if (e.key === "Enter" && !isVectorizing && !sendBtn.disabled) {
-            handleChat();
+            handleChat({ deComposer: true });   // (deComposer: veio do campo de digitação — com imagem anexada, a imagem vai junto: js/app/anexos.js)
         }
     });
 

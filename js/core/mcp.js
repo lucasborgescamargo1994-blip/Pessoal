@@ -306,12 +306,14 @@ async function callCurrentMCP(messages, config = {}) {
 }
 
 // Modelos gratuitos com suporte a visão (multimodal) — para "analisar tela" e análise de imagem (lista em config/mcp-config.js)
+// config.aceitar (opcional): função que recebe a resposta e diz se ela serve; se não servir (ex.: veio VAZIA — modelo de raciocínio que gastou o limite de tokens pensando), conta como falha e tenta de novo/o próximo modelo.
 async function callMCPVision(messages, config = {}) {
     for (const model of _VISION_MODELS) {
         for (let t = 1; t <= 2; t++) {
             try {
                 if (t > 1) await new Promise(r => setTimeout(r, 1500));
                 const res = await callMCPAPI('openrouter', model, DEFAULT_MCP_CONFIG.apiKey, DEFAULT_MCP_CONFIG.baseUrl, messages, config);
+                if (typeof config.aceitar === 'function' && !config.aceitar(res)) { const e = new Error('resposta vazia ou sem o que foi pedido'); e.status = 'recusada'; throw e; }
                 console.log(`%c🖼️ [Vision] OK — modelo: ${model}`, 'color:#16a34a;font-weight:600');
                 return res;
             } catch (e) {

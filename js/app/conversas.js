@@ -39,9 +39,11 @@ function excluirConversa(id, event) {
 function getConversaAtiva() { return conversas.find(c => c.id === conversaAtivaId) || null; }
 // textoContexto (opcional, só para sender 'user'): o que a IA lê no histórico quando difere do que a tela mostra (ex.: clique num botão de esclarecimento → a IA lê a pergunta refinada)
 // extra (opcional): { imagens: [{ url, legenda, titulo, id }] } — as imagens do procedimento que vieram com a resposta (js/core/imagens-banco.js); voltam a aparecer ao reabrir a conversa
+//                   { anexos: N } — a mensagem do usuário levou N imagens anexadas (js/app/anexos.js): só o AVISO é guardado, as imagens não (privacidade e espaço do navegador)
 function adicionarMensagemNaConversa(sender, text, textoContexto, extra) {
     const conversa = getConversaAtiva(); if (!conversa) return;
     const msg = { sender, text, timestamp: Date.now() };
+    if (extra && extra.anexos > 0) msg.anexos = Math.min(9, Math.floor(extra.anexos));
     if (extra && Array.isArray(extra.imagens) && extra.imagens.length) msg.imagens = extra.imagens.map(i => ({ url: i.url, legenda: i.legenda || '', titulo: i.titulo || '', id: i.id != null ? i.id : null }));
     conversa.mensagens.push(msg);
     if (sender === 'user' && conversa.titulo === 'Nova Conversa' && conversa.mensagens.filter(m => m.sender === 'user').length === 1) { conversa.titulo = text.length > 40 ? text.substring(0, 37) + '...' : text; conversa.primeiraPergunta = text; }

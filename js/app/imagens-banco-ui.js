@@ -10,8 +10,9 @@ const BancoImgUI = (() => {
         if (aoTeclar) { document.removeEventListener('keydown', aoTeclar, true); aoTeclar = null; }
         if (janela) { const antes = janela._foco; janela.remove(); janela = null; if (antes && antes.focus && document.contains(antes)) { try { antes.focus({ preventScroll: true }); } catch (e) { /* ok */ } } }
     }
-    function ampliar(url, legenda) {
-        if (!BancoImg.urlValida(url)) return;
+    // opcoes.local: o endereço é um blob: criado pelo próprio sistema (imagem que a pessoa anexou ao chat, js/app/anexos.js) — vale sem ser do armazenamento do Supabase. Qualquer outro endereço continua passando por urlValida.
+    function ampliar(url, legenda, opcoes) {
+        if (!BancoImg.urlValida(url) && !(opcoes && opcoes.local && /^blob:/.test(String(url)))) return;
         const foco = document.activeElement;
         fechar();
         const fundo = el('div', 'bd-lb'); fundo._foco = foco;
