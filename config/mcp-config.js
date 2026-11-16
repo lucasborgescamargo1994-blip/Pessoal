@@ -11,8 +11,8 @@
    DevTools; use só chaves gratuitas/limitadas (ver README).
    ═══════════════════════════════════════════════════════════════════════════ */
 window.BSOFT_MCP_CONFIG = {
-  "versao": 21,
-  "atualizadoEm": "2026-11-03T12:24:09.094Z",
+  "versao": 24,
+  "atualizadoEm": "2026-11-16T13:19:12.260Z",
   "atualizadoPor": "admin",
   "provedor": {
     "tipo": "openrouter",
@@ -24,6 +24,10 @@ window.BSOFT_MCP_CONFIG = {
     ]
   },
   "cadeia": [
+    {
+      "modelo": "ernie-5.5-flash-preview:free",
+      "ativo": true
+    },
     {
       "modelo": "cohere/north-mini-code:free",
       "ativo": true
@@ -49,7 +53,7 @@ window.BSOFT_MCP_CONFIG = {
     "modelo": ""
   },
   "visao": [
-    "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+    "nemotron-3.5-super-vl:free",
     "google/gemma-4-26b-a4b-it:free",
     "google/gemma-4-31b-it:free"
   ],

@@ -1,0 +1,48 @@
+@charset "UTF-8";
+/* css/anexos.css — Imagem anexada ao chat (v28.40): a bandeja de miniaturas em cima do campo de digitação e as miniaturas dentro da mensagem enviada (js/app/anexos.js).
+   Só aparece quando há imagem anexada: sem anexo, o campo de digitação fica exatamente como era. Sem desfoque ao vivo (backdrop-filter): em computador fraco ele custa placa de vídeo. */
+
+/* ── bandeja (dentro do .input-wrapper, acima do campo): [sugestões] [bandeja] [campo] — a ordem vem do `order` ── */
+.anx-bandeja { display: none; order: 5; pointer-events: auto; position: relative; width: 100%; max-width: 860px; margin: 0 auto 8px; padding: 0 4px; box-sizing: border-box; flex-wrap: wrap; align-items: center; gap: 8px; }
+.anx-bandeja.is-on { display: flex; animation: anxEntra var(--dur-2, .26s) var(--ease-out, ease-out) both; }
+.input-wrapper > .input-area { order: 6; }
+@keyframes anxEntra { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+.anx-chip { display: flex; align-items: center; gap: 9px; max-width: 250px; padding: 5px 8px 5px 5px; background: rgba(255, 255, 255, .97); border: 1px solid var(--border, #e7e5e4); border-radius: 16px; box-shadow: 0 10px 22px -14px rgba(28, 25, 23, .5); }
+.anx-thumb { position: relative; width: 48px; height: 48px; padding: 0; flex: 0 0 auto; border: 0; border-radius: 11px; overflow: hidden; cursor: zoom-in; background: #efeeed; }
+.anx-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.anx-info { min-width: 0; display: grid; gap: 1px; line-height: 1.25; }
+.anx-info b { font-size: 12.5px; font-weight: 700; color: var(--text, #1c1917); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.anx-info small { font-size: 11px; color: var(--text-muted, #78716c); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.anx-x { flex: 0 0 auto; width: 26px; height: 26px; padding: 0; border: 0; border-radius: 50%; background: rgba(28, 25, 23, .07); color: var(--text-muted, #78716c); font-size: 12px; line-height: 1; cursor: pointer; transition: background var(--dur-1, .14s), color var(--dur-1, .14s); }
+.anx-x:hover, .anx-x:focus-visible { background: #fee2e2; color: #b91c1c; }
+.anx-thumb:focus-visible, .anx-x:focus-visible { outline: 2px solid var(--primary, #f97316); outline-offset: 2px; }
+/* preparando (reduz e comprime a imagem): um giro simples no lugar da miniatura */
+.anx-chip.is-prep .anx-thumb::after { content: ""; position: absolute; inset: 14px; border-radius: 50%; border: 3px solid rgba(249, 115, 22, .25); border-top-color: var(--primary, #f97316); animation: anxGira .8s linear infinite; }
+@keyframes anxGira { to { transform: rotate(360deg); } }
+.anx-chip.is-prep .anx-thumb { cursor: progress; }
+/* arrastando um arquivo para cima da conversa: o campo mostra onde soltar */
+.anx-solte-dica { display: none; width: 100%; padding: 12px 14px; border: 2px dashed var(--primary, #f97316); border-radius: 16px; background: rgba(255, 247, 237, .96); color: var(--primary-dark, #ea6a0a); font-size: 13px; font-weight: 700; text-align: center; }
+body.anx-arrastando .anx-bandeja { display: flex; }
+body.anx-arrastando .anx-solte-dica { display: block; }
+body.anx-arrastando .input-area { outline: 2px dashed var(--primary, #f97316); outline-offset: 3px; }
+.anx-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* ── dentro da mensagem enviada: as miniaturas acima do texto ── */
+.message.user-msg .anx-bolha { display: grid; gap: 8px; justify-items: end; }
+.anx-minis { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.anx-mini { display: block; width: 116px; height: 116px; padding: 0; border: 2px solid rgba(255, 255, 255, .6); border-radius: 12px; overflow: hidden; background: rgba(255, 255, 255, .22); cursor: zoom-in; transition: transform var(--dur-2, .26s) var(--ease-out, ease-out); }
+.anx-mini:hover { transform: scale(1.03); }
+.anx-mini:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.anx-mini img { display: block; width: 100%; height: 100%; object-fit: cover; }
+/* uma imagem só: mostra inteira, proporcional. (Tamanhos em px/vw, não em %: a bolha encolhe até o conteúdo, e % aí faria ela ficar do tamanho da imagem original.) */
+.anx-minis.uma .anx-mini { width: auto; height: auto; max-width: min(280px, 70vw); }
+.anx-minis.uma .anx-mini img { width: auto; height: auto; max-width: min(280px, 70vw); max-height: 220px; object-fit: contain; }
+.anx-texto { white-space: pre-wrap; overflow-wrap: anywhere; }
+.anx-texto.vazio { opacity: .85; font-size: .92em; }
+/* conversa reaberta do histórico: as imagens não ficam guardadas (privacidade), só o aviso */
+.anx-restaurado { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 6px; padding: 3px 10px; border-radius: 999px; background: rgba(255, 255, 255, .22); font-size: .85em; font-weight: 600; }
+
+/* cartão de erro ao ler a imagem */
+.anx-erro { display: grid; gap: 10px; }
+.anx-erro button { justify-self: start; padding: 8px 18px; border-radius: 8px; background: var(--primary, #f97316); color: #fff; border: 0; cursor: pointer; font-weight: 600; font-size: 13px; }
