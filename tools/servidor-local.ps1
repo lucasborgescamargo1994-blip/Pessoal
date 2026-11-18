@@ -2,7 +2,7 @@
 # Uso: dê dois cliques em tools\servidor-local.bat  (ou: powershell -File tools\servidor-local.ps1 -Porta 8080)
 # Não precisa instalar nada. Feche a janela (ou Ctrl+C) para parar.
 # Observação: o sistema também funciona abrindo index.html direto do disco (duplo clique), sem servidor e sem erro de CORS.
-param([int]$Porta = 8080, [switch]$SemNavegador)   # -SemNavegador: não abre o navegador sozinho
+param([int]$Porta = 8080, [switch]$SemNavegador, [switch]$Isolado)   # -SemNavegador: não abre o navegador sozinho · -Isolado: manda os cabeçalhos COOP/COEP (libera vários núcleos para a IA local do simuladorlocal.html)
 
 $raiz = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $tipos = @{
@@ -40,6 +40,7 @@ try {
                 $ext = [IO.Path]::GetExtension($caminho).ToLowerInvariant()
                 $resp.ContentType = if ($tipos.ContainsKey($ext)) { $tipos[$ext] } else { 'application/octet-stream' }
                 $resp.Headers.Add('Cache-Control', 'no-store')   # sempre a versão mais nova do arquivo, ótimo para testar
+                if ($Isolado) { $resp.Headers.Add('Cross-Origin-Opener-Policy', 'same-origin'); $resp.Headers.Add('Cross-Origin-Embedder-Policy', 'credentialless') }   # "isolamento": o navegador libera várias threads (SharedArrayBuffer)
                 $corpo = [IO.File]::ReadAllBytes($caminho)
             }
             else { $resp.StatusCode = 404; $resp.ContentType = 'text/plain; charset=utf-8'; $corpo = [Text.Encoding]::UTF8.GetBytes("404 - não encontrado: $rel") }
