@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Primeira emissão guiada · IA local (teste) · Bsoft TMS</title>
+    <meta name="description" content="Passo a passo para a primeira emissão de CT-e, MDF-e e CIOT no Bsoft TMS, com vídeo em cada passo e uma IA que roda no seu próprio computador para tirar dúvidas e resolver erros — sem custo de IA.">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23f97316'/%3E%3Cpath d='M32 10c8 6 12 14 12 24 0 4-1 8-3 12H23c-2-4-3-8-3-12 0-10 4-18 12-24z' fill='%23fff'/%3E%3Ccircle cx='32' cy='28' r='5' fill='%23f97316'/%3E%3Cpath d='M20 38l-7 9 10-2zM44 38l7 9-10-2z' fill='%23fff'/%3E%3Cpath d='M28 48h8l-4 8z' fill='%23fff'/%3E%3C/svg%3E">
+    <script src="js/core/fontes.js?v=28.42.0" charset="utf-8"></script>
+    <link rel="stylesheet" href="css/tokens.css?v=28.42.0">
+    <link rel="stylesheet" href="css/migracao.css?v=28.42.0">
+    <link rel="stylesheet" href="css/migracao-local.css?v=28.42.0">
+    <!-- Supabase: mesma versão fixa + verificação de integridade (SRI) do sistema principal -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js" integrity="sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok" crossorigin="anonymous"></script>
+</head>
+<body>
+<a class="mig-pular" href="#conteudo">Pular para o conteúdo</a>
+<div class="mig-fundo" aria-hidden="true"></div>
+
+<header class="mig-topo">
+    <div class="mig-marca"><span class="mig-logo" aria-hidden="true">🚀</span><div><b>Primeira emissão guiada <span class="ml-tag">IA local · teste</span></b><small>Bsoft TMS · a IA roda no seu computador</small></div></div>
+    <div class="mig-topo-dir">
+        <button type="button" class="mig-btn pequeno" id="btnRecomecar" hidden>↺ Recomeçar</button>
+        <a class="mig-link-topo" href="migracao.html" title="A versão com os modelos de IA do MCP (na nuvem)">Versão com IA da nuvem</a>
+        <a class="mig-link-topo" href="faq.html">FAQ</a>
+    </div>
+</header>
+
+<main class="mig-main" id="conteudo">
+    <noscript><p class="mig-erro">Esta página precisa de JavaScript para funcionar.</p></noscript>
+
+    <!-- A IA local: baixar/carregar o modelo, ligar/desligar. O chat funciona mesmo sem ele (responde direto do banco de dados). -->
+    <section class="ml-painel" id="painelLocal" aria-label="IA local">
+        <div class="ml-linha">
+            <span class="ml-titulo">🧠 IA local <span class="ml-tag">teste</span></span>
+            <span class="ml-resumo" id="mlResumo">carregando…</span>
+            <button type="button" class="mig-btn pequeno primario" id="mlPreparar">⬇ Baixar e preparar</button>
+            <button type="button" class="mig-link" id="mlMais" aria-expanded="false" aria-controls="mlDetalhes">Detalhes</button>
+        </div>
+        <div class="ml-detalhes" id="mlDetalhes" hidden>
+            <p class="ml-intro">As respostas do chat podem ser escritas por uma <b>IA pequena que roda dentro do seu navegador, neste computador</b>: a sua pergunta não vai para a internet por causa dela e <b>não há custo de IA</b>. O modelo é baixado <b>uma vez</b> e fica guardado neste navegador. Sem ele, o chat continua funcionando: responde direto com o trecho do banco de dados.</p>
+            <div class="ml-campos">
+                <label class="ml-campo"><span>Modelo</span>
+                    <select id="mlModelo" aria-label="Modelo de IA local"></select>
+                </label>
+                <button type="button" class="mig-btn pequeno" id="mlApagar" hidden>🗑 Apagar este modelo do navegador</button>
+            </div>
+            <label class="ml-opcao"><input type="checkbox" id="mlUsar" checked><span>Respostas escritas pela IA local<small>Desmarcado: o chat mostra direto o trecho do banco de dados (instantâneo).</small></span></label>
+            <label class="ml-opcao"><input type="checkbox" id="mlTudo"><span>A IA escreve TODA resposta (modo de teste)<small>Desmarcado (padrão): quando o banco de dados já tem o artigo que responde à pergunta, o chat mostra esse trecho na hora, sem gastar a IA. Marcado: a IA reescreve até essas respostas (leva minutos e pode errar).</small></span></label>
+            <label class="ml-opcao"><input type="checkbox" id="mlGpu"><span>Tentar usar a placa de vídeo (experimental)<small>Pode ser bem mais rápido em computadores novos; não foi testado em todos. Se der problema, desmarque. Vale na próxima vez que a IA for carregada.</small></span></label>
+            <div class="ml-barra" id="mlBarra" hidden aria-hidden="true"><div class="ml-barra-cheia" id="mlBarraCheia"></div></div>
+            <p class="ml-status" id="mlStatus" role="status" aria-live="polite"></p>
+            <p class="ml-status" id="mlCompat"></p>
+            <details>
+                <summary>Como funciona e quais são os limites</summary>
+                <ul class="ml-limites">
+                    <li><b>Prazos e regras fiscais, “o que é…?”, “isso é com o Suporte” e “não encontrei” não passam pela IA</b>: a resposta vem direto das regras conferidas e do glossário da equipe (sem inventar números).</li>
+                    <li>Quando o banco de dados já tem o artigo que responde (o título é a própria pergunta, ou o artigo do código do erro), o chat mostra esse trecho <b>na hora</b>. A IA só entra nas perguntas em que o banco não tem uma resposta pronta, com um trecho curto do artigo mais parecido.</li>
+                    <li>Etapas de configuração (talão, numeração inicial, certificado, regras, tabelas) <b>saem das respostas</b>: o cliente só emite, quem configura é o Suporte.</li>
+                    <li>Num computador comum a IA responde em <b>minutos</b> (o processador lê e escreve poucos tokens por segundo: num i3-7100 foram ~3 ao ler e ~2 ao escrever; uma palavra ≈ 2 tokens). Enquanto ela escreve, o chat mostra o texto que já saiu e as fontes.</li>
+                    <li>Modelo pequeno erra: confira a resposta nos artigos de “Baseado em”. Número ou prazo que não está no material vem com um aviso.</li>
+                    <li>Por padrão a IA usa <b>1 núcleo</b> do processador; para usar vários, abra pelo servidor local com <code>tools\servidor-local.bat 8080 isolado</code>.</li>
+                    <li id="mlLicenca"></li>
+                </ul>
+            </details>
+        </div>
+    </section>
+
+    <!-- 1) as perguntas do começo -->
+    <section id="telaInicio" class="mig-painel" aria-live="polite"></section>
+    <!-- 2) o passo a passo + o chat da IA no mesmo lugar -->
+    <section id="telaPassos" class="mig-painel" hidden>
+        <div class="mig-grade-passos" id="gradePassos">
+            <div class="mig-coluna-passo" id="colunaPasso"></div>
+            <aside class="mig-coluna-chat" id="colunaChat" aria-label="Chat com a IA"></aside>
+        </div>
+    </section>
+</main>
+
+<button type="button" class="mig-chat-flutuante" id="btnChatCelular" aria-expanded="false" aria-controls="colunaChat" hidden>💬 Perguntar à IA</button>
+<div class="mig-toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<!-- configuração pública e o conteúdo editável (SEM o MCP: aqui a IA é um modelo que roda no computador do cliente) -->
+<script src="config/app-config.js?v=28.42.0" charset="utf-8"></script>
+<script src="config/menu-bsoft.js?v=28.42.0" charset="utf-8"></script>
+<script src="config/migracao-roteiro.js?v=28.42.0" charset="utf-8"></script>
+<script src="config/migracao-regras.js?v=28.42.0" charset="utf-8"></script>
+<script src="config/migracao-glossario.js?v=28.42.0" charset="utf-8"></script>
+<!-- os mesmos arquivos do sistema: ambiente, Supabase, markdown, imagens do banco, FAQ (vídeos e busca), menu real e parâmetros -->
+<script src="js/core/env.js?v=28.42.0" charset="utf-8"></script>
+<script src="js/core/supabase-client.js?v=28.42.0" charset="utf-8"></script>
+<script src="js/core/markdown.js?v=28.42.0" charset="utf-8"></script>
+<script src="js/core/imagens-banco.js?v=28.42.0" charset="utf-8"></script>
+<script src="js/faq/logica.js?v=28.42.0" charset="utf-8"></script>
+<script src="js/app/menu-bsoft.js?v=28.42.0" charset="utf-8"></script>
+<script src="js/app/prerequisitos.js?v=28.42.0" charset="utf-8"></script>
+<!-- a página (os mesmos de migracao.html) + a IA local -->
+<script src="js/migracao/logica.js?v=28.42.0" charset="utf-8"></script>
+<script src="js/migracao/dados.js?v=28.42.0" charset="utf-8"></script>
+<script src="js/migracao/ia.js?v=28.42.0" charset="utf-8"></script>
+<script src="js/ia-local/modelo.js?v=28.42.0" charset="utf-8"></script>
+<script src="js/migracao-local/rag.js?v=28.42.0" charset="utf-8"></script>
+<script src="js/migracao-local/ligacao.js?v=28.42.0" charset="utf-8"></script>
+<script src="js/migracao/tela-base.js?v=28.42.0" charset="utf-8"></script>
+<script src="js/migracao/tela-passos.js?v=28.42.0" charset="utf-8"></script>
+<script src="js/migracao/iniciar.js?v=28.42.0" charset="utf-8"></script>
+</body>
+</html>
