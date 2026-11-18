@@ -1,0 +1,25 @@
+@charset "UTF-8";
+/* Simulador LOCAL (simuladorlocal.html): o painel "IA local" e o que muda quando a IA ainda não está pronta. Usa as variáveis de css/tokens.css; o resto do visual é o de css/simulador.css. */
+.sl-tag { display: inline-block; vertical-align: middle; font-size: 10.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: color-mix(in srgb, var(--primary) 14%, #fff); border: 1px solid var(--primary-border); color: color-mix(in srgb, var(--primary) 70%, #000); }
+.sl-painel { background: color-mix(in srgb, var(--primary) 6%, #fff); border: 1px solid var(--primary-border); border-radius: var(--radius-md); padding: 14px 16px 12px; margin: 0 0 20px; }
+.sl-titulo { margin: 0 0 6px !important; font-size: 16px !important; font-weight: 800; }
+.sl-painel .sim-intro { font-size: 14px; }
+.sl-linha { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+.sl-modelo { flex: 1 1 240px; max-width: 360px; }
+.sl-botoes { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.sl-barra { height: 9px; margin: 12px 0 2px; border-radius: 999px; background: color-mix(in srgb, var(--primary) 14%, #fff); overflow: hidden; border: 1px solid var(--primary-border); }
+.sl-barra-cheia { height: 100%; width: 0; border-radius: 999px; background: linear-gradient(90deg, var(--primary), var(--primary-dark)); transition: width .35s var(--ease-out); }
+.sl-barra.indef .sl-barra-cheia { animation: sl-pulso 1.4s ease-in-out infinite; }
+@keyframes sl-pulso { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+.sl-painel .sim-status { margin: 8px 0 0; }
+.sl-aviso { margin: 8px 0 0; font-size: 13px; font-weight: 700; color: #9a3412; }
+.sl-aviso[hidden] { display: none; }
+.sl-detalhes { margin-top: 10px; font-size: 13.5px; }
+.sl-detalhes summary { cursor: pointer; font-weight: 700; color: var(--text); }
+.sl-detalhes ul { margin: 8px 0 2px; padding-left: 20px; color: var(--text-muted); }
+.sl-detalhes li { margin: 4px 0; }
+.sl-detalhes li b { color: var(--text); }
+/* enquanto a IA não está pronta, o resto da tela inicial fica "apagado" (e inerte: não dá para clicar) */
+#telaInicio.sl-aguarda #blocoProvas, #telaInicio.sl-aguarda #blocoTreino { opacity: .45; filter: grayscale(.5); }
+@media (prefers-reduced-motion: reduce) { .sl-barra-cheia { transition: none; } .sl-barra.indef .sl-barra-cheia { animation: none; } }
+@media (max-width: 640px) { .sl-modelo { max-width: none; } }

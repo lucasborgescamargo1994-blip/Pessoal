@@ -1,0 +1,33 @@
+@charset "UTF-8";
+/* Primeira emissão guiada com IA local (migracaolocal.html): o painel "IA local" e o que aparece na bolha "digitando". Usa as variáveis de css/tokens.css e as classes de css/migracao.css. */
+.ml-tag { display: inline-block; vertical-align: middle; font-size: 10.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: color-mix(in srgb, var(--primary) 14%, #fff); border: 1px solid var(--primary-border); color: color-mix(in srgb, var(--primary) 70%, #000); }
+.ml-painel { background: color-mix(in srgb, var(--primary) 6%, #fff); border: 1px solid var(--primary-border); border-radius: var(--radius-md); padding: 10px 14px; margin: 0 0 14px; }
+.ml-linha { display: flex; gap: 8px 12px; align-items: center; flex-wrap: wrap; }
+.ml-titulo { font-weight: 800; font-size: 14.5px; }
+.ml-resumo { font-size: 13px; font-weight: 700; color: var(--text-muted); }
+.ml-resumo.ok { color: var(--mig-ok); }
+.ml-resumo.erro { color: var(--mig-erro); }
+.ml-linha .mig-link { margin-left: auto; }
+.ml-detalhes { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--primary-border); display: flex; flex-direction: column; gap: 8px; font-size: 13.5px; }
+.ml-intro { margin: 0; color: var(--text); }
+.ml-campos { display: flex; gap: 8px 14px; align-items: flex-end; flex-wrap: wrap; }
+.ml-campo { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 700; color: var(--text-muted); }
+.ml-campo select { font-size: 14px; font-weight: 500; color: var(--text); background: #fff; border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 7px 10px; min-width: 220px; }
+.ml-opcao { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; line-height: 1.4; }
+.ml-opcao input { margin-top: 3px; }
+.ml-opcao small { display: block; color: var(--text-muted); font-size: 12px; }
+.ml-barra { height: 9px; border-radius: 999px; background: color-mix(in srgb, var(--primary) 14%, #fff); overflow: hidden; border: 1px solid var(--primary-border); }
+.ml-barra-cheia { height: 100%; width: 0; border-radius: 999px; background: linear-gradient(90deg, var(--primary), var(--primary-dark)); transition: width .35s var(--ease-out); }
+.ml-barra.indef .ml-barra-cheia { animation: ml-pulso 1.4s ease-in-out infinite; }
+@keyframes ml-pulso { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+.ml-status { margin: 0; font-size: 13px; color: var(--text-muted); }
+.ml-status.erro { color: var(--mig-erro); font-weight: 600; }
+.ml-limites { margin: 0; padding-left: 20px; color: var(--text-muted); font-size: 13px; }
+.ml-limites li { margin: 3px 0; }
+.ml-limites b { color: var(--text); }
+/* na bolha "digitando": o texto que a IA local já escreveu e as fontes do banco */
+.ml-parcial { margin-top: 8px; padding: 8px 10px; border-left: 3px solid var(--primary-border); background: color-mix(in srgb, var(--primary) 5%, #fff); border-radius: 0 8px 8px 0; font-size: 13.5px; color: var(--text-muted); white-space: pre-wrap; overflow-wrap: anywhere; }
+.ml-fontes { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); }
+.ml-fontes small { color: var(--text-muted); font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { .ml-barra-cheia { transition: none; } .ml-barra.indef .ml-barra-cheia { animation: none; } }
+@media (max-width: 640px) { .ml-campo select { min-width: 0; width: 100%; } .ml-campo { flex: 1 1 100%; } }
