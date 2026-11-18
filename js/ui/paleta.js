@@ -27,6 +27,7 @@ const Palette = (() => {
         { id: 'close-tab', title: 'Fechar a aba atual', sub: 'Alt+W', icon: 'x', kw: 'fechar aba', run: () => Workspace.close(Workspace.state.active) },
         { id: 'simulador', title: 'Simulador de atendimento (treino)', sub: 'A IA faz o cliente com uma dúvida do banco de dados · abre em outra guia', icon: 'chat', kw: 'simulador treino treinar cliente simulado atendimento praticar teste', run: () => window.open('simulador.html', '_blank') },
         { id: 'faq', title: 'FAQ: perguntas e vídeos', sub: 'Respostas e vídeos mostrando como fazer no sistema · abre em outra guia', icon: 'book', kw: 'faq perguntas frequentes duvidas videos video tutorial passo a passo como fazer ajuda', run: () => window.open('faq.html', '_blank') },
+        { id: 'migracao', title: 'Primeira emissão guiada', sub: 'Passo a passo para o cliente emitir CT-e, MDF-e e CIOT, com vídeo em cada passo e IA para tirar dúvidas · abre em outra guia', icon: 'flag', kw: 'migracao migrar primeira emissao emitir cliente novo outro sistema passo a passo video cte mdfe ciot contrato frete seguro averbacao numeracao implantacao', run: () => window.open('migracao.html', '_blank') },
         { id: 'copilot', title: 'Abrir o Copilot (janela flutuante)', sub: 'O assistente sobre qualquer janela', icon: 'sparkles', kw: 'copilot flutuante pip', run: () => abrirCopilot() },
     ];
     function gather(q) {

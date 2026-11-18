@@ -6,7 +6,8 @@
    Casos: vêm do banco de dados do Supabase (BancoDados, só leitura) ou são casos próprios escritos dentro da prova. A conversa com o banco fica em js/simulador/dados.js.
    IA: os mesmos modelos do MCP (config/mcp-config.js) — chamarIA() percorre a cadeia de modelos (mcpMontarCadeia() de js/core/mcp.js) com fallback e a
    página confere a configuração nova sozinha (a cada 2 horas), como o sistema principal. Mudou o modelo no painel "IA / MCP"? Muda aqui também.
-   Os textos que vão para a IA, as regras da prova e a nota ficam em js/simulador/logica.js. */
+   Os textos que vão para a IA, as regras da prova e a nota ficam em js/simulador/logica.js.
+   Motor alternativo: simuladorlocal.html define window.SimMotorIA (um modelo pequeno que roda no computador da pessoa, js/simulador-local/) e ele atende às chamadas de IA no lugar do MCP. */
 (function () {
     'use strict';
     const L = SimLogica, D = SimDados;
@@ -37,7 +38,13 @@
     const FALHAS = new Map();   // modelo → { n: falhas seguidas (vazio/lento), ate: até quando fica de fora }
     const emQuarentena = m => { const x = FALHAS.get(m); return !!x && x.n >= 2 && Date.now() < x.ate; };
     const comLimite = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('TIMEOUT: o modelo demorou mais de ' + Math.round(ms / 1000) + ' s')), ms))]);
+    // Motor de IA alternativo: a página simuladorlocal.html define window.SimMotorIA (um modelo pequeno que roda no computador da pessoa) e é ele quem atende às chamadas
+    // no lugar dos modelos do MCP. Nas outras páginas (simulador.html) isso não existe e nada muda.
+    const motorAlt = () => (window.SimMotorIA && typeof window.SimMotorIA.chamar === 'function') ? window.SimMotorIA : null;
+    const dicaErroIA = () => { const a = motorAlt(); return (a && a.dicaErro) || 'Confira os modelos em "IA / MCP" no painel.'; };
     async function chamarIA(messages, cfg, aoTentar) {
+        const alt = motorAlt();
+        if (alt) return alt.chamar(messages, cfg, aoTentar);
         const passos = mcpMontarCadeia();
         if (!passos.length) throw new Error('nenhum modelo ativo no MCP (config/mcp-config.js)');
         let ultimo = null;
@@ -73,6 +80,7 @@
     // ── selo da IA (modelos do MCP) ──
     function atualizarSeloIA() {
         const e = $('simIA');
+        const alt = motorAlt(); if (alt && alt.selo) { alt.selo(e); return; }
         try {
             const passos = mcpMontarCadeia();
             const v = (MCP_CFG && MCP_CFG.versao) ? ' · config v' + MCP_CFG.versao : '';
@@ -308,7 +316,7 @@
             if (tok !== S.token) return;
             digitando(false); bloquear(false);
             console.error('[simulador] IA:', e);
-            mostrarErro('⚠️ Não consegui falar com a IA agora (' + ((e && e.message) || 'erro') + '). Confira os modelos em "IA / MCP" no painel.', () => falaCliente(notaBase, 0, recusas));
+            mostrarErro('⚠️ Não consegui falar com a IA agora (' + ((e && e.message) || 'erro') + '). ' + dicaErroIA(), () => falaCliente(notaBase, 0, recusas));
             return;
         }
         if (tok !== S.token) return;
