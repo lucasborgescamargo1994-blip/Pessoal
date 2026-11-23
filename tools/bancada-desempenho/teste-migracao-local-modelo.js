@@ -36,7 +36,7 @@ const TODOS = {
     como1: { perfil: P_NOVA, passo: 'cte', pergunta: 'Como emito um CT-e?', deve: [[/CT-e|conhecimento/i, 'fala do CT-e'], [/Transporte|Conhecimentos|Novo|Transmitir|XML/i, 'cita um passo/tela do sistema']], via: 'banco' },
     como2: { perfil: P_NOVA, passo: 'pessoas', pergunta: 'Como cadastro um motorista?', deve: [[/motorista/i, 'fala do motorista']], via: 'banco' },
     como3: { perfil: P_NOVA, passo: 'mdfe', pergunta: 'Como encerro o MDF-e?', deve: [[/encerr/i, 'fala de encerrar']], via: 'banco' },
-    como4: { perfil: P_NOVA, passo: 'cte', pergunta: 'Como imprimo o DACTE?', deve: [[/DACTE|imprim/i, 'fala de imprimir/DACTE']], via: 'modelo' },
+    como4: { perfil: P_NOVA, passo: 'cte', pergunta: 'Como imprimo o DACTE?', deve: [[/DACTE|imprim/i, 'fala de imprimir/DACTE'], [/Esta etapa é feita pelo Suporte/, 'o artigo é uma configuração da equipe: vira o aviso do Suporte']], nao: [[/Imprime DACTE sem averbar|marcar como sim|basta marcar/, 'passo de configuração do talão (a equipe, não o cliente)']], via: 'banco' },
 };
 const escolhidos = (arg('cenarios', '') ? arg('cenarios', '').split(',') : Object.keys(TODOS)).filter(k => TODOS[k]);
 const linhas = []; const log = s => { linhas.push(s); console.log(s); };

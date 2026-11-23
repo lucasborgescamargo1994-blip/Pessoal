@@ -40,6 +40,8 @@ const FAKE = `(() => {
         async createChatCompletion(o) {
             F.chamadas.push({ messages: o.messages, max_tokens: o.max_tokens, temperature: o.temperature, stream: o.stream, cache_prompt: o.cache_prompt, return_progress: o.return_progress });
             if (F.falhaGerar) { const e = F.falhaGerar; F.falhaGerar = null; throw new Error(e); }
+            // trabalhador PENDURADO: o fluxo nunca termina e nem responde ao aborto (o que acontece quando o trabalhador é encerrado no meio de uma geração)
+            if (o.max_tokens === 1 ? F.penduraAquecimento : F.penduraGeracao) return (async function* () { await new Promise(() => {}); })();
             const texto = typeof F.resp === 'function' ? F.resp(o.messages, F.chamadas.length) : F.resp;
             const aborta = () => { F.abortados++; const e = new Error('Operation aborted'); e.name = 'WllamaAbortError'; return e; };
             return (async function* () {
@@ -106,8 +108,8 @@ const ESCUTA_FASES = `(() => { ModeloLocal.aoMudar(e => window.__fases.push(e.fa
         await cliente('cte');
         const r1 = await perguntar('Como emito um CT-e?');
         t('banco direto: o artigo cujo título é a pergunta vira a resposta NA HORA, avisando que não gastou IA (e sem mandar preparar a IA local, que aqui não faz falta)', r1.texto && /^\*\*Como emitir um ct-e\?\*\*/i.test(r1.texto) && /Resposta direta do banco de dados: o artigo já responde à sua pergunta, sem gastar IA/.test(r1.texto) && !/prepare a IA local/.test(r1.texto) && r1.modelo === 'banco', JSON.stringify(r1).slice(0, 300));
-        const r1b = await perguntar('Como imprimo o DACTE?');
-        t('sem modelo: pergunta que o banco não responde com um artigo-título → o trecho mais parecido, avisando que é resposta direta e mandando preparar a IA local', r1b.texto && /^\*\*Como faz para visualizar a DACTE/i.test(r1b.texto) && /Resposta direta do banco de dados\. Para respostas escritas pela IA, prepare a IA local/.test(r1b.texto) && r1b.modelo === 'banco', JSON.stringify(r1b).slice(0, 300));
+        const r1b = await perguntar('Como cadastro a apólice do seguro e ligo a averbação automática?');
+        t('sem modelo: pergunta que o banco não responde com um artigo-título → o trecho mais parecido, avisando que é resposta direta e mandando preparar a IA local', r1b.texto && /^\*\*Como configurar sistema para realizar averba/i.test(r1b.texto) && /Resposta direta do banco de dados\. Para respostas escritas pela IA, prepare a IA local/.test(r1b.texto) && r1b.modelo === 'banco', JSON.stringify(r1b).slice(0, 300));
         t('sem modelo: traz as fontes (“Baseado em”) e nada foi pedido ao modelo', r1.fontes.length >= 1 && r1b.fontes.length >= 1 && (await chamadas()) === 0);
         await cliente('cte');          // (conversa nova: com conversa anterior, uma pergunta curta é tratada como continuação dela)
         const rv = await perguntar('não consigo emitir');
@@ -182,7 +184,7 @@ const ESCUTA_FASES = `(() => { ModeloLocal.aoMudar(e => window.__fases.push(e.fa
         const rt = await perguntar('Como corrijo um CT-e emitido errado?');
         t('trava: número/prazo que não está no material vem com o aviso de confirmar', /⚠️ \*\*Atenção:\*\* o número\/prazo \(15 dias\)/.test(rt.texto), rt.texto.slice(0, 300));
         await ev(`window.__fake.resp = 'Hello, to issue the document you can open the menu and click on the button please.'; true`);
-        const ri = await perguntar('Como imprimo o DACTE do CT-e?');
+        const ri = await perguntar('Como cadastro a apólice do seguro e ligo a averbação automática?');
         t('trava: modelo respondeu em inglês → usa o trecho do banco e diz que a IA não conseguiu', /não conseguiu escrever uma resposta boa/.test(ri.texto) && ri.modelo === 'banco', ri.texto.slice(0, 200));
         await ev(`window.__fake.resp = 'Desculpe, mas não posso atender a esse pedido de ajuda com o sistema.'; true`);
         const rr = await perguntar('Como consulto um CT-e emitido?');
@@ -236,9 +238,9 @@ const ESCUTA_FASES = `(() => { ModeloLocal.aoMudar(e => window.__fases.push(e.fa
         const rdir = await perguntar('Como emito um CT-e?');
         t('padrão: o artigo cujo título é a pergunta responde NA HORA, mesmo com a IA pronta — o modelo não é chamado e a resposta avisa que não gastou IA', /^\*\*Como emitir um ct-e\?\*\*/i.test(rdir.texto) && /sem gastar IA/.test(rdir.texto) && rdir.modelo === 'banco' && (await chamadas()) === n5, JSON.stringify(rdir).slice(0, 200));
         const rdir2 = await perguntar('Rejeição 539: Duplicidade de CT-e. O número já foi usado.', true);
-        t('padrão, erro 539: as 3 partes do banco, com a etapa do Suporte e os números do cliente, SEM chamar o modelo', /\*\*Causa provável:\*\* Erro ou Rejeição SEFAZ 539/.test(rdir2.texto) && /\*\*Se não resolver:\*\*/.test(rdir2.texto) && /CT-e 1500/.test(rdir2.texto) && rdir2.modelo === 'banco' && (await chamadas()) === n5, rdir2.texto.slice(0, 300));
-        const rmod = await perguntar('Como imprimo o DACTE?');
-        t('padrão: a pergunta que NÃO tem artigo-título (DACTE) continua indo ao modelo', (await chamadas()) === n5 + 1 && rmod.modelo === 'Llama 3.2 · 1B', JSON.stringify(rmod).slice(0, 200));
+        t('padrão, erro 539: as 3 partes do banco, com a etapa do Suporte e os números do cliente, SEM chamar o modelo', /\*\*Causa provável:\*\* Erro ou Rejeição SEFAZ 539/.test(rdir2.texto) && /\*\*Se não resolver:\*\*/.test(rdir2.texto) && /CT-e 1500/.test(rdir2.texto) && /o artigo mais parecido é um procedimento de configuração, que é do Suporte/.test(rdir2.texto) && rdir2.modelo === 'banco' && (await chamadas()) === n5, rdir2.texto.slice(0, 300));
+        const rmod = await perguntar('Como cadastro a apólice do seguro e ligo a averbação automática?');
+        t('padrão: a pergunta que NÃO tem artigo-título (seguro/averbação) continua indo ao modelo', (await chamadas()) === n5 + 1 && rmod.modelo === 'Llama 3.2 · 1B', JSON.stringify(rmod).slice(0, 200));
         await ev("(() => { const c = document.getElementById('mlTudo'); c.checked = true; c.dispatchEvent(new Event('change')); return true; })()");
         const rtudo = await perguntar('Como emito um CT-e?');
         t('“A IA escreve TODA resposta” ligada: o mesmo pedido de antes agora vai ao modelo (e a escolha fica lembrada)', (await chamadas()) === n5 + 2 && rtudo.modelo === 'Llama 3.2 · 1B' && (await ev("localStorage.getItem('bsoft_migloc_tudo')")) === '1', JSON.stringify(rtudo).slice(0, 200));
@@ -261,13 +263,29 @@ const ESCUTA_FASES = `(() => { ModeloLocal.aoMudar(e => window.__fases.push(e.fa
 
         // ═════════ 6) já guardado → carrega sozinho; trocar de modelo; apagar ═════════
         const URL_LLAMA = await ev('ModeloLocal.MODELOS.llama.url');
-        await abrir('migracaolocal.html', `window.__fake.cache = [${JSON.stringify(URL_LLAMA)}];`);
+        await abrir('migracaolocal.html', `window.__fake.cache = [${JSON.stringify(URL_LLAMA)}]; window.__fake.penduraAquecimento = true;`);
         t('já guardado: abre e carrega SOZINHO, sem clicar', await esperarPronto(), JSON.stringify(await ev('window.__fases')));
         await ev(`(() => { const s = document.getElementById('mlModelo'); s.value = 'qwen'; s.dispatchEvent(new Event('change')); return true; })()`);
         t('trocar para o Qwen: o botão mostra 469 MB e a licença (Apache-2.0)', /469 MB/.test(await txt('#mlPreparar')) && /Apache-2\.0/.test(await txt('#mlLicenca')), await txt('#mlPreparar'));
         await clicar('#mlPreparar');
         t('trocar para o Qwen: descarrega o Llama e carrega o Qwen', await esperar("ModeloLocal.estado().fase === 'pronto' && ModeloLocal.estado().chave === 'qwen'", 8000) && /qwen2\.5-0\.5b-instruct-q4_k_m\.gguf$/.test((await ev('window.__fake.carga')).url) && (await ev('window.__fake.saidas')) >= 1);
         t('a escolha do modelo fica lembrada neste navegador', (await ev("localStorage.getItem('bsoft_migloc_modelo')")) === 'qwen');
+        // o aquecimento do modelo anterior ficou PENDURADO (o trabalhador foi encerrado no meio): a fila não pode travar — o chat responde com o modelo novo
+        // (achado com o modelo de verdade: abrir a página e trocar de modelo logo em seguida deixava o chat em “IA local: preparando” para sempre)
+        await ev("(() => { const c = document.getElementById('mlTudo'); c.checked = true; c.dispatchEvent(new Event('change')); return true; })()");
+        await cliente('cte');
+        const nq = await chamadas();
+        const rq = await perguntar('Como cadastro a apólice do seguro e ligo a averbação automática?');
+        t('trocar de modelo com o aquecimento pendurado: a pergunta seguinte é respondida pelo modelo NOVO (a fila não trava)', /Qwen/.test(rq.modelo) && (await chamadas()) > nq, JSON.stringify(rq).slice(0, 200));
+        // cancelar vale mesmo com o trabalhador pendurado (não responde nem ao aborto)
+        await ev('window.__fake.penduraGeracao = true; true');
+        await ev(`Mig.chatEnviar('Como emito um CT-e com frete e ICMS?', { modoErro: false }); true`);
+        await esperar("!!document.querySelector('.mig-msg.digitando .mig-mini')", 8000);
+        await clicar('.mig-msg.digitando .mig-mini');
+        t('cancelar com o trabalhador PENDURADO: a bolha “digitando” sai e o texto volta para o campo (o aborto não depende do trabalhador responder)', await esperar("!document.querySelector('.mig-msg.digitando')", 5000) && (await ev("document.getElementById('chatCampo').value")) === 'Como emito um CT-e com frete e ICMS?', await ev("document.getElementById('chatCampo').value"));
+        await ev('window.__fake.penduraGeracao = false; true');
+        const rq2 = await perguntar('Como cadastro a apólice do seguro e ligo a averbação automática?');
+        t('…e a fila segue livre: o pedido seguinte é respondido normalmente', /Qwen/.test(rq2.modelo), JSON.stringify(rq2).slice(0, 200));
         await ev(`(() => { const s = document.getElementById('mlModelo'); s.value = 'llama'; s.dispatchEvent(new Event('change')); return true; })()`);
         await ev('window.confirm = () => true; true');
         await clicar('#mlApagar');
