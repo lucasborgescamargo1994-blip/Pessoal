@@ -70,6 +70,9 @@ const ModeloLocal = (() => {
         cancelar(); abortarAquecimento();
         const w = W; W = null;
         if (w) { try { await w.exit(); } catch (e) { /* já encerrado */ } }
+        // A fila é zerada: uma geração (ou o aquecimento) que estava no meio quando o trabalhador foi encerrado pode NUNCA terminar, e todo pedido novo ficaria esperando por ela
+        // (achado nos testes com o modelo de verdade: abrir a página — que já carrega e aquece o modelo lembrado — e trocar de modelo logo em seguida deixava o chat em "IA local: preparando" para sempre).
+        fila = Promise.resolve(); atual = null; aquecendo = null;
         mudar('ocioso', { chave: '', carregado: 0, total: 0, erro: '' });
     }
 
@@ -176,8 +179,10 @@ const ModeloLocal = (() => {
         fila = fila.then(async () => {
             if (ctl.signal.aborted || E.fase !== 'pronto' || !W) return;
             try {
-                const it = await W.createChatCompletion({ messages, stream: true, abortSignal: ctl.signal, cache_prompt: true, max_tokens: 1, temperature: 0 });
-                for await (const ch of it) { void ch; }
+                const abortado = new Promise((_, rej) => { ctl.signal.addEventListener('abort', () => rej(new Error('abortado')), { once: true }); }); abortado.catch(() => {});
+                const it = await Promise.race([W.createChatCompletion({ messages, stream: true, abortSignal: ctl.signal, cache_prompt: true, max_tokens: 1, temperature: 0 }), abortado]);
+                const iter = it[Symbol.asyncIterator]();
+                for (;;) { const nx = await Promise.race([iter.next(), abortado]); if (nx.done) break; }
             } catch (e) { if (!ctl.signal.aborted) console.warn('[IA local] aquecimento:', e); }
             finally { if (aquecendo === ctl) aquecendo = null; }
         });

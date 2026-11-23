@@ -56,6 +56,7 @@
     const AVISO_DESLIGADA = 'Resposta direta do banco de dados (a opção “Respostas escritas pela IA” está desligada).';
     const AVISO_NAO_SERVIU = 'A IA local não conseguiu escrever uma resposta boa para esta pergunta; este é o trecho do banco de dados.';
     const AVISO_DIRETO = 'Resposta direta do banco de dados: o artigo já responde à sua pergunta, sem gastar IA.';
+    const AVISO_DIRETO_CONFIG = 'Resposta direta do banco de dados, sem gastar IA: o artigo mais parecido é um procedimento de configuração, que é do Suporte.';
 
     async function chamar(messages) {
         const meta = messages && messages.local;
@@ -63,7 +64,7 @@
         if (meta.direta) return { text: meta.direta, _iaModelo: 'regras', finishReason: 'stop' };
         if (meta.naoEncontrei) return { text: Rag.NAO_ENCONTREI, _iaModelo: 'regras', finishReason: 'stop' };
         // o banco JÁ tem o artigo que responde (título = pergunta; no erro, o artigo do código): o modelo só reescreveria, devagar e inventando. A não ser que a pessoa peça "IA em toda resposta".
-        if (meta.confiante && !tudo()) return { text: Rag.extrativaDe(meta, AVISO_DIRETO), _iaModelo: 'banco', finishReason: 'stop' };
+        if (meta.confiante && !tudo()) return { text: Rag.extrativaDe(meta, meta.materialConfig ? AVISO_DIRETO_CONFIG : AVISO_DIRETO), _iaModelo: 'banco', finishReason: 'stop' };
         const e = M.estado();
         if (!usarIA()) return { text: Rag.extrativaDe(meta, AVISO_DESLIGADA), _iaModelo: 'banco', finishReason: 'stop' };
         if (e.fase !== 'pronto') return { text: Rag.extrativaDe(meta, AVISO_SEM_MODELO), _iaModelo: 'banco', finishReason: 'stop' };

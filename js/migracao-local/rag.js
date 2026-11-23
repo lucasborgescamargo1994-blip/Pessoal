@@ -209,7 +209,7 @@ const MigLocalRag = (() => {
     // a linha sai e entra o aviso (uma vez). Vale para o trecho do banco E para o texto do modelo. (Os artigos do banco foram escritos para a EQUIPE de suporte: "ajuste a numeração inicial…")
     const ENSINA_CONFIG = l => /(ajust|edit|alter|defin|habilit|corrij|mude|troque|instal|import|configur|cadastr)[^\n]{0,80}(numera[cç][aã]o inicial|n[uú]mero inicial|tal[aã]o|tal[oõ]es|certificado|regra de c[aá]lculo|regras de c[aá]lculo|tabela de pre[cç]o|par[aâ]metro)/i.test(l) && !/Suporte|Implanta|n[aã]o é algo|peça /i.test(l);
     const LINHA_SUPORTE = '🔒 **Esta etapa é feita pelo Suporte Bsoft**, não por você (ajuste de talão, numeração inicial, certificado, regras de cálculo ou tabelas). Peça em **' + SUPORTE + '**.';
-    const SO_NUMERACAO = /numera|tal[aã]o|tal[oõ]es/i;
+    const SO_NUMERACAO = /numera[cç][aã]o|n[uú]mero inicial|sequ[eê]ncia/i;          // (só artigo de NUMERAÇÃO leva os números do cliente: "talão" aparece em qualquer configuração de talão, como a do DACTE)
     // o último número que o cliente disse ter emitido no sistema antigo (o que o Suporte vai pedir para acertar o talão); vem do que ele mesmo informou no passo da numeração
     function infoNumeracao(perfil) {
         const n = (perfil && perfil.numeracao) || {}, p = [];
@@ -235,17 +235,26 @@ const MigLocalRag = (() => {
         return { texto, n, sobra: (resto.match(/\p{L}/gu) || []).length };
     }
     const semCortes = trecho => String(trecho || '').replace(/ ?\[…\]$/, ' […]');
+    // ARTIGO DE CONFIGURAÇÃO: se QUALQUER frase do trecho manda mexer em talão/numeração/certificado/regras/tabelas, o trecho é um procedimento da EQUIPE de suporte inteiro (as frases seguintes
+    // continuam o passo a passo: "Vai ter uma opção Imprime DACTE sem averbar? Marque sim e salve…") — tirar só a frase deixava o resto chegar ao cliente (achado com o Qwen/Llama de verdade).
+    // Aqui o trecho INTEIRO vira o aviso do Suporte (+ os números do cliente, se for de numeração); null = o trecho não é de configuração.
+    function blocoConfig(trecho, infoNum) {
+        const frases = semCortes(trecho).split('\n').flatMap(l => l.split(/(?<=[.!?])\s+/));
+        const tiradas = frases.filter(ENSINA_CONFIG);
+        if (!tiradas.length) return null;
+        return LINHA_SUPORTE + (infoNum && SO_NUMERACAO.test(tiradas.join(' ')) ? ' ' + infoNum : '');
+    }
     // o trecho do banco como resposta: quando não há modelo, quando o modelo não serve, ou quando o artigo JÁ é a resposta (título = pergunta)
     function extrativa(material, aviso, infoNum) {
         if (!material || !material.length) return NAO_ENCONTREI;
-        const m = material[0], c = tirarConfig(semCortes(m.trecho), infoNum);
-        // (se saiu uma etapa de configuração, o "Onde fica" do artigo é a tela de configuração: não vai para o cliente)
+        const m = material[0], bloco = blocoConfig(m.trecho, infoNum), c = { texto: bloco || semCortes(m.trecho), n: bloco ? 1 : 0 };
+        // (se o artigo é de configuração, o "Onde fica" dele é a tela de configuração: não vai para o cliente)
         return '**' + m.titulo + '**\n\n' + c.texto + (m.caminho && !c.n ? '\n\n📍 Onde fica: ' + m.caminho : '') + '\n\n👉 Veja o artigo inteiro — e outros parecidos, se não for isso — em **Baseado em**.' + (aviso ? '\n\n_' + aviso + '_' : '');
     }
     // o mesmo para o modo ERRO: as 3 partes de sempre, montadas do próprio artigo (título = causa · trecho = como corrigir · Suporte = se não resolver)
     function extrativaErro(material, aviso, infoNum) {
         if (!material || !material.length) return ERRO_NAO_CONSTA;
-        const m = material[0], c = tirarConfig(semCortes(m.trecho), infoNum);
+        const m = material[0], bloco = blocoConfig(m.trecho, infoNum), c = { texto: bloco || semCortes(m.trecho), n: bloco ? 1 : 0 };
         return '**Causa provável:** ' + m.titulo.replace(/\.$/, '') + '.\n\n**Como corrigir:**\n' + c.texto + (m.caminho && !c.n ? '\n\n📍 Onde fica: ' + m.caminho : '') +
             '\n\n**Se não resolver:** fale com o **Suporte** (' + SUPORTE + ') levando o **código e a mensagem exata** do erro, o documento e um print.\n\n👉 Veja o artigo inteiro — e outros parecidos, se não for isso — em **Baseado em**.' + (aviso ? '\n\n_' + aviso + '_' : '');
     }
@@ -264,7 +273,7 @@ const MigLocalRag = (() => {
         const material = escolherMaterial(cands, texto, orc);
         const regrasP = erro ? [] : regrasDaPergunta(opc.ix, texto);
         const infoNum = infoNumeracao(o.perfil);
-        const local = { tipo: 'mentor', erro, orcamento: orc.nome, direta: '', diretaTipo: '', naoEncontrei: false, extrativa: '', material, permitidos: '', regrasIds: [], infoNum, confiante: false };
+        const local = { tipo: 'mentor', erro, orcamento: orc.nome, direta: '', diretaTipo: '', naoEncontrei: false, extrativa: '', material, permitidos: '', regrasIds: [], infoNum, confiante: false, materialConfig: false };
         const direta = (tipo, texto2) => { local.direta = texto2; local.diretaTipo = tipo; };
         // 0) configuração do sistema (certificado, talão, regras, tabelas) → é com o Suporte (fora do modo erro: lá a mensagem do erro pode citar o certificado e o artigo ajuda a triar)
         if (!erro && ehConfiguracao(texto)) direta('suporte', CONFIG_RESPOSTA);
@@ -288,7 +297,9 @@ const MigLocalRag = (() => {
         if (material.length) {
             const m0 = material[0];
             const codigoNoTitulo = codigos.length > 0 && codigos.some(c => semAcento(m0.titulo).includes(c));
-            local.confiante = codigoNoTitulo || (!erro && m0.noTitulo >= 0.6 && L().tokens(L().anonimizar(texto)).length >= 2);
+            // (e o material de CONFIGURAÇÃO — procedimento da equipe de suporte — também vai direto: nada que o modelo escreva a partir dele serve ao cliente, e o modelo levaria minutos para chegar ao mesmo aviso)
+            local.materialConfig = material.some(m => !!blocoConfig(m.trecho));
+            local.confiante = codigoNoTitulo || (!erro && m0.noTitulo >= 0.6 && L().tokens(L().anonimizar(texto)).length >= 2) || local.materialConfig;
         }
         local.extrativa = extrativaDe(local, opc.aviso || '');
         // o prompt (curto: no processador de um PC comum cada 100 caracteres custam ~10 s de leitura)
@@ -348,6 +359,7 @@ const MigLocalRag = (() => {
         let t = String(bruto == null ? '' : bruto).replace(/\r/g, '').trim();
         t = t.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/<think>[\s\S]*$/i, '').replace(/^```(?:markdown|md|text)?\s*\n([\s\S]*?)\n```$/i, '$1').trim();
         t = t.replace(/https?:\/\/\S+/g, '').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+        if (meta && meta.materialConfig) return '';          // o texto de apoio era um procedimento de configuração da equipe: nada escrito a partir dele serve ao cliente (o motor usa o trecho do banco, que vira o aviso do Suporte)
         if (t.length < 20 || pareceOutraLingua(t) || RECUSA.test(t) || NAO_RESPONDE.test(t) || /\[[^\]\n]{1,30}\]/.test(t.replace(/\[…\]/g, ''))) return '';
         const rp = repeticoes(t); if (rp.rep >= 2 || (rp.rep >= 1 && rp.rep / Math.max(1, rp.frases) >= 0.3)) return '';
         if (nomesInventados(t, meta).length) return '';
@@ -369,6 +381,6 @@ const MigLocalRag = (() => {
     }
 
     return { SISTEMA, MODO_ERRO, NAO_ENCONTREI, ESCLARECER, ERRO_NAO_CONSTA, CONFIG_RESPOSTA, LINHA_SUPORTE, SUPORTE, mensagensAquecimento, unidades, melhorTrecho, textoDaPergunta, codigosDe, focoDe, acharPelaPergunta, temIntencaoDeRegra, regraTexto, regrasDaPergunta, ehDefinicao, termosDaPergunta, termoTexto, ehConfiguracao,
-        orcamento, candidatos, escolherMaterial, perfilCurto, extrativa, extrativaErro, extrativaDe, montar, finalizar, pareceOutraLingua, ENSINA_CONFIG, tirarConfig, repeticoes, nomesInventados, infoNumeracao };
+        orcamento, candidatos, escolherMaterial, perfilCurto, extrativa, extrativaErro, extrativaDe, montar, finalizar, pareceOutraLingua, ENSINA_CONFIG, tirarConfig, blocoConfig, repeticoes, nomesInventados, infoNumeracao };
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = MigLocalRag;

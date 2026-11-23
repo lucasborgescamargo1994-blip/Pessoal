@@ -9,9 +9,9 @@
    o arquivo de configuração é carregado por <script> (sem fetch), então não dá erro de CORS.
    ═══════════════════════════════════════════════════════════════════════════ */
 const PROVIDER_PRESETS = {
-    openrouter: { baseUrl:'https://openrouter.ai/api/v1', models:['inclusionai/ling-3.0-flash-sante:free','cohere/north-mini-code:free','nvidia/nemotron-3.5-lightning:free','nvidia/nemotron-3-ultra-550b-a55b:free','nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free','google/gemma-4-31b-it:free','nvidia/nemotron-3-super-120b-a12b:free','thinkingmachines/inkling:free'], defaultModel:'inclusionai/ling-3.0-flash-fin:free', chatEndpoint:'/chat/completions', headers:(k)=>({Authorization:`Bearer ${k}`,'Content-Type':'application/json','HTTP-Referer':window.location.origin,'X-Title':'Bsoft TMS Suporte'}), formatRequestBody:(m,msgs,c={})=>({model:m,messages:msgs,temperature:c.temperature||0.3,max_tokens:c.maxTokens||4096,...(c.responseFormat?{response_format:c.responseFormat}:{})}), parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro OpenRouter');return{text:d.choices?.[0]?.message?.content||'',finishReason:d.choices?.[0]?.finish_reason||'',full:d};} },
+    openrouter: { baseUrl:'https://openrouter.ai/api/v1', models:['inclusionai/ling-3.0-flash-sante:free','cohere/north-mini-code:free','nvidia/nemotron-3.5-lightning:free','nvidia/nemotron-3-ultra-550b-a55b:free','nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free','google/gemma-4-31b-it:free','nvidia/nemotron-3-super-120b-a12b:free','thinkingmachines/inkling:free'], defaultModel:'inclusionai/ling-3.0-flash-fin:free', chatEndpoint:'/chat/completions', headers:(k)=>({Authorization:`Bearer ${k}`,'Content-Type':'application/json','HTTP-Referer':window.location.origin,'X-Title':'Bsoft TMS Suporte'}), formatRequestBody:(m,msgs,c={})=>({model:m,messages:msgs,temperature:c.temperature||0.3,max_tokens:c.maxTokens||4096,...(c.responseFormat?{response_format:c.responseFormat}:{}),...(c.reasoning?{reasoning:c.reasoning}:{})}), parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro OpenRouter');return{text:d.choices?.[0]?.message?.content||'',finishReason:d.choices?.[0]?.finish_reason||'',full:d};} },
     google: { baseUrl:'https://generativelanguage.googleapis.com/v1beta', models:['gemma-4-26b-a4b-it','gemini-2.0-flash','gemini-2.0-flash-lite','gemini-2.5-flash'], defaultModel:'gemma-4-26b-a4b-it', chatEndpoint:'/models/{model}:generateContent', headers:()=>({'Content-Type':'application/json'}), formatRequestBody:(m,msgs,c={})=>{const cnt=msgs.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:typeof m.content==='string'?m.content:JSON.stringify(m.content)}]}));return{contents:cnt,generationConfig:{temperature:c.temperature||0.3,maxOutputTokens:c.maxTokens||4096,...(c.responseFormat?.type==='json_object'?{responseMimeType:'application/json'}:{})}};}, parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro Google');const p=d.candidates?.[0]?.content?.parts||[];return{text:p.filter(p=>p.text).map(p=>p.text).join(''),finishReason:d.candidates?.[0]?.finishReason||'',full:d};}, buildUrl:(b,m,e)=>`${b}${e.replace('{model}',m)}` },
-    custom: { baseUrl:'',models:[],defaultModel:'',chatEndpoint:'/chat/completions', headers:(k)=>({Authorization:`Bearer ${k}`,'Content-Type':'application/json'}), formatRequestBody:(m,msgs,c={})=>({model:m,messages:msgs,temperature:c.temperature||0.3,max_tokens:c.maxTokens||4096,...(c.responseFormat?{response_format:c.responseFormat}:{})}), parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro API');return{text:d.choices?.[0]?.message?.content||'',finishReason:d.choices?.[0]?.finish_reason||'',full:d};} }
+    custom: { baseUrl:'',models:[],defaultModel:'',chatEndpoint:'/chat/completions', headers:(k)=>({Authorization:`Bearer ${k}`,'Content-Type':'application/json'}), formatRequestBody:(m,msgs,c={})=>({model:m,messages:msgs,temperature:c.temperature||0.3,max_tokens:c.maxTokens||4096,...(c.responseFormat?{response_format:c.responseFormat}:{}),...(c.reasoning?{reasoning:c.reasoning}:{})}), parseResponse:(d)=>{if(d.error)throw new Error(d.error.message||'Erro API');return{text:d.choices?.[0]?.message?.content||'',finishReason:d.choices?.[0]?.finish_reason||'',full:d};} }
 };
 /* ═══════════ IDIOMA: SEMPRE português do Brasil ═══════════
    Modelos pequenos/grátis (principalmente os de código, como o North Mini, que costuma ser o fallback) respondem em inglês quando
@@ -281,6 +281,11 @@ function mcpMontarCadeia() {
     return passos;
 }
 
+// config.reasoning (opcional, só OpenRouter/custom): ex. { enabled: false } pede ao modelo para NÃO "pensar" antes de responder. Os modelos grátis de hoje quase todos raciocinam por padrão e o raciocínio
+// CONTA no max_tokens: numa tarefa grande eles gastam o limite inteiro pensando e devolvem texto vazio (finish_reason "length"). Alguns (ex.: ernie-5.5-flash) NÃO deixam desligar e respondem
+// HTTP 400 "Reasoning is mandatory…": nesse caso o mesmo modelo é chamado de novo SEM o pedido, e a cadeia lembra dele (sessão) para não perder a 1ª tentativa de novo.
+const MCP_RACIOCINIO_OBRIGATORIO = new Set();
+const mcpSemRaciocinio = c => { const { reasoning, ...resto } = c || {}; return resto; };
 async function callCurrentMCP(messages, config = {}) {
     const passos = mcpMontarCadeia();
     const _tlog = (modelo, t, total, status, extra = '') => console.log(
@@ -294,11 +299,21 @@ async function callCurrentMCP(messages, config = {}) {
             try {
                 if (t > 1) { console.warn(`[IA] ${p.model} — nova tentativa 2/2...`); await new Promise(r => setTimeout(r, p.prioritario ? 2000 : 1500)); }
                 const _tm = performance.now();
-                const res = await callMCPAPI(p.provider, p.model, p.apiKey, p.baseUrl, messages, config);
+                let res;
+                if (config.reasoning && MCP_RACIOCINIO_OBRIGATORIO.has(p.model)) res = await callMCPAPI(p.provider, p.model, p.apiKey, p.baseUrl, messages, mcpSemRaciocinio(config));
+                else {
+                    try { res = await callMCPAPI(p.provider, p.model, p.apiKey, p.baseUrl, messages, config); }
+                    catch (e) {
+                        if (!(config.reasoning && e.status === 400 && /reasoning/i.test(e.message || ''))) throw e;
+                        MCP_RACIOCINIO_OBRIGATORIO.add(p.model); console.warn(`[IA] ${p.model} não deixa desligar o raciocínio — chamando de novo sem esse pedido.`);
+                        res = await callMCPAPI(p.provider, p.model, p.apiKey, p.baseUrl, messages, mcpSemRaciocinio(config));
+                    }
+                }
                 _tlog(p.model, t, performance.now() - _tm, '✅ OK', ` — via ${p.label}`);
                 return { ...res, _iaUsada: p.label, _iaModelo: p.model };
             } catch (e) {
                 _tlog(p.model, t, 0, `❌ erro (${e.status || e.message?.substring(0, 40) || '?'})`);
+                if (e.status === 404 || e.status === 410) break;      // "no longer available": o modelo saiu do ar, repetir não adianta (vai para o próximo da cadeia)
             }
         }
     }
@@ -324,12 +339,19 @@ async function callMCPVision(messages, config = {}) {
     throw new Error('Nenhum modelo de visão disponível.');
 }
 async function callMCPSemPensamento(messages, config = {}, maxTentativas = 3) {
+    let cfg = config;
     for (let t = 1; t <= maxTentativas; t++) {
-        const result = await callCurrentMCP(messages, config);
+        const result = await callCurrentMCP(messages, cfg);
         const { texto, eraPensamento } = filtrarPensamentoAlto(result.text);
         if (!eraPensamento) {
             const truncado = result.finishReason === 'length' || result.finishReason === 'MAX_TOKENS';
-            const finalText = truncado ? await _continuarResposta(messages, texto, config, 3, result.text) : texto;
+            // Modelo de RACIOCÍNIO que gastou o limite INTEIRO de tokens pensando: não saiu uma palavra do texto (medido no Assistente de Relatórios: 9.306 dos 9.888 tokens foram de raciocínio).
+            // "Continuar" não adianta (não há o que continuar — antes eram 3 chamadas inúteis seguidas, e o assistente dava erro); repete o pedido com mais espaço (3×, até 16.000 tokens).
+            if (truncado && !String(texto || '').trim() && t < maxTentativas) {
+                const atual = cfg.maxTokens || 4096, mais = Math.min(16000, atual * 3);
+                if (mais > atual) { console.warn(`[IA] resposta VAZIA com o limite de ${atual} tokens (o modelo gastou tudo pensando) — repetindo com ${mais}...`); cfg = { ...cfg, maxTokens: mais }; continue; }
+            }
+            const finalText = truncado && String(texto || '').trim() ? await _continuarResposta(messages, texto, cfg, 3, result.text) : texto;
             return { ...result, text: finalText };
         }
         console.warn('[AntiPensamento] tentativa ' + t + '/' + maxTentativas + ' — reprocessando...');

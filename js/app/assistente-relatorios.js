@@ -857,10 +857,13 @@ function _voltarParaWizardRelatorio(ts) {
     }
 }
 
-function _renderizarCardResultadoRelatorio(nomeRelatorio, camposTxt, encontrados, naoEncontrados, conteudoSerializado, nomeArquivoSugerido, origemSel, colunasRascunho) {
+function _renderizarCardResultadoRelatorio(nomeRelatorio, camposTxt, encontrados, naoEncontrados, conteudoSerializado, nomeArquivoSugerido, origemSel, colunasRascunho, respostaParcial) {
     const s = Ferr.stream('relatorios');
     const card = document.createElement('div');
     card.className = 'answer-card';
+    const avisoParcial = respostaParcial
+        ? `<div class="answer-section"><div class="section-label path">⚠️ Resposta da IA veio cortada</div><div class="section-content">A IA parou no meio da resposta: aproveitei só os <b>${encontrados.length}</b> campos que vieram completos. <b>Confira se faltou algum</b> da sua lista; se faltou, clique em "Voltar" e gere de novo (ou divida a lista em duas partes).</div></div>`
+        : '';
     const listaOk = encontrados.map(c => `<li><b>${escapeHtml(c.label)}</b> <span style="color:#6b7280;font-family:monospace;font-size:11.5px;">(${escapeHtml(c.exp)})</span></li>`).join('');
     const listaNok = naoEncontrados.length
         ? `<div class="answer-section"><div class="section-label path">⚠️ Não identificado</div><div class="section-content">Não encontrei campo correspondente para: <b>${naoEncontrados.map(escapeHtml).join(', ')}</b>. Você pode baixar mesmo assim e adicionar manualmente pelo sistema, ou clicar em "Voltar" pra reformular.</div></div>`
@@ -879,6 +882,7 @@ function _renderizarCardResultadoRelatorio(nomeRelatorio, camposTxt, encontrados
     window['_relatorioDat_' + ts] = { conteudo: conteudoSerializado, nomeArquivo: nomeArquivoSugerido, nome: nomeRelatorio, camposTxt, origemSel, colunasRascunho };
     card.innerHTML = `<div style="background:#eff6ff;padding:8px 15px;border-bottom:1px solid #bfdbfe;font-size:11px;color:#1e40af;font-weight:600;">📊 Assistente de Relatórios — Bsoft TMS</div>
 <div class="answer-section"><div class="section-label how">✅ Campos identificados (${encontrados.length})</div><div class="section-content"><ul style="margin:0;padding-left:18px;">${listaOk || '<li>Nenhum</li>'}</ul></div></div>
+${avisoParcial}
 ${comoUsar}
 ${listaNok}
 <div class="feedback-area">
@@ -913,6 +917,43 @@ function _normalizarExpressaoRelatorio(exp, expsValidas) {
     return norm;
 }
 
+// Lê o que a IA devolveu. Aceita o JSON completo; se veio CORTADO (limite de tokens) ou com lixo, aproveita cada item {"label":…,"exp":…} que veio inteiro
+// (parcial = true, para a tela avisar). Devolve null se não deu para ler nada.
+function _lerRespostaIARelatorio(raw) {
+    const s = String(raw || '').trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
+    const m = s.match(/\{[\s\S]*\}/);
+    if (m) {
+        try {
+            const p = JSON.parse(m[0]);
+            if (p && typeof p === 'object' && !Array.isArray(p)) return { encontrados: Array.isArray(p.encontrados) ? p.encontrados : [], naoEncontrados: Array.isArray(p.naoEncontrados) ? p.naoEncontrados.filter(Boolean).map(String) : [], parcial: false };
+        } catch (e) { /* cortado ou com lixo: tenta aproveitar o que veio inteiro */ }
+    }
+    const itens = [];
+    (s.match(/\{[^{}]*\}/g) || []).forEach(o => { try { const it = JSON.parse(o); if (it && typeof it.exp === 'string') itens.push(it); } catch (e) { /* objeto quebrado: ignora */ } });
+    return itens.length ? { encontrados: itens, naoEncontrados: [], parcial: true } : null;
+}
+
+// Junta o que a IA achou: valida cada expressão no catálogo e NÃO deixa dois pedidos ficarem com o mesmo campo sem avisar. Quando a IA "empurra" um termo para um campo que já tem dono
+// (medido: "Gris", que não existe no catálogo, voltou como Diária, e a coluna Diária de verdade era descartada), fica o pedido cujo nome é o do campo no catálogo; o outro vai para
+// "não identificado". Referência que não existe no catálogo também vai para "não identificado" (antes sumia em silêncio).
+function _consolidarCamposRelatorio(itens, catalogo) {
+    const expsValidas = new Set(catalogo.map(c => c.exp)), porExp = new Map(catalogo.map(c => [c.exp, c]));
+    const norm = s => String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+    const mapa = new Map(), descartados = [];
+    (itens || []).forEach(item => {
+        if (!item) return;
+        const expNorm = _normalizarExpressaoRelatorio(item.exp, expsValidas);
+        const cat = expNorm === null ? null : porExp.get(expNorm);
+        const rotulo = String(item.label || (cat ? cat.label : item.exp || '')).trim();
+        if (expNorm === null) { if (rotulo) descartados.push(rotulo); return; }
+        if (!mapa.has(expNorm)) { mapa.set(expNorm, { exp: expNorm, label: rotulo }); return; }
+        const ant = mapa.get(expNorm), nomeDoCampo = cat ? norm(cat.label) : '';
+        if (cat && norm(rotulo) === nomeDoCampo && norm(ant.label) !== nomeDoCampo) { descartados.push(ant.label); mapa.delete(expNorm); mapa.set(expNorm, { exp: expNorm, label: rotulo }); }      // (delete+set: o campo vai para a POSIÇÃO do pedido que ficou, não do que saiu)
+        else descartados.push(rotulo);
+    });
+    return { encontrados: Array.from(mapa.values()), descartados };
+}
+
 async function enviarWizardRelatorio() {
     const btn = document.getElementById('wRelBtnEnviar');
     const origemSel = window._relOrigemSel;
@@ -940,36 +981,29 @@ async function enviarWizardRelatorio() {
     const catalogo = CATALOGO_RELATORIOS[origemSel] || CATALOGO_RELATORIOS.CTe;
 
     try {
-        let encontradosIA = [], naoEncontrados = [];
+        let encontradosIA = [], naoEncontrados = [], respostaParcial = false;
         // Só chama a IA se sobrou descrição em texto livre pra ela interpretar — colunas montadas
         // 100% arrastando não precisam disso, e pular a chamada deixa esse caminho instantâneo.
         if (camposTxt) {
             const catalogoTxt = catalogo.map(c => `${c.label} => ${c.exp}`).join('\n');
-            const sysMsg = `Você identifica campos de relatório do Bsoft TMS a partir de uma descrição em português.\nAbaixo está o catálogo de campos disponíveis (rótulo => expressão). Use APENAS expressões desse catálogo, nunca invente uma expressão que não esteja listada.\n\nCATÁLOGO:\n${catalogoTxt}\n\n⚠️ REGRA ABSOLUTA — NÃO ADICIONE CAMPOS NÃO PEDIDOS: Inclua em "encontrados" SOMENTE campos que correspondem a algo que o usuário mencionou EXPLICITAMENTE no pedido — mesmo que o termo usado seja sinônimo, abreviado ou levemente diferente do rótulo do catálogo. É PROIBIDO incluir campos "relacionados", "que costumam aparecer junto", ou que pareçam úteis para o contexto do relatório, se o usuário não pediu por eles. Exemplo: se o usuário pediu "CFOP e Chave", a resposta deve conter exatamente esses 2 campos — nunca adicione um terceiro campo (como Agência ou Data Emissão) só porque é comum em relatórios de CT-e. Conte quantos itens distintos o usuário pediu e garanta que "encontrados" não tenha mais itens que isso (um pedido pode gerar menos itens, se algo não for encontrado, mas nunca mais).\n\n📐 COLUNAS CALCULADAS (contas): o usuário pode pedir uma coluna que é o resultado de uma conta (soma, subtração, multiplicação ou divisão) envolvendo um campo do catálogo e um número, ou dois campos do catálogo. Nesse caso, em vez de uma expressão simples do catálogo, monte a fórmula matemática como "exp", seguindo ESTAS DUAS REGRAS OBRIGATÓRIAS do sistema:\n1. Separador decimal SEMPRE ponto, NUNCA vírgula — o sistema TMS não aceita vírgula. Se o usuário disser "vezes 0,02", escreva 0.02.\n2. Todo campo do catálogo usado dentro de uma conta DEVE ficar entre parênteses — se não ficar entre parênteses, o relatório retorna null nessa coluna. Use APENAS parênteses ao redor do campo, nunca ao redor do número.\nExemplo real: pedido "a coluna Comissão seja o Total prestação do Ct-e vezes 0,02" → {"label":"Comissão","exp":"(composicaoFrete.totalPrestacao)*0.02"}. Outro exemplo com dois campos: "Frete mais pedágio" → {"label":"Frete mais pedágio","exp":"(composicaoFrete.freteValor)+(composicaoFrete.pedagio)"}. Toda expressão dentro dos parênteses tem que ser uma expressão EXATA do catálogo acima — nunca invente uma.\n\nResponda APENAS um JSON válido (sem texto antes ou depois, sem markdown), no formato:\n{"encontrados":[{"label":"<rótulo do catálogo, ou o nome da coluna calculada pedida pelo usuário>","exp":"<expressão exata do catálogo, ou a fórmula de conta seguindo as regras acima>"}],"naoEncontrados":["<termo do pedido do usuário que não bateu com nenhum campo>"]}\nNão repita o mesmo campo duas vezes. Em "naoEncontrados", liste os termos pedidos que não têm nenhum campo correspondente no catálogo.`;
+            const sysMsg = `Você identifica campos de relatório do Bsoft TMS a partir de uma descrição em português.\nAbaixo está o catálogo de campos disponíveis (rótulo => expressão). Use APENAS expressões desse catálogo, nunca invente uma expressão que não esteja listada.\n\nCATÁLOGO:\n${catalogoTxt}\n\n⚠️ REGRA ABSOLUTA — NÃO ADICIONE CAMPOS NÃO PEDIDOS: Inclua em "encontrados" SOMENTE campos que correspondem a algo que o usuário mencionou EXPLICITAMENTE no pedido — mesmo que o termo usado seja sinônimo, abreviado ou levemente diferente do rótulo do catálogo. É PROIBIDO incluir campos "relacionados", "que costumam aparecer junto", ou que pareçam úteis para o contexto do relatório, se o usuário não pediu por eles. Exemplo: se o usuário pediu "CFOP e Chave", a resposta deve conter exatamente esses 2 campos — nunca adicione um terceiro campo (como Agência ou Data Emissão) só porque é comum em relatórios de CT-e. Conte quantos itens distintos o usuário pediu e garanta que "encontrados" não tenha mais itens que isso (um pedido pode gerar menos itens, se algo não for encontrado, mas nunca mais).\n\n🚫 NUNCA associe um termo a um campo de significado DIFERENTE só para aproveitar o pedido (exemplo: se o usuário pediu "Gris" e o catálogo não tem Gris, NÃO devolva "Diária" nem outro campo parecido: o termo vai em "naoEncontrados"). Cada campo do catálogo só pode aparecer uma vez.\n\n📐 COLUNAS CALCULADAS (contas): o usuário pode pedir uma coluna que é o resultado de uma conta (soma, subtração, multiplicação ou divisão) envolvendo um campo do catálogo e um número, ou dois campos do catálogo. Nesse caso, em vez de uma expressão simples do catálogo, monte a fórmula matemática como "exp", seguindo ESTAS DUAS REGRAS OBRIGATÓRIAS do sistema:\n1. Separador decimal SEMPRE ponto, NUNCA vírgula — o sistema TMS não aceita vírgula. Se o usuário disser "vezes 0,02", escreva 0.02.\n2. Todo campo do catálogo usado dentro de uma conta DEVE ficar entre parênteses — se não ficar entre parênteses, o relatório retorna null nessa coluna. Use APENAS parênteses ao redor do campo, nunca ao redor do número.\nExemplo real: pedido "a coluna Comissão seja o Total prestação do Ct-e vezes 0,02" → {"label":"Comissão","exp":"(composicaoFrete.totalPrestacao)*0.02"}. Outro exemplo com dois campos: "Frete mais pedágio" → {"label":"Frete mais pedágio","exp":"(composicaoFrete.freteValor)+(composicaoFrete.pedagio)"}. Toda expressão dentro dos parênteses tem que ser uma expressão EXATA do catálogo acima — nunca invente uma.\n\nResponda APENAS um JSON válido (sem texto antes ou depois, sem markdown), no formato:\n{"encontrados":[{"label":"<rótulo do catálogo, ou o nome da coluna calculada pedida pelo usuário>","exp":"<expressão exata do catálogo, ou a fórmula de conta seguindo as regras acima>"}],"naoEncontrados":["<termo do pedido do usuário que não bateu com nenhum campo>"]}\nNão repita o mesmo campo duas vezes. Em "naoEncontrados", liste os termos pedidos que não têm nenhum campo correspondente no catálogo.`;
             const userMsg = `Pedido do usuário: "${camposTxt}"`;
 
+            // Quantos itens foram pedidos (uma linha cada, ou separados por vírgula): a resposta cresce com isso. O limite de tokens precisa caber a resposta E, nos modelos que raciocinam,
+            // o raciocínio: com 27 campos e o limite antigo de 2.000 o modelo gastava tudo pensando e devolvia texto vazio ("Erro ao identificar os campos"). Por isso o raciocínio é
+            // desligado (reasoning: { enabled: false } — 17 s em vez de 75 s e 617 tokens em vez de 9.888; o ernie-5.5 não deixa desligar: a cadeia chama de novo sem o pedido) e, se mesmo
+            // assim vier vazio, callMCPSemPensamento repete com 3× o limite.
+            const nItens = Math.max(camposTxt.split(/\n+/).filter(s => s.trim()).length, (camposTxt.match(/[,;]/g) || []).length + 1);
             const result = await callMCPSemPensamento(
                 [{ role: 'system', content: sysMsg }, { role: 'user', content: userMsg }],
-                { temperature: 0.1, maxTokens: 2000 }
+                { temperature: 0.1, maxTokens: Math.min(6000, 1500 + 120 * nItens), reasoning: { enabled: false } }
             );
-            let raw = (result.text || '').trim();
-            raw = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
-            const jsonMatch = raw.match(/\{[\s\S]*\}/);
-            if (!jsonMatch) throw new Error('IA não retornou JSON válido.');
-            const parsed = JSON.parse(jsonMatch[0]);
-
-            const expsValidas = new Set(catalogo.map(c => c.exp));
-            const porExp = new Map(catalogo.map(c => [c.exp, c]));
-            const vistos = new Set();
-            (parsed.encontrados || []).forEach(item => {
-                if (!item) return;
-                const expNorm = _normalizarExpressaoRelatorio(item.exp, expsValidas);
-                if (expNorm === null || vistos.has(expNorm)) return;
-                vistos.add(expNorm);
-                const cat = porExp.get(expNorm);
-                encontradosIA.push({ exp: expNorm, label: (item.label || (cat ? cat.label : expNorm)) });
-            });
-            naoEncontrados = Array.isArray(parsed.naoEncontrados) ? parsed.naoEncontrados.filter(Boolean) : [];
+            const lido = _lerRespostaIARelatorio(result.text);
+            if (!lido) throw new Error('A IA devolveu uma resposta vazia ou sem JSON válido' + (result.finishReason ? ' (fim: ' + result.finishReason + ')' : '') + '.');
+            respostaParcial = lido.parcial;
+            const cons = _consolidarCamposRelatorio(lido.encontrados, catalogo);
+            encontradosIA = cons.encontrados;
+            naoEncontrados = Array.from(new Set(lido.naoEncontrados.concat(cons.descartados)));
         }
 
         // Junta as colunas montadas arrastando com o que a IA achou no texto livre, sem repetir o
@@ -995,13 +1029,20 @@ async function enviarWizardRelatorio() {
         const origemValorDat = _ORIGEM_VALOR_DAT[origemSel] || origemSel;
         const conteudo = _gerarConteudoDatRelatorio({ nome, nomeArquivo: '', origem: origemValorDat, tamanhoRelatorio: '27cm', campos: encontrados });
 
-        _renderizarCardResultadoRelatorio(nome, camposTxt, encontrados, naoEncontrados, conteudo, nomeArquivoDat, origemSel, colunasRascunho);
+        _renderizarCardResultadoRelatorio(nome, camposTxt, encontrados, naoEncontrados, conteudo, nomeArquivoDat, origemSel, colunasRascunho, respostaParcial);
         ferrConversa('relatorios', 'ai', `Relatório "${nome}" gerado com ${encontrados.length} campo(s): ${encontrados.map(c => c.label).join(', ')}.`);
         ferrLog('relatorios', 'Assistente de Relatórios - ' + nome, true);
     } catch (e) {
         console.error('[Relatórios]', e);
         if (btn) { btn.disabled = false; btn.textContent = '🚀 Gerar Relatório'; }
-        ferrMsg('relatorios', 'ai', '❌ Erro ao identificar os campos do relatório. Tente novamente.');
+        // a causa aparece na mensagem (antes era sempre a mesma frase, mesmo quando era a IA fora do ar): o que a pessoa digitou continua na tela
+        const msg = String((e && e.message) || e || '');
+        const causa = /Todos os provedores falharam/i.test(msg)
+            ? 'A IA não respondeu agora (os modelos gratuitos estão com limite de uso ou fora do ar). Espere um ou dois minutos e clique em <b>Gerar Relatório</b> de novo — o que você digitou continua na tela.'
+            : /vazia|sem JSON/i.test(msg)
+                ? 'A IA devolveu uma resposta vazia ou incompleta (acontece com listas grandes de campos). Clique em <b>Gerar Relatório</b> de novo; se repetir, divida a lista em duas partes — o que você digitou continua na tela.'
+                : 'Tente novamente — o que você digitou continua na tela.';
+        ferrMsg('relatorios', 'ai', `❌ Erro ao identificar os campos do relatório. ${causa}<div style="font-size:11px;color:#9ca3af;margin-top:4px;">Detalhe técnico: ${escapeHtml(msg.slice(0, 200))}</div>`);
     }
 }
 
