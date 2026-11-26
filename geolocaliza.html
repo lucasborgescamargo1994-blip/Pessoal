@@ -286,6 +286,49 @@
         .ia-caixa { background: #1e1e2e; border-left: 4px solid #8b5cf6; padding: 10px; border-radius: 10px; margin-bottom: 8px; }
         .ia-caixa-titulo { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: #fff; font-size: 0.8rem; }
 
+        /* ───────── aba Consulta ANTT (RNTRC) ───────── */
+        .pane-antt .pane-in { background: #f0fdf4; border-color: #86efac; }
+        .antt-in {
+            width: 100%; padding: 8px 10px; border: 2px solid #bbf7d0; border-radius: 10px; background: #fff; color: var(--text);
+            font-size: 0.85rem; font-family: 'JetBrains Mono', ui-monospace, monospace; letter-spacing: .04em; text-transform: uppercase;
+        }
+        .antt-in::placeholder { text-transform: none; letter-spacing: 0; font-family: 'Inter', system-ui, sans-serif; color: #94a3b8; font-size: 0.72rem; }
+        .antt-in:focus { outline: none; border-color: var(--primary); }
+        .campo-bloco.erro .antt-in { border-color: #dc2626; background: #fff5f5; }
+        .campo-erro { font-size: 0.62rem; font-weight: 600; color: #dc2626; line-height: 1.3; }
+        .campo-erro:empty { display: none; }
+        .campos-2 { flex: none; display: flex; gap: 8px; }
+        .campos-2 .campo-bloco { flex: 1 1 0; min-width: 0; }
+        .antt-ou { flex: none; font-size: 0.64rem; color: #475569; line-height: 1.35; }
+        .antt-sugestoes { flex: none; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 0.66rem; color: #475569; }
+        .antt-sugestoes[hidden] { display: none; }
+        .antt-chip { padding: 3px 10px; border-radius: 999px; background: #dcfce7; color: #166534; border: 1px solid #86efac; font-size: 0.68rem; font-family: 'JetBrains Mono', ui-monospace, monospace; }
+        .antt-chip:hover { background: #bbf7d0; }
+        .antt-passos { margin: 0 0 8px; padding-left: 20px; font-size: 0.74rem; line-height: 1.5; color: #1e293b; }
+        .antt-passos li { margin: 0 0 6px; }
+        .antt-copia { display: inline-flex; align-items: center; gap: 5px; margin: 2px 6px 2px 0; padding: 2px 4px 2px 9px; border-radius: 999px; background: #fff; border: 1px solid #cbd5e1; font-size: 0.7rem; color: #475569; }
+        .antt-copia b { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.74rem; color: #1e293b; }
+        .antt-copia button { padding: 2px 9px; font-size: 0.62rem; border-radius: 999px; background: #3b82f6; }
+        .antt-registrar { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; }
+        .antt-registrar button { padding: 7px 12px; font-size: 0.72rem; }
+        .btn-st-ativo { background: linear-gradient(135deg, #10b981, #059669); }
+        .btn-st-irregular { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .btn-st-nao { background: linear-gradient(135deg, #dc2626, #991b1b); }
+        .antt-hist-titulo { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 10px 0 6px; font-size: 0.64rem; font-weight: 700; color: #64748b; letter-spacing: .04em; text-transform: uppercase; }
+        .antt-hist-titulo button { padding: 2px 10px; font-size: 0.62rem; }
+        .antt-hist-item { display: flex; align-items: center; justify-content: space-between; gap: 6px 10px; flex-wrap: wrap; padding: 6px 9px; margin-bottom: 6px; border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; font-size: 0.7rem; }
+        .antt-hist-dados { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+        .antt-hist-dados b { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.74rem; }
+        .antt-hist-dados small { color: #64748b; font-size: 0.62rem; overflow-wrap: anywhere; }
+        .antt-hist-acoes { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+        .antt-hist-acoes button { padding: 2px 9px; font-size: 0.62rem; }
+        .antt-st { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 999px; font-size: 0.62rem; font-weight: 700; white-space: nowrap; }
+        .antt-st.ok { background: #dcfce7; color: #166534; }
+        .antt-st.wa { background: #fef3c7; color: #92400e; }
+        .antt-st.er { background: #fee2e2; color: #991b1b; }
+        .antt-vazio-hist { font-size: 0.68rem; color: #94a3b8; padding: 4px 2px; }
+        .pane-antt .out-vazio { height: auto; min-height: 56px; }
+
         /* ───────── coluna lateral (distância / frete) ───────── */
         .card-side .card-body { padding: 8px; gap: 6px; }
         .side-titulo { font-size: 0.62rem; font-weight: 700; color: #64748b; letter-spacing: .04em; text-transform: uppercase; }
@@ -293,10 +336,9 @@
         .card-side .btn-limpar-hist { width: 100%; justify-content: center; padding: 6px 12px; font-size: 0.7rem; }
 
         /* ───────── janelas pequenas ───────── */
+        @container app (max-width: 1080px) { .tl-longo { display: none; } .tl-curto { display: inline; } }   /* 4 abas: os nomes longos só cabem em janelas bem largas */
         @container app (max-width: 900px) {
             .logo .by { display: none; }
-            .tl-longo { display: none; }
-            .tl-curto { display: inline; }
         }
         @container app (max-width: 700px) {
             .logo h1 { display: none; }
@@ -318,7 +360,7 @@
         /* janela BAIXA (altura do painel): some o que é só explicação, para os campos e botões continuarem todos à vista.
            Fica no FIM da folha de estilos de propósito: precisa vencer as regras base de mesma força que vêm antes. */
         @container painel (max-height: 360px) {
-            .pane-head, .pane-dica, .drop-tx small { display: none; }
+            .pane-head, .pane-dica, .drop-tx small, .antt-ou { display: none; }
             .pane-in { gap: 4px; padding: 5px 8px; }
             .drop { padding: 5px 10px; }
             .drop-ic { font-size: 1.15rem; }
@@ -360,6 +402,7 @@
         <nav class="tabs" role="tablist" aria-label="Ferramentas">
             <button class="tab-btn" data-tab="tab-xml" role="tab"><span class="tl-curto">📄 XML</span><span class="tl-longo">📄 XML (NF-e/CT-e)</span></button>
             <button class="tab-btn" data-tab="tab-ciot" role="tab"><span class="tl-curto">🚛 CIOT</span><span class="tl-longo">🚛 Validador Distância CIOT</span></button>
+            <button class="tab-btn" data-tab="tab-antt" role="tab"><span class="tl-curto">🔎 ANTT</span><span class="tl-longo">🔎 Consulta ANTT (RNTRC)</span></button>
             <button class="tab-btn active" data-tab="tab-error" role="tab"><span class="tl-curto">🤖 Erros IA</span><span class="tl-longo">🤖 Analisador de Erros (IA Livre)</span></button>
         </nav>
         <button id="btnSettingsTop" class="btn-gear" onclick="abrirSettings()" title="Configurações da IA" aria-label="Configurações da IA">⚙️</button>
@@ -465,6 +508,52 @@
 
                                 <div id="ciotListaViagens" style="margin-top: 8px;"></div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ABA CONSULTA ANTT (RNTRC): Placa + RNTRC ou Placa + CPF/CNPJ do transportador -->
+                <div id="tab-antt" class="tab-content">
+                    <div class="pane pane-antt">
+                        <div class="pane-in">
+                            <div class="pane-head">
+                                <span class="ph-ic">🔎</span>
+                                <strong>Consulta RNTRC na ANTT — Placa + transportador</strong>
+                                <button type="button" class="info-btn" title="Como funciona:&#10;1) Confira a placa e o RNTRC (ou o CPF/CNPJ do transportador) aqui.&#10;2) Clique em “Consultar na ANTT”: a consulta pública oficial abre em outra aba (a placa já fica copiada).&#10;3) Lá, escolha “Por Veículo”, cole os dados, marque “Eu não sou um robô” e consulte.&#10;4) Volte e registre a situação que a ANTT mostrou (fica no histórico deste navegador)." aria-label="Como funciona a consulta">ℹ️</button>
+                            </div>
+                            <p class="pane-dica">
+                                A ANTT exige a confirmação <strong>“Eu não sou um robô”</strong>, então a consulta é feita na <strong>página oficial</strong>: aqui você confere os dados, abre a consulta no modo certo (<strong>Por Veículo</strong>) e registra se o transportador está <strong>ativo</strong>.
+                            </p>
+                            <div class="campo-bloco">
+                                <label for="anttPlaca">PLACA DO VEÍCULO</label>
+                                <input type="text" id="anttPlaca" class="antt-in" maxlength="8" placeholder="ABC1D23 ou ABC-1234" autocomplete="off" spellcheck="false" inputmode="text">
+                                <span class="campo-erro" id="anttErroPlaca" aria-live="polite"></span>
+                            </div>
+                            <div class="campos-2">
+                                <div class="campo-bloco">
+                                    <label for="anttRntrc">RNTRC DO TRANSPORTADOR</label>
+                                    <input type="text" id="anttRntrc" class="antt-in" maxlength="12" placeholder="Ex.: 12345678" autocomplete="off" spellcheck="false" inputmode="numeric">
+                                    <span class="campo-erro" id="anttErroRntrc" aria-live="polite"></span>
+                                </div>
+                                <div class="campo-bloco">
+                                    <label for="anttDoc">CPF/CNPJ DO TRANSPORTADOR</label>
+                                    <input type="text" id="anttDoc" class="antt-in" maxlength="18" placeholder="Só números ou com pontos" autocomplete="off" spellcheck="false" inputmode="numeric">
+                                    <span class="campo-erro" id="anttErroDoc" aria-live="polite"></span>
+                                </div>
+                            </div>
+                            <div class="antt-ou">Preencha o <b>RNTRC</b> <u>ou</u> o <b>CPF/CNPJ</b> (a ANTT aceita qualquer um dos dois junto com a placa).</div>
+                            <div id="anttSugestoes" class="antt-sugestoes" hidden></div>
+                            <div class="acoes antt-acoes">
+                                <button id="btnAnttAbrir" class="success primario">🔎 Consultar na ANTT</button>
+                                <button id="btnAnttRequest" class="secondary" title="Procura placa, RNTRC e CPF/CNPJ do transportador no request colado ou anexado (abas CIOT e Analisador)">📥 Do request</button>
+                                <button id="btnAnttLimpar" class="secondary" title="Limpar os campos" aria-label="Limpar os campos">🗑️</button>
+                            </div>
+                        </div>
+                        <div class="pane-out">
+                            <button type="button" class="btn-voltar secondary" data-voltar title="Voltar para a entrada (arquivos, texto e botões)">&larr; Voltar</button>
+                            <div class="out-vazio">🔎 Os passos da consulta na ANTT e o histórico aparecem aqui.</div>
+                            <div id="anttPassos" style="display: none;"></div>
+                            <div id="anttHistorico" data-fixo></div>
                         </div>
                     </div>
                 </div>
@@ -1174,6 +1263,7 @@
         const reader = new FileReader();
         reader.onload = async (e) => {
             const texto = e.target.result;
+            window._ciotTextoCompleto = texto;   // (a aba ANTT lê daqui a placa/RNTRC/CPF-CNPJ do request inteiro; o campo de texto só guarda o começo)
             progressContainer.style.display = 'block';
             progressBar.style.width = '0%';
             const onProgress = (p, t) => { progressBar.style.width = `${(p/t)*100}%`; previewDiv.innerHTML = `📄 Processando... ${p}/${t} CT-e(s)`; };
@@ -1334,6 +1424,37 @@
     // ============================================================
     // BASE DE CONHECIMENTO: TUTORIAIS DE EMISSÃO DE CIOT
     // ============================================================
+    // ============================================================
+    // REGRA DA ANTT: TIPO DE CARGA × RETORNO VAZIO
+    // ============================================================
+    const KB_ANTT_RETORNO_VAZIO = `
+=== REGRA DA ANTT: TIPO DE CARGA × RETORNO VAZIO (FRETE MÍNIMO) ===
+
+QUANDO SE APLICA:
+Quando o TIPO DE CARGA for GRANEL PRESSURIZADO ou CONTEINERIZADA, a ANTT está OBRIGANDO que o Retorno Vazio seja "Sim".
+(Exemplo de granel pressurizado: cimento a granel, transportado em silo/carreta com descarga pressurizada. Cimento tem NCM 2523.)
+
+COMO CONFERIR NO REQUEST (operação AdicionarOperacaoTransporte):
+- CodigoTipoCarga: 12 = Granel Pressurizado · 4 = Conteinerizada (tabela de tipos de carga da ANTT).
+  Se o tipo de carga vier só por descrição (no texto colado, no RESPONSE ou na pergunta), aplique a mesma regra para "granel pressurizado" e "conteinerizada".
+- RetornoVazio: para esses dois tipos de carga TEM que ser true. Se estiver false, está errado.
+
+O QUE ACONTECE QUANDO ESTÁ ERRADO:
+Com RetornoVazio = false, o frete mínimo calculado e mostrado na tela do Bsoft sai MENOR do que o frete mínimo real da ANTT. O Valor do Frete enviado fica abaixo do mínimo
+real e a ANTT rejeita a operação com a mensagem:
+"[ANTT] ... Rejeição: O valor do frete informado é menor do que o valor mínimo de frete estabelecido."
+
+COMO ORIENTAR (SEMPRE que o tipo de carga for Granel Pressurizado ou Conteinerizada — mesmo que o erro seja outro, avise se o RetornoVazio estiver false):
+1. Diga qual é o tipo de carga encontrado no REQUEST e que, para ele, a ANTT EXIGE Retorno Vazio = Sim.
+2. Se o RetornoVazio estiver false (ou ausente) no REQUEST, aponte isso como a causa provável — principalmente quando o RESPONSE trouxer a rejeição do valor mínimo de frete.
+3. Oriente marcar, dentro do CIOT, no cálculo do Frete Mínimo, a opção "Retorno" como "Sim". Assim a tela do sistema passa a mostrar o valor REAL do frete mínimo.
+4. Oriente conferir o Valor do Frete: tem que ser igual ou maior que o frete mínimo mostrado DEPOIS de marcar "Retorno" = "Sim". Corrigir o valor e gerar o CIOT de novo
+   (o REQUEST passa a ir com RetornoVazio = true).
+5. Se o RetornoVazio já estiver true e a rejeição continuar, conferir também: Km percorridos (DistanciaPercorrida), número de eixos, tabela de frete mínimo (A/B/C/D) e o tipo de carga.
+Onde fica o CIOT: Transporte/Contrato de Frete → Contrato de Frete Eletrônico (ou Transporte/Documentos/CT-e → CT-e selecionado → Contrato de Frete Eletrônico);
+CIOT Frota Própria: Transporte/CIOT Frota Própria → quadro Dados Gerais (campo "Retorno").
+`.trim();
+
     const KB_CIOT_FROTA_PROPRIA = `
 === BASE DE Conhecimento: CIOT FROTA PRÓPRIA ===
 
@@ -1377,7 +1498,7 @@ Dados Gerais:
   * Tabela D: igual à B, para alto desempenho com apenas cavalo mecânico
 - Tipo de Carga: categoria da carga transportada
 - Kms Percorridos: quilometragem total do percurso (origem ao destino)
-- Retorno: se há pagamento de retorno (ida + retorno vazio do veículo)
+- Retorno: se há pagamento de retorno (ida + retorno vazio do veículo). Para tipo de carga Granel Pressurizado ou Conteinerizada a ANTT EXIGE Retorno = "Sim" (ver REGRA DA ANTT: TIPO DE CARGA × RETORNO VAZIO)
 - Número de Eixos: quantidade de eixos do veículo
 
 Motorista e Veículos:
@@ -1475,6 +1596,8 @@ Operação AdicionarOperacaoTransporte (CIOT):
   - Pagamentos: IdPagamentoCliente, Valor, Categoria (Adiantamento/Quitacao), TipoChavePix, chave Pix
   - Notas Fiscais: número, série, NCM, quantidade, valor unitário, valor total, tipo de cálculo
   - Viagem: código IBGE origem/destino, CEP origem/destino, coordenadas, distância percorrida
+  - Carga: CodigoTipoCarga (tipo de carga da ANTT: 12 = Granel Pressurizado · 4 = Conteinerizada), CodigoNCMNaturezaCarga, PesoCarga, TipoEmbalagem
+  - RetornoVazio (true/false): para Granel Pressurizado e Conteinerizada a ANTT EXIGE true (ver REGRA DA ANTT: TIPO DE CARGA × RETORNO VAZIO)
 
 Operação AdicionarValePedagioV2 (Vale-Pedágio):
   - Placa do veículo
@@ -1513,6 +1636,7 @@ REGRAS CRÍTICAS:
 2. Sempre aponte o caminho do menu do Bsoft TMS onde o cadastro precisa ser corrigido.
 3. Seja claro, direto e prático. Não siga formatos fixos — responda o que for relevante para resolver o problema.
 4. Se o erro for genérico no RESPONSE, analise os dados do REQUEST para identificar o campo problemático.
+5. SEMPRE confira o TIPO DE CARGA (CodigoTipoCarga) e o RetornoVazio do REQUEST. Se for Granel Pressurizado ou Conteinerizada e o RetornoVazio não for true, siga a REGRA DA ANTT: TIPO DE CARGA × RETORNO VAZIO (orientar marcar "Retorno" = "Sim" no cálculo do Frete Mínimo do CIOT).
 
 ESTRUTURA DO MENU DO BSOFT TMS:
 O sistema possui um menu lateral com pesquisa no topo e os seguintes menus principais:
@@ -1543,6 +1667,8 @@ CAMINHOS DE CADASTROS E CONFIGURAÇÕES PARA ORIENTAR ONDE AJUSTAR (NÃO INVENTE
 
 
 Responda sempre em português brasileiro.
+
+${KB_ANTT_RETORNO_VAZIO}
 
 ${KB_CIOT_FROTA_PROPRIA}
 
@@ -1607,6 +1733,46 @@ ${KB_CIOT_TERCEIROS}`, override = null) {
         if (resultado) resultado.setAttribute('aria-busy', sim ? 'true' : 'false');
     }
 
+    // ============================================================
+    // CONFERÊNCIA AUTOMÁTICA: TIPO DE CARGA × RETORNO VAZIO (regra da ANTT)
+    // ============================================================
+    // Para carga GRANEL PRESSURIZADO e CONTEINERIZADA a ANTT está OBRIGANDO "Retorno vazio = Sim". Com RetornoVazio=false no REQUEST o frete mínimo que o Bsoft mostra na tela sai
+    // MENOR que o da ANTT e a operação é rejeitada ("O valor do frete informado é menor do que o valor mínimo de frete estabelecido").
+    // CodigoTipoCarga (numeração da tabela de tipos de carga da ANTT): 4 = Conteinerizada · 12 = Granel Pressurizado (o 12 foi visto num caso real: cimento, NCM 2523).
+    // A página lê essas duas tags do REQUEST e entrega o RESULTADO pronto no fim do pedido à IA — assim até um modelo pequeno aplica a regra sem ter de achar as tags no meio do XML.
+    const CARGA_EXIGE_RETORNO_VAZIO = { 4: 'Conteinerizada', 12: 'Granel Pressurizado' };
+    function lerTagXml(texto, tag) {
+        const m = new RegExp('<(?:[\\w.-]+:)?' + tag + '>\\s*([^<]*?)\\s*</(?:[\\w.-]+:)?' + tag + '>', 'i').exec(String(texto || ''));
+        return m ? m[1].trim() : '';
+    }
+    // o RESPONSE costuma vir em Windows-1252 e o "í" de "mínimo" chega como "�": por isso o "." no lugar da letra
+    const RE_REJEICAO_FRETE_MINIMO = /frete\s+informado.{0,12}menor\s+do\s+que\s+o\s+valor\s+m.nimo/i;
+    // fontes = { nome: conteúdo }; devolve o texto da conferência ('' se nenhum REQUEST traz o tipo de carga nem o RetornoVazio)
+    function montarConferenciaCarga(fontes, colado) {
+        const lista = Object.keys(fontes || {}).map(n => [n, fontes[n]]);
+        if (colado) lista.push(['conteúdo colado', colado]);
+        const todo = lista.map(x => String(x[1] || '')).join('\n');
+        const rejeitou = RE_REJEICAO_FRETE_MINIMO.test(todo);
+        const linhas = []; let erradoEmAlgum = false;
+        lista.forEach(([nome, txt]) => {
+            const cod = lerTagXml(txt, 'CodigoTipoCarga'), ret = lerTagXml(txt, 'RetornoVazio').toLowerCase();
+            if (!cod && !ret) return;
+            const tipo = CARGA_EXIGE_RETORNO_VAZIO[parseInt(cod, 10)] || '';
+            const retTxt = ret === 'true' ? 'RetornoVazio=true' : ret === 'false' ? 'RetornoVazio=false' : 'RetornoVazio não aparece no REQUEST';
+            if (tipo) {
+                const errado = ret !== 'true'; if (errado) erradoEmAlgum = true;
+                linhas.push('- ' + nome + ': CodigoTipoCarga=' + cod + ' (' + tipo + ') e ' + retTxt + ' → ' + (errado
+                    ? 'ERRADO: para ' + tipo + ' a ANTT EXIGE Retorno Vazio = Sim (RetornoVazio=true).'
+                    : 'correto: para ' + tipo + ' a ANTT exige Retorno Vazio = Sim.'));
+            } else if (cod) linhas.push('- ' + nome + ': CodigoTipoCarga=' + cod + ' (não é Granel Pressurizado nem Conteinerizada: a regra de Retorno Vazio obrigatório da ANTT não se aplica por este critério) e ' + retTxt + '.');
+            else linhas.push('- ' + nome + ': ' + retTxt + ' (CodigoTipoCarga não aparece neste conteúdo).');
+        });
+        if (!linhas.length) return '';
+        if (erradoEmAlgum && rejeitou) linhas.push('- O RESPONSE traz a rejeição do valor mínimo de frete: a causa provável é o Retorno Vazio não marcado (sem o retorno, o frete mínimo calculado fica menor que o da ANTT). Oriente marcar "Retorno" = "Sim" no cálculo do Frete Mínimo do CIOT e conferir o Valor do Frete.');
+        else if (erradoEmAlgum) linhas.push('- Mesmo que o erro analisado seja outro, avise que o Retorno Vazio precisa ser "Sim" para este tipo de carga e oriente marcar "Retorno" = "Sim" no cálculo do Frete Mínimo do CIOT.');
+        return linhas.join('\n');
+    }
+
     async function analisarErroLivre() {
         if (analisando) return;   // já está verificando: ignora cliques/teclas repetidos
 
@@ -1638,6 +1804,10 @@ ${KB_CIOT_TERCEIROS}`, override = null) {
             if (manualContent) {
                 prompt += `## CONTEÚDO:\n\`\`\`\n${manualContent}\n\`\`\`\n\n`;
             }
+
+            // fatos já conferidos pela página (tipo de carga × Retorno Vazio da ANTT): no FIM do pedido, onde os modelos pequenos mais obedecem
+            const conferenciaCarga = montarConferenciaCarga(uploadedFiles, manualContent);
+            if (conferenciaCarga) prompt += `## CONFERÊNCIA AUTOMÁTICA DA PÁGINA (já verificada no REQUEST — use na análise e siga a REGRA DA ANTT: TIPO DE CARGA × RETORNO VAZIO):\n${conferenciaCarga}\n\n`;
 
             const respostaIA = await callAI(prompt);
 
@@ -1875,6 +2045,7 @@ ${KB_CIOT_TERCEIROS}`, override = null) {
     });
     document.getElementById('btnLimparCiot')?.addEventListener('click', () => {
         document.getElementById('ciotXmlInput').value = '';
+        window._ciotTextoCompleto = '';
         document.getElementById('ciotFilePreview').style.display = 'none';
         document.getElementById('ciotResultadoContainer').style.display = 'none';
         mostrarToast('🧹 CIOT limpo!');
@@ -1924,7 +2095,7 @@ ${KB_CIOT_TERCEIROS}`, override = null) {
         const out = tab.querySelector('.pane-out');
         if (!out) return;
         const atualizar = () => {
-            const tem = Array.from(out.children).some(el => !el.classList.contains('out-vazio') && !el.hasAttribute('data-voltar') && getComputedStyle(el).display !== 'none' && (el.querySelector('*') || el.textContent.trim()));
+            const tem = Array.from(out.children).some(el => !el.classList.contains('out-vazio') && !el.hasAttribute('data-voltar') && !el.hasAttribute('data-fixo') && getComputedStyle(el).display !== 'none' && (el.querySelector('*') || el.textContent.trim()));
             tab.classList.toggle('has-out', !!tem);
         };
         // resultado novo chegou → em janela estreita volta a mostrar o resultado (e não a entrada)
@@ -1968,6 +2139,181 @@ ${KB_CIOT_TERCEIROS}`, override = null) {
     window.abrirSettings = abrirSettings;
     window.fecharSettings = fecharSettings;
     window.verificarSenhaSettings = verificarSenhaSettings;
+
+    // ============================================================
+    // CONSULTA ANTT (RNTRC): Placa + RNTRC, ou Placa + CPF/CNPJ do transportador
+    // ============================================================
+    // A consulta pública da ANTT exige "Eu não sou um robô" (reCAPTCHA): nenhum programa consegue consultar sozinho (e burlar isso não é opção). Por isso esta aba:
+    // confere os dados ANTES (formato da placa, dígitos do CPF/CNPJ), abre a consulta oficial, copia os valores com um clique, puxa placa/RNTRC/CPF-CNPJ do request
+    // colado ou anexado e guarda o RESULTADO que a pessoa leu lá (histórico só neste navegador) — assim fica registrado se o transportador estava ativo.
+    const ANTT_URL = 'https://consultapublica.antt.gov.br/Site/ConsultaRNTRC.aspx';
+    const ANTT_HIST_CHAVE = 'geobsoft_antt_hist';
+    const ANTT_STATUS = { ativo: ['✅ Ativo', 'ok', 'ATIVO'], irregular: ['⚠️ Vencido / suspenso / irregular', 'wa', 'VENCIDO, SUSPENSO OU IRREGULAR'], nao: ['❌ Não encontrado', 'er', 'NÃO ENCONTRADO'] };
+    let anttHist = [], anttAtual = null;
+    const _g = id => document.getElementById(id);
+    const _dig = s => String(s == null ? '' : s).replace(/\D/g, '');
+    const anttPlaca = s => String(s == null ? '' : s).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7);
+    const anttPlacaOk = p => /^[A-Z]{3}\d[A-Z0-9]\d{2}$/.test(p);          // antiga (ABC1234) e Mercosul (ABC1D23)
+    function anttCpfOk(c) {
+        if (c.length !== 11 || /^(\d)\1+$/.test(c)) return false;
+        for (const n of [9, 10]) { let s = 0; for (let i = 0; i < n; i++) s += Number(c[i]) * (n + 1 - i); if (((s * 10) % 11) % 10 !== Number(c[n])) return false; }
+        return true;
+    }
+    function anttCnpjOk(c) {
+        if (c.length !== 14 || /^(\d)\1+$/.test(c)) return false;
+        const calc = n => { const pesos = n === 12 ? [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2] : [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]; let s = 0; for (let i = 0; i < n; i++) s += Number(c[i]) * pesos[i]; const r = s % 11; return r < 2 ? 0 : 11 - r; };
+        return calc(12) === Number(c[12]) && calc(13) === Number(c[13]);
+    }
+    const anttFormatarDoc = d => d.length === 11 ? d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : d.length === 14 ? d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5') : d;
+    const anttDataHora = t => { try { return new Date(t).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }); } catch (e) { return ''; } };
+
+    // lê e confere os campos → { ok, e:{placa,rntrc,doc}, dados:{placa,rntrc,doc} }
+    function anttLer() {
+        const placa = anttPlaca(_g('anttPlaca').value), rntrc = _dig(_g('anttRntrc').value), doc = _dig(_g('anttDoc').value), e = {};
+        if (!placa) e.placa = 'Informe a placa.';
+        else if (!anttPlacaOk(placa)) e.placa = 'Placa inválida: use 3 letras + 4 números (ABC-1234) ou o padrão Mercosul (ABC1D23).';
+        if (!rntrc && !doc) e.rntrc = e.doc = 'Preencha o RNTRC ou o CPF/CNPJ do transportador.';
+        else {
+            if (rntrc && (rntrc.length < 5 || rntrc.length > 10)) e.rntrc = 'RNTRC com ' + rntrc.length + ' dígitos: confira.';
+            if (doc) {
+                if (doc.length !== 11 && doc.length !== 14) e.doc = 'CPF tem 11 números e CNPJ tem 14.';
+                else if (!(doc.length === 11 ? anttCpfOk(doc) : anttCnpjOk(doc))) e.doc = 'Os dígitos verificadores não conferem: confira o ' + (doc.length === 11 ? 'CPF' : 'CNPJ') + '.';
+            }
+        }
+        return { ok: !Object.keys(e).length, e, dados: { placa, rntrc, doc } };
+    }
+    function anttMostrarErros(e) {
+        [['placa', 'anttPlaca', 'anttErroPlaca'], ['rntrc', 'anttRntrc', 'anttErroRntrc'], ['doc', 'anttDoc', 'anttErroDoc']].forEach(([k, inp, err]) => {
+            _g(err).textContent = e[k] || '';
+            _g(inp).closest('.campo-bloco').classList.toggle('erro', !!e[k]);
+            _g(inp).setAttribute('aria-invalid', e[k] ? 'true' : 'false');
+        });
+    }
+    function anttCopiarChip(rotulo, valor, mostrar) {
+        const span = document.createElement('span'); span.className = 'antt-copia';
+        const t = document.createElement('span'); t.textContent = rotulo + ' ';
+        const b = document.createElement('b'); b.textContent = mostrar || valor;
+        const bt = document.createElement('button'); bt.type = 'button'; bt.textContent = '📋 Copiar'; bt.setAttribute('aria-label', 'Copiar ' + rotulo);
+        bt.addEventListener('click', async () => mostrarToast((await copiarTexto(valor)) ? '✅ ' + rotulo + ' copiado!' : '⚠️ Não consegui copiar — selecione e use Ctrl+C.'));
+        span.append(t, b, bt); return span;
+    }
+    function anttRenderPassos() {
+        const box = _g('anttPassos'), d = anttAtual; if (!box || !d) return;
+        box.textContent = '';
+        const info = document.createElement('div'); info.className = 'alert-info';
+        const a = document.createElement('a'); a.href = ANTT_URL; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'abrir de novo';
+        info.append('🔎 Consulta pública da ANTT aberta em outra aba (a placa já ficou copiada). Não abriu? ', a, '.');
+        const ol = document.createElement('ol'); ol.className = 'antt-passos';
+        const li1 = document.createElement('li'); li1.append('Na página da ANTT, escolha ', Object.assign(document.createElement('b'), { textContent: 'Por Veículo' }), '.');
+        const li2 = document.createElement('li'); li2.append('Preencha os campos (copie daqui com um clique): ', anttCopiarChip('Placa', d.placa));
+        if (d.rntrc) li2.appendChild(anttCopiarChip('RNTRC', d.rntrc));
+        if (d.doc) li2.appendChild(anttCopiarChip(d.doc.length === 11 ? 'CPF' : 'CNPJ', d.doc, anttFormatarDoc(d.doc)));
+        const li3 = document.createElement('li'); li3.append('Marque ', Object.assign(document.createElement('b'), { textContent: '“Eu não sou um robô”' }), ' e clique em ', Object.assign(document.createElement('b'), { textContent: 'Consultar' }), '.');
+        const li4 = document.createElement('li'); li4.textContent = 'Veja a situação do transportador na ANTT e registre aqui:';
+        ol.append(li1, li2, li3, li4);
+        const reg = document.createElement('div'); reg.className = 'antt-registrar'; reg.setAttribute('role', 'group'); reg.setAttribute('aria-label', 'Registrar a situação');
+        [['ativo', 'btn-st-ativo'], ['irregular', 'btn-st-irregular'], ['nao', 'btn-st-nao']].forEach(([k, cls]) => {
+            const b = document.createElement('button'); b.type = 'button'; b.className = cls; b.textContent = ANTT_STATUS[k][0]; b.addEventListener('click', () => anttRegistrar(k)); reg.appendChild(b);
+        });
+        const nota = document.createElement('div'); nota.id = 'anttRegistrado'; nota.setAttribute('role', 'status');
+        box.append(info, ol, reg, nota);
+        box.style.display = 'block';
+    }
+    async function anttAbrir() {
+        const r = anttLer(); anttMostrarErros(r.e);
+        if (!r.ok) { mostrarToast('⚠️ Confira os campos em vermelho.'); const k = r.e.placa ? 'anttPlaca' : r.e.rntrc ? 'anttRntrc' : 'anttDoc'; _g(k).focus(); return; }
+        anttAtual = Object.assign({}, r.dados);
+        const copiou = await copiarTexto(r.dados.placa);          // copia ANTES de abrir a outra aba (depois dela o navegador pode negar a cópia)
+        window.open(ANTT_URL, 'anttConsulta', 'noopener');
+        anttRenderPassos();
+        mostrarToast(copiou ? '✅ Placa copiada — na ANTT escolha “Por Veículo” e cole.' : '🔎 Consulta da ANTT aberta em outra aba.');
+    }
+    function anttResumo(reg) {
+        const p = ['Placa ' + reg.placa];
+        if (reg.rntrc) p.push('RNTRC ' + reg.rntrc);
+        if (reg.doc) p.push((reg.doc.length === 11 ? 'CPF ' : 'CNPJ ') + anttFormatarDoc(reg.doc));
+        return 'Consulta pública da ANTT (RNTRC) — ' + p.join(' | ') + ' — situação: ' + ANTT_STATUS[reg.st][2] + ' — consultado em ' + anttDataHora(reg.t) + '.';
+    }
+    function anttSalvarHist() { try { localStorage.setItem(ANTT_HIST_CHAVE, JSON.stringify(anttHist.slice(0, 30))); } catch (e) { /* sem armazenamento: só não guarda */ } }
+    function anttCarregarHist() {
+        try { const v = JSON.parse(localStorage.getItem(ANTT_HIST_CHAVE) || '[]'); anttHist = Array.isArray(v) ? v.filter(x => x && ANTT_STATUS[x.st] && anttPlacaOk(String(x.placa || ''))).slice(0, 30) : []; } catch (e) { anttHist = []; }
+    }
+    function anttRegistrar(st) {
+        if (!anttAtual || !ANTT_STATUS[st]) return;
+        const reg = { t: Date.now(), placa: anttAtual.placa, rntrc: anttAtual.rntrc, doc: anttAtual.doc, st };
+        anttHist.unshift(reg); if (anttHist.length > 30) anttHist.length = 30;
+        anttSalvarHist(); anttRenderHist();
+        const nota = _g('anttRegistrado'); if (nota) {
+            nota.textContent = ''; nota.className = 'alert-' + (st === 'ativo' ? 'success' : st === 'irregular' ? 'warning' : 'error');
+            const bt = document.createElement('button'); bt.type = 'button'; bt.className = 'btn-copiar'; bt.style.marginLeft = '8px'; bt.textContent = '📋 Copiar resumo';
+            bt.addEventListener('click', async () => mostrarToast((await copiarTexto(anttResumo(reg))) ? '✅ Resumo copiado!' : '⚠️ Não consegui copiar.'));
+            nota.append('Registrado: ' + ANTT_STATUS[st][0] + ' — ' + reg.placa + '. ', bt);
+        }
+        mostrarToast('✅ Registrado: ' + ANTT_STATUS[st][0]);
+    }
+    function anttRenderHist() {
+        const box = _g('anttHistorico'); if (!box) return;
+        box.textContent = '';
+        const tit = document.createElement('div'); tit.className = 'antt-hist-titulo';
+        const t = document.createElement('span'); t.textContent = '📜 Consultas registradas (' + anttHist.length + ')';
+        tit.appendChild(t);
+        if (anttHist.length) { const lp = document.createElement('button'); lp.type = 'button'; lp.className = 'secondary'; lp.textContent = '🗑️ Limpar'; lp.addEventListener('click', () => { anttHist = []; anttSalvarHist(); anttRenderHist(); mostrarToast('🧹 Histórico da ANTT limpo!'); }); tit.appendChild(lp); }
+        box.appendChild(tit);
+        if (!anttHist.length) { const v = document.createElement('div'); v.className = 'antt-vazio-hist'; v.textContent = 'Nenhuma consulta registrada ainda. Depois de consultar na ANTT, registre aqui se o transportador está ativo.'; box.appendChild(v); return; }
+        anttHist.forEach((reg, i) => {
+            const item = document.createElement('div'); item.className = 'antt-hist-item';
+            const dados = document.createElement('div'); dados.className = 'antt-hist-dados';
+            const b = document.createElement('b'); b.textContent = reg.placa;
+            const sm = document.createElement('small'); sm.textContent = [reg.rntrc ? 'RNTRC ' + reg.rntrc : '', reg.doc ? (reg.doc.length === 11 ? 'CPF ' : 'CNPJ ') + anttFormatarDoc(reg.doc) : '', anttDataHora(reg.t)].filter(Boolean).join(' · ');
+            dados.append(b, sm);
+            const ac = document.createElement('div'); ac.className = 'antt-hist-acoes';
+            const st = document.createElement('span'); st.className = 'antt-st ' + ANTT_STATUS[reg.st][1]; st.textContent = ANTT_STATUS[reg.st][0];
+            const mk = (txt, titulo, fn) => { const x = document.createElement('button'); x.type = 'button'; x.className = 'secondary'; x.textContent = txt; x.title = titulo; x.setAttribute('aria-label', titulo); x.addEventListener('click', fn); return x; };
+            ac.append(st,
+                mk('↩ Usar', 'Preencher os campos com esta consulta', () => { _g('anttPlaca').value = reg.placa; _g('anttRntrc').value = reg.rntrc || ''; _g('anttDoc').value = reg.doc ? anttFormatarDoc(reg.doc) : ''; anttMostrarErros({}); _g('anttPlaca').focus(); }),
+                mk('📋', 'Copiar o resumo desta consulta', async () => mostrarToast((await copiarTexto(anttResumo(reg))) ? '✅ Resumo copiado!' : '⚠️ Não consegui copiar.')),
+                mk('✕', 'Remover do histórico', () => { anttHist.splice(i, 1); anttSalvarHist(); anttRenderHist(); }));
+            item.append(dados, ac); box.appendChild(item);
+        });
+    }
+    // procura placa(s), RNTRC e CPF/CNPJ do transportador nos requests colados/anexados (abas CIOT e Analisador de Erros)
+    function anttDoRequest() {
+        const fontes = [];
+        ['ciotXmlInput', 'combinedContentInput'].forEach(id => { const v = _g(id) && _g(id).value; if (v) fontes.push(String(v)); });
+        if (window._ciotTextoCompleto) fontes.push(String(window._ciotTextoCompleto));
+        Object.values(uploadedFiles || {}).forEach(t => fontes.push(String(t)));
+        const placas = new Set(), rntrcs = new Set(), docs = new Set();
+        const tag = nome => new RegExp('<(?:[\\w-]+:)?' + nome + '>\\s*([^<]+?)\\s*</', 'gi');
+        fontes.forEach(txt => {
+            for (const m of txt.matchAll(tag('Placa\\w*'))) { const p = anttPlaca(m[1]); if (anttPlacaOk(p)) placas.add(p); }
+            for (const m of txt.matchAll(tag('RNTRC'))) { const d = _dig(m[1]); if (d.length >= 5 && d.length <= 10) rntrcs.add(d); }
+            const c = extrairContratadoInfo(txt); const d = _dig(c.cnpj); if (d.length === 11 || d.length === 14) docs.add(d);
+        });
+        const achou = [];
+        if (rntrcs.size) { _g('anttRntrc').value = Array.from(rntrcs)[0]; achou.push('RNTRC'); }
+        if (docs.size) { _g('anttDoc').value = anttFormatarDoc(Array.from(docs)[0]); achou.push('CPF/CNPJ'); }
+        const sug = _g('anttSugestoes'); sug.textContent = ''; sug.hidden = true;
+        if (placas.size === 1) { _g('anttPlaca').value = Array.from(placas)[0]; achou.push('placa'); }
+        else if (placas.size > 1) {
+            sug.hidden = false; sug.append(placas.size + ' placas no request — escolha uma: ');
+            placas.forEach(p => { const b = document.createElement('button'); b.type = 'button'; b.className = 'antt-chip'; b.textContent = p; b.addEventListener('click', () => { _g('anttPlaca').value = p; anttMostrarErros({}); sug.hidden = true; }); sug.appendChild(b); });
+            achou.push(placas.size + ' placas');
+        }
+        anttMostrarErros({});
+        mostrarToast(achou.length ? '📥 Do request: ' + achou.join(', ') + '.' : '⚠️ Não achei placa, RNTRC nem CPF/CNPJ no request. Cole ou anexe o request na aba CIOT ou Analisador de Erros primeiro.');
+    }
+    function anttIniciar() {
+        _g('anttPlaca').addEventListener('input', e => { const v = anttPlaca(e.target.value); if (v !== e.target.value) e.target.value = v; _g('anttErroPlaca').textContent = ''; e.target.closest('.campo-bloco').classList.remove('erro'); });
+        _g('anttRntrc').addEventListener('input', e => { const v = _dig(e.target.value); if (v !== e.target.value) e.target.value = v; _g('anttErroRntrc').textContent = ''; e.target.closest('.campo-bloco').classList.remove('erro'); });
+        _g('anttDoc').addEventListener('input', e => { e.target.value = e.target.value.replace(/[^\d.\-\/]/g, ''); _g('anttErroDoc').textContent = ''; e.target.closest('.campo-bloco').classList.remove('erro'); });
+        _g('anttDoc').addEventListener('blur', e => { const d = _dig(e.target.value); if (d.length === 11 || d.length === 14) e.target.value = anttFormatarDoc(d); });
+        ['anttPlaca', 'anttRntrc', 'anttDoc'].forEach(id => _g(id).addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); anttAbrir(); } }));
+        _g('btnAnttAbrir').addEventListener('click', anttAbrir);
+        _g('btnAnttRequest').addEventListener('click', anttDoRequest);
+        _g('btnAnttLimpar').addEventListener('click', () => { ['anttPlaca', 'anttRntrc', 'anttDoc'].forEach(id => { _g(id).value = ''; }); anttMostrarErros({}); _g('anttSugestoes').hidden = true; _g('anttPassos').style.display = 'none'; anttAtual = null; });
+        anttCarregarHist(); anttRenderHist();
+    }
+    anttIniciar();
 
     loadToken();
     loadHistory();
