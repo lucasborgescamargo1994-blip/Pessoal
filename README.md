@@ -37,14 +37,13 @@ Assistente de suporte do Bsoft TMS: responde dúvidas com a base de conhecimento
 19. [Simulador de atendimento: treino, provas e área administrativa](#simulador-de-atendimento-treino-provas-e-área-administrativa-v2822)
 20. [IA / MCP: trocar modelos e chaves](#ia--mcp-trocar-modelos-e-chaves)
 21. [Segurança — leia](#segurança--leia)
-22. [Desempenho: o mesmo visual, bem mais leve](#desempenho-o-mesmo-visual-bem-mais-leve-v2835)
-23. [Fluidez: digitar, rolar e animar sem travar](#fluidez-digitar-rolar-e-animar-sem-travar-v2838)
-24. [Imagens do procedimento: prints no artigo, na resposta](#imagens-do-procedimento-prints-no-artigo-na-resposta-v2839)
-25. [Imagem anexada ao chat: o print do cliente + a pergunta](#imagem-anexada-ao-chat-o-print-do-cliente--a-pergunta-v2840)
-26. [Primeira emissão guiada (migracao.html)](#primeira-emissão-guiada-migracaohtml-v2841)
-27. [IA local no navegador: migracaolocal.html (e simuladorlocal.html)](#ia-local-no-navegador-migracaolocalhtml-e-simuladorlocalhtml-v2842)
-28. [Problemas comuns](#problemas-comuns)
-29. [Para quem vai mexer no código](#para-quem-vai-mexer-no-código)
+22. [Layout leve: simples, rápido e sem travar na abertura](#layout-leve-simples-rápido-e-sem-travar-na-abertura-v2843)
+23. [Imagens do procedimento: prints no artigo, na resposta](#imagens-do-procedimento-prints-no-artigo-na-resposta-v2839)
+24. [Imagem anexada ao chat: o print do cliente + a pergunta](#imagem-anexada-ao-chat-o-print-do-cliente--a-pergunta-v2840)
+25. [Primeira emissão guiada (migracao.html)](#primeira-emissão-guiada-migracaohtml-v2841)
+26. [IA local no navegador: migracaolocal.html (e simuladorlocal.html)](#ia-local-no-navegador-migracaolocalhtml-e-simuladorlocalhtml-v2842)
+27. [Problemas comuns](#problemas-comuns)
+28. [Para quem vai mexer no código](#para-quem-vai-mexer-no-código)
 
 ---
 
@@ -845,65 +844,83 @@ inserir/atualizar `logs` e inserir/apagar `machine_learning` (como já fazia). S
 
 ---
 
-## Desempenho: o mesmo visual, bem mais leve (v28.35)
+## Layout leve: simples, rápido e sem travar na abertura (v28.43)
 
-O sistema tinha ficado pesado em muitos computadores. A regra desta rodada foi **não mudar o que se vê** (no computador de quem tem boa máquina nada muda a olho nu) e tirar o custo escondido. O que pesava, em ordem de peso:
+Pedido do dono do sistema: **(1)** ficar leve para ocupar o mínimo de **GPU, CPU e RAM**; **(2)** ao abrir, **liberar o campo de digitação na hora** e deixar **só o botão de pesquisar (➤) bloqueado** até a base estar carregada/vetorizada e pronta; **(3)** “fique à vontade de mudar completamente a estrutura do layout, só mantenha tudo no mesmo lugar — a preferência agora é **simplicidade e rapidez**”.
 
-1. **Efeitos que se mexem o tempo todo.** O fundo (aurora) andava 60 vezes por segundo por baixo de três painéis de vidro (blur): o navegador refazia o vidro a cada quadro, mesmo com o sistema parado. Além disso, o anel colorido do campo de digitação (sempre que o campo tem foco, ou seja, quase sempre) e o brilho do título eram **repintados na thread principal a cada quadro**.
-2. **A resposta da IA aparecendo.** A cada quadro (60×/s) o conteúdo INTEIRO da resposta era jogado fora e recriado: centenas de elementos numa resposta longa, quanto maior pior.
-3. **Carga da página.** A Central de Ajuda (um site inteiro de terceiros) carregava escondida em TODA abertura do sistema, e a biblioteca do Supabase (CDN, no `<head>`) travava a primeira pintura.
+Isto **substitui as rodadas de desempenho da v28.35 e da v28.38** (que tentavam manter o visual idêntico: fundo aurora “assado” em imagens, anel por `transform`, pulsos em degraus, “Desempenho automático”). Agora o visual em si é leve, então nada disso é mais necessário e foi **removido** (`js/core/aurora.js`, `js/ui/desempenho.js`, `css/desempenho.css` — 33 KB só de keyframes —, o fundo `.bg-aurora`, o anel `.ia-ring`).
 
-O que mudou (cada item foi conferido contra o comportamento de antes):
+### O que mudou no visual (tudo continua NO MESMO LUGAR)
 
-- **Fundo e título em “degraus” (`css/desempenho.css`).** O mesmo movimento e a mesma suavização, só que atualizados ~8× (fundo) e ~10× (título) por segundo em vez de 60: o fundo anda poucos pixels por segundo sobre manchas borradas. Os keyframes foram gerados com a curva original (ease-in-out) em 16 trechos; **erro máximo medido contra a animação original: ~2 px no fundo e ~7 px no título**, em degradês de centenas de pixels.
-- **Anel do campo de digitação por `transform`.** O mesmo gradiente, no mesmo lugar e com a mesma máscara, mas girado pela placa de vídeo (`<i class="ia-ring">` dentro do `.input-area`) em vez de repintado. Comparado lado a lado com o anel antigo em 5 ângulos (0°, 48°, 90°, 180°, 270°): idêntico. Fica parado e invisível quando o campo não tem foco.
-- **Resposta por partes (`js/app/streaming.js`).** Só o que mudou é trocado (quase sempre o último pedaço); o resultado na tela é **idêntico** ao do `innerHTML` de antes (1.618 quadros comparados num texto de 4.848 caracteres com títulos, listas, tabela, código, LaTeX e marcação aberta: 0 diferenças; e a resposta final pelo `handleChat` real, com IA simulada, idêntica). O cursor continua recriado a cada quadro, como antes. Bônus: o texto já mostrado pode ser selecionado enquanto a resposta continua.
-- **Varredura do chat a ≤ 10×/s** (`Smart.scan`, `js/ui/inteligencia.js`), em vez de 1× por quadro durante a resposta.
-- **Central de Ajuda só ao abrir a aba** (`ONCE.central` em `js/ui/workspace.js`; o `<iframe>` ficou com `data-src`). Abrir a aba, pesquisar pela Central e as sugestões continuam funcionando; só deixou de carregar à toa.
-- **Biblioteca do Supabase no fim da página** (logo antes de `js/core/supabase-client.js`, o único que a usa): a tela aparece sem esperar o CDN. Mantém a versão fixa e a verificação de integridade (SRI).
-- **Desempenho automático (`js/ui/desempenho.js`)** — a rede de segurança para os computadores que, mesmo assim, não dão conta. Mede o tempo entre quadros por 2 s (só com a janela visível e com foco): **com o sistema parado** nos primeiros segundos de uso e **enquanto a IA responde**. Duas medidas ruins seguidas (mediana ≥ 28 ms parado, ≥ 40 ms respondendo) descem um nível: **“medio”** para só os movimentos contínuos (o vidro e todo o resto ficam iguais) e, se ainda pesar, **“leve”** tira também o vidro (igual ao “Leves” de Personalizar). Computadores com 2 núcleos ou menos (ou 2 GB) já começam em “medio”. A pessoa recebe um aviso com o botão **“Voltar ao completo”** e controla em **Personalizar › “Ajustar o visual sozinho se o computador estiver lento”**. Fica gravado só naquele computador (`localStorage` `bsoft_perf`, validade de 14 dias; **não** vai para a pasta do Meu Espaço) e vale já na primeira pintura (`js/core/early.js`). Quem escolheu “Leves” ou “Desligadas” em Animações e vidro não é afetado; Copilot e simulador ficam como estão.
+- **Painéis colados, de ponta a ponta**, separados por uma linha fina — antes eram cartões de vidro flutuando sobre um fundo animado, com margem de 12 px, cantos de 22 px e sombras de 60 px. Lateral de atalhos à esquerda, conversas, cabeçalho (marca · busca **Ctrl K** · selos · Copilot/🔑), abas, chat e campo de digitação embaixo: **as mesmas posições**.
+- **Cores sólidas.** Sem vidro (`backdrop-filter`), sem fundo animado, sem ruído, sem anel colorido girando no campo, sem brilho no logo/título, sem degradê animado, sem pulsos de sombra (o selo “Esta resposta foi útil?”, o botão “Ferramentas”, o ponto das abas, o botão ↓, o selo “Carregando…” piscavam sem parar).
+- **Sem animação de entrada** em mensagens, cartões, abas e painéis (antes subiam deslizando **com desfoque**, uma depois da outra); menus e janelas só “aparecem” (opacidade, 0,12 s). **Hover só muda cor e linha** — nada “sobe”, cresce ou gira. Botões principais em **cor sólida** (sem degradê).
+- **Personalizar:** saíram **Fundo**, **Animações e vidro** e **Ajustar o visual sozinho…** (não há mais o que ajustar). Ficam cor de destaque, densidade, abas, etc. Preferências antigas guardadas (`bg`, `efeitos`, `perfAuto`, `bsoft_perf`) são **ignoradas sem erro**.
+- O painel **Personalizar** vira uma folha lateral reta (antes um cartão flutuante); a lista de conversas no celular desliza por `transform` (antes por `left`).
+- **Todo o sistema:** FAQ, Primeira emissão (as duas), Simulador e o painel administrativo também perderam o vidro e os degradês de fundo.
 
-**Medido** neste computador (4 núcleos, 8 GB, janela 1440×900, tela visível, campo com foco; medida = quanto da thread principal sobra com o sistema parado):
+### As regras do layout leve (leia antes de mexer no CSS)
+
+Estão no cabeçalho de `css/theme-2026.css` e os tokens em `css/tokens.css` (os nomes antigos `--glass`, `--shadow-lg`, `--ease-spring`… continuam existindo, só mudaram de valor — assim as ~170 regras que os usam ficaram lisas de uma vez):
+
+1. nada de `backdrop-filter`, `filter`, `mix-blend-mode`, `will-change` nem máscara (`mask`) em área grande;
+2. nada de sombra grande — só nos itens que **flutuam** (menus, avisos, janelas: `var(--shadow-pop)`);
+3. nada de animação contínua decorativa — só o que indica “trabalhando” (pontinhos, cursor da resposta, giro de carregando) e só enquanto trabalha;
+4. mensagens, abas e painéis **não** têm animação de entrada;
+5. movimento só por `transform`/`opacity`; nada de `transition: all` em lista longa.
+
+O `teste-layout-leve.js` confere as regras 1, 2 (sombra ≥ 12 px) e 3 no sistema aberto; se alguém reintroduzir um vidro ou uma animação infinita, ele falha.
+
+### Abertura: o campo libera na hora, só o ➤ espera (`js/app/prontidao.js`)
+
+- **Antes:** o `#searchInput` nascia `disabled` e só era liberado no `DOMContentLoaded`, ou seja, **depois de ~100 arquivos baixados e executados**: a tela aparecia em 0,4 s e a pessoa ficava ~1,7 s (3,7 s na 1ª abertura) olhando um campo que não aceitava letras, com um selo amarelo “Carregando…” piscando no topo. Cliques em “Em alta” e nos atalhos de boas-vindas nessa fase eram **ignorados em silêncio**.
+- **Agora:** o campo **nasce liberado** no HTML (e o `Enter` já vale desde o primeiro instante); só o **➤** fica travado, com `title` explicando. Logo acima do campo aparece um aviso discreto — “⏳ Baixando vetores do servidor… 240/641 — você já pode digitar; o ➤ libera sozinho.” — com barrinha quando há contagem. **Enter ou atalho antes da hora:** não envia; o texto **fica no campo** e o aviso se destaca por um instante (antes: nada acontecia). O selo do topo fica curto e neutro (“Carregando…”) e vira **“IA Pronta (641)…”**.
+- **Quando o ➤ libera:** quando `liberarChat` roda (`js/app/dados.js`): base carregada **e com vetores** — **a mesma regra de antes**. Se houver artigo **novo** ainda sendo vetorizado (modo “parcial”, raro: só depois de o administrador adicionar/editar artigos), o ➤ libera mesmo assim e o selo mostra “Vet. 3/5”, para um único artigo novo não travar todo mundo.
+- **“Instalando novos dados”** (`#vecOverlay`) **deixou de ser uma cortina preta de tela cheia** (com desfoque, que impedia até de digitar): virou um **cartão no canto**, que não captura cliques — dá para digitar e usar as abas enquanto instala.
+- **Menos espera até o ➤ liberar** (`_paginarTabela`, `js/app/dados.js`): as tabelas grandes (Rotinas ~3.800 linhas, Parâmetros ~1.300) eram baixadas **uma página de 1000 linhas por vez, em fila**, e o ➤ espera todas. Agora as páginas saem **juntas**, usando a contagem da última abertura (`localStorage` `bsoft_tab_linhas`, +100 linhas de folga). Se a tabela cresceu além disso — ou é a 1ª abertura, sem contagem — o que faltar vem **página por página, como antes**. **Mesmos dados** (testado: conteúdo inteiro de cada linha, com e sem ordem; tabela que cresceu ou encolheu não perde nem repete linha).
+- `index.html` ganhou **dicas de rede** (`preconnect` para o Supabase, a biblioteca no jsDelivr e as fontes): abrem as conexões já na largada. Se o endereço do Supabase mudar em `config/app-config.js`, ajuste a dica também (com o endereço velho nada quebra; só deixa de ajudar).
+
+### Medido (Edge com **janela de verdade** neste computador — i3-7100, Intel HD 630, 8 GB —, 1536×730 a 125 %, animações forçadas **ligadas**; “antes” = a v28.42.1 servida ao lado, na mesma bancada)
+
+**Abertura** (a do dia a dia = “quente”, com os vetores já guardados; as duas versões medidas **na mesma janela de tempo**, porque a rede e o Supabase variam — de manhã a antiga levou 2,6 s para liberar o ➤ e meia hora depois 4,5–5,6 s):
+
+| | antes (v28.42.1) | depois (v28.43.0) |
+|---|---|---|
+| A tela aparece | ≈ 0,4 s | ≈ 0,4 s |
+| **O campo de digitação aceita letras** | **3,2 – 3,6 s** (ficava 2,1 – 3,1 s travado depois de a tela aparecer) | **0,37 – 0,59 s** (nunca travado) |
+| **O ➤ libera** (aberturas quentes) | 4,5 – 5,6 s | **2,3 – 2,5 s** |
+| 1ª abertura, “fria” (baixa ~640 vetores): campo / ➤ | 3,3 s / 9,0 s | **0,7 s** / 8,1 s |
+| Rotinas (4 páginas de 1000 linhas): quando todas chegaram | 1,7 s (uma depois da outra) | ≤ 0,95 s (juntas) |
+
+*Só as páginas em paralelo, isoladas* (a mesma versão, alternando “em fila” × “juntas”, mediana de 6 aberturas): pedidos ao banco **1,71 s → 1,26 s**; do fim do carregamento da página até o ➤ liberar **≈ 1,4 s → ≈ 1,0 s** (`tools/bancada-desempenho/ab-paginas.js`). É um ganho modesto e constante (~0,4 s); o resto do tempo até o ➤ é rede e Supabase.
+
+**Parado, digitando e rolando** (janela de verdade, chat com 80 mensagens):
 
 | | antes | depois |
 |---|---|---|
-| Thread principal consumida com o sistema parado | ≈ 9 % | ≈ 5,5 % (−40 %) |
-| Fundo (aurora) sozinho | ≈ 4,0 % | ≈ 1,7 % |
-| Resposta de 8.000 caracteres: custo por quadro no fim da resposta | 5,1 ms (31 % do quadro de 16,7 ms) | 1,5 ms (9 %) |
-| Central de Ajuda na abertura | carregava (site de terceiros escondido) | só ao abrir a aba |
+| **Parado: placa de vídeo** | **30 – 32 %** | **0 – 1 %** |
+| Parado: CPU da página | 25 % | 2 – 3 % |
+| Parado: thread principal ocupada (em 4 s) | 718 – 790 ms | 70 – 79 ms |
+| Animações rodando parado · elementos com vidro · com `filter` | 8 · 5 · 4 | **0 · 0 · 0** |
+| **Digitando: placa de vídeo** · CPU da página | 42 % · 39 % | **4 %** · 12 % |
+| Da tecla até a letra (média) | 24 ms | 25 ms (já era bom) |
+| **Rolando: placa de vídeo** | 32 – 41 % | **12 – 13 %** |
+| Rolando: quadros por segundo · pior 5 % dos quadros | 55 – 56 · 33 ms | **58 – 60 · 17 ms** |
+| Memória do processo **da placa de vídeo** | 260 – 400 MB | 110 – 300 MB (oscila entre medidas) |
+| Memória do processo **da página** (RAM) | 118 – 163 MB | 106 – 158 MB (**pouca diferença**: o JavaScript é o mesmo) |
+| Arquivos na abertura | 83 JS + 23 CSS | 82 JS + 22 CSS |
 
-**Limites (leia):** *(a seção seguinte, v28.38, refez a medida num computador fraco de verdade e achou o gargalo que esta rodada não via: a placa de vídeo.)* A medida acima é de UM computador bom; em máquinas simples o ganho tende a ser maior, mas **não pude testar em hardware fraco nem medir a placa de vídeo** (o custo do vidro/blur é de GPU). O desempenho automático foi testado com quadros lentos SIMULADOS (parado e respondendo → “medio” → “leve”, aviso, “Voltar ao completo”, persistência, interruptor em Personalizar) e, na máquina rápida, a medida real deu 16,7 ms (60 quadros/s) — sem falso positivo. Se alguém ainda achar o sistema pesado: **Personalizar › Animações e vidro › Leves**.
+### Como medir e testar
 
-- **Para mexer:** `css/desempenho.css` (keyframes em degraus, anel, regras `html[data-perf]`), `js/ui/desempenho.js` (global `Perf`: `iniciar`, `nivel`, `dica`, `voltarAoCompleto`; limites `LIM_OCIOSO`/`LIM_OCUPADO` no topo), `js/core/early.js` (aplica o nível salvo antes da 1ª pintura), `js/app/streaming.js` (`_atualizarConteudoFluido`). Os keyframes foram gerados por script (ease-in-out em 16 trechos com `steps()`); para mudar a taxa de atualização, regere-os alterando o nº de passos por trecho.
+`tools/bancada-desempenho/LEIAME.md`: **`abertura.js`** (quando o campo e o ➤ liberam, rede, CPU/placa/memória da página parada), **`bench.js`** (parado, digitando, rolando), **`ab-paginas.js`** (páginas do banco em paralelo × em fila, mediana de rodadas alternadas), **`teste-layout-leve.js`** (**97 verificações**: prontidão, efeitos, lugares, telas, celular, compatibilidade, páginas em paralelo, outras páginas) e **`regressao.js`**. **Validação:** o `teste-layout-leve.js` foi validado por **mutação** — 22 defeitos plantados, um de cada vez, numa cópia do projeto (campo que volta a nascer travado, Enter que envia ou que não avisa, ➤ que nunca libera, vidro/`filter`/`mix-blend-mode`/animação infinita/sombra grande de volta, painéis flutuando de novo, o fundo aurora, Personalizar com as opções antigas, páginas do banco duplicando linhas ou voltando para a fila, gaveta do celular aberta…) e **todos foram reprovados** (o primeiro defeito de sombra escapou porque o `:focus-within` do campo o neutralizava; troquei por alvos sempre visíveis). As suítes antigas continuam passando na versão nova: regressão (4), anexos (33) e imagens do procedimento (44). O sistema também abre e funciona **direto do disco** (`file://`, duplo clique). Cuidado com as armadilhas de sempre: o Windows pode estar com as animações desligadas (o navegador informa “reduzir movimento” e tudo parece ótimo — os scripts forçam `no-preference`) e o Edge sem janela não reproduz o custo da placa de vídeo.
 
-## Fluidez: digitar, rolar e animar sem travar (v28.38)
+### Voltar atrás (se não gostar)
 
-Depois da v28.35 ainda havia queixa: a letra demorava a aparecer ao digitar e a rolagem e as animações pareciam rodar com poucos quadros. Desta vez a medida foi feita **num computador fraco de verdade** (Intel i3-7100 de 2 núcleos, vídeo Intel HD 630, Edge controlado por script, janela de 1536×730 a 125 %, animações ligadas) e deu para **reproduzir** o problema: a **placa de vídeo era o gargalo** (≈ 19 ms por quadro) enquanto o sistema pedia 50–60 quadros por segundo o tempo todo, até parado.
+A versão anterior inteira está em **`Versões Anteriores\bsoft-suporte-ia 28.42.1 - antes do layout leve`** (fora desta pasta — não suba no GitHub). Para voltar, copie o conteúdo dessa pasta por cima da `bsoft-suporte-ia`.
 
-| Medido nesse computador | antes (v28.37) | depois (v28.38) |
-|---|---|---|
-| Quadros por segundo, parado | 50 (um quadro de 33 ms a cada instante) | 57–60 (o limite da tela) |
-| CPU da placa de vídeo + da página, parado | 52 % + 37 % | 19 % + 11 % |
-| **Da tecla até a letra aparecer** (mediana) | **98 ms** (pior 112) | **27 ms** (pior 32) |
-| Rolar o chat | 39 quadros/s (pior quadro 117 ms) | 54 quadros/s (pior 36 ms) |
-| **Rolar com o cursor no campo (o normal)** | **21 quadros/s** | **55 quadros/s** |
-| Resposta de 8.000 caracteres: thread principal | 28 % do tempo | 21 % (o script −44 %) |
+**Limites (leia):** medido num computador fraco, mas **um só**; a rede e o Supabase (de que o “➤ livre” depende) variam de um minuto para o outro — compare sempre na mesma bancada e repita. A abertura **fria** (primeira vez no computador, ou cache apagado) continua baixando ~640 vetores (~3,4 MB) — é o que mais demora, e agora acontece com o campo já liberado. **Não foi feito:** carregar sob demanda os scripts grandes das ferramentas (Regras, Relatórios, tutorial: ~700 KB dos ~1,7 MB de JavaScript, só usados ao abrir a ferramenta) — daria menos memória e uma abertura um pouco mais rápida, mas mexe em muitos pontos de entrada e foi deixado como possível próximo passo.
 
-O que pesava e o que foi feito (o visual é o mesmo — cada troca foi comparada com a anterior):
-
-1. **Manchas do fundo (`js/core/aurora.js`, `css/desempenho.css`).** Eram 4 elementos com `filter: blur(72px)` se mexendo: a placa refazia o desfoque de 4 superfícies grandes a CADA quadro (e o vidro por cima, de novo). Agora o desfoque é feito **uma vez**, dentro de uma imagem SVG (`feGaussianBlur` em sRGB, como o `filter`), e a animação só desloca a textura. **Comparado pixel a pixel** com o fundo antigo, no mesmo instante da animação, em 5 cenários (claro, escuro, “Leves”, tom azul, janela estreita): diferença máxima de 3 a 5 em 255 por canal, média ≤ 0,5 — não se vê. Acompanha o tom de Personalizar, o tipo de fundo e “Animações e vidro” (refaz sozinho, e também ao redimensionar a janela). Sem JavaScript (ou se algo falhar) vale o CSS antigo.
-2. **Ruído do fundo.** Usava `mix-blend-mode: multiply`, que obriga a placa a uma passada inteira de mistura por quadro. A mancha é **preta com transparência** (o filtro zera R, G e B), e multiplicar preto = pintar preto normalmente: `normal` dá o mesmo resultado. No fundo escuro era `screen` com preto, que não muda nada: simplesmente some.
-3. **Anel do campo e pulsos** (botão “Ferramentas”, pontinhos de aviso das abas/do serviço, botão ↓). Os pulsos de `box-shadow` repintavam a thread principal 60×/s o tempo todo — o do botão “Ferramentas” fica ligado enquanto a dica de abas está na tela, e sozinho custava ~40 ms por tecla. Agora andam em degraus de 20 quadros/s (o anel, 30), **com a mesma curva** (ease-out gerada em degraus por script; erro ≤ 0,6 px de borda e ≤ 0,03 de transparência).
-4. **Resposta da IA aparecendo (`js/app/streaming.js`).** Cada atualização refaz o HTML da resposta inteira e cresce com o tamanho dela. Agora a revelação **se adapta ao computador**: se o passo anterior custou caro (> 2,4 ms), atualiza a cada 2 ou 3 quadros — o texto aparece **na mesma velocidade** (o ritmo é por tempo), só em pedaços maiores — e o botão ↓ lê o leiaute ~6×/s em vez de 60. Em computador rápido (passo barato) nada muda.
-5. **Desempenho automático (`js/ui/desempenho.js`) agora mede o que a pessoa sente.** A vigilância antiga só olhava a mediana dos quadros parado, que dava 60 mesmo com a letra levando ~90 ms. Entraram duas vigilâncias passivas: **digitando** (Event Timing: ≥ 70 % das teclas de uma digitação seguida acima de 80 ms desce um nível na hora; entre 50 e 70 %, na 2ª vez) e **rolando** (média ≥ 27 ms por quadro durante a rolagem, 2 vezes seguidas); o parado também olha a média (≥ 24 ms). O aviso diz o sintoma (“demorando a mostrar o que você digita” / “travando ao rolar”). Também corrigi: depois de **“Voltar ao completo”** nenhuma vigilância ajusta de novo por 14 dias (a da resposta da IA ignorava isso).
-
-**Testes** (todos passaram): 14 da vigilância (digitação e rolagem lentas de verdade, uso normal sem falso positivo, “Voltar ao completo”, “Leves”), 12 de regressão (console limpo, Personalizar refaz o fundo, resposta simulada completa pelo `handleChat` real) e a comparação pixel a pixel do fundo acima.
-
-**Para medir de novo** (e não voltar a achar que “na minha máquina está bom”): `tools/bancada-desempenho/LEIAME.md` — Edge controlado por script, mede quadros, latência de tecla, rolagem, CPU por processo, resposta da IA e fidelidade do visual. Dois cuidados que enganaram a primeira medição: **(a)** o Windows deste computador tem as animações desligadas, então o Edge informa “reduzir movimento” e o sistema **já não anima** (regra em `theme-2026.css`) — é preciso forçar `prefers-reduced-motion: no-preference` para medir o que a maioria vê; **(b)** o Edge **sem janela (headless) não reproduz o custo da placa de vídeo** — só serve para medir a thread principal.
-
-**Limites (leia):** medido num computador fraco, mas **um só**; placas muito piores ainda podem precisar do desempenho automático (agora mais sensível). Ficam de pé: a entrada de cada mensagem (desfoque de 5 px que some em 0,5 s) ainda custa um quadro perdido nesse computador; a placa ainda gasta ~20 % de um núcleo com o anel, o pulso e o fundo andando em degraus; e refazer só o trecho final do HTML da resposta (em vez de reanalisá-lo todo) seria o próximo ganho para respostas muito longas. Se alguém ainda achar pesado: **Personalizar › Animações e vidro › Leves**.
-
-- **Para mexer:** `js/core/aurora.js` (global `Aurora.assar()`; geometria `MANCHAS` idêntica à de `theme-2026.css`), `css/desempenho.css` (regras `.bg-aurora[data-baked]`, ruído, anel em degraus e os keyframes dos pulsos — gerados por script; para mudar a taxa, regere-os: 20 quadros/s = duração × 20 degraus), `js/app/streaming.js` (`ORCAMENTO_MS` na revelação), `js/ui/desempenho.js` (`LIM_TECLA`, `MIN_TECLAS`, `LIM_ROLAR`, `LIM_MEDIA_OCIOSA` no topo; `Perf._teste` para simular).
+- **Para mexer:** `css/tokens.css` (cores, sombras, tempos — um lugar só), `css/theme-2026.css` (a camada visual e as regras acima), `css/workspace.css` (lateral, abas, paleta, avisos), `js/app/prontidao.js` (global `Pronto`: `progresso`, `liberar`, `avisarEspera`, `pronto`), `js/app/dados.js` (`_faseCarga`, `liberarChat`, `_paginarTabela`), `index.html` (`#composerStatus`, `#sendBtn`, `#vecOverlay`), `css/app-overlay.css` (cartão “instalando”).
 
 ## Imagens do procedimento: prints no artigo, na resposta (v28.39)
 
@@ -1105,7 +1122,7 @@ Em *Detalhes* há ainda **“A IA escreve TODA resposta (modo de teste)”**: de
 | No Criar Regra (Nova Versão), colei `outrosValores[nome]` ou `tabelaPrecos.nome` e o campo diz "foram ignorados" | Desde a **v28.37** o nome colado inteiro vira só o nome interno. Se ainda aparece o aviso, é **caixa trocada** (`tabelaPrecos.x` no campo do Ct-e, ou `outrosValores[x]` no da Tabela de Preços — o aviso diz para qual campo ir) ou o nome tem espaço/símbolo (`frete terceiros`, `a-b`): o nome interno é escrito junto. |
 | Mudei a IA e nada mudou para os usuários | Confirme o commit/push do `config/mcp-config.js` e aguarde ~1 min; o sistema confere ao abrir e a cada 2 h. No painel: **IA / MCP → Conferir arquivo publicado agora**. |
 | A IA escreveu “parâmetro 1117” / “funcionalidade 315” (com o número) | Desde a **v28.36** o número sai sozinho do que aparece (e do log e da memória da conversa): a resposta fica “parâmetro: Nome do parâmetro”. Se ainda aparecer algum, é um jeito de escrever que a trava não reconhece (ex.: “o código do parâmetro é 1117”): ajuste `RE_SEM_COD` em `js/app/prerequisitos.js` e rode os casos de teste. Se o número vem de um artigo ou de uma resposta rápida, corrija-o na fonte (Revisão › “Dados do banco usados”) — a trava só limpa na hora de mostrar. |
-| O sistema ficou “sem os movimentos de fundo” (ou sem o vidro) sozinho e apareceu um aviso | É o **desempenho automático** (v28.35; desde a v28.38 também sente a **digitação demorando** e a **rolagem travando**): o computador estava com dificuldade e o sistema se ajustou (textos, cores e posições não mudam). Para voltar: botão **“Voltar ao completo”** do aviso, ou **Personalizar › “Ajustar o visual sozinho”** (desligue para manter sempre o completo). Vale só naquele computador e expira em 14 dias. |
+| Ao abrir, o ➤ fica cinza e aparece “⏳ Preparando a base de conhecimento…” acima do campo | **É o normal** (v28.43): o campo já aceita digitar desde o primeiro instante; só o ➤ espera a base ficar carregada e com os vetores, e libera sozinho (a 1ª abertura num computador baixa ~640 vetores, ~3,4 MB — as seguintes são bem mais rápidas). Se apertar Enter antes da hora, nada é enviado: o texto fica no campo. Se o ➤ **nunca** libera: o selo do topo diz o motivo (“Modo Offline” = sem conexão com o banco de dados, com o botão **Tentar novamente**; “Banco vazio”); abra o console (**F12**) e procure erros em vermelho. |
 | A imagem do artigo não aparece na resposta do chat | Confira nesta ordem: **(1)** o `sql/09_bancodados_imagens.sql` foi rodado? (aba **Sistema › Verificar**: “Coluna imagens” e “bucket” precisam estar ✔); **(2)** a imagem foi **salva** no artigo (depois de colar o print, clique em Salvar); **(3)** quem já estava com o sistema aberto só vê depois de **recarregar** (a base de conhecimento é lida ao abrir); **(4)** a resposta **veio daquele artigo**? A imagem só entra se o artigo estava entre os 5 primeiros da busca (≥ 55 % de semelhança) e a pergunta é o título dele, ou a resposta é uma das que mais copiam dele, ou foi o escolhido nos botões — abra o console (F12) e procure a linha “📷 [imagens do procedimento · vX.Y.Z]”: se entrou, diz a **prova** usada; se a busca trouxe o artigo mas a imagem não entrou, diz **qual artigo e por quê** (semelhança baixa, resposta que não veio dele, limite de 2 artigos) e a **versão do sistema** que estava rodando (confira que é a mais nova: o navegador pode estar com arquivos antigos até recarregar com **Ctrl+F5**). Perguntas com a palavra **“SEFAZ”** (também “rejeição”, “falha”, “fisco”, “fazenda”, “receita”) abrem antes o assistente **“Consulta de Rejeição SEFAZ”**: para chegar ao artigo, clique em **“💬 Consultar no banco de dados”**; depois, se a escolha de formato estiver ativa, escolha **curta** ou **completa** (a imagem vem nas duas). Respostas rápidas aprovadas, ferramentas (SEFAZ, Parâmetros…) e voz não mostram imagem. |
 | No painel, o campo de imagens avisa “Falta uma coluna no banco de dados”, ou o envio diz que o armazenamento “não foi ativado” | Rode o arquivo **`sql/09_bancodados_imagens.sql`** uma vez no SQL Editor do Supabase (a aba **Sistema** tem o botão **Copiar o SQL**). Se disser “sem permissão”: no modo seguro, entre como administrador. |
 | Colei uma imagem e a IA **não analisou na hora** | É assim desde a **v28.40**: a imagem fica como **anexo** (miniatura em cima do campo). Escreva o que quer saber e **envie** — ou envie só a imagem. Para tirar o anexo: ✕ na miniatura. |

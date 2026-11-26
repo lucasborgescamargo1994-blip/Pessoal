@@ -6,9 +6,9 @@
     <title>Primeira emissão guiada · Bsoft TMS</title>
     <meta name="description" content="Passo a passo para a primeira emissão de CT-e, MDF-e e CIOT no Bsoft TMS, com vídeo em cada passo e uma IA para tirar dúvidas e resolver erros.">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23f97316'/%3E%3Cpath d='M32 10c8 6 12 14 12 24 0 4-1 8-3 12H23c-2-4-3-8-3-12 0-10 4-18 12-24z' fill='%23fff'/%3E%3Ccircle cx='32' cy='28' r='5' fill='%23f97316'/%3E%3Cpath d='M20 38l-7 9 10-2zM44 38l7 9-10-2z' fill='%23fff'/%3E%3Cpath d='M28 48h8l-4 8z' fill='%23fff'/%3E%3C/svg%3E">
-    <script src="js/core/fontes.js?v=28.42.1" charset="utf-8"></script>
-    <link rel="stylesheet" href="css/tokens.css?v=28.42.1">
-    <link rel="stylesheet" href="css/migracao.css?v=28.42.1">
+    <script src="js/core/fontes.js?v=28.43.0" charset="utf-8"></script>
+    <link rel="stylesheet" href="css/tokens.css?v=28.43.0">
+    <link rel="stylesheet" href="css/migracao.css?v=28.43.0">
     <!-- Supabase: mesma versão fixa + verificação de integridade (SRI) do sistema principal -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js" integrity="sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok" crossorigin="anonymous"></script>
 </head>
@@ -41,27 +41,27 @@
 <div class="mig-toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <!-- configuração pública, a IA (MCP = os modelos do painel administrativo) e o conteúdo editável -->
-<script src="config/app-config.js?v=28.42.1" charset="utf-8"></script>
+<script src="config/app-config.js?v=28.43.0" charset="utf-8"></script>
 <script src="config/mcp-config.js" data-mcp-config charset="utf-8"></script>
-<script src="config/menu-bsoft.js?v=28.42.1" charset="utf-8"></script>
-<script src="config/migracao-roteiro.js?v=28.42.1" charset="utf-8"></script>
-<script src="config/migracao-regras.js?v=28.42.1" charset="utf-8"></script>
-<script src="config/migracao-glossario.js?v=28.42.1" charset="utf-8"></script>
+<script src="config/menu-bsoft.js?v=28.43.0" charset="utf-8"></script>
+<script src="config/migracao-roteiro.js?v=28.43.0" charset="utf-8"></script>
+<script src="config/migracao-regras.js?v=28.43.0" charset="utf-8"></script>
+<script src="config/migracao-glossario.js?v=28.43.0" charset="utf-8"></script>
 <!-- os mesmos arquivos do sistema: ambiente, Supabase, markdown, MCP, imagens do banco, FAQ (vídeos e busca), menu real e parâmetros -->
-<script src="js/core/env.js?v=28.42.1" charset="utf-8"></script>
-<script src="js/core/supabase-client.js?v=28.42.1" charset="utf-8"></script>
-<script src="js/core/markdown.js?v=28.42.1" charset="utf-8"></script>
-<script src="js/core/mcp.js?v=28.42.1" charset="utf-8"></script>
-<script src="js/core/imagens-banco.js?v=28.42.1" charset="utf-8"></script>
-<script src="js/faq/logica.js?v=28.42.1" charset="utf-8"></script>
-<script src="js/app/menu-bsoft.js?v=28.42.1" charset="utf-8"></script>
-<script src="js/app/prerequisitos.js?v=28.42.1" charset="utf-8"></script>
+<script src="js/core/env.js?v=28.43.0" charset="utf-8"></script>
+<script src="js/core/supabase-client.js?v=28.43.0" charset="utf-8"></script>
+<script src="js/core/markdown.js?v=28.43.0" charset="utf-8"></script>
+<script src="js/core/mcp.js?v=28.43.0" charset="utf-8"></script>
+<script src="js/core/imagens-banco.js?v=28.43.0" charset="utf-8"></script>
+<script src="js/faq/logica.js?v=28.43.0" charset="utf-8"></script>
+<script src="js/app/menu-bsoft.js?v=28.43.0" charset="utf-8"></script>
+<script src="js/app/prerequisitos.js?v=28.43.0" charset="utf-8"></script>
 <!-- a página -->
-<script src="js/migracao/logica.js?v=28.42.1" charset="utf-8"></script>
-<script src="js/migracao/dados.js?v=28.42.1" charset="utf-8"></script>
-<script src="js/migracao/ia.js?v=28.42.1" charset="utf-8"></script>
-<script src="js/migracao/tela-base.js?v=28.42.1" charset="utf-8"></script>
-<script src="js/migracao/tela-passos.js?v=28.42.1" charset="utf-8"></script>
-<script src="js/migracao/iniciar.js?v=28.42.1" charset="utf-8"></script>
+<script src="js/migracao/logica.js?v=28.43.0" charset="utf-8"></script>
+<script src="js/migracao/dados.js?v=28.43.0" charset="utf-8"></script>
+<script src="js/migracao/ia.js?v=28.43.0" charset="utf-8"></script>
+<script src="js/migracao/tela-base.js?v=28.43.0" charset="utf-8"></script>
+<script src="js/migracao/tela-passos.js?v=28.43.0" charset="utf-8"></script>
+<script src="js/migracao/iniciar.js?v=28.43.0" charset="utf-8"></script>
 </body>
 </html>
