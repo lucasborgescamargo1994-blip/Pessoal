@@ -18,11 +18,10 @@
     const CHAVE_NOME = 'bsoft_sim_nome';
     const TELAS = ['telaInicio', 'telaProva', 'telaChat', 'telaFim', 'telaResultado'];
 
-    // ── aparência: usa a cor e o fundo que a pessoa escolheu em Personalizar no sistema principal ──
+    // ── aparência: usa a cor de destaque que a pessoa escolheu em Personalizar no sistema principal ──
     try {
         const p = JSON.parse(localStorage.getItem('bsoft_v27_prefs') || '{}') || {};
         const h = document.documentElement;
-        h.dataset.bg = p.bg || 'aurora'; h.dataset.efeitos = p.efeitos || 'completo';
         if (p.accent && p.accentRgb) { h.style.setProperty('--primary', p.accent); h.style.setProperty('--primary-rgb', String(p.accentRgb).replace(/,/g, ' ').replace(/\s+/g, ' ').trim()); }
     } catch (e) { /* sem preferências: padrão */ }
 

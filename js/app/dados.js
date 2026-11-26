@@ -26,28 +26,40 @@ function _atualizarBotaoScrollDown(streaming = false) {
 // PostgREST, então precisa paginar com .range() até vir uma página incompleta (mesmo padrão já
 // usado no editor de banco, função dbeLoadTable). Devolve {data:[...]} pra encaixar direto no
 // Promise.allSettled de loadData(), igual as outras consultas da lista.
-async function _carregarRotinasCompleto(){
-    let todas=[], from=0; const lote=1000;
-    while(true){
-        const {data,error}=await sb.from('Rotinas').select('*').range(from, from+lote-1);
-        if(error)throw error;
-        todas=todas.concat(data||[]);
-        if(!data||data.length<lote)break;
-        from+=lote;
+// v28.43 — PÁGINAS EM PARALELO. Antes cada página de 1000 linhas só era pedida depois que a anterior chegava (Rotinas = 4 idas e voltas em fila, e o ➤ espera todas as tabelas). Agora as páginas que a
+// tabela deve ter saem JUNTAS: o número vem da contagem gravada na última abertura (localStorage `bsoft_tab_linhas`, +100 linhas de folga). Se a tabela cresceu além disso — ou é a primeira
+// abertura, sem contagem — o que faltar é buscado uma página por vez, exatamente como antes. O resultado é o mesmo (mesmas linhas, mesma ordem); só chega mais cedo.
+const _TAB_LINHAS_KEY = 'bsoft_tab_linhas';
+function _tabLinhasLer() { try { return JSON.parse(localStorage.getItem(_TAB_LINHAS_KEY) || '{}') || {}; } catch (e) { return {}; } }
+function _tabLinhasGravar(tabela, n) { try { const c = _tabLinhasLer(); if (c[tabela] !== n) { c[tabela] = n; localStorage.setItem(_TAB_LINHAS_KEY, JSON.stringify(c)); } } catch (e) { /* sem localStorage: só perde a otimização */ } }
+async function _paginarTabela(tabela, pagina /* (de, ate) => consulta do Supabase */) {
+    const lote = 1000;
+    const esperadas = Math.max(1, Math.min(8, Math.ceil(((_tabLinhasLer()[tabela] || 0) + 100) / lote)));
+    const juntas = await Promise.all(Array.from({ length: esperadas }, (_, i) => pagina(i * lote, i * lote + lote - 1)));
+    let todas = [], cheia = true;
+    for (const r of juntas) {
+        if (r.error) throw r.error;
+        const d = r.data || [];
+        todas = todas.concat(d);
+        if (d.length < lote) { cheia = false; break; }   // esta página já veio incompleta: é o fim da tabela (as seguintes, se houver, vieram vazias)
     }
-    return {data:todas};
+    for (let de = esperadas * lote; cheia; de += lote) {   // a tabela é maior do que o esperado: segue página por página
+        const r = await pagina(de, de + lote - 1);
+        if (r.error) throw r.error;
+        const d = r.data || [];
+        todas = todas.concat(d);
+        if (d.length < lote) break;
+    }
+    _tabLinhasGravar(tabela, todas.length);
+    return { data: todas };
+}
+// A tabela Rotinas tem ~3.800 linhas -- passa do limite padrão de 1000 por consulta do Supabase/PostgREST, então precisa paginar com .range() (ver _paginarTabela acima).
+async function _carregarRotinasCompleto(){
+    return _paginarTabela('Rotinas', (de, ate) => sb.from('Rotinas').select('*').range(de, ate));
 }
 // Parametros (1287 linhas) passa do limite de 1000 por consulta do Supabase: select('*') simples cortava o resto sem avisar. Ordena por id pra paginar sem repetir/pular linha.
 async function _carregarTabelaCompleta(tabela){
-    let todas=[], from=0; const lote=1000;
-    while(true){
-        const {data,error}=await sb.from(tabela).select('*').order('id',{ascending:true}).range(from, from+lote-1);
-        if(error)throw error;
-        todas=todas.concat(data||[]);
-        if(!data||data.length<lote)break;
-        from+=lote;
-    }
-    return {data:todas};
+    return _paginarTabela(tabela, (de, ate) => sb.from(tabela).select('*').order('id',{ascending:true}).range(de, ate));
 }
 // Artigos da base de conhecimento. A coluna caminho_menu (sql/05_bancodados_caminho_menu.sql: o caminho da tela no menu, escrito na Revisão) vem junto; se o SQL ainda não foi rodado o banco recusa a coluna
 // e a carga é refeita sem ela — o sistema nunca deixa de abrir por causa disso.
@@ -66,10 +78,17 @@ async function _carregarBancoDados() {
     }
     return r;
 }
+// Fase da carga: o DETALHE ("Baixando vetores do servidor... 240/641") vai para o aviso acima do campo de digitação (js/app/prontidao.js);
+// o selo do cabeçalho fica curto e neutro ("Carregando…") até virar "IA Pronta" — antes mostrava o texto longo, em amarelo, lá em cima.
+function _faseCarga(texto) {
+    const b = document.getElementById('statusBadge');
+    if (b) { b.innerText = 'Carregando…'; b.title = texto; }
+    if (typeof Pronto !== 'undefined') Pronto.progresso(texto);
+}
 async function loadData() {
     const b = document.getElementById('statusBadge');
     try {
-        b.innerText = `Carregando banco de dados...`;
+        _faseCarga(`Carregando banco de dados...`);
         const [rB, rP, rF, rL, rM, rR] = await Promise.allSettled([
             _carregarBancoDados(), // embedding vem do cache local
             _carregarTabelaCompleta('Parametros'),
@@ -107,9 +126,9 @@ async function loadData() {
         await _embCachePronto;
         const idsSemVetor = dados.filter(r => r.id != null && !_getEmbFromCache(r.id)).map(r => r.id);
         if (idsSemVetor.length > 0) {
-            b.innerText = 'Baixando vetores do servidor...';
+            _faseCarga('Baixando vetores do servidor...');
             try {
-                const { baixados, falhas } = await _embBaixarDoServidor(idsSemVetor, (i, n) => { b.innerText = `Baixando vetores do servidor... ${i}/${n}`; });
+                const { baixados, falhas } = await _embBaixarDoServidor(idsSemVetor, (i, n) => { _faseCarga(`Baixando vetores do servidor... ${i}/${n}`); });
                 console.log(`[vetores] ${baixados} de ${idsSemVetor.length} baixados do servidor${falhas ? ` (${falhas} lote(s) falharam)` : ''}`);
             } catch(e) { console.warn('[vetores] Falha ao baixar vetores:', e); }
         }
@@ -122,7 +141,7 @@ async function loadData() {
             vetor: _getEmbFromCache(row.id) // lê do localStorage — zero egress Supabase
         }));
         bancoCompletoRaw = dados;
-        b.innerText = "Vetorizando base...";
+        _faseCarga("Vetorizando base...");
         const { linhasComVetor, linhasSemVetor, chaves } = carregarVetoresExistentes(dados);
         BSOFT_VETORES.cacheLocal = Math.max(0, linhasComVetor - BSOFT_VETORES.servidor);
         b.dataset.vetores = _embResumo();
@@ -178,7 +197,7 @@ async function vetorizarEmBackground(lsv,chaves){
     for(let i=0;i<lsv.length;i++){
         if(es>5){b.innerText='IA Pronta ⚠️';break;}
         const item=lsv[i];
-        b.innerText=`Vet. ${i+1}/${lsv.length}`;
+        b.innerText=`Vet. ${i+1}/${lsv.length}`;   // (o ➤ já está liberado nessa fase — liberarChat("parcial") —, por isso só o selo mostra o andamento)
         if(manyItems) _updOverlay(i+1,lsv.length);
         await new Promise(r=>setTimeout(r,500));
         const nv=await gerarEmbeddingComRetry(item.textoCompleto);
@@ -204,7 +223,8 @@ function liberarChat(modo="completo"){
     const sendBtn = document.getElementById('sendBtn');
     const searchInput = document.getElementById('searchInput');
     isVectorizing = false;
-    sendBtn.disabled = false;
+    b.removeAttribute('title');   // (durante a carga o título do selo guardava o detalhe da fase)
+    if (typeof Pronto !== 'undefined') Pronto.liberar(); else sendBtn.disabled = false;   // libera o ➤ e tira o aviso de cima do campo (js/app/prontidao.js)
     searchInput.placeholder = "Digite sua dúvida...";
     const pi = ` [${mcpConfig.provider}/${mcpConfig.model.split('/').pop()}]`;
     if(modo === "completo"){

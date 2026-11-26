@@ -25,9 +25,6 @@ const Personalizar = (() => {
         <div class="dr-body">
           <section class="dr-sec"><h3>${icon('sparkles', 13)}Aparência</h3>
             <div class="dr-row"><span class="dr-lbl">Cor de destaque</span><div class="dr-swatches">${ACCENTS.map(([n, hex, rgb]) => `<button type="button" class="dr-sw${(p.accent || null) === hex ? ' is-on' : ''}" data-accent="${hex || ''}" data-rgb="${rgb || ''}" title="${n}" aria-label="${n}" style="--sw:${hex || '#f97316'}"></button>`).join('')}<label class="dr-custom" title="Escolher outra cor"><input type="color" id="drCustom" value="${p.accent || '#f97316'}" aria-label="Outra cor"></label></div></div>
-            <div class="dr-row"><span class="dr-lbl">Fundo</span>${seg('bg', [['aurora', 'Aurora'], ['liso', 'Liso'], ['escuro', 'Escuro'], ['foto', 'Foto']], p.bg)}</div>
-            <div class="dr-row"><span class="dr-lbl">Animações e vidro</span>${seg('efeitos', [['completo', 'Completas'], ['leve', 'Leves'], ['zero', 'Desligadas']], p.efeitos)}<small>“Leves” tira o efeito de vidro e deixa o sistema mais rápido em computadores simples. “Desligadas” remove todo o movimento.</small></div>
-            ${sw('perfAuto', 'Ajustar o visual sozinho se o computador estiver lento', 'Se o computador não conseguir animar o fundo e o vidro com fluidez, o sistema reduz os movimentos (e, em último caso, o vidro) automaticamente — textos, cores e posições não mudam. Só vale com “Completas”. Desligue para manter sempre o visual completo.' + (typeof Perf !== 'undefined' ? Perf.dica() : ''), p.perfAuto !== false)}
             <div class="dr-row"><span class="dr-lbl">Densidade</span>${seg('density', [['confortavel', 'Confortável'], ['compacta', 'Compacta']], p.density)}</div>
           </section>
           <section class="dr-sec"><h3>${icon('split', 13)}Abas e atalhos</h3>

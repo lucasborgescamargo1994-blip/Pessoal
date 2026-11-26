@@ -7,8 +7,9 @@ const Prefs = (() => {
     // A pessoa traz de volta em Ajustes › Ferramentas visíveis (e ainda os acha no Ctrl K). Quem já tem preferências salvas recebe esse padrão UMA vez (marcador railDefaults);
     // depois disso vale o que ela escolher, e "Restaurar padrões" volta a escondê-los. Mudou a lista? Some 1 em RAIL_DEFAULTS para a novidade chegar a todo mundo de novo.
     const HIDDEN_DEFAULT = ['blog', 'repo'], RAIL_DEFAULTS = 1;
-    const base = () => ({ accent: null, accentRgb: null, bg: 'aurora', efeitos: 'completo', density: 'confortavel', startup: 'restore', sidebar: 'open',
-        railOrder: 'fixa', railLabels: true, abasDestaque: true, abasDica: false, smartDock: true, desambiguar: true, esclarecer: true, ferramentaSugerida: true, perfAuto: true, formatoResposta: 'perguntar', rememberSide: true, hidden: HIDDEN_DEFAULT.slice(), railDefaults: RAIL_DEFAULTS, ws: null, usage: {}, newsSeen: 0, updated: 0,
+    // (v28.43: sem as escolhas de fundo, "animações e vidro" e ajuste automático de desempenho — o visual é único e leve. Quem as tinha salvas nas preferências ou na pasta do Meu Espaço não é afetado: elas só deixam de ser lidas.)
+    const base = () => ({ accent: null, accentRgb: null, density: 'confortavel', startup: 'restore', sidebar: 'open',
+        railOrder: 'fixa', railLabels: true, abasDestaque: true, abasDica: false, smartDock: true, desambiguar: true, esclarecer: true, ferramentaSugerida: true, formatoResposta: 'perguntar', rememberSide: true, hidden: HIDDEN_DEFAULT.slice(), railDefaults: RAIL_DEFAULTS, ws: null, usage: {}, newsSeen: 0, updated: 0,
         // Agenda: forma de ver (calendário/lista/cronograma), quadro ao abrir o sistema, avisos e início da semana
         agView: 'cal', agCrono: 28, agBoard: 'sempre', agToast: true, agNotify: false, agSound: false, agWeek: 'dom',
         // Recursos em teste (Personalizar › Recursos em teste): todos nascem DESLIGADOS. betaRegra = mostra o "Ct-e / Conhecimento Beta" no Criar Regra (js/app/regra-cte-beta.js): a versão em desenvolvimento do assistente; a "Nova Versão" (js/app/regra-cte-nova.js) é a cópia estável dele.
@@ -36,12 +37,11 @@ const Prefs = (() => {
     function persist(touch, push) { if (touch !== false) d.updated = Date.now(); lsSet(KEY, JSON.stringify(d)); if (push !== false) pushDisk(); }
     function apply() {
         const h = document.documentElement;
-        h.dataset.bg = d.bg || 'aurora'; h.dataset.efeitos = d.efeitos || 'completo'; h.dataset.density = d.density || 'confortavel';
+        h.dataset.density = d.density || 'confortavel';
         h.dataset.labels = d.railLabels === false ? 'off' : 'on';
         h.dataset.abas = d.abasDestaque === false ? 'normal' : 'destaque';   // abas grandes e coloridas + atalhos das ferramentas ainda fechadas (css/workspace.css, js/ui/workspace.js)
         if (d.accent && d.accentRgb) { h.style.setProperty('--primary', d.accent); h.style.setProperty('--primary-rgb', String(d.accentRgb).replace(/,/g, ' ').replace(/\s+/g, ' ').trim()); }
         else { h.style.removeProperty('--primary'); h.style.removeProperty('--primary-rgb'); }
-        if (typeof Aurora !== 'undefined') Aurora.assar();   // o fundo "assado" (js/core/aurora.js) acompanha o tom, o tipo de fundo e "Animações e vidro"
     }
     if (migrouNaCarga) persist();   // grava já (o carimbo `updated` novo também faz a versão migrada vencer a cópia da pasta do Meu Espaço)
     return {

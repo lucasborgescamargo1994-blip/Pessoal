@@ -29,9 +29,14 @@ window.addEventListener('DOMContentLoaded', async () => {
     const sendBtn = document.getElementById('sendBtn');
     document.getElementById('chatStream')?.addEventListener('scroll', () => _atualizarBotaoScrollDown());
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && document.getElementById('builderModalOverlay')?.classList.contains('active')) _fecharBuilderModal(); });
+    // v28.43: o campo já nasce liberado no HTML (a pessoa digita enquanto a base carrega); só o ➤ espera (js/app/prontidao.js). O Enter passa a valer desde já: antes da hora só avisa.
     searchInput.disabled = false;
-    searchInput.placeholder = "Carregando banco de dados... (digite sua pergunta enquanto carrega)";
     sendBtn.disabled = true;
+    searchInput.addEventListener("keypress", (e) => {
+        if (e.key !== "Enter") return;
+        if (isVectorizing || sendBtn.disabled) { if (typeof Pronto !== 'undefined') Pronto.avisarEspera(); return; }
+        handleChat({ deComposer: true });   // (deComposer: veio do campo de digitação — com imagem anexada, a imagem vai junto: js/app/anexos.js)
+    });
 
     console.log("🔄 Carregando banco de dados...");
     await loadData();
@@ -62,12 +67,6 @@ window.addEventListener('DOMContentLoaded', async () => {
         }
     }).catch(e => {
         console.warn("⚠️ Repositório carregado com erros (não afeta o chat):", e);
-    });
-
-    searchInput.addEventListener("keypress", (e) => {
-        if (e.key === "Enter" && !isVectorizing && !sendBtn.disabled) {
-            handleChat({ deComposer: true });   // (deComposer: veio do campo de digitação — com imagem anexada, a imagem vai junto: js/app/anexos.js)
-        }
     });
 
     simEnviarAoPainel({ tipo: 'bsoft:sim:pronto', artigos: manualVetorizado.length });

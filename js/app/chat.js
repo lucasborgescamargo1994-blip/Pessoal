@@ -21,7 +21,7 @@ async function handleChat(opts) {
     // Antes só a 1ª ia para a busca e a 2ª caía na IA do chat. Nas abas (Ferr.emAba) a ferramenta tem a própria caixa e isto nunca é usado.
     if (_paramFuncMode && !_reuso) return handleParametrosFuncionalidades();
     const ch = obterContextoHorario();
-    if (isVectorizing) return;
+    if (isVectorizing) { if (typeof Pronto !== 'undefined') Pronto.avisarEspera(); return; }   // base ainda carregando: o texto fica no campo e o aviso acima dele destaca (antes ignorava em silêncio)
     // Imagem anexada ao campo (js/app/anexos.js): enviar pelo campo (botão ➤ ou Enter = opts.deComposer) com imagem pendente → a IA lê a imagem e responde ao que foi perguntado. Os outros caminhos
     // (atalhos, "Em alta", voz…) nunca levam o anexo junto: a flag sai das opções para não pegar carona numa nova tentativa.
     if (opts.deComposer) {
