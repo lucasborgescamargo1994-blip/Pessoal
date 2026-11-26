@@ -744,6 +744,29 @@ Mudanças só no `geolocaliza.html` (**suba-o para o repositório `Pessoal`**; c
 - **“Analisar com IA”:** ao clicar, o botão **some** e no lugar aparece **“Aguarde, verificando arquivos…”**; o “Limpar” fica desativado e cliques repetidos são ignorados. Volta ao normal quando a análise termina — com resposta ou com erro. A resposta da IA agora mostra as tags XML que ela cita (antes o navegador as escondia) e o “Copiar análise” tem plano B dentro do sistema.
 - **Aba “Consulta ANTT (RNTRC)” — Placa + RNTRC ou Placa + CPF/CNPJ do transportador.** A consulta pública da ANTT (`consultapublica.antt.gov.br`) exige **“Eu não sou um robô” (reCAPTCHA)**: nenhum programa consegue consultar sozinho, e a página **não tenta burlar isso**. O que a aba faz: **confere antes** (formato da placa antiga/Mercosul, dígitos verificadores do CPF/CNPJ, tamanho do RNTRC), **pega os dados do request** colado/anexado (botão “Do request”: placa, RNTRC e CPF/CNPJ do contratado; se houver várias placas, você escolhe), abre a **consulta oficial em outra aba** já com a placa **copiada** (botões “Copiar” para RNTRC e CPF/CNPJ), mostra os passos (**Por Veículo** → colar → marcar “Não sou um robô” → Consultar) e deixa você **registrar o resultado** que leu lá — ✅ Ativo, ⚠️ Vencido/suspenso/irregular ou ❌ Não encontrado — num **histórico** (últimas 30, só neste navegador) com “Copiar resumo” para colar no chamado. A situação “ativo” é a que a **ANTT** mostrou; o aplicativo não a lê sozinho.
 
+#### Regra da ANTT: tipo de carga × Retorno Vazio no “Erros IA” (26/11/2026)
+
+Pedido do suporte: para carga **Granel Pressurizado** e **Conteinerizada** a **ANTT está obrigando “Retorno vazio = Sim”**; com `RetornoVazio=false` no REQUEST o **frete mínimo que o Bsoft mostra
+na tela sai menor** que o da ANTT e o CIOT é rejeitado com *“O valor do frete informado é menor do que o valor mínimo de frete estabelecido”*. Mudança só no `geolocaliza.html`
+(**suba-o para o repositório `Pessoal`**; cópia do anterior: `geolocaliza - antes do retorno vazio.html`):
+
+- **No prompt da IA** (o que ela recebe sempre): bloco **“REGRA DA ANTT: TIPO DE CARGA × RETORNO VAZIO”** — quando se aplica, como conferir no REQUEST (`CodigoTipoCarga`: **12 = Granel Pressurizado**, **4 = Conteinerizada**;
+  `RetornoVazio` tem que ser `true`), o que acontece quando está errado e **como orientar**: *marcar, dentro do CIOT, no cálculo do Frete Mínimo, a opção “Retorno” como “Sim”* (a tela passa a mostrar o frete mínimo
+  **real**), conferir o Valor do Frete (igual ou maior que esse mínimo) e gerar o CIOT de novo (o REQUEST passa a ir com `RetornoVazio=true`). Entrou também como **regra crítica nº 5** (sempre conferir o tipo de carga e o
+  `RetornoVazio`, mesmo que o erro seja outro) e nas bases de conhecimento (campo “Retorno” da Frota Própria; `CodigoTipoCarga`/`RetornoVazio` entre os campos do REQUEST).
+- **Conferência automática da página** (`montarConferenciaCarga`): ela mesma lê `CodigoTipoCarga` e `RetornoVazio` do REQUEST (em vários arquivos ou no texto colado; com ou sem prefixo de namespace) e põe o **resultado pronto
+  no fim do pedido** à IA — *“CodigoTipoCarga=12 (Granel Pressurizado) e RetornoVazio=false → ERRADO”* e, quando o RESPONSE traz a rejeição do frete mínimo (lida mesmo com o “�” no lugar dos acentos), a **causa provável**.
+  Assim até um modelo pequeno aplica a regra sem ter de achar as tags no meio do XML. Outro tipo de carga: a regra **não** se aplica (não culpa o Retorno Vazio); `RetornoVazio=true`: “correto”, e a IA vai para km/eixos/tabela.
+- **Conferido com o caso real** (REQUEST/RESPONSE de cimento, NCM 2523, tipo 12, `RetornoVazio=false`) e com a IA de verdade (nemotron-3.5-super-vl, o mesmo prompt da página): a análise diz tipo de carga, regra, causa e os passos
+  (marcar “Retorno” = “Sim” no Frete Mínimo, conferir o Valor do Frete, gerar de novo). Nos casos contrários (carga geral com `false`; conteinerizada com `true`) a IA **não** acusa o Retorno Vazio.
+- Teste: `tools/bancada-desempenho/teste-geolocaliza-retorno-vazio.js` (27 verificações, página aberta do disco, IA simulada; **14 mutações** na página, todas pegas). O arquivo é lido de
+  `Documentos\Projeto pessoal\Geolocalização IA\geolocaliza.html` (use `--arquivo=…` ou `GEOLOCALIZA_HTML` para outro caminho).
+- **Atenção:** a numeração 4 = Conteinerizada / 12 = Granel Pressurizado é a das tabelas de piso mínimo da ANTT ([Resolução 6.022/2023](https://www.normasbrasil.com.br/norma/resolucao-6022-2023_447827.html),
+  [Portaria 169/2022](https://www.normasbrasil.com.br/norma/portaria-169-2022_428998.html)); o **12** foi visto num REQUEST real, o **4** ainda não: confirme num REQUEST de carga conteinerizada. A **Perigosa (conteinerizada)**
+  não entrou na regra (não foi pedida): diga se vale também.
+- Fora do ar nessa página: o modelo padrão da configuração PRÓPRIA do `geolocaliza.html` (usada só quando ele é aberto direto, sem passar pelo botão CIOT do sistema) é `cohere/north-mini-code:free`, que a OpenRouter já
+  não serve (404) — aberto direto, o “Analisar com IA” deve dar erro 404 (não testei: vi o modelo no pedido que a página monta); aberto pelo sistema (que repassa a cadeia do MCP) usa a cadeia dele.
+
 ## IA / MCP: trocar modelos e chaves
 
 Tudo da IA fica em **um arquivo**: `config/mcp-config.js`. O fluxo é:
