@@ -45,7 +45,12 @@
             --ciot-border: #a7f3d0;
         }
 
-/* ── Sistema de design 2026 (v27): sobrescreve as variáveis acima ── */
+/* ── Sistema de design (v28.43 — LAYOUT LEVE): sobrescreve as variáveis acima ──
+   Liso e rápido, no mesmo lugar de sempre: cores SÓLIDAS e linhas finas no lugar de vidro (backdrop-filter), fundo animado, sombras grandes e brilhos.
+   Os nomes antigos (--glass, --glass-strong, --shadow-lg, --blur, --ease-spring…) continuam existindo — só mudaram de valor — para que todas as telas
+   que os usam (agenda, Meu Espaço, Personalizar, FAQ, simulador…) fiquem lisas ao mesmo tempo, sem mexer em cada arquivo.
+   • sombra: as 3 sombras antigas viraram "sem sombra" (uma sombra transparente, que continua válida dentro de listas de box-shadow); só o que FLUTUA (menu, aviso, janela) usa --shadow-pop.
+   • tempos: tudo é curto (≤ 0,16 s) e sem "mola" (a curva spring passava do ponto e voltava: mais quadros desenhados à toa). */
 
 :root {
     --primary: #f97316;
@@ -53,39 +58,36 @@
     --primary-dark: color-mix(in srgb, var(--primary) 80%, #000);
     --primary-light: color-mix(in srgb, var(--primary) 8%, #fff);
     --primary-border: color-mix(in srgb, var(--primary) 30%, #fff);
-    --accent-glow: rgb(var(--primary-rgb) / .38);
+    --accent-glow: rgb(var(--primary-rgb) / .38);   /* (só para quem ainda usa como cor de destaque; não há mais "brilho") */
 
-    --bg-base: #f6f2ed;
-    --glass: rgba(255,255,255,.68);
-    --glass-strong: rgba(255,255,255,.88);
-    --glass-border: rgba(255,255,255,.78);
-    --line: rgba(28,25,23,.09);
-    --blur: 22px;
+    --bg-base: #f5f2ed;      /* fundo da tela e da área do chat */
+    --bg-soft: #faf8f5;      /* lateral de atalhos, conversas e barra de abas */
+    --glass: #ffffff;        /* (nome antigo) agora é branco sólido */
+    --glass-strong: #ffffff;
+    --glass-border: rgba(28,25,23,.11);
+    --line: rgba(28,25,23,.10);
+    --blur: 0px;             /* (nome antigo) sem desfoque */
 
-    --radius: 22px;
-    --radius-md: 14px;
-    --radius-sm: 10px;
-    --shadow-sm: 0 1px 2px rgba(28,25,23,.06), 0 1px 1px rgba(28,25,23,.04);
-    --shadow-lg: 0 26px 60px -22px rgba(28,25,23,.34), 0 8px 20px -10px rgba(28,25,23,.14);
-    --shadow-glow: 0 12px 32px -10px var(--accent-glow);
+    --radius: 14px;
+    --radius-md: 10px;
+    --radius-sm: 8px;
+    --shadow-sm: 0 0 0 0 transparent;
+    --shadow-lg: 0 0 0 0 transparent;
+    --shadow-glow: 0 0 0 0 transparent;
+    --shadow-pop: 0 6px 22px rgba(28,25,23,.18);   /* só para o que flutua por cima de tudo */
 
-    --ease-out: cubic-bezier(.22, 1, .36, 1);
-    --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
-    --ease-inout: cubic-bezier(.65, 0, .35, 1);
-    --dur-1: .14s; --dur-2: .26s; --dur-3: .5s;
+    --ease-out: ease-out;
+    --ease-spring: ease-out;
+    --ease-inout: ease-in-out;
+    --dur-1: .08s; --dur-2: .12s; --dur-3: .16s;
 
     --rail-w: 78px;
     --composer-h: 78px;
     --input-h: 78px;
     --tabbar-h: 46px;
-    --header-h: 62px;
+    --header-h: 58px;
     --pane-pad: clamp(14px, calc((100% - 860px) / 2), 9999px);
 }
-html[data-bg="escuro"] {
-    --bg-base: #0b0807;
-    --glass: rgba(255,255,255,.80);
-    --glass-strong: rgba(255,255,255,.92);
-}
-html[data-density="compacta"] { --header-h: 54px; --tabbar-h: 40px; --rail-w: 68px; }
+html[data-density="compacta"] { --header-h: 52px; --tabbar-h: 40px; --rail-w: 68px; }
 ::selection { background: rgb(var(--primary-rgb) / .28); }
 :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 6px; }

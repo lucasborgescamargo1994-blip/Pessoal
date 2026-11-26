@@ -1,6 +1,6 @@
 @charset "UTF-8";
-/* Primeira emissão guiada (migracao.html). Usa as variáveis de css/tokens.css (cor de destaque e fundo vêm de Personalizar no sistema principal).
-   Leve de propósito: só o topo tem desfoque; os cartões são sólidos e não há animação contínua (exceto os três pontinhos da IA digitando). */
+/* Primeira emissão guiada (migracao.html). Usa as variáveis de css/tokens.css (a cor de destaque vem de Personalizar no sistema principal).
+   Leve de propósito (v28.43): nada de desfoque nem de fundo com degradê; os cartões são sólidos e não há animação contínua (exceto os três pontinhos da IA digitando). */
 * { box-sizing: border-box; }
 html, body { margin: 0; min-height: 100%; }
 html { scroll-padding-top: calc(var(--mig-sticky, 112px) + 8px); }
@@ -15,15 +15,14 @@ a { color: var(--primary-dark); }
 .mig-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .mig-pular { position: absolute; left: 8px; top: -60px; background: var(--primary); color: #fff; padding: 8px 14px; border-radius: 8px; z-index: 50; font-weight: 700; text-decoration: none; }
 .mig-pular:focus { top: 8px; }
-.mig-fundo { position: fixed; inset: 0; z-index: -1; background: radial-gradient(900px 520px at 12% -8%, rgb(var(--primary-rgb) / .20), transparent 60%), radial-gradient(760px 480px at 100% 6%, rgba(37, 99, 235, .12), transparent 60%), var(--bg-base); }
-html[data-bg="liso"] .mig-fundo { background: var(--bg-base); }
+.mig-fundo { position: fixed; inset: 0; z-index: -1; background: var(--bg-base); }   /* (v28.43: liso, sem os degradês de fundo) */
 
 /* ───────── topo ───────── */
-.mig-topo { position: sticky; top: 0; z-index: 12; display: flex; align-items: center; justify-content: space-between; gap: 10px 14px; flex-wrap: wrap; padding: 9px clamp(12px, 3vw, 28px); background: var(--glass-strong); backdrop-filter: blur(var(--blur)); -webkit-backdrop-filter: blur(var(--blur)); border-bottom: 1px solid var(--line); }
+.mig-topo { position: sticky; top: 0; z-index: 12; display: flex; align-items: center; justify-content: space-between; gap: 10px 14px; flex-wrap: wrap; padding: 9px clamp(12px, 3vw, 28px); background: var(--glass-strong); border-bottom: 1px solid var(--line); }
 .mig-marca { display: flex; align-items: center; gap: 11px; }
 .mig-marca b { display: block; font-size: 15.5px; font-weight: 800; letter-spacing: -.01em; }
 .mig-marca small { display: block; font-size: 11.5px; color: var(--text-muted); }
-.mig-logo { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; font-size: 19px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); box-shadow: var(--shadow-glow); }
+.mig-logo { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; font-size: 19px; background: var(--primary); box-shadow: var(--shadow-glow); }
 .mig-topo-dir { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; }
 .mig-link-topo { font-size: 13px; font-weight: 700; text-decoration: none; }
 .mig-link-topo:hover { text-decoration: underline; }
@@ -44,8 +43,8 @@ html[data-bg="liso"] .mig-fundo { background: var(--bg-base); }
 .mig-btn:hover:not(:disabled) { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 7%, #fff); }
 .mig-btn:active:not(:disabled) { transform: translateY(1px); }
 .mig-btn:disabled { opacity: .5; cursor: not-allowed; }
-.mig-btn.primario { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); border-color: transparent; color: #fff; box-shadow: var(--shadow-glow); }
-.mig-btn.primario:hover:not(:disabled) { filter: brightness(1.06); background: linear-gradient(135deg, var(--primary), var(--primary-dark)); }
+.mig-btn.primario { background: var(--primary); border-color: transparent; color: #fff; box-shadow: var(--shadow-glow); }
+.mig-btn.primario:hover:not(:disabled) { filter: brightness(1.06); background: var(--primary); }
 .mig-btn.perigo { color: var(--mig-erro); border-color: var(--mig-erro-bd); }
 .mig-btn.perigo:hover:not(:disabled) { background: var(--mig-erro-bg); border-color: var(--mig-erro); }
 .mig-btn.pequeno { font-size: 12.5px; padding: 6px 12px; }
@@ -185,7 +184,7 @@ textarea { width: 100%; font-size: 14px; background: #fff; border: 1.5px solid v
 .mig-msg.voce { align-self: flex-end; align-items: flex-end; }
 .mig-msg.ia { align-self: flex-start; }
 .mig-balao { background: #fff; border: 1px solid var(--border); border-radius: 16px 16px 16px 4px; padding: 10px 14px; box-shadow: var(--shadow-sm); font-size: 14.5px; min-width: 0; overflow-wrap: anywhere; }
-.mig-msg.voce .mig-balao { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: #fff; border-color: transparent; border-radius: 16px 16px 4px 16px; }
+.mig-msg.voce .mig-balao { background: var(--primary); color: #fff; border-color: transparent; border-radius: 16px 16px 4px 16px; }
 .mig-msg.voce .mig-balao p { margin: 0; white-space: pre-wrap; }
 .mig-msg.ia.erro .mig-balao { background: var(--mig-erro-bg); border-color: var(--mig-erro-bd); }
 .mig-hora { font-size: 11px; color: var(--text-muted); padding: 0 6px; }
@@ -277,7 +276,7 @@ dialog.mig-dialogo::backdrop { background: rgba(28, 25, 23, .5); }
     .mig-coluna-chat { display: none; position: fixed; inset: 0; z-index: 40; max-height: none; border-radius: 0; background: #fff; }
     .mig-grade-passos.chat-aberto .mig-coluna-chat { display: flex; }
     .mig-so-celular { display: inline-grid; margin-left: auto; }
-    .mig-chat-flutuante { display: inline-flex; position: fixed; right: 14px; bottom: 14px; z-index: 30; padding: 12px 18px; border-radius: 999px; border: 0; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: #fff; font-weight: 800; box-shadow: var(--shadow-lg); }
+    .mig-chat-flutuante { display: inline-flex; position: fixed; right: 14px; bottom: 14px; z-index: 30; padding: 12px 18px; border-radius: 999px; border: 0; background: var(--primary); color: #fff; font-weight: 800; box-shadow: var(--shadow-lg); }
     .mig-opcoes-grandes { grid-template-columns: 1fr; }
     .mig-nav .mig-btn { flex: 1; }
 }

@@ -8,7 +8,7 @@
 .btn-rr-ia {
     display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 999px; cursor: pointer;
     font-family: inherit; font-size: 12px; font-weight: 700; color: #fff; border: none;
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    background: var(--primary);
     box-shadow: 0 10px 22px -10px var(--accent-glow); transition: transform .26s cubic-bezier(.34, 1.56, .64, 1), box-shadow .26s;
 }
 .btn-rr-ia:hover { transform: translateY(-2px) scale(1.02); box-shadow: 0 16px 30px -12px var(--accent-glow); }

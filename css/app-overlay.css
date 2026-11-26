@@ -1,52 +1,51 @@
 @charset "UTF-8";
-/* Tela de instalação/vetorização da IA. */
+/* Aviso de instalação/vetorização da base de conhecimento da IA.
 
-/* ── Overlay de instalação de IA ─────────────────────────── */
+   v28.43 — NÃO bloqueia mais a tela: antes era uma cortina preta de tela cheia (com desfoque) que impedia até de digitar; agora é um cartão pequeno no canto de baixo, SEM capturar cliques
+   (pointer-events: none) — dá para continuar digitando e usando as abas enquanto os dados são instalados. Só o botão de enviar (➤) espera, e libera sozinho. */
+
 #vecOverlay {
     display: none;
-    position: fixed; inset: 0; z-index: 99999;
-    background: rgba(0,0,0,0.82);
-    backdrop-filter: blur(6px);
-    align-items: center; justify-content: center;
-    flex-direction: column;
-    animation: vecFadeIn 0.4s ease;
+    position: fixed; right: 16px; bottom: 16px; z-index: 3600;
+    width: min(360px, calc(100vw - 32px));
+    pointer-events: none;
 }
-#vecOverlay.visible { display: flex; }
-@keyframes vecFadeIn { from { opacity:0; } to { opacity:1; } }
-@keyframes vecFadeOut { from { opacity:1; } to { opacity:0; } }
-#vecOverlay.hiding { animation: vecFadeOut 0.5s ease forwards; }
+#vecOverlay.visible { display: block; }
+#vecOverlay.hiding { opacity: 0; transition: opacity .3s ease; }
 
 .vec-box {
     background: #fff;
-    border-radius: 20px;
-    padding: 48px 52px 44px;
-    max-width: 560px; width: 90%;
-    text-align: center;
-    box-shadow: 0 30px 80px rgba(0,0,0,0.4);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px 14px 12px;
+    text-align: left;
+    box-shadow: var(--shadow-pop);
 }
-.vec-icon { font-size: 56px; margin-bottom: 18px; display: block; animation: vecPulse 2s ease-in-out infinite; }
-@keyframes vecPulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.08);} }
+.vec-icon { font-size: 18px; margin-right: 6px; display: inline-block; vertical-align: -2px; }
 .vec-title {
-    font-size: 19px; font-weight: 800; color: #1e293b;
-    line-height: 1.4; margin-bottom: 10px;
+    display: inline;
+    font-size: 13px; font-weight: 800; color: #1e293b;
+    line-height: 1.4;
 }
+.vec-title br { display: none; }
 .vec-subtitle {
-    font-size: 13px; color: #64748b; margin-bottom: 28px; line-height: 1.5;
+    font-size: 11.5px; color: #64748b; margin: 6px 0 10px; line-height: 1.45;
 }
+.vec-subtitle br { display: none; }
 .vec-bar-wrap {
-    background: #f1f5f9; border-radius: 99px; height: 14px;
-    overflow: hidden; margin-bottom: 14px;
+    background: #f1f5f9; border-radius: 99px; height: 8px;
+    overflow: hidden; margin-bottom: 8px;
 }
 .vec-bar {
     height: 100%; border-radius: 99px;
-    background: linear-gradient(90deg, #f97316, #fb923c);
-    transition: width 0.6s ease;
+    background: var(--primary);
+    transition: width 0.3s ease;
     min-width: 6px;
 }
 .vec-status {
-    font-size: 12px; color: #94a3b8; font-weight: 600; letter-spacing: 0.03em;
+    font-size: 11px; color: #64748b; font-weight: 600;
 }
 .vec-warn {
-    margin-top: 22px; font-size: 11px; color: #dc2626; font-weight: 700;
-    background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 8px 14px;
+    margin-top: 8px; font-size: 10.5px; color: #92400e; font-weight: 600;
+    background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 5px 9px;
 }

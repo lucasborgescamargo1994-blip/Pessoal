@@ -33,22 +33,21 @@
             border: 1px solid var(--primary-border); background: var(--surface); color: var(--primary-dark);
             box-shadow: var(--shadow-lg); display: flex; align-items: center; justify-content: center;
             font-size: 16px; line-height: 1; cursor: pointer; opacity: 0; pointer-events: none;
-            transition: opacity .18s ease, transform .18s ease; padding: 0;
+            transition: opacity .12s ease; padding: 0;
         }
         #btnScrollDown.show { opacity: 1; pointer-events: auto; transform: translate(-50%, 0); }
         #btnScrollDown:hover { background: var(--primary); color: white; border-color: var(--primary); }
-        #btnScrollDown.streaming { animation: scrollDownPulse 1.4s ease-in-out infinite; }
-        /* @keyframes scrollDownPulse (botão ↓ durante a resposta): ver css/desempenho.css — a mesma curva, em degraus. */
+        /* durante a resposta o botão ↓ só ganha a cor de destaque (antes pulsava com sombra animada) */
+        #btnScrollDown.streaming { border-color: var(--primary); color: var(--primary-dark); }
 
         .message { max-width: 85%; width: fit-content; min-width: 60px; padding: 10px 14px; border-radius: 14px; line-height: 1.55; font-size: 13.5px; white-space: pre-wrap; word-break: break-word; }
-        @keyframes slideIn { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform: translateY(0); } }
-        .user-msg { align-self: flex-end; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; border-bottom-right-radius: 3px; box-shadow: 0 3px 10px rgba(249,115,22,0.28); }
-        .ai-msg { align-self: flex-start; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-bottom-left-radius: 3px; box-shadow: var(--shadow-sm); }
+        .user-msg { align-self: flex-end; background: var(--primary); color: white; border-bottom-right-radius: 3px; }
+        .ai-msg { align-self: flex-start; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-bottom-left-radius: 3px; }
         .system-msg { align-self: center; background: var(--primary-light); color: var(--primary-dark); border: 1px solid var(--primary-border); border-radius: 10px; font-size: 12px; font-weight: 500; text-align: center; max-width: 75%; }
         .ml-msg { align-self: center; background: var(--ml-light); color: var(--ml-color); border: 1px solid var(--ml-border); border-radius: 10px; font-size: 12px; font-weight: 500; text-align: center; max-width: 80%; }
 
-        .answer-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-sm); width: 100%; align-self: flex-start; animation: slideIn 0.25s ease; overflow-wrap: break-word; }
-        .answer-card.ml-card { border: 2px solid var(--ml-border); box-shadow: 0 4px 15px rgba(124,58,237,0.12); }
+        .answer-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; width: 100%; align-self: flex-start; overflow-wrap: break-word; }
+        .answer-card.ml-card { border: 2px solid var(--ml-border); }
         .answer-section { padding: 11px 15px; border-bottom: 1px solid var(--border); }
         .answer-section:last-child { border-bottom: none; }
         .section-label { display: flex; align-items: center; gap: 7px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 7px; }
@@ -68,8 +67,7 @@
         .retry-btn { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; background: var(--primary); color: white; border: none; padding: 9px 18px; border-radius: 9px; cursor: pointer; font-family: inherit; font-weight: 700; font-size: 13px; transition: all 0.2s; }
         .retry-btn:hover { background: var(--primary-dark); transform: scale(1.03); }
         .feedback-area { display: flex; gap: 7px; padding: 8px 15px; background: #f8fafc; border-top: 1px solid var(--border); align-items: center; font-size: 12px; color: var(--text-muted); flex-wrap: wrap; }
-        @keyframes feedbackPulse { 0%,100%{background:#16a34a;box-shadow:0 0 0 0 rgba(22,163,74,.4);} 50%{background:#22c55e;box-shadow:0 0 0 5px rgba(22,163,74,0);} }
-        .feedback-util { font-weight:700; color:#fff !important; background:#16a34a; padding:3px 10px; border-radius:8px; animation:feedbackPulse 1.5s ease-in-out infinite; white-space:nowrap; }
+        .feedback-util { font-weight:700; color:#fff !important; background:#16a34a; padding:3px 10px; border-radius:8px; white-space:nowrap; }
         @keyframes streamBlink { 0%,100%{opacity:1} 50%{opacity:0} }
         .stream-cursor { display:inline-block; width:2px; height:1.1em; background:var(--primary); vertical-align:text-bottom; animation:streamBlink .6s step-start infinite; margin-left:1px; border-radius:1px; }
         .stream-thinking { color:var(--text-muted,#888); font-style:italic; font-size:13px; margin-right:6px; }

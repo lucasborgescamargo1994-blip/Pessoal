@@ -1,23 +1,19 @@
 @charset "UTF-8";
-/* FAQ (faq.html). Usa as variáveis de css/tokens.css (cor de destaque e fundo vêm de Personalizar no sistema principal). */
+/* FAQ (faq.html). Usa as variáveis de css/tokens.css (a cor de destaque vem de Personalizar no sistema principal). Layout leve (v28.43): sem desfoque nem degradê de fundo. */
 * { box-sizing: border-box; }
 html, body { margin: 0; min-height: 100%; }
 body { font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color: var(--text); background: var(--bg-base); font-size: 15px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
-.faq-fundo { position: fixed; inset: 0; z-index: -1; background:
-    radial-gradient(900px 520px at 12% -8%, rgb(var(--primary-rgb) / .20), transparent 60%),
-    radial-gradient(760px 480px at 100% 6%, rgba(37, 99, 235, .12), transparent 60%),
-    var(--bg-base); }
-html[data-bg="liso"] .faq-fundo { background: var(--bg-base); }
+.faq-fundo { position: fixed; inset: 0; z-index: -1; background: var(--bg-base); }   /* (v28.43: liso, sem os degradês de fundo) */
 .faq-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 [hidden] { display: none !important; }
 
 /* topo */
 .faq-topo { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 10px clamp(14px, 4vw, 32px);
-    background: var(--glass-strong); backdrop-filter: blur(var(--blur)); -webkit-backdrop-filter: blur(var(--blur)); border-bottom: 1px solid var(--line); color: var(--text); }
+    background: var(--glass-strong); border-bottom: 1px solid var(--line); color: var(--text); }
 .faq-marca { display: flex; align-items: center; gap: 12px; }
 .faq-marca b { display: block; font-size: 15.5px; font-weight: 800; letter-spacing: -.01em; }
 .faq-marca small { display: block; font-size: 11.5px; color: var(--text-muted); }
-.faq-logo { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; font-size: 19px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); box-shadow: var(--shadow-glow); }
+.faq-logo { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; font-size: 19px; background: var(--primary); box-shadow: var(--shadow-glow); }
 .faq-topo-dir { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
 .faq-link { font-size: 13px; font-weight: 700; color: var(--primary-dark); text-decoration: none; }
 .faq-link:hover { text-decoration: underline; }
@@ -74,7 +70,7 @@ html[data-bg="liso"] .faq-fundo { background: var(--bg-base); }
 .faq-video-link { margin-top: 6px; font-size: 12.5px; }
 .faq-video-link a { color: var(--primary-dark); font-weight: 700; text-decoration: none; }
 .faq-video-link a:hover { text-decoration: underline; }
-.faq-video-externo { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 999px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: #fff; font-weight: 700; font-size: 13.5px; text-decoration: none; box-shadow: var(--shadow-glow); }
+.faq-video-externo { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 999px; background: var(--primary); color: #fff; font-weight: 700; font-size: 13.5px; text-decoration: none; box-shadow: var(--shadow-glow); }
 
 /* ações e rodapé */
 .faq-acoes { margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap; }

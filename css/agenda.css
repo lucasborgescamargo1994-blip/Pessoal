@@ -35,7 +35,7 @@
 .ag-filter:focus-within { background: #fff; border-color: var(--primary-border); box-shadow: 0 0 0 4px rgb(var(--primary-rgb) / .10); }
 .ag-filter label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
 .ag-filter input[type=checkbox] { accent-color: var(--primary); }
-.ag-new { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; border-radius: 12px; border: none; cursor: pointer; font-family: inherit; font-weight: 800; font-size: 12.5px; color: #fff; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); box-shadow: var(--shadow-glow), inset 0 1px 0 rgba(255,255,255,.35); transition: transform var(--dur-2) var(--ease-spring); white-space: nowrap; }
+.ag-new { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; border-radius: 12px; border: none; cursor: pointer; font-family: inherit; font-weight: 800; font-size: 12.5px; color: #fff; background: var(--primary); box-shadow: var(--shadow-glow); transition: transform var(--dur-2) var(--ease-spring); white-space: nowrap; }
 .ag-new:hover { transform: translateY(-2px) scale(1.03); }
 .ag-new:active { transform: scale(.96); }
 .ag-main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 340px); gap: 12px; }
@@ -125,7 +125,7 @@
 .agg-cols i { border-left: 1px solid rgba(28,25,23,.05); }
 .agg-cols i.we { background: rgba(28,25,23,.035); }
 .agg-cols i.td { background: rgb(var(--primary-rgb) / .10); border-left: 1px solid rgb(var(--primary-rgb) / .5); border-right: 1px solid rgb(var(--primary-rgb) / .5); }
-.agg-head { position: sticky; top: 0; z-index: 4; display: grid; grid-template-columns: var(--lw) repeat(var(--n), minmax(var(--cw), 1fr)); background: var(--glass-strong); backdrop-filter: blur(6px); border-bottom: 1px solid var(--line); }
+.agg-head { position: sticky; top: 0; z-index: 4; display: grid; grid-template-columns: var(--lw) repeat(var(--n), minmax(var(--cw), 1fr)); background: var(--glass-strong); border-bottom: 1px solid var(--line); }
 .agg-head .agg-corner { position: sticky; left: 0; z-index: 5; background: var(--glass-strong); padding: 8px 12px; font-size: 10.5px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; color: var(--text-muted); display: flex; align-items: flex-end; }
 .agg-m { padding: 6px 4px 0; font-size: 11px; font-weight: 800; text-transform: capitalize; white-space: nowrap; overflow: hidden; color: var(--text); }
 .agg-d { text-align: center; font-size: 11px; font-weight: 800; padding: 2px 0 6px; line-height: 1.15; color: var(--text-muted); }
@@ -158,7 +158,7 @@
 .ag-zoom button.is-on { background: #fff; color: var(--text); box-shadow: var(--shadow-sm); }
 
 /* ── editor de tarefa ──────────────────────────────────────────────────────── */
-.ag-ov { position: fixed; inset: 0; z-index: 3200; display: grid; place-items: center; padding: 16px; background: rgba(28,25,23,.38); backdrop-filter: blur(3px); animation: agFade var(--dur-2) var(--ease-out) both; }
+.ag-ov { position: fixed; inset: 0; z-index: 3200; display: grid; place-items: center; padding: 16px; background: rgba(28,25,23,.38); animation: agFade var(--dur-2) var(--ease-out) both; }
 @keyframes agFade { from { opacity: 0; } to { opacity: 1; } }
 .ag-modal { width: min(640px, 100%); max-height: min(92vh, 760px); display: flex; flex-direction: column; border-radius: 22px; padding: 0; overflow: hidden; animation: popIn var(--dur-3) var(--ease-out) both; }
 .ag-modal > header { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px 10px; }
@@ -182,7 +182,7 @@
 .ag-modal > footer .ag-spacer { flex: 1; }
 .ag-btn { display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 16px; border-radius: 12px; border: 1px solid var(--line); background: rgba(255,255,255,.9); color: var(--text); font-family: inherit; font-size: 13px; font-weight: 800; cursor: pointer; transition: all var(--dur-2) var(--ease-spring); }
 .ag-btn:hover { background: #fff; transform: translateY(-1px); box-shadow: var(--shadow-sm); }
-.ag-btn.primary { border-color: transparent; color: #fff; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); box-shadow: var(--shadow-glow), inset 0 1px 0 rgba(255,255,255,.35); }
+.ag-btn.primary { border-color: transparent; color: #fff; background: var(--primary); box-shadow: var(--shadow-glow); }
 .ag-btn.danger { color: #dc2626; }
 .ag-btn.danger:hover { background: #fef2f2; border-color: #fecaca; }
 .ag-x { width: 34px; height: 34px; border-radius: 11px; border: none; background: transparent; color: var(--text-muted); display: grid; place-items: center; cursor: pointer; padding: 0; }
@@ -191,7 +191,7 @@
 /* ── quadro do dia (ao abrir o sistema) ───────────────────────────────────── */
 .ag-board { width: min(660px, 100%); max-height: min(88vh, 720px); display: flex; flex-direction: column; border-radius: 24px; overflow: hidden; animation: popIn var(--dur-3) var(--ease-spring) both; }
 .agb-head { display: flex; align-items: center; gap: 13px; padding: 18px 20px 12px; background: linear-gradient(135deg, rgb(var(--primary-rgb) / .16), transparent 70%); }
-.agb-ic { width: 46px; height: 46px; border-radius: 15px; display: grid; place-items: center; color: #fff; flex: 0 0 auto; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); box-shadow: var(--shadow-glow), inset 0 1px 0 rgba(255,255,255,.4); animation: agRing 2.4s ease-in-out 1; transform-origin: 50% 12%; }
+.agb-ic { width: 46px; height: 46px; border-radius: 15px; display: grid; place-items: center; color: #fff; flex: 0 0 auto; background: var(--primary); box-shadow: var(--shadow-glow); animation: agRing 2.4s ease-in-out 1; transform-origin: 50% 12%; }
 @keyframes agRing { 0%, 100% { transform: rotate(0); } 12% { transform: rotate(14deg); } 24% { transform: rotate(-12deg); } 36% { transform: rotate(9deg); } 48% { transform: rotate(-6deg); } 60% { transform: rotate(0); } }
 .agb-head h2 { font-size: 19px; font-weight: 800; letter-spacing: -.4px; line-height: 1.15; }
 .agb-head p { font-size: 12.5px; color: var(--text-muted); margin-top: 3px; }
@@ -223,7 +223,7 @@
 /* ── cartão da agenda no chat ─────────────────────────────────────────────── */
 .ag-chat { align-self: stretch; }
 .ag-chat .agc-head { display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: linear-gradient(135deg, rgb(var(--primary-rgb) / .13), transparent 75%); border-bottom: 1px solid var(--line); }
-.ag-chat .agc-head .agc-ic { width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); flex: 0 0 auto; }
+.ag-chat .agc-head .agc-ic { width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; color: #fff; background: var(--primary); flex: 0 0 auto; }
 .ag-chat .agc-head b { display: block; font-size: 14px; font-weight: 800; letter-spacing: -.2px; }
 .ag-chat .agc-head small { display: block; font-size: 11.5px; color: var(--text-muted); margin-top: 1px; }
 .ag-chat .agc-body { padding: 10px 14px; display: flex; flex-direction: column; gap: 6px; }
