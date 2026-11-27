@@ -1,0 +1,53 @@
+@charset "UTF-8";
+/* css/agente.css — o cartão de resposta do AGENTE DE IA no chat (js/app/agente-chat.js): passos, fontes, botões de pergunta e a janela da fonte.
+   Segue o layout leve (v28.43): sem filter/backdrop-filter, sem animação decorativa, sem sombra grande. Usa as cores do tema do sistema (--primary, --border, --text-muted…). */
+
+/* ── passos do agente (o que ele fez: buscas, artigos lidos, contas) ── */
+.ag-card .ag-passos { margin: 0 0 8px; font-size: 12.5px; color: var(--text-muted); }
+.ag-card .ag-passos > summary { cursor: pointer; user-select: none; list-style: none; display: flex; gap: 6px; align-items: center; }
+.ag-card .ag-passos > summary::-webkit-details-marker { display: none; }
+.ag-card .ag-passos > summary::before { content: "▸"; font-size: 10px; display: inline-block; width: 10px; }
+.ag-card .ag-passos[open] > summary::before { content: "▾"; }
+.ag-lista { margin: 6px 0 0; padding: 0; list-style: none; display: grid; gap: 3px; }
+.ag-passo { display: flex; gap: 7px; align-items: baseline; }
+.ag-passo .ag-ic { width: 14px; text-align: center; flex: none; }
+.ag-passo.ok .ag-ic { color: #16a34a; }
+.ag-passo.erro .ag-ic { color: #dc2626; }
+.ag-passo.rodando .ag-ic { color: var(--primary); }
+.ag-passo .ag-res { color: var(--text-muted); }
+.ag-passo .ag-ms { margin-left: auto; opacity: .7; font-variant-numeric: tabular-nums; padding-left: 8px; white-space: nowrap; }
+.ag-passo.agente .ag-rot::before { content: "▶ "; color: var(--primary); }
+.ag-status { font-size: 12.5px; color: var(--text-muted); padding: 2px 0 6px; display: flex; gap: 10px; align-items: center; }
+.ag-status[hidden] { display: none; }
+.ag-parar { border: 1px solid var(--border); background: var(--surface); border-radius: 6px; cursor: pointer; padding: 1px 9px; font-size: 11.5px; color: var(--text-muted); }
+.ag-parar:hover { border-color: #dc2626; color: #dc2626; }
+
+/* ── fontes (os artigos que a resposta leu) ── */
+.ag-fontes { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; }
+.ag-fontes .ag-rot { color: var(--text-muted); margin-right: 2px; }
+.ag-fonte { border: 1px solid var(--border); background: var(--bg-soft, #f8fafc); border-radius: 8px; padding: 2px 9px; cursor: pointer; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: inherit; color: inherit; }
+.ag-fonte:hover { border-color: var(--primary-border); color: var(--primary-dark); }
+.ag-fonte.sec { opacity: .75; }
+.ag-aviso { margin-top: 8px; padding: 6px 10px; border-radius: 8px; background: #fffbeb; color: #92400e; font-size: 12.5px; }
+
+/* ── pergunta com botões (a IA precisa saber qual é o caso) ── */
+.ag-opcoes { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
+.ag-opcoes button { border: 1.5px solid var(--primary); color: var(--primary-dark); background: var(--surface); border-radius: 999px; padding: 7px 15px; cursor: pointer; font: inherit; font-size: 13px; }
+.ag-opcoes button:hover:not(:disabled) { background: var(--primary-light); }
+.ag-opcoes button:disabled { opacity: .55; cursor: default; }
+.ag-opcoes button.escolhida { background: var(--primary); color: #fff; opacity: 1; }
+
+/* ── vídeos do FAQ e o botão ⚡ Resumir ── */
+.ag-midia { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
+.ag-midia a.ag-video { display: inline-block; padding: 5px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 12.5px; }
+
+/* ── janela da fonte (artigo completo) ── */
+dialog.ag-dialog { border: 1px solid var(--border); border-radius: 14px; background: var(--surface); color: var(--text); padding: 18px 20px; width: min(760px, calc(100vw - 24px)); max-height: calc(100vh - 32px); overflow: auto; }
+dialog.ag-dialog::backdrop { background: rgba(0, 0, 0, .45); }
+.ag-dialog .ag-d-cab { display: flex; align-items: center; gap: 10px; }
+.ag-dialog .ag-d-cab h2 { margin: 0; font-size: 17px; flex: 1; }
+.ag-dialog .ag-d-x { border: 0; background: none; font-size: 18px; cursor: pointer; color: var(--text-muted); }
+.ag-dialog .ag-d-meta { color: var(--text-muted); font-size: 12.5px; margin-top: 2px; }
+.ag-dialog .ag-d-corpo { white-space: pre-wrap; overflow-wrap: anywhere; margin: 12px 0; line-height: 1.55; font-size: 13.5px; }
+.ag-dialog .ag-d-midia { display: flex; flex-wrap: wrap; gap: 8px; }
+.ag-dialog .ag-d-midia img { max-width: 260px; max-height: 200px; border-radius: 8px; border: 1px solid var(--border); }
