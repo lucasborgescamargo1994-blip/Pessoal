@@ -15,6 +15,10 @@ function _menuBtnsHtml() {
     ].filter(Boolean);
     return `<div class="bento">${cards.map((c, i) => `<button class="bento-card" style="--i:${i};--c:${c[4]}" onclick="${c[3]}"><span class="bc-ic">${c[0]}</span><span class="bc-tx"><b>${c[1]}</b><small>${c[2]}</small></span></button>`).join('')}</div>`;
 }
+// Quem responde: o Agente de IA (v29, js/app/agente-chat.js) ou, com ele desligado, o assistente clássico.
+const _agenteLigado = () => { try { return typeof AgenteChat !== 'undefined' && AgenteChat.ativo(); } catch (e) { return false; } };
+const _apresentacaoIA = () => _agenteLigado() ? 'Sou o <b>Agente de IA</b> do Bsoft TMS: pesquiso no banco, leio o artigo completo e uso ferramentas (contas, prazos, chave de acesso…) para te responder.' : 'Sou o assistente IA <b>Bsoft TMS</b>.';
+const _pilulaIA = () => _agenteLigado() ? '🤖 <b>Agente de IA</b>' : 'IA: <b>' + escapeHtml(String(mcpConfig.model).split('/').pop()) + '</b>';
 function _welcomeHero(si, sub, pills = '') {
     return `<div class="hero"><div class="hero-hello">${si.emoji} ${si.saudacao}!<br><span class="grad">Como posso ajudar hoje?</span></div><div class="hero-sub">${sub}</div>${pills ? `<div class="hero-meta">${pills}</div>` : ''}</div>`;
 }
@@ -22,7 +26,7 @@ function _criarWelcomeMsg() {
     const w = document.createElement('div');
     w.className = 'message ai-msg';
     w.id = 'welcomeMsg';
-    w.innerHTML = _welcomeHero(obterSaudacao(), 'Sou o assistente IA <b>Bsoft TMS</b>. Escolha um atalho abaixo ou digite exatamente o que precisa.') + _menuBtnsHtml();
+    w.innerHTML = _welcomeHero(obterSaudacao(), _apresentacaoIA() + ' Escolha um atalho abaixo ou digite exatamente o que precisa.') + _menuBtnsHtml();
     return w;
 }
 // Erros SEFAZ, Criar Regra, Relatórios e Parâmetros abrem na própria aba (js/app/ferramentas.js): o chat fica como está.

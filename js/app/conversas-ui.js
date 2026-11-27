@@ -1,5 +1,5 @@
 /* js/app/conversas-ui.js — Renderização da lista de conversas e da barra lateral. */
-function limparChatStream() { if (typeof Desamb !== 'undefined') Desamb.limpar(); if (typeof Formato !== 'undefined') Formato.limpar(); if (typeof Esc !== 'undefined') Esc.limpar(); if (typeof Anexos !== 'undefined') Anexos.limparLotes(); const stream = document.getElementById('chatStream'); stream.innerHTML = ''; stream.appendChild(_criarWelcomeMsg()); }
+function limparChatStream() { if (typeof Desamb !== 'undefined') Desamb.limpar(); if (typeof Formato !== 'undefined') Formato.limpar(); if (typeof Esc !== 'undefined') Esc.limpar(); if (typeof AgenteChat !== 'undefined') AgenteChat.limpar(); if (typeof Anexos !== 'undefined') Anexos.limparLotes(); const stream = document.getElementById('chatStream'); stream.innerHTML = ''; stream.appendChild(_criarWelcomeMsg()); }
 function restaurarConversa(id) {
     const conversa = conversas.find(c => c.id === id); if (!conversa) return;
     if (typeof Desamb !== 'undefined') Desamb.limpar();

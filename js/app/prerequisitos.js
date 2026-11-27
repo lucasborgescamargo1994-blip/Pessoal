@@ -1,9 +1,10 @@
-/* js/app/prerequisitos.js — "Pré-requisito primeiro": quando o que a pessoa pergunta DEPENDE de um parâmetro ou de uma funcionalidade
-   (ex.: "é possível vincular CT-es de filiais diferentes ao mesmo contrato de frete?" só funciona com o parâmetro "Pode criar CF com
-   documentos de talões diferentes?" habilitado), a resposta começa por ele e só depois traz o passo a passo.
+/* js/app/prerequisitos.js — Parâmetros e Funcionalidades do Bsoft TMS que a pergunta pode envolver (ex.: "é possível vincular CT-es de filiais diferentes ao mesmo contrato de
+   frete?" tem a ver com o parâmetro "Pode criar CF com documentos de talões diferentes?").
+   v29.1.0: NÃO manda mais abrir a resposta com "⚙️ Antes de tudo, verifique:" (pedido do dono: confundia mais do que ajudava). Os itens achados entram no prompt só como material de apoio:
+   a IA/o agente responde o que achar certo para o que foi perguntado e cita um parâmetro/funcionalidade apenas quando ele faz parte da resposta — sempre pela Descrição + Nome Interno, nunca pelo código.
    Só lógica, sem tela (por isso dá para testar em Node): a busca dos parâmetros/funcionalidades da pergunta (BM25 com radicais, nome interno
-   separado por maiúsculas e sinônimos de domínio), a ligação dos artigos achados aos parâmetros que eles citam, e os textos do prompt.
-   Quem usa: handleChat (js/app/chat.js). A tabela de Parâmetros/Funcionalidades vem de dadosParametros/dadosFuncionalidades (js/app/dados.js). */
+   separado por maiúsculas e sinônimos de domínio), a ligação dos artigos achados aos parâmetros que eles citam, e os textos do prompt (inclusive a regra "nunca o código").
+   Quem usa: handleChat (js/app/chat.js) e o Agente de IA (que recebe uma cópia: agente-bsoft/nucleo/prereq.js). A tabela de Parâmetros/Funcionalidades vem de dadosParametros/dadosFuncionalidades (js/app/dados.js). */
 const Prereq = (function () {
     const CAMINHOS = {
         parametros: 'Ambiente > Administração > Parâmetros',
@@ -205,28 +206,16 @@ const Prereq = (function () {
     function montarContexto(res) {
         if (!res || (!res.parametros.length && !res.funcionalidades.length)) return '';
         let c = '\n=== PARÂMETROS E FUNCIONALIDADES RELACIONADOS ===\n';
-        c += `Onde conferir/alterar (caminhos reais do menu): parâmetros → ${CAMINHOS.parametros}; funcionalidades → ${CAMINHOS.funcionalidades}; depois de alterar → ${CAMINHOS.permissoes}.\nIdentifique cada item pela Descrição e pelo Nome Interno (funcionalidade: só a Descrição) e NUNCA pelo código/número.\n`;
+        c += `Onde conferir/alterar (caminhos reais do menu): parâmetros → ${CAMINHOS.parametros}; funcionalidades → ${CAMINHOS.funcionalidades}; depois de alterar → ${CAMINHOS.permissoes}.\nIdentifique cada item pela Descrição e pelo Nome Interno (funcionalidade: só a Descrição) e NUNCA pelo código/número.\nMaterial de apoio: use estes itens só quando fizerem parte do que foi perguntado (a pergunta é sobre eles, ou o procedimento depende deles); se não fizerem, ignore-os.\n`;
         // (sem "sim:NN%": era só a cobertura das palavras da pergunta e passava a impressão de relevância; a lista já vem do mais ao menos provável)
         const origem = (x, fem) => x.daPergunta ? ` - ${fem ? 'PEDIDA' : 'PEDIDO'} NA PERGUNTA` : x.citado ? ` - ${fem ? 'MENCIONADA' : 'MENCIONADO'} NO ARTIGO "${x.citado.substring(0, 70)}"` : '';
         res.parametros.forEach((x, i) => { c += `\n[PARÂMETRO ${i + 1}${origem(x, false)}]\n${formatarItem(x.item)}\n`; });
         res.funcionalidades.forEach((x, i) => { c += `\n[FUNCIONALIDADE ${i + 1}${origem(x, true)}]\n${formatarItem(x.item)}\n`; });
         return c;
     }
-    // Regra 9 do prompt (o resto das regras fica em chat.js). Mexa aqui para mudar o jeito de a IA tratar pré-requisitos.
-    const REGRA = `9. ⚠️ PRÉ-REQUISITO PRIMEIRO — PARÂMETROS E FUNCIONALIDADES: no Bsoft TMS, muita coisa só funciona (ou só aparece na tela) depois que um PARÂMETRO ou uma FUNCIONALIDADE é habilitado/configurado. Quem lê a resposta costuma parar no começo, então o que DEPENDE de um parâmetro/funcionalidade tem de vir ANTES do passo a passo — nunca escondido no fim. Veja a seção "PARÂMETROS E FUNCIONALIDADES RELACIONADOS" (e o que o próprio artigo disser sobre habilitar/liberar algo antes: "primeiro habilite…", "pré-requisito", "precisa estar ativo", "só aparece se…") e classifique cada item:
-   • CONDICIONA a pergunta = a descrição diz que ele permite, libera, habilita, exibe, obriga ou bloqueia justamente a ação ou a opção que o cliente quer (ex.: "é possível vincular CT-es de filiais diferentes ao mesmo contrato de frete?" ↔ parâmetro "Pode criar CF com documentos de talões diferentes?"; "não aparece a opção X" ↔ o parâmetro/funcionalidade que exibe X). Se for o caso, a resposta COMEÇA por este bloco — antes de qualquer abertura, de "sim, é possível" e de qualquer passo:
-       **⚙️ Antes de tudo, verifique:**
-       - quem é o item: a DESCRIÇÃO em negrito (o título, a primeira frase, como aparece na tela — ex.: **Pode criar CF com documentos de talões diferentes?**) seguida do NOME INTERNO entre parênteses (ex.: transp_podeCriarCFComDocsDeTaloesDiferentes); funcionalidade não tem nome interno: só a Descrição. ⚠️ NUNCA escreva o CÓDIGO (o número) do parâmetro/funcionalidade, nem "parâmetro 1117": os códigos mudaram entre versões do sistema e deixaram de bater. Se o artigo citar só o número, troque-o pela Descrição e pelo Nome Interno do item correspondente da seção (ou pelo nome que o próprio artigo trouxer); se não houver nome nenhum, descreva o item pelo que ele faz, sem número. Depois: uma frase do que ele faz; e como precisa estar. PARÂMETRO: diga "precisa estar **Sim**" (ou **Não**) só se a Descrição deixar isso claro — cuidado com "Impedir/Obrigar/Restringir/Bloquear", em que liberar a ação exige o valor oposto; se o valor for número ou texto, escreva "confira o valor configurado" e o que ele controla. FUNCIONALIDADE ("Quem pode…"): é permissão — diga que o usuário (ou o grupo dele) precisa ter essa funcionalidade LIBERADA;
-       - onde conferir: copie os caminhos do cabeçalho da seção (parâmetros e funcionalidades ficam em lugares diferentes; depois de alterar, vale atualizar as permissões);
-       - se mais de um item condiciona, liste todos.
-     Em seguida, uma linha de ligação ("Com isso configurado, siga o procedimento:") e então o passo a passo completo do conhecimento (as regras 4 e 5 continuam valendo, sem omitir nada). Se o conhecimento NÃO trouxer o passo a passo desta pergunta, entregue só o bloco e diga que o procedimento não está documentado (sem a linha de ligação e sem inventar passos). Em pergunta de sim/não ("é possível…?"), a resposta direta vem DEPOIS do bloco ("Sim, é possível — com o item acima configurado."). Se a pergunta é sobre o próprio item ("para que serve…?"), explique o item em vez de montar o bloco. Esta regra vale também ao reaproveitar um artigo ou uma resposta aprovada (regra 11): se o parâmetro/funcionalidade que condiciona aparecer lá no fim, leve-o para o início.
-   • APENAS RELACIONADO = é do mesmo assunto, mas a ação funciona sem ele: NÃO abra a resposta com ele; deixe no FIM, como "💡 Verifique também o parâmetro/funcionalidade X…" (no máximo 2).
-   Só conta como CONDICIONA se o OBJETO e a AÇÃO da Descrição forem os mesmos da pergunta (ex.: vincular + documentos de talões/empresas diferentes + contrato de frete); item que só divide uma palavra solta (emitir, opção, permitir, valor, nota…) NÃO condiciona. Um item "MENCIONADO NO ARTIGO" só é pré-requisito se o artigo disser que ele é necessário para o que foi perguntado (e não que é opcional). Se nenhum item condiciona a pergunta, NÃO crie o bloco. Nunca invente parâmetro, funcionalidade ou valor que não esteja no conhecimento, e nunca cite códigos (números) de parâmetros/funcionalidades, em nenhuma parte da resposta. O "Valor de referência" NÃO é como o sistema do cliente está configurado (você não sabe): nunca diga "o seu está Sim/Não".`;
-    // Dica curta, só quando a pergunta tem cara de "depende de um parâmetro" e há o que conferir.
-    function dica(ehCondicao, res) {
-        if (!ehCondicao || !res || !(res.parametros.length || res.funcionalidades.length)) return '';   // só em pergunta de condição (item só mencionado num artigo não dispara a dica)
-        return '\n🔎 PRÉ-REQUISITO (regra 9): esta pergunta pode depender de um parâmetro ou funcionalidade. Confira a seção PARÂMETROS E FUNCIONALIDADES RELACIONADOS antes de responder; se algum CONDICIONA o que foi perguntado, a resposta COMEÇA por "⚙️ Antes de tudo, verifique:".\n';
-    }
+    // Regra 9 do prompt (o resto das regras fica em chat.js). Desde a v29.1.0 ela NÃO manda abrir a resposta pelo parâmetro/funcionalidade (pedido do dono: confundia mais do que ajudava):
+    // a IA responde o que achar certo para o que foi perguntado. O que continua valendo é a regra "nunca o código" (REGRA_SEM_CODIGO, abaixo).
+    const REGRA = `9. PARÂMETROS E FUNCIONALIDADES: a seção "PARÂMETROS E FUNCIONALIDADES RELACIONADOS" (quando existir) é só material de apoio. Responda ao que foi perguntado, do jeito que for mais correto e útil — não é obrigatório abrir a resposta com parâmetro ou funcionalidade, e um item que apenas tem relação com o assunto não precisa aparecer. Cite um parâmetro/funcionalidade somente quando ele fizer parte da resposta (a pergunta é sobre ele, ou o procedimento só funciona com ele habilitado, como diz o próprio artigo), no ponto em que ele importa, pela DESCRIÇÃO em negrito e, no parâmetro, pelo NOME INTERNO entre parênteses — nunca pelo código. Nunca invente parâmetro, funcionalidade ou valor que não esteja no conhecimento. O "Valor de referência" NÃO é como o sistema do cliente está configurado (você não sabe): nunca diga "o seu está Sim/Não".`;
 
     // ── NUNCA o código (número) de parâmetro ou funcionalidade (instrução do dono do projeto, v28.36.0) ──
     // Os códigos já não seguem um padrão e informar o número só atrapalha a pessoa a achar o item na tela. Duas camadas:
@@ -261,5 +250,5 @@ const Prereq = (function () {
         }).replace(RE_NOME_COD, '$1');
     }
 
-    return { ehPerguntaDeCondicao, buscar, buscarEm, indexar, tokens, citadosNosArtigos, combinar, montarContexto, formatarItem, dica, REGRA, REGRA_SEM_CODIGO, LEMBRETE_SEM_CODIGO, semCodigo, CAMINHOS, PADRAO, GRUPOS };
+    return { ehPerguntaDeCondicao, buscar, buscarEm, indexar, tokens, citadosNosArtigos, combinar, montarContexto, formatarItem, REGRA, REGRA_SEM_CODIGO, LEMBRETE_SEM_CODIGO, semCodigo, CAMINHOS, PADRAO, GRUPOS };
 })();

@@ -225,12 +225,13 @@ function liberarChat(modo="completo"){
     isVectorizing = false;
     b.removeAttribute('title');   // (durante a carga o título do selo guardava o detalhe da fase)
     if (typeof Pronto !== 'undefined') Pronto.liberar(); else sendBtn.disabled = false;   // libera o ➤ e tira o aviso de cima do campo (js/app/prontidao.js)
+    try { if (typeof AgenteChat !== 'undefined') AgenteChat.agendar(); } catch (e) { /* o agente se prepara na 1ª pergunta */ }   // o Agente de IA (js/app/agente-chat.js) se prepara numa folga do navegador: a 1ª pergunta já o encontra pronto
     searchInput.placeholder = "Digite sua dúvida...";
     const pi = ` [${mcpConfig.provider}/${mcpConfig.model.split('/').pop()}]`;
     if(modo === "completo"){
         b.innerText = `IA Pronta (${manualVetorizado.length})${pi}`;
         b.className = "badge";
-        if(w) w.innerHTML = _welcomeHero(si, 'Sou o assistente IA <b>Bsoft TMS</b>. Escolha um atalho abaixo ou digite exatamente qual é a sua dúvida.', `<span class="hero-pill"><b>${manualVetorizado.length}</b> artigos na base</span><span class="hero-pill">IA: <b>${escapeHtml(String(mcpConfig.model).split('/').pop())}</b></span><span class="hero-pill">${si.dataCompleta}</span>`) + _menuBtnsHtml();
+        if(w) w.innerHTML = _welcomeHero(si, _apresentacaoIA() + ' Escolha um atalho abaixo ou digite exatamente qual é a sua dúvida.', `<span class="hero-pill"><b>${manualVetorizado.length}</b> artigos na base</span><span class="hero-pill">${_pilulaIA()}</span><span class="hero-pill">${si.dataCompleta}</span>`) + _menuBtnsHtml();
     }
     else if(modo === "parcial"){
         b.innerText = `IA Pronta (${manualVetorizado.length} +)${pi}`;
