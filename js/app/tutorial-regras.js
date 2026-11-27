@@ -785,12 +785,27 @@ async function enviarWizardRegraDnd(){
     const li=Date.now();
     try{
         const msgsIA=[{role:'system',content:sysMsg},{role:'user',content:'Monte a regra conforme a solicitacao abaixo.\n'+configTxt}];
-        let result=await callMCPSemPensamento(msgsIA,{temperature:REGRAS_TEMPERATURA,maxTokens: REGRAS_MAX_TOKENS});
-        result.text=_regraLimparContinuacao(result.text);   // resposta cortada e continuada: tira o pedaço cortado se a IA recomeçou a regra
-        // Conferência automática (assistentes em telas): se a regra entregue ainda altera o valor do ICMS ou lê um campo antes de calculá-lo, a IA recebe a lista e entrega a regra de novo (uma vez só).
-        // Só vale a 2ª resposta se vier com código e com menos problemas que a 1ª; se a 2ª passada falhar, segue a 1ª resposta (que ainda leva os avisos no cartão).
         const ctxConf={original:[canvasTxt,regraCola].filter(Boolean).join('\n'),pedido:descricao};
-        const probs=(_as&&_as.problemasNaResposta)?_as.problemasNaResposta(result.text,ctxConf):[];
+        // v29.2.0 — AGENTE DE REGRAS (js/app/agente-regras.js), só nos assistentes em telas (Nova Versão / Beta): o mesmo prompt de sempre + a documentação oficial da equipe (manual de funções e os artigos do assunto)
+        // + conferência de cada resposta (sintaxe, função/campo que não existe, ICMS, ordem, linha perdida, loop) com até 3 correções automáticas. Qualquer falha cai no gerador clássico logo abaixo, como sempre foi.
+        // Desligar: Personalizar › "Usar o Agente de IA nas regras" ou ?agente=0.
+        let result=null,_viaAgente=false;
+        if(_as&&typeof AgenteRegras!=='undefined'&&AgenteRegras.ativo()){
+            try{
+                result=await AgenteRegras.gerar({sysMsg,userMsg:msgsIA[1].content,pedido:descricao,original:ctxConf.original,nomes:nomesOutros.concat(nomesTabela),assistente:_as,
+                    aoStatus:t=>{try{const sp=ld.firstElementChild;if(sp)sp.textContent=t;}catch(e){}}});
+                _viaAgente=true;
+                const _ag=result.agente;
+                console.log('%c🤖 [regras] agente: '+_ag.chamadasIA+' chamada(s) de IA · '+_ag.reparos+' correção(ões) · '+(_ag.problemas.length?_ag.problemas.length+' ponto(s) ainda pendente(s)':'conferida, sem pendências')+' · '+(_ag.referencia?'manual A'+_ag.referencia.id:'sem manual')+(_ag.apoio.length?' + '+_ag.apoio.map(a=>'A'+a.id).join(', '):'')+' · '+Math.round(_ag.ms/1000)+' s','color:#7c3aed;font-weight:600;');
+            }catch(e){ console.warn('[regras] o agente de regras falhou; sigo pelo gerador clássico:',e); result=null; _viaAgente=false; }
+        }
+        if(!result){
+            result=await callMCPSemPensamento(msgsIA,{temperature:REGRAS_TEMPERATURA,maxTokens: REGRAS_MAX_TOKENS});
+            result.text=_regraLimparContinuacao(result.text);   // resposta cortada e continuada: tira o pedaço cortado se a IA recomeçou a regra
+        }
+        // Conferência automática (assistentes em telas): se a regra entregue ainda altera o valor do ICMS ou lê um campo antes de calculá-lo, a IA recebe a lista e entrega a regra de novo (uma vez só).
+        // Só vale a 2ª resposta se vier com código e com menos problemas que a 1ª; se a 2ª passada falhar, segue a 1ª resposta (que ainda leva os avisos no cartão). (O agente já conferiu e corrigiu até 3 vezes: não repete.)
+        const probs=(!_viaAgente&&_as&&_as.problemasNaResposta)?_as.problemasNaResposta(result.text,ctxConf):[];
         if(probs.length){
             try{ const sp=ld.firstElementChild; if(sp)sp.textContent='🔎 Conferindo a regra e corrigindo '+probs.length+' ponto(s)...'; }catch(e){}
             try{
@@ -2591,7 +2606,9 @@ function renderizarCardRegra(texto, li, iaUsada, iaModelo, tipoRegra, estadoVolt
         .replace(/\*\*(.*?)\*\*/g,'<b>$1</b>')
         .replace(/\n/g,'<br>');
     const modelo = (iaModelo||'').split('/').pop();
-    const _rBadgeCfg = (iaUsada||'OpenRouter')==='Gemini'
+    const _rBadgeCfg = (iaUsada||'OpenRouter')==='Agente'
+        ? {emoji:'🤖',color:'#6d28d9',bg:'#f5f3ff',border:'#ddd6fe'}
+        : (iaUsada||'OpenRouter')==='Gemini'
         ? {emoji:'🌐',color:'#7c3aed',bg:'#f5f3ff',border:'#ddd6fe'}
         : (iaUsada||'OpenRouter')==='Custom'
         ? {emoji:'🔌',color:'#059669',bg:'#f0fdf4',border:'#bbf7d0'}

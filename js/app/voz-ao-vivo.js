@@ -369,7 +369,12 @@ registerProcessor('captura-bsoft', CapturaBsoft);`;
     async function executar(fc) {
         const args = fc.args || {};
         if (fc.name === 'consultar_base_bsoft') {
-            const r = await Promise.race([VozConsulta.consultar(args.pergunta), espera(25000).then(() => { throw new Error('a consulta demorou demais'); })]);
+            // v29.3.0: quando o agente está ligado, o conhecimento vem da pesquisa dele (a mesma do chat: artigos lidos, respostas aprovadas, parâmetros, rejeições, menu, regras fiscais); qualquer problema → a busca de sempre
+            const consulta = async () => {
+                if (typeof AgenteVoz !== 'undefined' && AgenteVoz.ativo()) { try { const a = await AgenteVoz.consultar(args.pergunta); if (a) return a; } catch (e) { console.warn('[voz ao vivo] o agente não consultou; uso a busca de sempre:', e); } }
+                return VozConsulta.consultar(args.pergunta);
+            };
+            const r = await Promise.race([consulta(), espera(25000).then(() => { throw new Error('a consulta demorou demais'); })]);
             const c = C;
             if (c) {
                 const T = c.turno; T.consultou = true; T.fontes = r.fontes;

@@ -9,7 +9,7 @@ const Prefs = (() => {
     const HIDDEN_DEFAULT = ['blog', 'repo'], RAIL_DEFAULTS = 1;
     // (v28.43: sem as escolhas de fundo, "animações e vidro" e ajuste automático de desempenho — o visual é único e leve. Quem as tinha salvas nas preferências ou na pasta do Meu Espaço não é afetado: elas só deixam de ser lidas.)
     const base = () => ({ accent: null, accentRgb: null, density: 'confortavel', startup: 'restore', sidebar: 'open',
-        railOrder: 'fixa', railLabels: true, abasDestaque: true, abasDica: false, smartDock: true, agente: true, desambiguar: true, esclarecer: true, ferramentaSugerida: true, formatoResposta: 'perguntar', rememberSide: true, hidden: HIDDEN_DEFAULT.slice(), railDefaults: RAIL_DEFAULTS, ws: null, usage: {}, newsSeen: 0, updated: 0,
+        railOrder: 'fixa', railLabels: true, abasDestaque: true, abasDica: false, smartDock: true, agente: true, agenteRegras: true, agenteVoz: true, desambiguar: true, esclarecer: true, ferramentaSugerida: true, formatoResposta: 'perguntar', rememberSide: true, hidden: HIDDEN_DEFAULT.slice(), railDefaults: RAIL_DEFAULTS, ws: null, usage: {}, newsSeen: 0, updated: 0,
         // Agenda: forma de ver (calendário/lista/cronograma), quadro ao abrir o sistema, avisos e início da semana
         agView: 'cal', agCrono: 28, agBoard: 'sempre', agToast: true, agNotify: false, agSound: false, agWeek: 'dom',
         // Recursos em teste (Personalizar › Recursos em teste): todos nascem DESLIGADOS. betaRegra = mostra o "Ct-e / Conhecimento Beta" no Criar Regra (js/app/regra-cte-beta.js): a versão em desenvolvimento do assistente; a "Nova Versão" (js/app/regra-cte-nova.js) é a cópia estável dele.

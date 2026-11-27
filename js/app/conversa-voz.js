@@ -69,6 +69,7 @@ REGRAS
             .replace(/https?:\/\/\S+/g, ' ')
             .replace(/\(\s*id da rotina[^)]*\)/gi, ' ').replace(/\[\s*pasta\s*\]/gi, ' ').replace(/#finalizado/gi, ' ')
             .replace(/\b(par[âa]metro|funcionalidade)s?\s+(?:n[º°o.]*\s*)?\d{1,5}\s*(?:[–—-]\s*)?/gi, '$1 ')   // o número (código) de parâmetro/funcionalidade nunca é falado: só o nome
+            .replace(/\(\s*[A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)+\s*\)/g, ' ').replace(/\b[a-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)+\b/g, ' ')   // nome interno de parâmetro ("transp_podeCriarCF…") nunca é falado: só a Descrição
             .replace(/\s*(?:→|->|›|»|>)\s*/g, ', depois ').replace(/\s+\/\s+/g, ', depois ')
             .replace(/[*_`#~|]/g, '')
             .replace(/\p{Extended_Pictographic}|️/gu, '')
@@ -273,6 +274,7 @@ REGRAS
     }
     function antecipar(texto) {
         if (!V || V.turno || palavrasDe(texto).length < 4 || ehContinuacao(texto) || respostaLocal(texto)) return;
+        if (typeof AgenteVoz !== 'undefined' && AgenteVoz.ativo(V) && AgenteVoz.pronto()) return;   // o agente pesquisa por conta própria (leva milissegundos): não adianta uma busca à parte
         const chave = norm(texto);
         if (V.pre && V.pre.chave === chave) return;
         V.pre = { chave, p: VozConsulta.consultar(consultaQuery(texto), opcoesConsulta()).catch(() => null) };
@@ -320,6 +322,17 @@ REGRAS
         T.timerFiller = setTimeout(() => { if (V && V.turno === T && !T.cancelado && !T.falouAlgo && !T.fillerFalado) { T.fillerFalado = true; V.ultimoFiller = (V.ultimoFiller + 1 + Math.floor(Math.random() * (FILLERS.length - 1))) % FILLERS.length; falar(FILLERS[V.ultimoFiller], T, true); } }, cfg().esperaFraseMs);
         try {
             const cont = ehContinuacao(texto); T.continuacao = cont;
+            // v29.3.0 — o AGENTE responde a chamada (js/app/agente-voz.js): pesquisa o banco (artigos, respostas aprovadas, parâmetros, rejeição, menu, regras) e devolve o fluxo da resposta NO MESMO FORMATO de um modelo;
+            // o resto (frases, 2 por vez, "quer que eu continue?", interromper, chat e log) é o de sempre. Não deu a tempo? Este turno segue pelo caminho de sempre logo abaixo (2 falhas seguidas: o agente sai da chamada).
+            if (typeof AgenteVoz !== 'undefined' && AgenteVoz.ativo(V)) {
+                const r = await AgenteVoz.abrir(T, { pergunta: texto, historico: V.hist.slice(-cfg().historico), continuar: cont, ultimaResposta: V.ultimaResposta,
+                    ordemDeModelos: ordemDeModelos().map(m => m.model), aoModelo: x => anotar(x.modelo, { ttft: x.ttft }), aoRuim: (modelo, min, motivo) => anotar(modelo, { ruimMin: min, motivo }),
+                    aoPrevia: p => { T.previa = p; V.ultimoConhecimento = V.ultimoConhecimento || '(agente)'; if (!cont) V.ultimaConsulta = consultaQuery(texto); PainelChamada.fontes(p.titulos || []); } });
+                if (T.cancelado) return;
+                if (r) { V.agenteFalhas = 0; T.viaAgente = true; T.leitor = r.leitor; T.fim = r.fim; await consumir(T, r); return; }
+                V.agenteFalhas = (V.agenteFalhas || 0) + 1;
+                console.warn('[conversa voz] o agente não respondeu a tempo; sigo pelo caminho de sempre (' + V.agenteFalhas + ' seguida(s))');
+            }
             let ctx;
             if (cont) {   // "continua": usa o conhecimento COMPLETO (já buscado em segundo plano quando a fala anterior foi cortada) — o enxuto talvez não tenha os passos seguintes
                 const completo = await (V.completoP || VozConsulta.consultar(V.ultimaConsulta, { escala: 1, artigos: 3, cabecalho: '' }).catch(() => null));
@@ -363,6 +376,10 @@ REGRAS
         }
         if (T.cancelado) return;
         if (!r) { falhar(T); return; }
+        return consumir(T, r);
+    }
+    // Daqui para a frente é igual para o modelo de sempre e para o agente: lê o fluxo, fala cada frase assim que fica pronta, corta no limite de frases e oferece "quer que eu continue?".
+    async function consumir(T, r) {
         T.modelo = r.modelo;
         const filtro = _makeThinkingFilter();   // <thinking>…</thinking> nunca é falado
         const k = cfg();
@@ -414,17 +431,17 @@ REGRAS
             try { r.leitor.cancel(); } catch (e) { /* já fechou */ }
             buffer = '';
             if (!/\?\s*$/.test(T.respFila)) falarFrase(T, 'Quer que eu continue?');
-            V.completoP = VozConsulta.consultar(V.ultimaConsulta, { escala: 1, artigos: 3, cabecalho: '' }).catch(() => null);
+            if (!T.viaAgente) V.completoP = VozConsulta.consultar(V.ultimaConsulta, { escala: 1, artigos: 3, cabecalho: '' }).catch(() => null);   // (com o agente, o "continua" refaz a pesquisa sozinho)
         } else {
             if (!limite) buffer += filtro.finish().slice(visivel).replace(/\s*\n+\s*/g, ' ');
             const cortada = /length|max_tokens|MAX_TOKENS/.test(fimMotivo || '');
             if (!limite) frase(true);
             if (cortada) buffer = '';   // bateu no limite de tokens no meio de uma frase: descarta o pedaço solto (a pessoa pede "continua" e ele volta)
             if (!limite && limpar(buffer)) { falarFrase(T, buffer); buffer = ''; }
-            if (cortada && T.respFila && !/\?\s*$/.test(T.respFila)) { falarFrase(T, 'Quer que eu continue?'); V.completoP = VozConsulta.consultar(V.ultimaConsulta, { escala: 1, artigos: 3, cabecalho: '' }).catch(() => null); }
+            if (cortada && T.respFila && !/\?\s*$/.test(T.respFila)) { falarFrase(T, 'Quer que eu continue?'); if (!T.viaAgente) V.completoP = VozConsulta.consultar(V.ultimaConsulta, { escala: 1, artigos: 3, cabecalho: '' }).catch(() => null); }
         }
         if (T.continuacao && !T.respFila) falarFrase(T, 'Isso é tudo que encontrei sobre esse assunto. Posso ajudar em mais alguma coisa?');   // a IA só repetiu o que já tinha dito
-        if (!V.completoP && /continu/i.test(T.respFila.slice(-70))) V.completoP = VozConsulta.consultar(V.ultimaConsulta, { escala: 1, artigos: 3, cabecalho: '' }).catch(() => null);   // ela mesma ofereceu continuar: deixa o conteúdo completo pronto
+        if (!T.viaAgente && !V.completoP && /continu/i.test(T.respFila.slice(-70))) V.completoP = VozConsulta.consultar(V.ultimaConsulta, { escala: 1, artigos: 3, cabecalho: '' }).catch(() => null);   // ela mesma ofereceu continuar: deixa o conteúdo completo pronto
         console.log(`%c⏱️ [conversa voz] ${T.modelo.split('/').pop()} · 1ª palavra ${r.ttft} ms · fim do turno → fala: ${Math.round((T.tFala || performance.now()) - T.tFim)} ms`, 'color:#0891b2;font-weight:600');
         T.streamAcabou = true; clearTimeout(T.timerFiller);
         if (!V.falando && !V.fila.length) aoFalaTerminar();
@@ -454,7 +471,8 @@ REGRAS
             if (V.hist.length > 12) V.hist = V.hist.slice(-12);
             V.ultimaResposta = resp;
             try { appendMessage('ai', esc(resp) + (interrompido ? ' <i>(interrompida)</i>' : '')); adicionarMensagemNaConversa('ai', esc(resp)); } catch (e) { console.warn('[conversa voz] chat:', e); }
-            if (T.ts) { try { registrarRespostaNoLog(T.ts, { resposta: resp, fonte: 'ia', modelo: (T.modelo.split('/').pop() || 'IA') + ' (voz)', fontes: T.fontes, revisao: 'nao_se_aplica' }); } catch (e) { console.warn('[conversa voz] log:', e); } }
+            if (T.viaAgente && !T.ts && !T.continuacao) { try { const d = AgenteVoz.dadosDoLog({ usados: T.previa && T.previa.usados, fontes: T.previa && T.previa.fontes }); T.fontes = d.fontes; T.ts = logSearch(T.pergunta, d.encontrou); } catch (e) { console.warn('[conversa voz] log:', e); } }   // (com o agente, o "encontrou?" só se sabe depois da pesquisa: a linha do log nasce aqui, 1 por pergunta como sempre)
+            if (T.ts) { try { registrarRespostaNoLog(T.ts, { resposta: resp, fonte: 'ia', modelo: (T.modelo.split('/').pop() || 'IA') + (T.viaAgente ? ' (voz, agente)' : ' (voz)'), fontes: T.fontes, revisao: 'nao_se_aplica' }); } catch (e) { console.warn('[conversa voz] log:', e); } }
         }
         if (!interrompido) { fase('ouvindo'); if (V.encerrarAoFinal) setTimeout(() => encerrar('despedida'), 400); }
     }
@@ -510,7 +528,8 @@ REGRAS
         if (!suporta()) return false;
         V = { ativa: true, rec: null, recVivo: false, errosRede: 0, fase: 'ouvindo', faseDesde: Date.now(), inicio: Date.now(), mudo: false, semFone: PainelChamada.lerFone(true),
             base: 0, ultimoTotal: 0, textoAtual: '', prefixo: '', timerFim: 0, timerPre: 0, turnoId: 0, turno: null, hist: [], ultimoConhecimento: '', ultimasFontes: [], ultimaConsulta: '', ultimaPergunta: '', ultimaResposta: '',
-            fila: [], falando: false, utts: [], falaRecente: '', ignorarAte: 0, voz: escolherVoz(), turnos: 0, tick: 0, ultimoFiller: -1, pre: null, encerrarAoFinal: false };
+            fila: [], falando: false, utts: [], falaRecente: '', ignorarAte: 0, voz: escolherVoz(), turnos: 0, tick: 0, ultimoFiller: -1, pre: null, encerrarAoFinal: false, agenteFalhas: 0 };
+        try { if (typeof AgenteVoz !== 'undefined' && AgenteVoz.ativo(V)) AgenteVoz.preparar(); } catch (e) { /* o agente se prepara na 1ª pergunta ou a chamada segue sem ele */ }   // (v29.3.0: o agente responde a chamada; normalmente já está pronto)
         PainelChamada.montar({
             semFone: V.semFone,
             aviso: 'O navegador transcreve o que você fala e o texto vai para IAs gratuitas. Não fale dados pessoais de clientes.',
@@ -535,7 +554,7 @@ REGRAS
     }
 
     return { disponivel, suporta, iniciar, encerrar, ativa: () => !!V, interromper,
-        estado: () => V ? { fase: V.fase, turnos: V.turnos, mudo: V.mudo, semFone: V.semFone, falando: V.falando, filaFala: V.fila.length, modeloAtual: V.turno ? V.turno.modelo : '', hist: V.hist.length } : null,
+        estado: () => V ? { fase: V.fase, turnos: V.turnos, mudo: V.mudo, semFone: V.semFone, falando: V.falando, filaFala: V.fila.length, modeloAtual: V.turno ? V.turno.modelo : '', hist: V.hist.length, agenteFalhas: V.agenteFalhas || 0 } : null,
         config: cfg, ordemDeModelos, paraFala };
 })();
 window.ConversaVoz = ConversaVoz;

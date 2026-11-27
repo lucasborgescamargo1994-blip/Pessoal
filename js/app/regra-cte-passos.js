@@ -419,6 +419,163 @@ function _cnAvisoOrdemNaResposta(texto) {
     const linhas = achados.slice(0, 4).map(a => '- ' + rot(a.lidoPor) + ' usa ' + rot(a.campo) + ', que só é calculado mais abaixo na regra: nessa conta entra o valor que já estava na tela, não o calculado. Se o valor calculado deve entrar, mova o def de ' + a.campo + ' para antes de ' + a.lidoPor + '.').join('\n');
     return texto + '\n\n**🔎 Conferência automática da ordem:**\n' + linhas + (achados.length > 4 ? '\n- (e mais ' + (achados.length - 4) + ' caso(s) parecido(s))' : '');
 }
+// ── Conferências do AGENTE DE REGRAS (v29.2.0) ───────────────────────────────────────────────────────────────────────────────────────
+// Rodam só quando o agente gera a regra (ctx.agente em _cnProblemasDaResposta): o caminho clássico fica exatamente como era. São ESTÁTICAS (o código da regra nunca é executado) e viram frases para a IA
+// corrigir na rodada seguinte. As de "função/campo fora da documentação" dizem para CONFERIR (não que está errado): o pedido, a regra original e os artigos da equipe valem como documentação.
+// Texto do código sem comentários e com o miolo das aspas apagado (as posições e as quebras de linha continuam as mesmas). erros = aspa ou comentário que não fecha.
+function _cnSemTextos(codigo) {
+    const s = String(codigo == null ? '' : codigo), n = s.length, erros = [], linha = k => s.slice(0, k).split('\n').length;
+    let r = '', i = 0;
+    while (i < n) {
+        const c = s[i], d = s[i + 1];
+        if (c === '/' && d === '/') { while (i < n && s[i] !== '\n') { r += ' '; i++; } continue; }
+        if (c === '/' && d === '*') { const f = s.indexOf('*/', i + 2), fim = f < 0 ? n : f + 2; if (f < 0) erros.push('o comentario /* da linha ' + linha(i) + ' nao e fechado com */'); r += s.slice(i, fim).replace(/[^\n]/g, ' '); i = fim; continue; }
+        if (c === '"' || c === "'" || c === '`') {
+            let j = i + 1;
+            while (j < n && s[j] !== c && !(c !== '`' && s[j] === '\n')) { if (s[j] === '\\') j++; j++; }
+            if (j >= n || s[j] !== c) { erros.push('o texto entre aspas que comeca na linha ' + linha(i) + ' nao e fechado'); r += c + s.slice(i + 1, Math.min(j, n)).replace(/[^\n]/g, ' '); i = Math.min(j, n); continue; }
+            r += c + s.slice(i + 1, j).replace(/[^\n]/g, ' ') + c; i = j + 1; continue;
+        }
+        r += c; i++;
+    }
+    return { limpo: r, erros };
+}
+// Mesmo código sem comentários, com os textos entre aspas INTEIROS (é onde ficam os nomes de campo de obt("campo")).
+function _cnSemComentarios(codigo) {
+    const s = String(codigo == null ? '' : codigo), n = s.length;
+    let r = '', i = 0;
+    while (i < n) {
+        const c = s[i], d = s[i + 1];
+        if (c === '/' && d === '/') { while (i < n && s[i] !== '\n') i++; continue; }
+        if (c === '/' && d === '*') { const f = s.indexOf('*/', i + 2); const fim = f < 0 ? n : f + 2; r += s.slice(i, fim).replace(/[^\n]/g, ' '); i = fim; continue; }
+        if (c === '"' || c === "'" || c === '`') { let j = i + 1; while (j < n && s[j] !== c && !(c !== '`' && s[j] === '\n')) { if (s[j] === '\\') j++; j++; } r += s.slice(i, Math.min(n, j + 1)); i = Math.min(n, j + 1); continue; }
+        r += c; i++;
+    }
+    return r;
+}
+// Parênteses, chaves, colchetes e aspas que não fecham: o que deixaria a regra inválida ao salvar.
+function _cnSintaxeDoCodigo(codigo) {
+    const { limpo, erros } = _cnSemTextos(codigo), p = erros.slice(), pilha = [], par = { ')': '(', '}': '{', ']': '[' }, linha = k => limpo.slice(0, k).split('\n').length;
+    for (let i = 0; i < limpo.length; i++) {
+        const c = limpo[i];
+        if (c === '(' || c === '{' || c === '[') pilha.push({ c, i });
+        else if (c === ')' || c === '}' || c === ']') {
+            const t = pilha.pop();
+            if (!t) { p.push('ha um "' + c + '" sobrando na linha ' + linha(i)); break; }
+            if (t.c !== par[c]) { p.push('o "' + t.c + '" da linha ' + linha(t.i) + ' fecha com "' + c + '" na linha ' + linha(i)); break; }
+        }
+    }
+    if (pilha.length && !p.length) { const t = pilha[pilha.length - 1]; p.push('o "' + t.c + '" aberto na linha ' + linha(t.i) + ' nao e fechado'); }
+    return p.slice(0, 3);
+}
+// Código do campo VALIDAÇÃO (manual da equipe: "deverá TERMINAR com return true (salvar) ou return false (não salvar — padrão)"). O erro perigoso: um "return false" que roda SEMPRE — fora de qualquer if, ou
+// depois de um if SEM chaves (que só controla o comando seguinte) — sem nenhum "return true" antes: o Ct-e nunca mais salvaria. Devolve frases (vazio se não há return ou se está certo).
+function _cnValidacaoPerigosa(codigo) {
+    const { limpo } = _cnSemTextos(codigo);
+    if (!/\breturn\b/.test(limpo)) return [];
+    const p = [], linha = k => limpo.slice(0, k).split('\n').length;
+    let chaves = 0, parens = 0, ini = 0, viuTrue = false;
+    const re = /\breturn\s+(true|false)\b/g, pos = [];
+    let m; while ((m = re.exec(limpo))) pos.push({ i: m.index, v: m[1] });
+    let k = 0;
+    for (let i = 0; i < limpo.length && k < pos.length; i++) {
+        if (i === pos[k].i) {
+            const alvo = pos[k++];
+            if (chaves === 0 && parens === 0) {
+                const cab = limpo.slice(ini, i).replace(/\s+/g, ' ').trim();   // o que vem entre o fim da instrução anterior e este return: se for "if (…)" ou "else", o return é CONDICIONAL
+                const condicional = /^(?:else\s+)?if\s*\(.*\)$/.test(cab) || /^else$/.test(cab);
+                if (alvo.v === 'true') viuTrue = true;   // (qualquer "return true" antes já dá um caminho para salvar — mesmo condicional)
+                if (alvo.v === 'false' && !condicional && !viuTrue) { p.push('VALIDACAO: o "return false" da linha ' + linha(i) + ' roda SEMPRE (esta fora do if, ou o if sem chaves so controla o comando seguinte): o Ct-e nunca seria salvo. Use if (condicao) { alert("..."); return false; } e termine a validacao com return true;'); break; }
+            }
+            continue;
+        }
+        const c = limpo[i];
+        if (c === '(') parens++; else if (c === ')') parens = Math.max(0, parens - 1);
+        else if (c === '{') { chaves++; ini = i + 1; } else if (c === '}') { chaves = Math.max(0, chaves - 1); if (chaves === 0) ini = i + 1; }
+        else if (c === ';' && chaves === 0 && parens === 0) ini = i + 1;
+    }
+    if (!p.length && pos.some(x => x.v === 'false') && !pos.some(x => x.v === 'true')) p.push('VALIDACAO: ha "return false" mas nenhum "return true": o Ct-e nunca seria salvo. Termine a validacao com return true; (quando esta tudo certo) e deixe o return false so dentro do if que acha o erro.');
+    return p;
+}
+// Funções e objetos DOCUMENTADOS (REGRAS_SO_O_DOCUMENTADO + artigo "Funções disponíveis" da equipe: obtGlob/defGlob, obtStr/defStr, montaObsPV, arredondaISS…). Qualquer outra chamada é suspeita.
+const CN_FUNCOES_DOC = new Set('def obt defStr obtStr defGlob obtGlob $SV $V alert montaObs montaObsChave montaObsPV montaObsPVChave arredondaISS parseFloat parseInt Number String Boolean isNaN isFinite Date Array'.split(' '));
+const CN_PALAVRAS_JS = new Set('if for while switch catch function return typeof else do new try case in of delete void throw with'.split(' '));
+const CN_OBJETOS_DOC = { Math: null, Number: null, String: null, Boolean: null, Date: null, Array: null, tabelaPrecos: null, IRRF: new Set(['defineDescontoIRRF']), COM_RF: new Set(['composicaoFrete', 'permissaoVeiculoAbastecimento']), document: new Set(['getElementsByName']) };
+// Nomes que o texto cita como função ("obtGlob(nome)", "arredondaISS()"): usados para ampliar a lista de funções válidas com o que os artigos da equipe e a regra original já usam.
+function _cnNomesDeFuncao(texto) {
+    const r = new Set(); let m; const re = /(?:^|[^\w$.])([A-Za-z_$][\w$]*)\s*\(/g, t = String(texto || '');
+    while ((m = re.exec(t))) r.add(m[1]);
+    return r;
+}
+// [{ nome, linha }] das funções chamadas que não são documentadas, nem do próprio código, nem citadas em extras (Set/array de nomes).
+function _cnFuncoesForaDaDoc(codigo, extras) {
+    const { limpo } = _cnSemTextos(codigo), ok = new Set(extras || []), locais = new Set(), vistos = new Set(), achados = [];
+    let m;
+    const reDecl = /\b(?:var|let|const|function)\s+([A-Za-z_$][\w$]*)/g; while ((m = reDecl.exec(limpo))) locais.add(m[1]);
+    const reAtr = /(^|[^\w$.])([A-Za-z_$][\w$]*)\s*(?:=(?!=)|\+=|-=|\*=|\/=)/g; while ((m = reAtr.exec(limpo))) locais.add(m[2]);
+    const reParam = /function\s*[\w$]*\s*\(([^)]*)\)/g; while ((m = reParam.exec(limpo))) m[1].split(',').forEach(x => { x = x.trim(); if (x) locais.add(x); });
+    const reCatch = /catch\s*\(\s*([A-Za-z_$][\w$]*)/g; while ((m = reCatch.exec(limpo))) locais.add(m[1]);
+    const reFor = /for\s*\(\s*(?:var|let|const)?\s*([A-Za-z_$][\w$]*)/g; while ((m = reFor.exec(limpo))) locais.add(m[1]);
+    const re = /([A-Za-z_$][\w$]*)\s*\(/g;
+    while ((m = re.exec(limpo))) {
+        const id = m[1], antes = limpo.slice(0, m.index).replace(/\s+$/, ''), linha = limpo.slice(0, m.index).split('\n').length;
+        if (antes.endsWith('.')) {   // método de um objeto: só confere os objetos que o sistema documenta (Math.x, IRRF.x, COM_RF.x, document.x); o resto é método de um valor (ex.: valor.toFixed)
+            const ob = /(?:^|[^\w$.])([A-Za-z_$][\w$]*)$/.exec(antes.slice(0, -1).replace(/\s+$/, ''));
+            if (!ob) continue;
+            const obj = ob[1];
+            if (Object.prototype.hasOwnProperty.call(CN_OBJETOS_DOC, obj)) { const permitidos = CN_OBJETOS_DOC[obj]; if (permitidos && !permitidos.has(id) && !ok.has(obj + '.' + id)) { const k = obj + '.' + id; if (!vistos.has(k)) { vistos.add(k); achados.push({ nome: k, linha }); } } }
+            else if (/^[A-Z]/.test(obj) && !locais.has(obj) && !ok.has(obj)) { const k = obj + '.' + id; if (!vistos.has(k)) { vistos.add(k); achados.push({ nome: k, linha }); } }
+            continue;
+        }
+        if (CN_PALAVRAS_JS.has(id) || CN_FUNCOES_DOC.has(id) || locais.has(id) || ok.has(id) || vistos.has(id)) continue;
+        vistos.add(id); achados.push({ nome: id, linha });
+    }
+    return achados;
+}
+// Todas as palavras de uma lista de textos (documentação, regra original, pedido…): base para saber se um nome de campo "existe em algum lugar".
+function _cnConhecidos(textos) {
+    const s = new Set();
+    (textos || []).forEach(t => { (String(t == null ? '' : t).match(/[A-Za-z_$][\w$]*/g) || []).forEach(x => s.add(x)); });
+    return s;
+}
+// Nomes de campo usados em obt()/def()/obtStr()/defStr() que não aparecem em lugar nenhum da documentação, da regra original, do pedido ou dos campos informados. Família dados_*, merc_*, freteMinimo_* é aceita.
+function _cnCamposForaDaDoc(codigo, conhecidos) {
+    const s = _cnSemComentarios(codigo), re = /\b(?:obt|def|obtStr|defStr)\s*\(\s*(["'])([^"']+)\1/g, achados = [], vistos = new Set();
+    let m;
+    while ((m = re.exec(s))) {
+        const nome = m[2].trim(), base = nome.replace(/\[.*$/, '');
+        if (!base || vistos.has(nome)) continue;
+        vistos.add(nome);
+        if (conhecidos.has(nome) || conhecidos.has(base) || /^(?:dados_|merc_|freteMinimo_)/.test(base) || /^\d/.test(base)) continue;
+        achados.push(nome);
+    }
+    return achados;
+}
+// def() que a regra ORIGINAL tinha e a nova não tem mais (quando o pedido não mandou retirar nem refazer): é o jeito mais comum de a IA "perder" um pedaço da regra do cliente.
+function _cnDefsPerdidos(original, novo, pedido) {
+    const ped = _cnPalavras(pedido || '');
+    if (!String(original || '').trim() || CN_PEDIDO_TIRA.test(ped) || /\b(do zero|refa\w+|reescrev\w+|substitu\w+|nova regra)\b/.test(ped)) return [];
+    const antes = _cnDefsDoCodigo(original).map(d => d.alvo), depois = new Set(_cnDefsDoCodigo(novo).map(d => d.alvo));
+    return Array.from(new Set(antes)).filter(x => !depois.has(x));
+}
+// Junta tudo: devolve as frases (sem acento, como as demais conferências) para a IA corrigir. ctx: { docs, original, pedido, canvas, nomes[] }.
+function _cnProblemasDoAgente(codigo, ctx) {
+    ctx = ctx || {};
+    const p = [];
+    _cnSintaxeDoCodigo(codigo).forEach(e => p.push('SINTAXE: ' + e + '. Corrija: parenteses, chaves e aspas tem que fechar.'));
+    _cnValidacaoPerigosa(codigo).forEach(e => p.push(e));
+    const fontes = [ctx.docs, ctx.original, ctx.pedido, ctx.canvas, (ctx.nomes || []).join(' ')];
+    const funcoesOk = new Set(); fontes.forEach(t => _cnNomesDeFuncao(t).forEach(x => funcoesOk.add(x)));
+    ['msg', 'mensagem', 'preventSave', 'bloquear', 'impedirSalvar', 'validar', 'setError', 'cancelar'].forEach(x => { if (!_cnNomesDeFuncao([ctx.original, ctx.canvas].join(' ')).has(x)) funcoesOk.delete(x); });   // (os nomes PROIBIDOS que o prompt cita como exemplo de "não existe" nunca viram "documentados")
+    _cnFuncoesForaDaDoc(codigo, funcoesOk).slice(0, 3).forEach(f => p.push('A funcao ' + f.nome + '() (linha ' + f.linha + ') NAO esta documentada nem existe na regra original: nao existe no sistema. Troque por um recurso documentado (ex.: alert("texto") para avisar) ou remova, e explique nos pontos de atencao.'));
+    const conhecidos = _cnConhecidos([(typeof CONTEXTO_REGRAS !== 'undefined' ? CONTEXTO_REGRAS : ''), (typeof REGRAS_CTE_CALCULO !== 'undefined' ? REGRAS_CTE_CALCULO : ''), (typeof REGRAS_CTE_RECEITAS !== 'undefined' ? REGRAS_CTE_RECEITAS : ''),
+        (typeof CTE_CAMPOS !== 'undefined' ? CTE_CAMPOS.map(c => c.campo).join(' ') : '')].concat(fontes));
+    const fora = _cnCamposForaDaDoc(codigo, conhecidos);
+    if (fora.length) p.push('O(s) campo(s) ' + fora.slice(0, 4).map(x => '"' + x + '"').join(', ') + ' nao aparece(m) na documentacao, na regra original nem no pedido: confira o nome. Se nao existir no sistema, troque ou remova (nao chute nomes); se o pedido ou a regra original usa esse nome, mantenha e registre nos pontos de atencao.');
+    _cnDefsPerdidos(ctx.original, codigo, ctx.pedido).slice(0, 4).forEach(c => p.push('A regra original definia def("' + c + '", ...) e a nova nao define mais. Se o pedido NAO mandou retirar, volte a incluir esse bloco (preserve o que nao foi pedido).'));
+    _cnLoopsDoCodigo(codigo).slice(0, 2).forEach(l => p.push('LOOP: ' + l.caminho.join(' -> ') + '. Cada campo depende do outro e a conta nunca fecha: calcule a partir dos campos de origem (nao de um total que ja inclui o campo).'));
+    return p;
+}
 // Problemas que a regra entregue pela IA ainda tem e que ela mesma pode corrigir (o ICMS alterado e campos lidos antes de serem calculados): lista de frases, para a SEGUNDA passada ("conferência automática"
 // em enviarWizardRegraDnd: a IA recebe a lista e entrega a regra de novo). Vazia = nada a corrigir (ou nenhum código na resposta, como na recusa "LOOP DETECTADO").
 // ctx (opcional): { original: a regra de antes do pedido, pedido: o texto escrito para a IA } — com ele também confere se a IA TIROU de uma conta (base, total) algo que a regra original somava sem o pedido mandar tirar.
@@ -436,9 +593,10 @@ function _cnProblemasDaResposta(texto, ctx) {
             if (perdidos.length) p.push('A conta de ' + alvo + ' deixou de considerar: ' + perdidos.slice(0, 8).join(', ') + ' (a regra original considerava, direta ou indiretamente). Se o pedido NAO mandou retirar, volte a incluir; se mandou, mantenha e registre nos pontos de atencao.');
         });
     }
+    if (ctx && ctx.agente) _cnProblemasDoAgente(codigo, ctx).forEach(x => p.push(x));   // v29.2.0: só quando o agente gera (sintaxe, função/campo fora da documentação, def perdido, loop)
     return p;
 }
-const CN_PEDIDO_TIRA = /\b(tira\w*|tirar|remov\w*|retir\w*|exclu\w*|apag\w*|delet\w*|elimin\w*|sem|nao some\w*|nao soma\w*|nao inclu\w*|nao conside\w*|deixa\w* de)\b/;
+const CN_PEDIDO_TIRA = /\b(tir[ae]\w*|remov\w*|retir\w*|exclu\w*|apag\w*|delet\w*|elimin\w*|sem|nao some\w*|nao soma\w*|nao inclu\w*|nao conside\w*|deixa\w* de)\b/;
 // Para cada campo definido no código: os campos "de origem" (os que a regra não define) de que ele depende, seguindo as definições (total -> base -> frete + pedágio…). Map campo -> Set.
 function _cnFolhasPorCampo(codigo) {
     const defs = _cnDefsDoCodigo(codigo), dep = new Map();
