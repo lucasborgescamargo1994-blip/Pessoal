@@ -43,8 +43,10 @@ Assistente de suporte do Bsoft TMS: responde dúvidas com a base de conhecimento
 25. [Primeira emissão guiada (migracao.html)](#primeira-emissão-guiada-migracaohtml-v2841)
 26. [IA local no navegador: migracaolocal.html (e simuladorlocal.html)](#ia-local-no-navegador-migracaolocalhtml-e-simuladorlocalhtml-v2842)
 27. [Agente de IA: o chat responde pelo agente](#agente-de-ia-o-chat-responde-pelo-agente-v29)
-28. [Problemas comuns](#problemas-comuns)
-29. [Para quem vai mexer no código](#para-quem-vai-mexer-no-código)
+28. [Agente de IA na geração de regras (Criar Regra › Ct-e Nova Versão)](#agente-de-ia-na-geração-de-regras-criar-regra--ct-e-nova-versão-v292)
+29. [Agente de IA nas chamadas de voz (o 📞)](#agente-de-ia-nas-chamadas-de-voz-o--v293)
+30. [Problemas comuns](#problemas-comuns)
+31. [Para quem vai mexer no código](#para-quem-vai-mexer-no-código)
 
 ---
 
@@ -73,7 +75,7 @@ bsoft-suporte-ia/
 ├─ js/
 │  ├─ core/                ← base compartilhada (IA/MCP, Supabase, markdown, busca de respostas rápidas...)
 │  ├─ agente/              ← motor.js: o MOTOR do Agente de IA (v29) — GERADO a partir da pasta irmã `agente-bsoft/nucleo` (não edite à mão; veja "Agente de IA")
-│  ├─ app/                 ← lógica do chat e dos assistentes (ferramentas.js = abas das ferramentas; regras, relatórios, Sefaz...; agente-chat.js = a ponte do chat com o agente)
+│  ├─ app/                 ← lógica do chat e dos assistentes (ferramentas.js = abas das ferramentas; regras, relatórios, Sefaz...; agente-chat.js = a ponte do chat com o agente; agente-regras.js = a ponte da geração de regras com o agente)
 │  ├─ faq/                 ← página do FAQ: logica.js (links de vídeo, busca, importação do banco) e tela.js
 │  ├─ migracao/            ← primeira emissão guiada: logica.js (sem tela, testada em Node), dados.js (banco só leitura + armazenamento do navegador), ia.js (chat), tela-base.js e tela-passos.js (a tela)
 │  ├─ ia-local/            ← modelo.js: o MOTOR da IA local (llama.cpp em WebAssembly via wllama; baixa e guarda o modelo no navegador) — usado pelas duas páginas "local"
@@ -1138,10 +1140,86 @@ A **ponte** é `js/app/agente-chat.js` (global `AgenteChat`; o `chat.js` a chama
 
 **Limites (leia):** a velocidade da resposta depende dos **modelos grátis** do OpenRouter (cota da conta, modelos que saem do ar — hoje `north-mini-code` e `laguna-s-2.1` estão mortos e são pulados sozinhos; troque-os em **IA / MCP**). A pesquisa e as ferramentas são rápidas e não gastam IA, mas **a IA ainda escreve a resposta**: o ganho é em ler o artigo inteiro e em não montar um prompt gigante, não em dispensar o modelo. O agente foi testado com os modelos reais e com o banco real, mas **não com a voz** (sem microfone) e não em todas as perguntas possíveis — acompanhe a aba **Análise** e a **Revisão** nos primeiros dias.
 
+## Agente de IA na geração de regras (Criar Regra › Ct-e Nova Versão) (v29.2)
+
+Pergunta do dono: *“a geração de regra com IA (na nova versão) está usando o agente? Se não está, coloca pra ficar mais preciso.”* — **não estava**: o agente só respondia o chat. A geração era “um prompt + uma chamada de IA (+ uma correção)” e a IA só conhecia o texto fixo do prompt. Desde a **v29.2.0** a Nova Versão (e o Beta, que usa o mesmo código) gera pelo **Agente de Regras**. O Contrato de Frete, o Faturamento e o montador clássico **não mudaram**.
+
+### O que foi descoberto (e por que isso melhora a precisão)
+
+- O prompt do gerador tem ≈ 24 mil caracteres, mas só **4,6 mil** são documentação (`CONTEXTO_REGRAS`). A base de conhecimento da equipe tem o **manual “Funções disponíveis para configurar dentro de uma regra…”** (artigos A75/A76/A245) e artigos de caso (A501 base de IBS/CBS, A570 advalorem, A359 frete por KM progressivo, A2 CST 60, A644 PIS/COFINS na DACTE, A562 INSS no Ct-e OS…): **de 0 a 2 %** do que eles dizem estava no prompt (medido por trechos de 4 palavras).
+- Por isso a IA **não conhecia** o que existe: `obtGlob`/`defGlob` (acumulador global), `obtStr`/`defStr` (campos TAG do Ct-e), `montaObsPV`, `arredondaISS`, `outrosValoresCF[..]`, `tagsCTe[..]`, `$CE`, as propriedades da `tabelaPrecos`… — e o prompt chegava a dizer que “não existe” o que existe. Exemplo: para **impedir de salvar** (o caso de 14/10/2026, em que a IA inventou `msg()` e `preventSave()`) o jeito certo é o campo **Validação** da regra, que **termina com `return true` (salvar) ou `return false` (não salvar)** — está no manual e o gerador clássico respondia “não há função documentada”.
+
+### O que o Agente de Regras faz
+
+1. **Põe a documentação oficial da equipe no prompt:** o manual de funções (sempre) + até **2 artigos do assunto do pedido** (busca por palavras, sem IA; só entram quando combinam de verdade — “reduzir a base em 20 %” ou “somar o seguro no total” não trazem artigo nenhum, “IBS/CBS”, “advalorem”, “KM progressivo”, “CST 60” trazem o certo). Editou o artigo da base? A próxima regra já usa o texto novo.
+2. **Confere cada resposta da IA** (sem executar o código da regra) e, havendo problema, **devolve a lista para a IA corrigir — até 3 vezes** (o clássico corrigia 1). Sem problema na 1ª resposta = **nenhuma chamada a mais**. O que é conferido: **sintaxe** (parênteses, chaves, aspas), **função que não existe** (a que não está na documentação nem na regra original), **campo que não existe**, **ICMS alterado**, **ordem das linhas**, **linha que a regra original tinha e sumiu**, **loop**, e o **código da Validação** (um `return false` que rodaria sempre e travaria o salvamento do Ct-e para sempre). Se o pedido ou a regra original usa um nome “estranho”, a conferência só pede para **conferir** — nunca proíbe.
+3. **Mostra o que fez** no fim do cartão (“🤖 Agente de Regras: regra conferida automaticamente … N correção(ões) … base: manual de funções (A76), A501…”) e, se algo ainda sobrou, a lista “**⚠️ Ainda sobrou na conferência (confira antes de usar)**”. O selo do cartão passa a ser “🤖 Agente · modelo”.
+4. **Pedido de validação:** o código do campo Validação vem num **segundo bloco** com o título “Código do campo Validacao:” (cole na aba Validação da regra, não no cálculo); a regra de cálculo continua no primeiro bloco.
+
+### Ligar, desligar, voltar atrás
+
+- **Padrão: ligado.** Personalizar › **“Usar o Agente de IA para gerar regras (mais preciso)”** desliga só para quem mexeu; `?agente=0` desliga tudo do agente (chat e regras).
+- **Sozinho:** se o agente não conseguir (internet, banco fora do ar, IA que não devolve nada), o gerador clássico assume na hora, com o mesmo pedido. A trava de ICMS, o aviso de loop, o “Voltar” e o cartão da regra são os mesmos nos dois jeitos.
+
+### Medido (IA real, 6 pedidos × 2 jeitos, `tools/bancada-desempenho/teste-regras-agente.js`)
+
+12 gerações por jeito (6 pedidos × 2 rodadas), mesmos modelos grátis, a mesma régua para os dois: *o que o pedido exigia* (regras de texto sobre a regra gerada), *o que não podia aparecer* e as conferências do agente.
+
+| Pedido | Clássico | Agente |
+|---|---|---|
+| 1. Do zero: frete = tarifa × peso, ICMS demonstrativo com pedágio na base | 3/3 · 3/3 | 3/3 · 3/3 |
+| 2. Editar a regra de cálculo inverso: somar seguro e pedágio na base | 4/4 · 4/4 | 4/4 · 4/4 |
+| 3. “Valide o peso e impeça de salvar” (o caso real de 14/10/2026) | 1/1 · 1/1 — só avisa (“não há função documentada para impedir o salvamento”) | 1/1 · 1/1 — **entrega o código do campo Validação** (`if (…) { alert(…); return false; }` + `return true;`) |
+| 4. Base de IBS/CBS reduzindo PIS e Cofins (só existe no artigo A501) | **1/3 · 1/3** (não usa o campo do artigo, deixa a base negativa) | **3/3 · 3/3** (campo `bloco_impostos_conhecimento[base_calculo_cbs_ibs]`, `Math.max(0, …)`; 1 correção automática em cada) |
+| 5. Acumulador global (`obtGlob`/`defGlob`, só no manual) | **0/2 · 0/2** (“não há função documentada”) | **2/2 · 2/2** |
+| 6. Advalorem em campo personalizado somado no total (artigo A570) | **1/3 · 1/3** (`def("advalorem", …)` em vez de `outrosValores[advalorem]`) | **3/3 · 3/3** |
+| **Total** | **20 de 32** exigências · 3 coisas que não podiam aparecer · 15,5 s por regra | **32 de 32** exigências · 2 coisas que não podiam aparecer · 3,9 s por regra |
+
+Nos pedidos que o prompt do sistema já cobria (1 e 2) os dois jeitos **empataram**; o ganho do agente está onde a resposta certa estava **na base de conhecimento da equipe** (3 a 6). As “coisas que não podiam aparecer” do agente foram as mesmas dos dois jeitos no pedido 1 (um `def("totalPrestacao", …)` que ninguém pediu, que o próprio exemplo do prompt induz); as do clássico incluem o `obt("advalorem")` com o nome errado do campo. O agente também foi mais rápido neste teste (uma chamada, sem esperar por correção; a diferença de tempo vem do cliente de IA do agente). Amostra pequena (12 gerações, 6 pedidos, 1 máquina, IA que varia): vale como **indício**, não como garantia — rode `teste-regras-agente.js --rodadas=3` antes de concluir qualquer coisa nova.
+
+### Limites (leia)
+
+- As conferências são **estáticas**: nada da regra é executado, então uma conta errada que tenha sintaxe e campos válidos **passa**. A IA ainda erra e varia a cada resposta — confira a regra antes de usar (o cartão diz o que foi alterado e os pontos de atenção).
+- Os artigos da base viram **documentação**: se um artigo estiver errado ou desatualizado, a IA pode seguir o erro. O manual “Funções disponíveis…” é o mais importante: mantenha-o em dia (ele é escolhido pelo título, o mais completo dos que começam por “Funções disponíveis”).
+- A conferência de “campo/função fora da documentação” usa as palavras da documentação, do pedido e da regra original: um campo real do sistema que **nunca foi citado em lugar nenhum** gera um aviso de “confira” (só um aviso). Documentá-lo no artigo resolve.
+- Cada correção custa uma chamada de IA (os modelos grátis têm cota da conta): no pior caso são 4 chamadas por regra; no melhor, 1.
+
+## Agente de IA nas chamadas de voz (o 📞) (v29.3)
+
+Pedido do dono: *“coloca o agente também pra responder as chamadas de voz”*. Há três jeitos de ligar para o suporte e o agente entra em cada um do que cabe a ele:
+
+| Chamada | Quem pensa a resposta | O que mudou na v29.3 |
+|---|---|---|
+| **Conversa rápida** (o 📞 padrão, grátis, sem chave) | o **agente** (antes: busca enxuta + prompt próprio + um modelo) | o agente pesquisa o banco, escreve a fala e o motor de voz de sempre a corta em 1–2 frases e a fala |
+| **Voz ao vivo** (Gemini; só com chave) | o modelo do Google (voz nativa) | o **conhecimento** que ele recebe quando consulta o banco passa a vir da pesquisa do agente (a mesma do chat), em vez da busca enxuta da voz |
+| **Chamada antiga** (opção do Ajustes; passa pelo `handleChat`) | já era o agente desde a v29.0 | nada |
+
+### Conversa rápida: o que é do agente e o que continua igual
+
+- **Do agente** (`js/app/agente-voz.js` + o *modo voz* do motor, `agente-bsoft/nucleo`): a pesquisa (artigos lidos, respostas aprovadas, parâmetros/funcionalidades, **rejeições da SEFAZ**, menu real, regras fiscais) e a escrita da fala. O modo voz do motor tem um **prompt curto e falado** (sem ferramentas, sem Markdown, sem “não omita nada”), recebe a pesquisa como **texto** na própria mensagem da pessoa e usa **limites de voz**: ≤ 170 tokens, 1 artigo lido (≤ 4.200 caracteres), 1ª palavra em até 6,5 s por modelo, **1 tentativa por modelo**, e **desiste na hora se todos estiverem em limite de uso (429)** em vez de esperar.
+- **Do motor de voz de sempre** (`js/app/conversa-voz.js`, **não foi reescrito**): ouvir e achar o fim da frase, “deixa eu ver…”, **no máximo 2 frases por vez** e “**quer que eu continue?**”, interromper (✋, toque, com fone a própria voz), o **placar de modelos** (o mais rápido na prática vai primeiro — o agente respeita essa ordem e também a atualiza), a bolha no chat e **1 linha de log por pergunta** (`fonte: "ia"`, modelo `… (voz, agente)`, com os “dados do banco usados”).
+- **“Continua”:** o agente refaz a pesquisa junto da pergunta anterior e recebe, no prompt, o que já foi falado (“diga só o próximo trecho, sem repetir”).
+- **Fala só o que dá para ouvir:** nunca o **número** de parâmetro/funcionalidade (regra inegociável) **nem o nome interno** (`transp_podeCriarCF…`: o agente só diz a Descrição; o motor de voz também apaga qualquer nome com sublinhado antes de falar). E, como pediu o dono, a resposta **não abre com “Antes de tudo, verifique”**: ela responde o que foi perguntado.
+- **Se o agente não responder a tempo** (ainda carregando, 1ª palavra demorou mais de 8 s, erro), **aquele turno segue pelo caminho de antes** — a pessoa nem percebe; **depois de 2 falhas seguidas o agente sai da chamada** (`ConversaVoz.estado().agenteFalhas`). Desligar de vez: **Personalizar › “Usar o Agente de IA nas chamadas de voz”** ou `?agente=0`.
+
+### Voz ao vivo (Gemini)
+
+O modelo do Google continua falando e decidindo; quando ele chama a função `consultar_base_bsoft`, o conhecimento vem de `AgenteVoz.consultar` (a pesquisa do agente, **sem IA**, até 2 artigos lidos + rejeição/menu/regras conforme a pergunta, com o número de parâmetro já retirado). Qualquer problema → a busca de sempre (`VozConsulta`). **Atenção:** esta parte foi testada **sem abrir uma chamada real** (o teste chama a consulta direto): confira numa ligação de verdade antes de divulgar.
+
+### Medido (Edge de verdade, microfone e alto-falante **simulados**, IA **real**; `tools/bancada-desempenho/teste-voz-agente.js`, 19 + 5 verificações)
+
+- Da pessoa terminar a frase até a **1ª frase falada**: **1,7 a 2,9 s** (a 1ª palavra do modelo chega em 0,7–1,6 s); a mesma pergunta pelo caminho de antes levou 2,6 s na mesma bancada — **empate**: o ganho do agente na voz é de **conteúdo**, não de velocidade.
+- Conferido: fala de 1–3 frases sem símbolos, links nem número de parâmetro; “continua” não repete; **“o que significa a rejeição 539?” responde com a tabela da SEFAZ** (o motor antigo não tinha essa ferramenta); pergunta de parâmetro responde direto, sem “Antes de tudo”; log com `(voz, agente)`; reserva quando o agente cai; interromper no meio da fala; “obrigado” respondido na hora, sem IA.
+- **Não testado:** microfone e alto-falante **de verdade** (o reconhecimento e a voz do navegador foram simulados) e a voz ao vivo com chave real.
+
 ## Problemas comuns
 
 | Sintoma | Causa provável / solução |
 |---|---|
+| Na chamada de voz a resposta demora ou vem pelo jeito de antes (aparece “o agente não respondeu a tempo” no console) | O agente ainda estava carregando (os primeiros segundos depois de abrir o sistema), a 1ª palavra passou de 8 s ou os modelos grátis estavam em limite de uso (429): **aquele turno** vai pelo caminho de antes; com 2 falhas seguidas o agente sai da chamada até ela terminar. Não é erro. Para forçar o jeito antigo sempre: **Personalizar › “Usar o Agente de IA nas chamadas de voz”** desligado. |
+| A assistente de voz falou algo estranho (um nome com letras coladas, um número de parâmetro) | Não deveria: o prompt de voz proíbe e o motor de voz apaga nomes internos e números antes de falar. Se acontecer, abra o console (F12), copie a linha `⏱️ [conversa voz]` e a pergunta, e rode `teste-voz-agente.js --depurar=1`. |
+| A regra gerada (Criar Regra › Ct-e Nova Versão) veio com “🤖 Agente de Regras … Ainda sobrou na conferência (confira antes de usar)” | É o agente avisando o que a conferência automática ainda achou depois de 3 correções (ex.: um campo que não aparece na documentação, um `return false` que recusaria sempre). **Confira essas linhas antes de colar a regra no sistema.** Se o aviso estiver errado (o nome do campo existe no sistema do cliente), ignore-o: ele só diz para conferir. Para tirar o aviso na origem, documente o campo/função no artigo da base de conhecimento “Funções disponíveis…”. |
+| Quero a geração de regra do jeito antigo (uma chamada de IA, sem a documentação da base) | **Personalizar › “Usar o Agente de IA para gerar regras”** desligado (ou `?agente=0` no endereço). Se o agente não conseguir gerar (internet, banco fora do ar, IA indisponível), o sistema volta sozinho para o gerador clássico. |
 | O chat respondeu pelo jeito antigo (aparece “Como você prefere a resposta?”) | O agente está desligado: confira **Personalizar › “Usar o Agente de IA (mais rápido)”**, se o endereço tem `?agente=0`, e o console (F12): `[agente] desligado nesta sessão…` quer dizer que ele não conseguiu se preparar duas vezes (internet, banco fora do ar, arquivo `js/agente/motor.js` não publicado). Recarregue com **Ctrl+F5**. |
 | O cartão do agente diz “Não consegui uma resposta dos modelos agora” e mostra só um artigo | Todos os modelos da cadeia falharam (cota 429 dos modelos grátis, modelo que saiu do ar 404, rede). O artigo mostrado é o melhor do banco; **🔄 Tentar novamente** repete a pergunta. Se for sempre: **IA / MCP → Testar todos** e troque os modelos mortos. |
 | Mexi no `nucleo` do agente e o chat não mudou | O chat usa o `js/agente/motor.js` **gerado**: rode `publicar-no-chat.js` (veja “Atualizar o motor”) e suba o arquivo novo; depois **Ctrl+F5**. |
@@ -1207,6 +1285,7 @@ A **ponte** é `js/app/agente-chat.js` (global `AgenteChat`; o `chat.js` a chama
 - **Ordem dos scripts** (fim do `index.html` e do `admin/index.html`): `config/*` → `js/core/*` → `js/app/*` → `js/ui/*`. Cada arquivo declara
   funções/variáveis globais; um arquivo novo precisa ser listado nos dois HTMLs que o usam (e `tools/atualizar-versao.ps1` cuida do `?v=`).
 - **Agente de IA (v29):** `js/agente/motor.js` é **GERADO** de `agente-bsoft/nucleo` (`publicar-no-chat.js`; não edite à mão). Ele carrega **antes** de `js/app/agente-chat.js` (a ponte), e os dois **antes** de `js/app/chat.js` (que chama `AgenteChat.responder` e, se vier `false`, segue pelo prompt clássico). Prompt/regra de negócio que o agente também usa (`Prereq`, `MenuBsoft`, `REGRA_SEM_CODIGO`) fica **aqui no chat** e a pasta `agente-bsoft` recebe **cópias** (`sincronizar-do-chat.js`; o `rodar-testes.js` avisa quando estiverem atrasadas) — mude sempre no chat. Fluxo de uma mudança que afeta o agente: mexer → `agente-bsoft/testes/rodar-testes.js` → `publicar-no-chat.js` → `teste-agente-chat.js`.
+- **Agente de Regras (v29.2):** quem gera a regra da Nova Versão/Beta é `Agente.regrasIA.gerar` (motor, fonte `agente-bsoft/nucleo/regras-ia.js`) chamado por `AgenteRegras.gerar` (`js/app/agente-regras.js`) dentro de `enviarWizardRegraDnd` (`js/app/tutorial-regras.js`); o gerador clássico logo abaixo continua lá como reserva. **As conferências moram no chat**, em `js/app/regra-cte-passos.js` (`_cnProblemasDoAgente`: sintaxe, `_cnValidacaoPerigosa`, função/campo fora da documentação, `_cnDefsPerdidos`, loops) e só rodam com `ctx.agente` — para **acrescentar uma conferência**: escreva a função pura nesse arquivo, ponha uma frase no `_cnProblemasDoAgente`, e cubra com casos bons **e** ruins em `tools/bancada-desempenho/teste-regras-validador.js` (que também garante que o código bom que o sistema já tem não dispara alarme falso). Mudou algo em `agente-bsoft/nucleo`? `rodar-testes.js` → `publicar-no-chat.js` → `teste-regras-agente.js`.
 - **Criar Regra › Ct-e (assistentes em telas)**: `regra-cte-passos.js` (biblioteca compartilhada, carrega primeiro) → `regra-cte-beta.js` (desenvolvimento) → `regra-cte-nova.js` (cópia estável, **gerada do Beta** por `tools/gerar-nova-do-beta.js`; veja "Promover do Beta para a Nova Versão"). Não edite a Nova Versão à mão sem levar a mudança ao Beta.
 - **IA que gera regra só usa o que está documentado (v28.15.2)**: `REGRAS_SO_O_DOCUMENTADO` (em `js/app/assistente-regras.js`, logo acima de `CONTEXTO_REGRAS`) é a "regra absoluta" que abre **todos** os prompts de geração de regra (Ct-e: clássico, montador e assistentes Nova Versão/Beta; Contrato de Frete; Faturamento; chat de regras — 7 prompts). Ela lista o que existe (`def`, `obt`, `$SV`, `$V`, `alert("texto")`, `COM_RF.composicaoFrete`, `IRRF.defineDescontoIRRF`, `tabelaPrecos.*`, JavaScript puro, `Math.*`), **proíbe inventar** função/objeto/campo (cita `msg()`, `preventSave()`, `bloquear()`… como exemplos de coisas que não existem; aviso ao usuário = só `alert`) e manda, quando o pedido exigir algo sem recurso documentado (ex.: impedir o salvamento), **não inventar**: fazer a parte possível, deixar o comentário `// ATENCAO: nao ha funcao documentada para …` no código e explicar em 1–2 frases depois do bloco. Surgiu um recurso novo no sistema? Documente-o nos `CONTEXTO_*` e, se for função/objeto, acrescente no item 1 da constante. (Caso real: "valide o peso total das notas e impeça de salvar o Ct-e" gerou `msg()` e `preventSave()`, que não existem.)
 - **[REMOVIDO na v28.26 — ver abaixo]** Link de tela (rotina) com campo + botão (v28.16): quando a IA indica uma tela do sistema, o link-modelo `https://NOMEDOCLIENTE.bsoft.app/versoes/versao5.0/rotinas/c.php?id=<nome interno>&menu=s` **não aparece mais como link**: no lugar entra um **campo** ("Cole aqui o endereço do seu sistema") e o botão **🔗 Acessar tela** (Enter no campo também); ele monta o link com o endereço colado e abre numa **nova guia**. Aceita `https://empresa.bsoft.app`, `empresa.bsoft.app` ou até o link de qualquer tela dela (só a origem é usada); recusa vazio, texto solto e o próprio exemplo NOMEDOCLIENTE (avisa em vermelho). O endereço fica **guardado neste navegador** (`bsoft_dominio_cliente`) e já vem preenchido nas próximas telas (e nos outros campos da página). Vale no chat, em "Analisar tela" e nas respostas rápidas (tudo que passa pelo `renderMd`, `js/core/markdown.js`) e no painel admin. Funciona com o link completo com o endereço-modelo (NOMEDOCLIENTE, SEUCLIENTE, CLIENTE, XXXX), só com o caminho `/versoes/…/rotinas/c.php?id=…` e dentro de `[texto](link)`; link com endereço **real** de cliente continua link comum. O id só aceita letras, números, `_ . -`. Para a IA copiar o link do jeito certo, `_formatarRotinaParaPrompt` (`js/app/rotinas.js`) agora entrega o link completo com NOMEDOCLIENTE e a regra 10 do prompt manda copiá-lo sem explicar como montar a URL.
